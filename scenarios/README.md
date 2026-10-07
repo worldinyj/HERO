@@ -100,3 +100,20 @@ S01~S03의 근거·이용조건·HF/익명화·기술검증 상태는 `research/
 - `SOURCE_HOLD`: source/rights/OPIS/human gate 중 하나 이상이 남아 있어 publish 금지
 - `REVIEW_READY`: 공식근거·이용조건·기술게이트는 통과했지만 사람 HF/익명화 승인이 남아 있어 publish 금지
 - 사람 승인 기록 없이는 `drafts/` → `data/` 이동 금지
+
+
+### Promotion guard
+
+`research/promotion-status.json`은 shipping 여부를 기계적으로 검사하는 승격 manifest입니다.
+
+```bash
+pnpm check:scenario-promotion
+```
+
+규칙:
+- `s00_tutorial`은 `tutorial_exception`으로 허용
+- 경쟁 시나리오가 `scenarios/data/`에 존재하려면 manifest 상태가 `approved`여야 함
+- `sourceRightsComplete`, `hfReviewComplete`, `anonymizationReviewComplete`가 모두 true여야 함
+- `humanReview.status = approved`와 승인자·승인일이 있어야 함
+- draft가 `approved` 상태로 남아 있으면 CI 실패
+- 사람 검토 양식은 `research/T3_HUMAN_REVIEW_PACKET_V1.md` 사용
