@@ -506,4 +506,11 @@ test("invitation → play → replay offline queue → leaderboard", async ({
   await expect(page.getByText(identity.inviteeName, { exact: true })).toHaveCount(
     0,
   );
+
+  await page.goto("/me");
+  await expect(
+    page.getByRole("button", { name: "로그아웃" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "로그아웃" }).click();
+  await expect(page).toHaveURL("/login");
 });
