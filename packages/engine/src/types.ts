@@ -37,13 +37,13 @@ export interface GameLogEntry {
   step: number;
   nodeId: string;
   actionType: UserActionType | "hazard_check";
-  actionId?: string;
+  actionId?: string | undefined;
   clockBefore: number;
   clockAfter: number;
   hazardBefore: number;
   hazardAfter: number;
-  breached?: boolean;
-  weakBarriers?: string[];
+  breached?: boolean | undefined;
+  weakBarriers?: string[] | undefined;
 }
 
 export type VisibleNode = Exclude<ScenarioNode, { type: "hazard" }>;
