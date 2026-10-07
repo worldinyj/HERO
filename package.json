@@ -19,7 +19,8 @@
     "e2e": "playwright test",
     "e2e:setup": "tsx e2e/setup-local.ts",
     "check:scenario-promotion": "tsx scripts/check-scenario-promotion.ts",
-    "check:mvp-readiness": "node scripts/check-mvp-readiness.mjs"
+    "check:mvp-readiness": "node scripts/check-mvp-readiness.mjs",
+    "promote:scenario": "tsx scripts/promote-scenario.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
