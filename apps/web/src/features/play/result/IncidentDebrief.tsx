@@ -49,31 +49,33 @@ export function IncidentDebrief({
       </header>
 
       <p className="incident-anonymization">
-        이 시나리오는 실제 원전 사건을 교육 목적에 맞게 재구성했습니다. 발전소명,
-        호기, 고유 설비 Tag, 세부 운전값, 개인 식별정보는 익명화·일반화하여
-        표시하지 않습니다.
+        사건 개요는 공개된 공식자료의 사실관계를 바탕으로 익명화·일반화했습니다.
+        발전소명, 호기, 고유 설비 Tag, 세부 운전값, 개인 식별정보는 표시하지
+        않습니다. 아래 원인·기여조건 분석은 HERO의 교육용 방어막 관점
+        재구성이며 조사기관의 공식 근본원인 분류를 의미하지 않습니다.
       </p>
 
       <section className="incident-section">
-        <h3>사건 개요</h3>
+        <h3>사건 개요 · 공식자료 기반 일반화</h3>
         <p>{debrief.overview}</p>
       </section>
 
       <section className="incident-section">
-        <h3>근본원인</h3>
+        <h3>방어막 관점 원인 분석</h3>
         <ul className="incident-list">
           {debrief.rootCauses.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
         <p className="muted mini-copy">
-          “작업자 실수” 하나로 원인을 끝내지 않고 절차·감독·설계·조직조건과
-          방어막의 상호작용을 함께 봅니다.
+          이 항목은 HERO의 시스템적 학습 분석입니다. “작업자 실수” 하나로
+          원인을 끝내지 않고 절차·감독·설계·조직조건과 방어막의 상호작용을
+          함께 봅니다.
         </p>
       </section>
 
       <section className="incident-section">
-        <h3>기여요인</h3>
+        <h3>학습 관점 기여조건</h3>
         <ul className="incident-list incident-list--factors">
           {debrief.contributingFactors.map((item) => (
             <li key={item}>{item}</li>
