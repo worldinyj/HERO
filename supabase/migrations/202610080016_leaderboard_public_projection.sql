@@ -206,7 +206,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 begin
   if tg_op = 'DELETE' then
     if old.status = 'completed' then
@@ -237,7 +237,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function private.refresh_current_leaderboard_from_session()
 from public, anon, authenticated;
