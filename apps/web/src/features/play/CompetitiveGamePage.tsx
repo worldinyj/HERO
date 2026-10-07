@@ -26,6 +26,7 @@ import {
   submitSessionWithQueue,
 } from "../../lib/submissionQueue";
 import { ChoiceSheet } from "./ChoiceSheet";
+import { GameClock } from "./GameClock";
 import { restoreReplayPrefix, type StoredDecisionRow } from "./competitiveReplay";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
@@ -57,12 +58,6 @@ interface StartSessionResponse {
   replayFromNode?: string | null;
   startedAt?: string;
   error?: string;
-}
-
-function formatClock(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60) % 24;
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 function serverEvaluation(data: unknown): Evaluation | null {
@@ -574,7 +569,7 @@ export function CompetitiveGamePage({
             {server.seasonKey} · {server.perspectiveRole}
             {server.replayOf ? " · 리플레이" : ""}
           </span>
-          <span>{formatClock(view.clockMin)}</span>
+          <GameClock clockMin={view.clockMin} deadlineMin={view.deadlineMin} />
         </div>
 
         {!online ? (
@@ -728,10 +723,10 @@ export function CompetitiveGamePage({
     <section className="game-page" aria-live="polite">
       <div className="game-status">
         <span>{server.seasonKey} · {server.perspectiveRole}</span>
-        <span>
-          {formatClock(view.clockMin)}
-          <small> · 마감 {formatClock(view.deadlineMin)}</small>
-        </span>
+        <GameClock
+          clockMin={view.clockMin}
+          deadlineMin={view.deadlineMin}
+        />
       </div>
 
       {!online ? (
