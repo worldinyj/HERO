@@ -2552,3 +2552,79 @@ h3 {
     animation: none;
   }
 }
+
+
+.hp-radar-wrap {
+  display: grid;
+  width: min(100%, 330px);
+  margin: 0 auto;
+  place-items: center;
+  padding: 4px 0;
+}
+
+.hp-radar {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.hp-radar-grid {
+  fill: none;
+  stroke: rgba(138, 150, 173, 0.18);
+  stroke-width: 1;
+}
+
+.hp-radar-axis {
+  stroke: rgba(138, 150, 173, 0.16);
+  stroke-width: 1;
+}
+
+.hp-radar-data {
+  fill: rgba(111, 160, 255, 0.16);
+  stroke: var(--barrier);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.hp-radar-point {
+  fill: var(--accent);
+  stroke: rgba(14, 22, 36, 0.9);
+  stroke-width: 1.5;
+}
+
+.hp-radar-label {
+  fill: #d7e3ff;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.hp-radar-value {
+  fill: var(--muted);
+  font-size: 7px;
+  font-variant-numeric: tabular-nums;
+}
+
+.risk-factor-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.risk-factor-chip {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  padding: 5px 9px;
+  border: 1px solid rgba(242, 165, 65, 0.28);
+  border-radius: 999px;
+  color: #ffe0a8;
+  background: rgba(242, 165, 65, 0.08);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+@media (max-width: 359px) {
+  .hp-radar-wrap {
+    width: min(100%, 292px);
+  }
+}
