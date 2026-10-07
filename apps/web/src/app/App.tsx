@@ -6,6 +6,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
+import { CampaignRankCard } from "../features/leaderboard/CampaignRankCard";
 import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
 import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
@@ -72,6 +73,8 @@ function CampaignPage() {
       <p className="muted">
         0장 튜토리얼은 실제 엔진으로 플레이할 수 있습니다. S01~S03은 서버 세션·콘텐츠 검수 후 순차 개방합니다.
       </p>
+
+      <CampaignRankCard />
 
       <div className="chapter-list">
         <Link
