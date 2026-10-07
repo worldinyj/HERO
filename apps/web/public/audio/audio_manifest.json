@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "project": "HERO",
+  "updatedAt": "2026-10-07",
+  "policy": {
+    "runtimeGeneration": false,
+    "sourceOfTruth": "docs/06_AUDIO_ASSET_GUIDE.md",
+    "prohibitRealNuclearAlarmSimilarity": true,
+    "requireLicenseReview": true,
+    "requireHumanFactorsAudioReview": true
+  },
+  "assets": []
+}
