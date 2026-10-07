@@ -4,8 +4,8 @@ import type {
   ScenarioNode,
 } from "@hero/schema";
 import { validateScenarioGraph } from "@hero/schema";
-import { BARRIER_CARDS } from "./catalog";
-import { seededOrderKey, seededUnit } from "./rng";
+import { BARRIER_CARDS } from "./catalog.ts";
+import { seededOrderKey, seededUnit } from "./rng.ts";
 import type {
   GameAction,
   GameLogEntry,
@@ -14,7 +14,7 @@ import type {
   Metrics,
   UserActionType,
   VisibleNode,
-} from "./types";
+} from "./types.ts";
 
 const METRIC_KEYS = [
   "safety",
