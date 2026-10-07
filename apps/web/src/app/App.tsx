@@ -1,6 +1,6 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { AdminOrgPage } from "../features/admin/AdminOrgPage";
 import { AdminScenarioPage } from "../features/admin/AdminScenarioPage";
@@ -13,6 +13,7 @@ import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { ManagerDashboardPage } from "../features/manager/ManagerDashboardPage";
 import { GamePage } from "../features/play/GamePage";
 import { ProfilePage } from "../features/profile/ProfilePage";
+import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
 
@@ -91,7 +92,7 @@ function AdminGate({ children }: { children: ReactNode }) {
 
 export function App() {
   const location = useLocation();
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const managerNav = profile?.role === "plant_manager";
   const adminNav = profile?.role === "admin";
   const expandedNav = managerNav || adminNav;
@@ -101,6 +102,18 @@ export function App() {
     location.pathname === "/privacy" ||
     location.pathname.startsWith("/i/");
   const playRoute = location.pathname.startsWith("/play/");
+
+  useEffect(() => {
+    if (
+      !session?.user.id ||
+      profile?.role !== "player" ||
+      profile.is_active !== true
+    ) {
+      return;
+    }
+
+    return startSubmissionQueueProcessor(session.user.id);
+  }, [profile?.is_active, profile?.role, session?.user.id]);
 
   return (
     <main className={playRoute ? "app-shell app-shell--play" : "app-shell"}>
