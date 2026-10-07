@@ -284,7 +284,7 @@ ${checklist}
 
 ## 6. 보조 검토자료
 
-- 공통 HF 체크리스트: \`scenarios/research/T3_HF_REVIEW_CHECKLIST_V1.md\`
+- 공통 HF 체크리스트: \`scenarios/research/T3_HF_REVIEW_CHECKLIST_V1.md\`\n- 사람 검토 증거 기록 가이드: \`scenarios/research/HUMAN_REVIEW_EVIDENCE_GUIDE.md\`
 - 공통 사람 검토 패킷: \`scenarios/research/T3_HUMAN_REVIEW_PACKET_V1.md\`
 - 시나리오별 AI 사전검토가 있는 경우: \`scenarios/research/S03_AI_PRE_REVIEW_V1.md\`
 - source evidence: \`scenarios/research/source-evidence.json\`
