@@ -69,7 +69,7 @@
       "blockers": [
         "HF review of Direct/Root/Contributing cause classification and cause-to-action traceability",
         "anonymization/operational-overexposure review",
-        "incidentDebrief final approval for v3 content hash"
+        "incidentDebrief final approval for v4 content hash"
       ],
       "notes": "KINS investigation report No. 2026-03 is used as an internal factual/HF analysis source. S03 v4 corrects the gameplay premise so the triggering setting change is presented as an unplanned, nonessential action rather than a required procedure step, adds a safe path that rechecks necessity before acting, and keeps Direct/Root/Contributing cause, failed/absent barriers, corrective actions, recovery-HF boundary, and public sanitization explicit. Human re-review is required for the current v4 content hash."
     }
