@@ -53,8 +53,8 @@ jobs:
       - name: Configure E2E web environment
         run: |
           cat > apps/web/.env.e2e.local <<EOF
-          VITE_SUPABASE_URL=$SUPABASE_URL
-          VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          VITE_SUPABASE_URL=$API_URL
+          VITE_SUPABASE_ANON_KEY=$ANON_KEY
           VITE_E2E_MODE=true
           EOF
 
@@ -63,7 +63,7 @@ jobs:
           supabase functions serve > /tmp/hero-functions.log 2>&1 &
           echo $! > /tmp/hero-functions.pid
           for i in {1..60}; do
-            code="$(curl -sS -o /dev/null -w '%{http_code}' -X POST               -H 'Content-Type: application/json'               --data '{"token":"health-check-not-a-real-invite"}'               "$SUPABASE_URL/functions/v1/peek-invite" || true)"
+            code="$(curl -sS -o /dev/null -w '%{http_code}' -X POST               -H 'Content-Type: application/json'               --data '{"token":"health-check-not-a-real-invite"}'               "$API_URL/functions/v1/peek-invite" || true)"
             if [ "$code" != "000" ]; then
               echo "Edge Functions ready with HTTP $code"
               exit 0
