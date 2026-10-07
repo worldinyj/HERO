@@ -73,9 +73,11 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
     page.getByText("E2E 안전 확인 시나리오", { exact: true }),
   ).toBeVisible();
 
-  await page
-    .getByRole("link", { name: /E2E 안전 확인 시나리오/ })
-    .click();
+  const chapterLink = page
+    .locator("a.chapter-link")
+    .filter({ hasText: "E2E 안전 확인 시나리오" });
+  await expect(chapterLink).toHaveCount(1);
+  await chapterLink.click();
 
   await expect(
     page.getByRole("heading", { name: /E2E 안전 확인 시나리오/ }),
