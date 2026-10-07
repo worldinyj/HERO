@@ -226,7 +226,7 @@ export function CompetitiveBriefingPage({
 
     return data.scenario.cards
       .map((id) => BARRIER_CARDS[id])
-      .filter((card) => Boolean(card));
+      .filter((card): card is NonNullable<typeof card> => card !== undefined);
   }, [data]);
 
   if (profile?.role !== "player") {
