@@ -1738,6 +1738,143 @@ h3 {
 }
 
 
+
+.incident-debrief {
+  gap: 18px;
+}
+
+.incident-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.incident-heading h2 {
+  margin-bottom: 0;
+}
+
+.incident-type {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid rgba(111, 160, 255, 0.32);
+  border-radius: 999px;
+  color: #d7e3ff;
+  background: rgba(111, 160, 255, 0.08);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.incident-anonymization {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(76, 195, 138, 0.24);
+  border-radius: 12px;
+  color: #d8f3e6;
+  background: rgba(76, 195, 138, 0.07);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.incident-section {
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(138, 150, 173, 0.14);
+}
+
+.incident-section h3,
+.incident-section p {
+  margin: 0;
+}
+
+.incident-section > p:not(.mini-copy) {
+  color: #d7deeb;
+  line-height: 1.65;
+}
+
+.incident-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.incident-list li {
+  position: relative;
+  padding: 11px 12px 11px 34px;
+  border: 1px solid rgba(138, 150, 173, 0.16);
+  border-radius: 12px;
+  color: #d7deeb;
+  background: rgba(14, 22, 36, 0.45);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.incident-list li::before {
+  content: "●";
+  position: absolute;
+  top: 11px;
+  left: 14px;
+  color: var(--barrier);
+  font-size: 0.7rem;
+}
+
+.incident-list--factors li::before {
+  color: var(--accent);
+}
+
+.incident-lessons {
+  display: grid;
+  gap: 9px;
+}
+
+.incident-lessons article {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(242, 165, 65, 0.18);
+  border-radius: 12px;
+  background: rgba(242, 165, 65, 0.06);
+}
+
+.incident-lessons article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.incident-lessons article span {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.incident-lessons article p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 359px) {
+  .incident-heading,
+  .incident-lessons article > div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .incident-lessons article span {
+    text-align: left;
+  }
+}
+
 .offline-banner {
   position: sticky;
   top: calc(max(8px, env(safe-area-inset-top)) + 56px);

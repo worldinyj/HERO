@@ -192,8 +192,15 @@ export function AdminScenarioPage() {
       });
       await load();
     } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : "상태 변경에 실패했습니다.";
+
       setError(
-        cause instanceof Error ? cause.message : "상태 변경에 실패했습니다.",
+        message.includes("scenario_incident_debrief_required")
+          ? "경쟁 시나리오를 배포하려면 익명화된 실사건 공개(사건유형·근본원인·기여요인·HU Tool 교훈)를 먼저 작성해야 합니다."
+          : message.includes("scenario_content_invalid")
+            ? "저장된 시나리오 내용이 현재 스키마와 맞지 않습니다. 새 버전으로 다시 업로드해주세요."
+            : message,
       );
     } finally {
       setStatusPending(null);
