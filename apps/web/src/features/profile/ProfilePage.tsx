@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../../lib/supabase";
+import { AudioSettings } from "../audio/AudioSettings";
 import { useAuth } from "../auth/AuthContext";
 
 interface LearningMetrics {
@@ -415,6 +416,8 @@ export function ProfilePage() {
           ) : null}
         </section>
       ) : null}
+
+      <AudioSettings />
 
       {data.current_season ? (
         <section className="profile-season-card" aria-label="현재 시즌">
