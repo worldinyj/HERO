@@ -29,6 +29,9 @@
 - PR #79: 리더보드 projection Migration 016의 활성 Player 순위 집계 보완 및 라이프사이클 pgTAP 19개
 - 일괄 개발 브랜치: `my_record_summary()`의 없는 시즌 컬럼 참조 수정, 실제 현재(open) 시즌으로 판정, 사용자 격리 pgTAP 8개
 - 사람 검토자료: S01·S03 관련 원인·방어막 정보의 시나리오 간 혼재 수정
+- CSV 대량 초대: 성공 링크 부분 저장/중단 후 이어하기/1회 25건 제한, `SITE_URL` 입력 오류 사전 차단
+- 초대 가입: 닉네임 중복확인 응답의 입력값 변경 레이스 방지
+- 실제 Kakao 계정 검증 계획: `docs/14_KAKAO_LIVE_INVITE_VALIDATION.md` (시험 전 상태 `NOT RUN`)
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
@@ -48,6 +51,10 @@ pnpm check:scenario-promotion
 pnpm check:human-review-evidence
 pnpm build:review-packet -- --scenario=s03_procedure_reality_gap --check
 pnpm check:mvp-readiness
+# GitHub Actions를 실행하지 않고 로컬에서 초대 도구 단위 테스트
+pnpm --dir apps/web test
+# Deno가 설치된 경우에만 순수 URL 검증 테스트
+deno test supabase/functions/_shared/inviteUrl.test.ts
 ```
 
 로컬 Docker와 Supabase CLI가 있을 때만 pgTAP 정책 테스트:
