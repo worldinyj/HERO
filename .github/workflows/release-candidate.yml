@@ -1,0 +1,123 @@
+name: Release Candidate Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      staging_smoke_run_id:
+        description: "Successful Staging Smoke run ID for this exact commit"
+        required: true
+        type: string
+      release_label:
+        description: "Release candidate label"
+        required: true
+        default: "v1.0.0-rc"
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: hero-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: release-candidate
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: corepack enable
+      - run: pnpm install --no-frozen-lockfile
+
+      - name: Verify staging smoke run belongs to this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAGING_SMOKE_RUN_ID: ${{ inputs.staging_smoke_run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          run_json="$RUNNER_TEMP/staging-smoke-run.json"
+          gh api             "repos/$GITHUB_REPOSITORY/actions/runs/$STAGING_SMOKE_RUN_ID"             > "$run_json"
+
+          node - "$run_json" "$GITHUB_SHA" <<'NODE'
+          const fs = require("fs");
+          const [path, expectedSha] = process.argv.slice(2);
+          const run = JSON.parse(fs.readFileSync(path, "utf8"));
+
+          const failures = [];
+          if (run.name !== "Staging Smoke") failures.push(`name=${run.name}`);
+          if (run.event !== "workflow_dispatch") failures.push(`event=${run.event}`);
+          if (run.conclusion !== "success") failures.push(`conclusion=${run.conclusion}`);
+          if (run.head_branch !== "main") failures.push(`head_branch=${run.head_branch}`);
+          if (run.head_sha !== expectedSha) {
+            failures.push(`head_sha=${run.head_sha} expected=${expectedSha}`);
+          }
+
+          if (failures.length > 0) {
+            console.error("Staging Smoke evidence does not match this release commit:");
+            for (const failure of failures) console.error(`- ${failure}`);
+            process.exit(1);
+          }
+
+          console.log(`STAGING_SMOKE_VERIFIED run_id=${run.id} sha=${run.head_sha}`);
+          NODE
+
+          echo "HERO_STAGING_SMOKE_VERIFIED=1" >> "$GITHUB_ENV"
+          echo "HERO_STAGING_SMOKE_RUN_ID=$STAGING_SMOKE_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Verify human release evidence
+        run: pnpm check:release-evidence -- --strict
+
+      - name: Verify scenario source and approval gates
+        run: |
+          pnpm check:source-evidence
+          pnpm check:scenario-promotion
+          pnpm check:approval-hash
+
+      - name: Verify audio release scope
+        run: pnpm check:audio-manifest
+
+      - name: Run strict MVP readiness
+        run: pnpm check:mvp-readiness -- --strict
+
+      - name: Build release candidate
+        run: pnpm build
+
+      - name: Write release evidence reports
+        env:
+          HERO_RELEASE_LABEL: ${{ inputs.release_label }}
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/hero-release-candidate"
+          pnpm check:release-evidence -- --json             > "$RUNNER_TEMP/hero-release-candidate/release-evidence.json"
+          pnpm check:mvp-readiness -- --json             > "$RUNNER_TEMP/hero-release-candidate/mvp-readiness.json"
+
+          node - "$RUNNER_TEMP/hero-release-candidate/release-meta.json" <<'NODE'
+          const fs = require("fs");
+          const out = {
+            releaseLabel: process.env.HERO_RELEASE_LABEL,
+            commitSha: process.env.GITHUB_SHA,
+            repository: process.env.GITHUB_REPOSITORY,
+            stagingSmokeRunId: process.env.HERO_STAGING_SMOKE_RUN_ID,
+            generatedAt: new Date().toISOString(),
+          };
+          fs.writeFileSync(process.argv[2], JSON.stringify(out, null, 2) + "\n");
+          NODE
+
+      - name: Upload release candidate evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: hero-release-candidate-${{ github.run_id }}
+          path: ${{ runner.temp }}/hero-release-candidate
+          retention-days: 90

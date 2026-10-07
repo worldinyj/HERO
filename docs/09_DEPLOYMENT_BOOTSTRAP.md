@@ -256,3 +256,22 @@ Staging Smoke가 PASS해도 다음 항목은 별도 사람 확인이 남는다.
 - 파일럿 운영
 
 즉 이 workflow는 **외부 배포 구성과 웹/Edge 기본 동작을 자동 검증하는 staging gate**이며 프로덕션 출시 승인 자체를 대신하지 않는다.
+
+
+## 8. Release Candidate Gate
+
+실제 릴리스 승인 직전에는 [11_RELEASE_EVIDENCE.md](11_RELEASE_EVIDENCE.md)의 절차를 따른다.
+
+핵심 순서:
+
+1. `ops/release-evidence.json`에 법무/개인정보, 외부배포, 실기기, 사내망, 파일럿 증거를 기록
+2. 오디오 정책을 `deferred`에서 `excluded` 또는 `included`로 확정
+3. 릴리스 대상 **동일 main SHA**를 staging에 배포
+4. GitHub Actions → **Staging Smoke** 실행 및 PASS
+5. GitHub Actions → **Release Candidate Gate** 실행
+6. 입력값 `staging_smoke_run_id`에 바로 앞 성공 run ID 입력
+7. workflow가 Staging Smoke의 이름·성공결론·main branch·**head SHA 정확 일치**를 GitHub API로 재검증
+8. strict release evidence/readiness, scenario approval, audio scope, production build를 모두 확인
+9. 생성된 90일 보존 RC evidence artifact를 최종 승인자료에 첨부
+
+Release Candidate Gate는 production 배포를 실행하지 않는다. 배포 승인과 실제 production 전환은 조직의 승인 절차에 따라 별도로 수행한다.

@@ -13,6 +13,19 @@ function checkFile(path) {
   return existsSync(resolve(root, path));
 }
 
+function validApproval(value) {
+  return Boolean(
+    value &&
+      value.status === "approved" &&
+      typeof value.approvedBy === "string" &&
+      value.approvedBy.trim().length >= 2 &&
+      typeof value.approvedAt === "string" &&
+      /^\d{4}-\d{2}-\d{2}/u.test(value.approvedAt) &&
+      typeof value.evidenceRef === "string" &&
+      value.evidenceRef.trim().length >= 3,
+  );
+}
+
 const structuralRequirements = [
   "docs/01_PRD.md",
   "docs/02_TRD.md",
@@ -23,18 +36,23 @@ const structuralRequirements = [
   "docs/07_TERMS_PRIVACY_DRAFT.md",
   "docs/08_HP_BALANCE_REPORT.md",
   "docs/09_DEPLOYMENT_BOOTSTRAP.md",
+  "docs/10_MVP_READINESS.md",
+  "docs/11_RELEASE_EVIDENCE.md",
+  "ops/release-evidence.json",
   "scenarios/data/S00_tutorial.json",
   "scenarios/research/promotion-status.json",
   ".github/workflows/ci.yml",
   ".github/workflows/database-tests.yml",
   ".github/workflows/e2e.yml",
+  ".github/workflows/staging-smoke.yml",
+  ".github/workflows/release-candidate.yml",
   "apps/web/public/audio/audio_manifest.json",
   "apps/web/src/features/audio/audioManager.ts",
   "apps/web/src/features/audio/AudioContext.tsx",
   "apps/web/src/features/audio/AudioSettings.tsx",
   "scripts/check-audio-manifest.mjs",
   "scripts/check-staging-http.mjs",
-  ".github/workflows/staging-smoke.yml",
+  "scripts/check-release-evidence.mjs",
 ];
 
 const missingFiles = structuralRequirements.filter((path) => !checkFile(path));
@@ -54,6 +72,9 @@ const legal = read("docs/07_TERMS_PRIVACY_DRAFT.md");
 const deployment = read("docs/09_DEPLOYMENT_BOOTSTRAP.md");
 const audio = JSON.parse(
   read("apps/web/public/audio/audio_manifest.json"),
+);
+const releaseEvidence = JSON.parse(
+  read("ops/release-evidence.json"),
 );
 
 const competitive = promotion.entries.filter(
@@ -88,7 +109,6 @@ const audioAssets = Array.isArray(audio.assets) ? audio.assets.length : 0;
 const audioApprovedAssets = Array.isArray(audio.assets)
   ? audio.assets.filter((asset) => asset?.approved === true).length
   : 0;
-const audioApproved = audioApprovedAssets > 0;
 const audioRuntimeReady = [
   "apps/web/src/features/audio/audioManager.ts",
   "apps/web/src/features/audio/AudioContext.tsx",
@@ -96,12 +116,55 @@ const audioRuntimeReady = [
   "scripts/check-audio-manifest.mjs",
 ].every(checkFile);
 
+const approvals = releaseEvidence.approvals ?? {};
+const audioPolicy = releaseEvidence.audioPolicy;
+const requiredDeviceChecks = [
+  "kakaoInApp",
+  "androidChrome",
+  "samsungInternet",
+  "iosSafari",
+];
+const realDeviceChecks = approvals.realDevice?.checks ?? {};
+const realDevicesComplete = requiredDeviceChecks.every(
+  (key) => realDeviceChecks[key] === true,
+);
+const pilotParticipants = Number(approvals.pilot?.participants ?? 0);
+const pilotBlockerCount = approvals.pilot?.blockerCount;
+const stagingSmokeVerified =
+  process.env.HERO_STAGING_SMOKE_VERIFIED === "1";
+
+let audioAssetStatus = "deferred";
+let audioAssetDetail =
+  `Audio manifest has ${audioAssets} entries but release audio scope is still deferred.`;
+
+if (audioPolicy === "excluded") {
+  audioAssetStatus = "pass";
+  audioAssetDetail =
+    "Audio assets are explicitly excluded from this release scope; runtime remains ready.";
+} else if (audioPolicy === "included") {
+  const audioQcApproved = validApproval(approvals.audioQc);
+  if (audioApprovedAssets > 0 && audioQcApproved) {
+    audioAssetStatus = "pass";
+    audioAssetDetail =
+      `${audioApprovedAssets} approved audio assets are included with recorded HF/rights/technical QC approval.`;
+  } else {
+    audioAssetStatus = "blocked";
+    audioAssetDetail =
+      `audioPolicy=included requires approved assets and audioQc approval (approved assets=${audioApprovedAssets}).`;
+  }
+} else if (audioPolicy !== "deferred") {
+  audioAssetStatus = "blocked";
+  audioAssetDetail =
+    "audioPolicy must be one of deferred, excluded, or included.";
+}
+
 const gates = [
   {
     id: "repository_structure",
     status: "pass",
     owner: "automation",
-    detail: "Core design, CI, E2E, scenario, deployment, and audio-manifest files exist.",
+    detail:
+      "Core design, CI, E2E, scenario, deployment, release-evidence, and audio files exist.",
   },
   {
     id: "competitive_scenarios",
@@ -114,11 +177,15 @@ const gates = [
   },
   {
     id: "legal_privacy",
-    status: legalPending ? "blocked" : "pass",
+    status:
+      !legalPending && validApproval(approvals.legalPrivacy)
+        ? "pass"
+        : "blocked",
     owner: "legal+privacy",
-    detail: legalPending
-      ? "Terms/privacy document still contains review-draft or [확정 필요] markers."
-      : "Terms/privacy finalization markers are cleared.",
+    detail:
+      !legalPending && validApproval(approvals.legalPrivacy)
+        ? "Final terms/privacy text and approval evidence are both recorded."
+        : "Final terms/privacy text and approved evidence are both required.",
   },
   {
     id: "staging_smoke_automation",
@@ -136,12 +203,25 @@ const gates = [
   },
   {
     id: "external_deployment",
-    status: uncheckedDeploymentItems > 0 ? "blocked" : "pass",
+    status:
+      uncheckedDeploymentItems === 0 &&
+      validApproval(approvals.externalDeployment)
+        ? "pass"
+        : "blocked",
     owner: "operator",
     detail:
-      uncheckedDeploymentItems > 0
-        ? `${uncheckedDeploymentItems} deployment/bootstrap checklist items remain unchecked.`
-        : "Deployment/bootstrap checklist has no unchecked items.",
+      uncheckedDeploymentItems === 0 &&
+      validApproval(approvals.externalDeployment)
+        ? "Deployment checklist and external deployment approval evidence are complete."
+        : `${uncheckedDeploymentItems} deployment checklist items remain unchecked; approved deployment evidence is also required.`,
+  },
+  {
+    id: "staging_smoke_live",
+    status: stagingSmokeVerified ? "pass" : "blocked",
+    owner: "operator+automation",
+    detail: stagingSmokeVerified
+      ? `Successful same-commit Staging Smoke verified (run ${process.env.HERO_STAGING_SMOKE_RUN_ID ?? "unknown"}).`
+      : "Run Release Candidate Gate with a successful same-commit Staging Smoke run ID.",
   },
   {
     id: "audio_runtime",
@@ -153,18 +233,47 @@ const gates = [
   },
   {
     id: "audio_assets",
-    status: audioApproved ? "pass" : "deferred",
+    status: audioAssetStatus,
     owner: "audio+HF+rights",
-    detail: audioApproved
-      ? `${audioApprovedAssets} approved audio assets are registered (${audioAssets} total manifest entries).`
-      : `Audio manifest has ${audioAssets} entries but 0 approved assets. Audio generation/QC is intentionally handled separately.`,
+    detail: audioAssetDetail,
   },
   {
-    id: "real_device_pilot",
-    status: "blocked",
+    id: "real_device",
+    status:
+      validApproval(approvals.realDevice) && realDevicesComplete
+        ? "pass"
+        : "blocked",
     owner: "human+operator",
     detail:
-      "Kakao in-app browser, Android/Samsung Internet/iOS Safari real-device checks, intranet policy, and pilot operation require external execution.",
+      validApproval(approvals.realDevice) && realDevicesComplete
+        ? "Kakao in-app, Android Chrome, Samsung Internet, and iOS Safari evidence is approved."
+        : "All four required real-device/browser checks and approval evidence are required.",
+  },
+  {
+    id: "intranet_policy",
+    status: validApproval(approvals.intranetPolicy) ? "pass" : "blocked",
+    owner: "human+operator",
+    detail: validApproval(approvals.intranetPolicy)
+      ? "Intranet/personal-device access policy evidence is approved."
+      : "Intranet/personal-device policy approval evidence is required.",
+  },
+  {
+    id: "pilot",
+    status:
+      validApproval(approvals.pilot) &&
+      Number.isInteger(pilotParticipants) &&
+      pilotParticipants >= 30 &&
+      pilotBlockerCount === 0
+        ? "pass"
+        : "blocked",
+    owner: "human+operator",
+    detail:
+      validApproval(approvals.pilot) &&
+      Number.isInteger(pilotParticipants) &&
+      pilotParticipants >= 30 &&
+      pilotBlockerCount === 0
+        ? `Pilot approved with ${pilotParticipants} participants and 0 blockers.`
+        : `Pilot requires approval evidence, >=30 participants, and blockerCount=0 (participants=${pilotParticipants}, blockerCount=${String(pilotBlockerCount)}).`,
   },
 ];
 
@@ -173,14 +282,19 @@ const deferred = gates.filter((gate) => gate.status === "deferred");
 
 const report = {
   generatedAt: new Date().toISOString(),
-  verdict: blocking.length === 0 ? "release_candidate" : "not_release_ready",
+  verdict:
+    blocking.length === 0 && deferred.length === 0
+      ? "release_candidate"
+      : "not_release_ready",
   structuralCheck: "pass",
   approvedCompetitiveScenarios: approvedCompetitive.length,
   competitiveScenarioStatus: scenarioStatus,
+  audioPolicy,
   audioAssets,
   approvedAudioAssets: audioApprovedAssets,
   audioRuntimeReady,
   uncheckedDeploymentItems,
+  releaseEvidenceUpdatedAt: releaseEvidence.updatedAt ?? null,
   gates,
 };
 
@@ -200,7 +314,7 @@ if (jsonOutput) {
 
   console.log("");
   console.log(
-    `blocking=${blocking.length} deferred=${deferred.length} approved_scenarios=${approvedCompetitive.length}/3 audio_assets=${audioApprovedAssets}/${audioAssets}`,
+    `blocking=${blocking.length} deferred=${deferred.length} approved_scenarios=${approvedCompetitive.length}/3 audio_policy=${audioPolicy} audio_assets=${audioApprovedAssets}/${audioAssets}`,
   );
 }
 

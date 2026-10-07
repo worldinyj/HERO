@@ -7,7 +7,8 @@
 | 대상 | MVP Release 1 |
 | 현재 판정 | **프로덕션 RELEASE BLOCKED / 내부 개발·통합 준비 완료에 가까움** |
 | 자동 확인 | `pnpm check:mvp-readiness` |
-| 출시 강제 게이트 | `pnpm check:mvp-readiness -- --strict` |
+| 사람 승인 증거 | `ops/release-evidence.json` / `pnpm check:release-evidence` |
+| 출시 강제 게이트 | `pnpm check:mvp-readiness -- --strict` + GitHub **Release Candidate Gate** |
 
 ## 1. 판정 원칙
 
@@ -40,12 +41,12 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + 과거 OPIS 목록/현재 NSIC 진입점 확인. 사건별 direct URL/식별번호, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
 | S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 확보. 원안위 직접 조사 원문/개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
-| 약관·개인정보 | **BLOCKED** | `[확정 필요]` 항목과 법무/개인정보 검토 잔존 |
-| 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | GitHub Staging Smoke는 준비됨. staging/prod Supabase, Cloudflare, Kakao 실제 값 연결·실행 필요 |
+| 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
+| 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | 실제 값 연결·체크리스트 완료·외부배포 승인 증거 + 동일 SHA Staging Smoke PASS 필요 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
-| 오디오 자산 | **DEFERRED** | 생성·HF/권리/기술 QC는 별도 진행. manifest는 아직 승인 asset 0건 |
-| 실기기·사내망 | **BLOCKED** | Kakao 인앱, Android Chrome, Samsung Internet, iOS Safari, 사내망 정책 |
-| 파일럿 | **BLOCKED** | 파일럿 발전소 1곳·30명 운영과 KPI 측정 필요 |
+| 오디오 자산 | **DEFERRED** | `audioPolicy=deferred`. RC 전에 `excluded` 또는 `included`를 명시 결정. included면 승인 asset + audioQc 증거 필요 |
+| 실기기·사내망 | **BLOCKED** | 4종 실기기 확인 + 사내망/개인폰 정책 승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
+| 파일럿 | **BLOCKED** | 30명 이상·Blocker 0·승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 
 ## 3. 자동 검증과 사람 게이트의 경계
 
@@ -68,6 +69,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 브라우저 번들 secret 노출 방지
 - staging HTTP/SPA/PWA/보안헤더 validator 자체 self-test
 - GitHub **Staging Smoke** workflow 구조 준비(실제 외부 값 연결 후 수동 실행)
+- release evidence validator + same-commit **Release Candidate Gate**
 - audio manifest validator: approved asset 파일 존재·same-origin 경로·중복 ID·provenance 검증
 
 ### 사람이 닫아야 하는 항목
@@ -113,7 +115,10 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 6. 실기기/사내망 테스트를 수행한다.
 7. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
 8. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
-9. Blocker 0일 때 v1.0 프로덕션 릴리스를 승인한다.
+9. 법무·외부배포·실기기·사내망·파일럿 승인 증거를 `ops/release-evidence.json`에 기록하고 오디오 정책을 `excluded` 또는 `included`로 확정한다.
+10. 릴리스 대상 `main` SHA를 staging에 배포하고 **Staging Smoke**를 PASS시킨다.
+11. 같은 SHA에서 **Release Candidate Gate**를 실행해 Staging Smoke run ID와 모든 증거를 검증한다.
+12. RC evidence artifact를 최종 승인자료로 첨부하고 Blocker 0일 때 v1.0 프로덕션 릴리스를 승인한다.
 
 ## 6. readiness 명령
 
@@ -130,7 +135,7 @@ pnpm check:mvp-readiness -- --json
 pnpm check:mvp-readiness -- --strict
 ```
 
-strict 모드는 BLOCKED 또는 DEFERRED gate가 남아 있으면 non-zero exit code를 반환한다.
+strict 모드는 BLOCKED 또는 DEFERRED gate가 남아 있으면 non-zero exit code를 반환한다. `audioPolicy=excluded`는 명시적인 릴리스 범위 결정이므로 오디오 자산 0건 자체로는 차단하지 않는다. `audioPolicy=deferred`는 계속 차단한다.
 
 > 출시 전 최종 판단은 자동 스크립트가 아니라 운영·HF·법무·개인정보·파일럿 승인 기록을 포함해 사람이 수행한다.
 
