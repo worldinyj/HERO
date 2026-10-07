@@ -2279,3 +2279,39 @@ h3 {
     animation: none;
   }
 }
+
+
+.choice-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.choice-heading h3 {
+  margin-bottom: 0;
+}
+
+.choice-heading span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.choice-button--selected small {
+  color: #ffd79d;
+  font-weight: 700;
+}
+
+@media (max-width: 359px) {
+  .choice-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .choice-heading span {
+    text-align: left;
+  }
+}

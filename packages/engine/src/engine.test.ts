@@ -125,6 +125,66 @@ describe("HERO engine", () => {
     expect(second.log).toEqual(first.log);
   });
 
+  it("presentation seed only changes visible choice order, not action identity or outcome", () => {
+    const scenario = scenarioFixture();
+    const simulationSeed = "season-2026-10:s01";
+
+    const orders = [
+      "presentation-a",
+      "presentation-b",
+      "presentation-c",
+      "presentation-d",
+      "presentation-e",
+    ].map((presentationSeed) => {
+      let state = createGame(scenario, {
+        simulationSeed,
+        presentationSeed,
+      });
+      state = act(scenario, state, { type: "continue" });
+
+      const view = getView(scenario, state);
+      if (view.node.type !== "decision") {
+        throw new Error("fixture_expected_decision");
+      }
+
+      return view.node.choices.map((choice) => choice.actionId);
+    });
+
+    expect(new Set(orders.map((order) => order.join("|"))).size).toBeGreaterThan(1);
+    for (const order of orders) {
+      expect([...order].sort()).toEqual([
+        "continue_alone",
+        "review_again",
+        "use_peer_check",
+      ]);
+    }
+
+    let first = createGame(scenario, {
+      simulationSeed,
+      presentationSeed: "presentation-a",
+    });
+    first = act(scenario, first, { type: "continue" });
+    first = act(scenario, first, {
+      type: "choice",
+      actionId: "continue_alone",
+    });
+
+    let second = createGame(scenario, {
+      simulationSeed,
+      presentationSeed: "presentation-e",
+    });
+    second = act(scenario, second, { type: "continue" });
+    second = act(scenario, second, {
+      type: "choice",
+      actionId: "continue_alone",
+    });
+
+    expect(second.nodeId).toBe(first.nodeId);
+    expect(second.metrics).toEqual(first.metrics);
+    expect(second.barriers).toEqual(first.barriers);
+    expect(second.log).toEqual(first.log);
+  });
+
   it("never exposes a hazard node in the player view", () => {
     const scenario = scenarioFixture();
     let state = createGame(scenario, { simulationSeed: "same-seed" });

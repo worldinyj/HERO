@@ -7,6 +7,7 @@ import {
 } from "@hero/engine";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
+import { ChoiceSheet } from "./ChoiceSheet";
 import { CompetitiveGamePage } from "./CompetitiveGamePage";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
@@ -362,54 +363,18 @@ export function GamePage() {
             </div>
           ) : null}
 
-          <div className="decision-section">
-            <h3>행동 선택</h3>
-            <div
-              className="choice-list"
-              role="radiogroup"
-              aria-label="행동 선택"
-            >
-              {node.choices.map((choice, index) => {
-                const selected = selectedChoice === choice.actionId;
-
-                return (
-                  <button
-                    key={choice.actionId}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    className={
-                      selected
-                        ? "choice-button choice-button--selected"
-                        : "choice-button"
-                    }
-                    onClick={() => setSelectedChoice(choice.actionId)}
-                  >
-                    <span className="choice-letter">
-                      {String.fromCharCode(65 + index)}
-                    </span>
-                    <span>{choice.label}</span>
-                    <small>+{choice.timeCostMin}분</small>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              className="primary-button confirm-choice"
-              type="button"
-              disabled={!selectedChoice}
-              onClick={() => {
-                if (!selectedChoice) return;
-                dispatch(scenario, {
-                  type: "choice",
-                  actionId: selectedChoice,
-                });
-              }}
-            >
-              이 행동으로 진행
-            </button>
-          </div>
+          <ChoiceSheet
+            choices={node.choices}
+            selectedActionId={selectedChoice}
+            onSelect={setSelectedChoice}
+            onConfirm={(actionId) => {
+              setSelectedChoice(null);
+              dispatch(scenario, {
+                type: "choice",
+                actionId,
+              });
+            }}
+          />
         </article>
       ) : null}
     </section>
