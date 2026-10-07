@@ -2,7 +2,7 @@
 
 > 대상: `s03_procedure_reality_gap`  
 > 기준자료: KINS 「원전 사고·고장 조사 보고서 제2026-03호(260811SU3)」  
-> 기준일: 2026-10-07  
+> 기준일: 2026-10-08  
 > 상태: **REVIEW_SUPPORT — HUMAN HF/OPERATIONS REVIEW REQUIRED**  
 > 기계검증 원본: `scenarios/research/cause-traceability.json` · CI: `pnpm check:cause-traceability`
 
@@ -53,11 +53,11 @@ KINS 보고서가 모든 원인을 Direct / Root / Contributing taxonomy로 명�
 
 | ID | HERO 분류 | 원인/조건 | KINS 근거 수준 | 조사보고서 근거 | 약화·실패 방어막 | 연결 대책 |
 |---|---|---|---|---|---|---|
-| DC-01 | Direct Cause | 현재 밸브개도 기준보다 낮은 제한 설정값이 입력되어 터빈제어밸브가 닫힘 | **Explicit fact** | §3.2.2: LDR을 기준으로 설정치를 계산·지시했고 입력값 적정성 검토 없이 입력 | Self Check, Peer/Independent Verification, 입력 재확인 | CA-01, CA-05, CA-06 |
+| DC-01 | Direct Cause | 현재 밸브개도 기준보다 낮은 제한 설정값이 입력되어 터빈제어밸브가 닫힘 | **Explicit fact** | §3.2.2: LDR을 기준으로 설정치를 계산·지시했고 입력값 적정성 검토 없이 입력 | Self Check, 별도 확인, 입력 재확인 방어막 부족 | CA-01, CA-05, CA-06 |
 | DC-02 | Direct Cause | 제어밸브 폐쇄 → 터빈속도/발전기 주파수 감소 → RCP 속도 감소 → 원자로보호신호 → 자동정지 | **Explicit event chain** | 사건요약·§2·§3.2.2 및 사건전개 개략도 | Expected-response monitoring은 조기차단 관점에서 약화; 원자로보호계통 동작 자체는 **실패방어막이 아님** | CA-01, CA-05, CA-06 |
-| RC-01 | Root Cause — HERO | 사전 계획되지 않은 중요 운전행위를 실행하기 전 목적·근거·방법·예상반응·방어막을 팀 단위로 재검토하는 관리방어막 부족 | **HERO classification from KINS findings** | §3.2.2: 사건 직전 필수조작이 아니었고 사전 계획되지 않았으며 briefing/update 미활용 | 미예정 운전행위 사전점검, Briefing/Update | CA-03, CA-07 |
+| RC-01 | Root Cause — HERO | 사전 계획되지 않은 중요 운전행위를 실행하기 전 목적·근거·방법·예상반응·방어막을 팀 단위로 재검토하는 관리방어막 부족 | **HERO classification from KINS findings** | §3.2.2: 사건 직전 필수조작이 아니었고 사전 계획되지 않았으며 briefing/update 미활용 | 사건 당시 미예정 운전행위 사전점검 방어막 부재/미작동, Briefing/Update 미활용 | CA-03, CA-07 |
 | RC-02 | Root Cause — HERO | 소내부하운전 상태에서 두 제어 기준값이 달라질 수 있다는 제어논리 이해가 설정치 계산에 연결되지 않음 | **HERO classification from explicit finding** | §3.2.2: 계통연결 시와 달리 소내부하운전에서는 CVR/LDR 편차 가능; 사건 당시 두 값을 동일하다고 착각 | Knowledge/Mental Model, Self Check, Questioning Attitude | CA-01, CA-02, CA-05, CA-08 |
-| RC-03 | Root Cause — HERO | 중요 설정치의 입력 전 검증과 입력 후 설비반응 감시가 단일 오류를 차단하도록 중첩되지 않음 | **HERO classification from explicit finding** | §3.2.2: 지시 설정치 검토 없이 입력, Questioning Attitude·자기진단 미흡, 변경 후 상태감시 미흡 | Self Check, Independent Verification, Post-manipulation Monitoring, HMI confirmation | CA-01, CA-02, CA-05, CA-06 |
+| RC-03 | Root Cause — HERO | 중요 설정치의 입력 전 별도 확인과 입력 후 설비반응 감시가 단일 오류를 차단하도록 중첩되지 않음 | **HERO classification from explicit finding** | §3.2.2: 지시 설정치 검토 없이 입력, Questioning Attitude·자기진단 미흡, 변경 후 상태감시 미흡 | Self Check, 별도 확인/Peer Check/Independent Verification 방어막, Post-manipulation Monitoring, 사건 당시 부재한 HMI 재확인 방어막 | CA-01, CA-02, CA-05, CA-06 |
 | CF-01 | Contributing Factor | 시운전 참관 인원 다수로 운전집중도 저하 및 정보교환 저해 | **Explicit finding** | §3.2.2 KINS 검토결론 | Work Environment, Communication | CA-04 |
 | CF-02 | Contributing Factor | 설정치 입력 운전원이 온도제어 등 경쟁 업무에 주의를 동시에 배분 | **Explicit context** | §3.2.2 운전원 업무상황 | Attention Management, Workload | CA-03, CA-07 |
 | CF-03 | Contributing Factor | 터빈 진동 경험과 계통연결 후 과도 우려로 신속한 계통연결/추가 제한 필요성을 판단 | **Explicit context/evaluation** | §3.2.2 VPL 변경 판단 | Conservative Decision Check, Unplanned-action review | CA-03, CA-07 |
@@ -100,6 +100,17 @@ Post-Trip Recovery HF Issues
 후속 교육 시나리오로 활용할 경우 별도 원인분석과 별도 Decision Node를 구성한다.
 
 ---
+
+## 6.1 S03 v4 gameplay source-alignment correction
+
+KINS §3.2.2는 사건 직전의 제한 설정 변경을 **사전 계획된 필수 단계가 아니라 당시 꼭 필요한 조작이 아니었던 미예정 행위**로 평가한다. 따라서 v4에서는 게임 도입부의 “절차상 다음 설정을 입력할 차례” 표현을 제거하고 다음과 같이 수정했다.
+
+- 사전 계획에 없던 추가 설정 변경이 제안된 상황으로 제시
+- 현재 운전상태에서 조작의 **필요성 자체**를 재확인하는 선택지를 추가
+- 필요성이 확인되지 않으면 조작을 수행하지 않는 `safe_stop` 경로 추가
+- 입력값 경고/재확인 UI와 미예정행위 사전점검은 사건 당시 존재해 실패한 방어막처럼 쓰지 않고, **부재 또는 미작동한 방어막**으로 표현
+
+이 변경은 사건의 기술 세부를 더 노출하기 위한 것이 아니라, 공식 조사결과의 인과구조와 교육용 의사결정 구조를 더 일치시키기 위한 것이다.
 
 ## 7. Human Review Questions
 
