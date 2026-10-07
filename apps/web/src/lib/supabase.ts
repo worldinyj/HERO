@@ -25,8 +25,18 @@ export function getSupabase(): SupabaseClient {
   return client;
 }
 
+function safeAppPath(value: string): string {
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
+}
+
 export async function signInWithKakao(returnPath = "/"): Promise<void> {
   const supabase = getSupabase();
+  const safeReturnPath = safeAppPath(returnPath);
+  const redirectTo = new URL(safeReturnPath, window.location.origin).toString();
 
   if (import.meta.env.VITE_E2E_MODE === "true") {
     const email = window.sessionStorage.getItem("hero:e2e-email");
@@ -42,10 +52,12 @@ export async function signInWithKakao(returnPath = "/"): Promise<void> {
     });
 
     if (error) throw error;
+
+    // Match the real OAuth round trip: persist the session first, then load
+    // the requested app route from a fresh document.
+    window.location.assign(redirectTo);
     return;
   }
-
-  const redirectTo = new URL(returnPath, window.location.origin).toString();
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "kakao",
