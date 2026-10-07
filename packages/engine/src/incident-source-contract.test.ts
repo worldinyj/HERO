@@ -34,6 +34,7 @@ function fixture() {
       contributingFactors: ["교육용 기여조건"],
       causalChain: ["직접 트리거 → 설비 반응 → 사건"],
       failedBarriers: ["독립확인 방어막"],
+      correctiveActions: ["입력 전 재확인 단계를 강화한다."],
       lessons: [
         {
           title: "멈추고 확인한다.",
@@ -87,12 +88,14 @@ describe("incident debrief source attribution schema", () => {
     const input = fixture();
     delete (input.incidentDebrief as { causalChain?: unknown }).causalChain;
     delete (input.incidentDebrief as { failedBarriers?: unknown }).failedBarriers;
+    delete (input.incidentDebrief as { correctiveActions?: unknown }).correctiveActions;
     delete (input.incidentDebrief as { sources?: unknown }).sources;
 
     const parsed = ScenarioSchema.parse(input);
 
     expect(parsed.incidentDebrief?.causalChain).toEqual([]);
     expect(parsed.incidentDebrief?.failedBarriers).toEqual([]);
+    expect(parsed.incidentDebrief?.correctiveActions).toEqual([]);
     expect(parsed.incidentDebrief?.sources).toEqual([]);
   });
 
