@@ -35,7 +35,7 @@ jobs:
         shell: bash
         run: |
           supabase start --output-format json > /tmp/hero-supabase.json
-          supabase status --env --output-format text > /tmp/hero-supabase.env
+          supabase status -o env > /tmp/hero-supabase.env
           grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env >> "$GITHUB_ENV"
 
       - name: Configure E2E web environment
