@@ -1,0 +1,19 @@
+{
+  "name": "hero",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.9.1",
+  "engines": { "node": ">=20.19.0" },
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "build": "pnpm --dir apps/web build",
+    "typecheck": "pnpm --dir packages/schema typecheck && pnpm --dir packages/engine typecheck && pnpm --dir apps/web typecheck",
+    "test": "pnpm --dir apps/web test",
+    "lint": "pnpm --dir apps/web lint && eslint packages/engine/src packages/schema/src"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.0.0"
+  }
+}
