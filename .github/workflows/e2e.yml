@@ -48,7 +48,9 @@ jobs:
             exit 1
           fi
           supabase status -o env > /tmp/hero-supabase.env
-          grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env >> "$GITHUB_ENV"
+          grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env \
+            | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' \
+            >> "$GITHUB_ENV"
 
       - name: Configure E2E web environment
         run: |
