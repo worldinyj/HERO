@@ -187,7 +187,37 @@ Deno.serve(async (req) => {
 
     if (createError || !created) {
       if (createError?.code === "23505") {
-        return json(req, { error: "session_start_race_retry" }, 409);
+        const { data: racedExisting, error: racedExistingError } = await admin
+          .from("play_sessions")
+          .select(
+            "id, simulation_seed, presentation_seed, replay_of, replay_from_node, started_at",
+          )
+          .eq("user_id", user.id)
+          .eq("season_id", season.id)
+          .eq("scenario_version_id", version.id)
+          .eq("status", "in_progress")
+          .maybeSingle();
+
+        if (racedExistingError || !racedExisting) {
+          throw racedExistingError ?? new Error("session_start_race_recovery_failed");
+        }
+
+        return json(req, {
+          resumed: true,
+          sessionId: racedExisting.id,
+          seasonId: season.id,
+          seasonKey: season.season_key,
+          scenarioId: scenario.slug,
+          scenarioVersionId: version.id,
+          scenarioVersion: version.version,
+          scenario: version.content,
+          simulationSeed: racedExisting.simulation_seed,
+          presentationSeed: racedExisting.presentation_seed,
+          perspectiveRole: version.default_perspective_role,
+          replayOf: racedExisting.replay_of,
+          replayFromNode: racedExisting.replay_from_node,
+          startedAt: racedExisting.started_at,
+        });
       }
       throw createError ?? new Error("session_create_failed");
     }

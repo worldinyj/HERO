@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "e2e_competitive",
+  "version": 1,
+  "title": "E2E 안전 확인 시나리오",
+  "defaultPerspectiveRole": "worker",
+  "audienceJobs": ["sro", "ro", "field_operator", "supervisor", "worker"],
+  "estimatedMinutes": 2,
+  "startNode": "intro",
+  "cards": ["self_check_star", "stop_when_unsure"],
+  "initialState": {
+    "clockMin": 540,
+    "deadlineMin": 600,
+    "baseHazard": 40,
+    "psf": {
+      "uncertainty": 1.4
+    },
+    "barriers": {
+      "self_check": 0.05,
+      "communication": 0.05
+    },
+    "metrics": {
+      "safety": 50,
+      "awareness": 50,
+      "communication": 50,
+      "procedure": 50,
+      "challenge": 50
+    }
+  },
+  "nodes": {
+    "intro": {
+      "type": "scene",
+      "speaker": "E2E 훈련 안내",
+      "text": "현장에 도착했습니다. 비슷한 두 대상을 확인해야 합니다.",
+      "next": "decision_identify"
+    },
+    "decision_identify": {
+      "type": "decision",
+      "prompt": "작업 대상을 확신하기 어려운 상황입니다. 어떻게 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "check_procedure",
+          "label": "절차와 표식을 다시 대조한다.",
+          "next": "hazard_identity",
+          "timeCostMin": 2,
+          "effects": {
+            "barrierDelta": {
+              "self_check": 0.45
+            },
+            "metricsDelta": {
+              "awareness": 8,
+              "procedure": 8
+            }
+          }
+        },
+        {
+          "actionId": "ask_peer",
+          "label": "동료에게 함께 확인해 달라고 요청한다.",
+          "next": "hazard_identity",
+          "timeCostMin": 2,
+          "effects": {
+            "barrierDelta": {
+              "communication": 0.45
+            },
+            "metricsDelta": {
+              "communication": 9,
+              "safety": 5
+            }
+          }
+        },
+        {
+          "actionId": "proceed_with_guess",
+          "label": "현재 정보로 판단해 바로 진행한다.",
+          "next": "hazard_identity",
+          "timeCostMin": 0,
+          "effects": {
+            "metricsDelta": {
+              "challenge": -4
+            }
+          }
+        }
+      ],
+      "infoActions": [],
+      "allowedCards": ["self_check_star", "stop_when_unsure"]
+    },
+    "hazard_identity": {
+      "type": "hazard",
+      "threshold": 50,
+      "jitter": 0,
+      "passNext": "safe_end",
+      "breachNext": "near_miss_end",
+      "tag": "identity_uncertainty"
+    },
+    "safe_end": {
+      "type": "ending",
+      "ending": "safe_complete",
+      "title": "확인 후 진행",
+      "summary": "추가 확인을 통해 작업 대상을 명확히 확인했습니다."
+    },
+    "near_miss_end": {
+      "type": "ending",
+      "ending": "near_miss",
+      "title": "멈춰서 다시 확인",
+      "summary": "진행 직전 식별 차이를 발견했습니다."
+    }
+  }
+}
