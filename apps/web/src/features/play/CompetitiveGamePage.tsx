@@ -726,7 +726,6 @@ export function CompetitiveGamePage({
       ) : null}
 
       <PlayNodeStage
-        scenario={scenario}
         view={view}
         onAction={dispatch}
       />
