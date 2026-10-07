@@ -143,6 +143,7 @@ export function LeaderboardPage() {
       return;
     }
 
+    const season = selectedSeason;
     let active = true;
 
     async function loadLeaderboard() {
@@ -152,11 +153,11 @@ export function LeaderboardPage() {
       try {
         const supabase = getSupabase();
 
-        if (selectedSeason.status === "open") {
+        if (season.status === "open") {
           const { data, error: viewError } = await supabase
             .from("v_leaderboard_current_public")
             .select("*")
-            .eq("season_id", selectedSeason.id)
+            .eq("season_id", season.id)
             .limit(500);
 
           if (viewError) throw viewError;
@@ -168,7 +169,7 @@ export function LeaderboardPage() {
           const { data, error: viewError } = await supabase
             .from("v_leaderboard_snapshot_public")
             .select("*")
-            .eq("season_id", selectedSeason.id)
+            .eq("season_id", season.id)
             .eq("scope_type", scope)
             .limit(500);
 
