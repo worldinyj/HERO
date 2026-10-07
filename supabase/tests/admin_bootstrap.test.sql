@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email) values
   ('60000000-0000-0000-0000-000000000001', 'initial-admin@hero.test'),
@@ -25,11 +25,26 @@ select throws_ok(
 
 reset role;
 
+set local role service_role;
+
+select throws_ok(
+  $select private.bootstrap_initial_admin(
+    '60000000-0000-0000-0000-000000000001',
+    'Initial Admin',
+    'HEROROOT1'
+  )$,
+  '42501',
+  null,
+  'service_role cannot call the initial admin bootstrap function'
+);
+
+reset role;
+
 select is(
   private.bootstrap_initial_admin(
     '60000000-0000-0000-0000-000000000001',
     'Initial Admin',
-    'HEROADMIN1'
+    'HEROROOT1'
   ),
   '60000000-0000-0000-0000-000000000001'::uuid,
   'database owner can bootstrap the first admin'
@@ -53,18 +68,20 @@ select results_eq(
 );
 
 select results_eq(
-  $$select count(*) from public.audit_logs
+  $select count(*) from public.audit_logs
     where action = 'admin.bootstrap_initial'
-      and actor_user_id = '60000000-0000-0000-0000-000000000001'$$,
+      and actor_user_id is null
+      and entity_id = '60000000-0000-0000-0000-000000000001'
+      and metadata->>'target_user_id' = '60000000-0000-0000-0000-000000000001'$,
   array[1::bigint],
-  'initial admin bootstrap writes an audit event'
+  'initial admin bootstrap writes an owner-originated audit event'
 );
 
 select throws_ok(
   $$select private.bootstrap_initial_admin(
     '60000000-0000-0000-0000-000000000002',
     'Second Admin',
-    'HEROADMIN2'
+    'HEROROOT2'
   )$$,
   'P0001',
   'admin_already_exists',
