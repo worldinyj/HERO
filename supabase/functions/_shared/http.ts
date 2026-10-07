@@ -33,15 +33,38 @@ export function corsHeaders(req: Request): HeadersInit {
   };
 }
 
-export function json(req: Request, body: unknown, status = 200): Response {
+export function json(
+  req: Request,
+  body: unknown,
+  status = 200,
+  extraHeaders: HeadersInit = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       ...corsHeaders(req),
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
+      ...extraHeaders,
     },
   });
+}
+
+export function rateLimited(
+  req: Request,
+  retryAfterSeconds: number,
+): Response {
+  return json(
+    req,
+    {
+      error: "rate_limited",
+      retryAfterSeconds,
+    },
+    429,
+    {
+      "Retry-After": String(Math.max(1, Math.ceil(retryAfterSeconds))),
+    },
+  );
 }
 
 export function handleOptions(req: Request): Response | null {
