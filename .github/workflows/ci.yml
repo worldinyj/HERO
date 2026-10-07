@@ -52,6 +52,21 @@ jobs:
       - name: Preflight scenario promotion helper
         run: pnpm promote:scenario -- --scenario=s03_procedure_reality_gap
 
+      - name: Verify incomplete human review blocks promotion apply
+        run: |
+          if pnpm promote:scenario -- \
+            --scenario=s03_procedure_reality_gap \
+            --approved-by="CI must not approve" \
+            --approved-at=2026-10-07 \
+            --confirm-hf \
+            --confirm-anonymization \
+            --confirm-debrief \
+            --apply; then
+            echo "Promotion unexpectedly succeeded without complete human-review evidence"
+            exit 1
+          fi
+          echo "Promotion correctly blocked by incomplete human-review evidence"
+
       - name: Check S03 human review packet freshness
         run: pnpm build:review-packet -- --scenario=s03_procedure_reality_gap --check
 
