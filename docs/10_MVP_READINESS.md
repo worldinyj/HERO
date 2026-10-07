@@ -41,7 +41,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
 | S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + NSIC/과거 OPIS + 안전모아 OPIS 연계 locator 확인. 사건별 direct URL/식별번호/PDF, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
 | S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 + 안전모아 OPIS 연계 locator 확인. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
-| S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
+| S03 | **REVIEW_READY (v3)** | KINS 상세보고서 기반 Direct/Root/Contributing + 인과사슬·방어막·재발방지대책 추적성 및 공개정보 일반화 완료. HF·운전맥락·익명화·incidentDebrief 사람 승인 남음 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
 | 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | 실제 값 연결·체크리스트 완료·외부배포 승인 증거 + 동일 SHA Staging Smoke PASS 필요 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
@@ -58,6 +58,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 코드 lint/typecheck/test/build
 - 시나리오 schema/graph/promotion guard
 - source-evidence ↔ promotion-status 출처·권리 일관성 guard
+- **Direct/Root/Contributing Cause ↔ 근거 ↔ Barrier ↔ Corrective Action 추적성 guard**
+- S03 공개 JSON의 고유 운전정보/설정값 sanitization guard
 - 사람 승인 시나리오 SHA-256 고정 및 승인 후 내용변경 감지
 - S00 및 draft path simulation
 - HP 파밍·리플레이 밸런스 guard
