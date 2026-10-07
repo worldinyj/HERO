@@ -1,5 +1,111 @@
 begin;
 
+-- Keep rank windows aligned with the active player population shown by RLS
+-- projections. Filtering only after rank calculation causes hidden inactive
+-- accounts to inflate other players' ranks and percentile denominators.
+create or replace view private.v_season_scores_internal as
+with best_per_scenario as (
+  select
+    ps.season_id,
+    ps.user_id,
+    sv.scenario_id,
+    max(ps.hp_point)::integer as best_hp
+  from public.play_sessions ps
+  join public.scenario_versions sv
+    on sv.id = ps.scenario_version_id
+  join public.seasons s
+    on s.id = ps.season_id
+  where ps.status = 'completed'
+    and ps.hp_point is not null
+    and ps.completed_at >= s.starts_at
+    and ps.completed_at < s.ends_at
+  group by ps.season_id, ps.user_id, sv.scenario_id
+),
+season_totals as (
+  select
+    season_id,
+    user_id,
+    sum(best_hp)::integer as season_hp,
+    count(*)::integer as scenario_count
+  from best_per_scenario
+  group by season_id, user_id
+),
+season_identity as (
+  select distinct on (ps.season_id, ps.user_id)
+    ps.season_id,
+    ps.user_id,
+    ps.plant_id,
+    ps.player_job_role
+  from public.play_sessions ps
+  where ps.status in ('completed', 'in_progress', 'abandoned')
+  order by ps.season_id, ps.user_id, ps.started_at asc, ps.id asc
+),
+enriched as (
+  select
+    st.season_id,
+    st.user_id,
+    coalesce(p.nickname, '익명 사용자') as nickname,
+    si.plant_id,
+    coalesce(pl.display_name, '소속 없음') as plant_display_name,
+    si.player_job_role,
+    st.season_hp,
+    st.scenario_count
+  from season_totals st
+  join season_identity si
+    on si.season_id = st.season_id
+   and si.user_id = st.user_id
+  join public.profiles p
+    on p.id = st.user_id
+   and p.role = 'player'
+   and p.is_active = true
+  left join public.plants pl
+    on pl.id = si.plant_id
+),
+ranked as (
+  select
+    e.*,
+    dense_rank() over (
+      partition by e.season_id
+      order by e.season_hp desc
+    )::integer as overall_rank,
+    count(*) over (
+      partition by e.season_id
+    )::integer as overall_total,
+    dense_rank() over (
+      partition by e.season_id, e.plant_id
+      order by e.season_hp desc
+    )::integer as plant_rank,
+    count(*) over (
+      partition by e.season_id, e.plant_id
+    )::integer as plant_total,
+    dense_rank() over (
+      partition by e.season_id, e.player_job_role
+      order by e.season_hp desc
+    )::integer as job_rank,
+    count(*) over (
+      partition by e.season_id, e.player_job_role
+    )::integer as job_total,
+    dense_rank() over (
+      partition by e.season_id, e.plant_id, e.player_job_role
+      order by e.season_hp desc
+    )::integer as plant_job_rank,
+    count(*) over (
+      partition by e.season_id, e.plant_id, e.player_job_role
+    )::integer as plant_job_total
+  from enriched e
+)
+select
+  r.*,
+  greatest(1, ceil(100.0 * r.overall_rank / nullif(r.overall_total, 0))::integer)
+    as overall_top_percent,
+  greatest(1, ceil(100.0 * r.plant_rank / nullif(r.plant_total, 0))::integer)
+    as plant_top_percent,
+  greatest(1, ceil(100.0 * r.job_rank / nullif(r.job_total, 0))::integer)
+    as job_top_percent,
+  greatest(1, ceil(100.0 * r.plant_job_rank / nullif(r.plant_job_total, 0))::integer)
+    as plant_job_top_percent
+from ranked r;
+
 -- Replace SECURITY DEFINER leaderboard views with dedicated public-facing
 -- projection tables protected by RLS. These tables intentionally omit
 -- user_id, real_name, decision logs, endings, and learning metrics.

@@ -4,7 +4,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(19);
 
 insert into auth.users (id, email) values
   ('61000000-0000-0000-0000-000000000001', 'projection-manager@hero.test'),
@@ -106,6 +106,60 @@ select results_eq(
   array[1::bigint],
   'rename refreshes current public projection'
 );
+
+-- Add a higher-scoring active competitor to verify rank recomputation.
+insert into auth.users (id, email)
+values ('61000000-0000-0000-0000-000000000003', 'projection-competitor@hero.test');
+
+insert into public.profiles (id, plant_id, role, job_role, real_name, nickname, is_active)
+values (
+  '61000000-0000-0000-0000-000000000003',
+  '62000000-0000-0000-0000-000000000001',
+  'player', 'worker', 'Competitor', 'PROJP3', true
+);
+
+insert into public.play_sessions (
+  id, user_id, plant_id, player_job_role, perspective_role,
+  season_id, scenario_version_id, simulation_seed, presentation_seed,
+  status, ending, metrics, hp_point, score_rule_version, evaluation,
+  started_at, completed_at
+) values (
+  '65000000-0000-0000-0000-000000000002',
+  '61000000-0000-0000-0000-000000000003',
+  '62000000-0000-0000-0000-000000000001',
+  'worker', 'worker',
+  '64000000-0000-0000-0000-000000000001',
+  '63000000-0000-0000-0000-000000000002',
+  'higher-score-simulation-seed', 'higher-score-presentation-seed',
+  'completed', 'safe_complete',
+  '{"safety":90,"awareness":90,"communication":90,"procedure":90,"challenge":90}'::jsonb,
+  220, 'v1', '{}'::jsonb,
+  now() - interval '1 hour', now() - interval '10 minutes'
+);
+select is(
+  (select overall_rank from public.leaderboard_current_public_rows
+   where season_id = '64000000-0000-0000-0000-000000000001' and nickname = 'PROJP2'),
+  2,
+  'active higher-scoring competitor places player second'
+);
+
+update public.profiles set is_active = false
+where id = '61000000-0000-0000-0000-000000000003';
+select is(
+  (select overall_rank from public.leaderboard_current_public_rows
+   where season_id = '64000000-0000-0000-0000-000000000001' and nickname = 'PROJP2'),
+  1,
+  'inactive competitor is excluded before rank calculation'
+);
+
+set local role authenticated;
+set local request.jwt.claim.sub = '61000000-0000-0000-0000-000000000002';
+select is(
+  (select overall_rank from public.my_current_rank()),
+  1,
+  'self rank RPC matches active-only public leaderboard after deactivation'
+);
+reset role;
 
 update public.profiles set is_active = false
 where id = '61000000-0000-0000-0000-000000000002';
