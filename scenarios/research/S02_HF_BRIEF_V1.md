@@ -1,6 +1,6 @@
 # S02 HF Brief V1 — 작업 대상·조작부 식별 오류
 
-> **상태: SOURCE VERIFIED DRAFT / publish 금지**  
+> **상태: SOURCE_HOLD — 사건사실 교차확인 / 원안위 직접원문·이용조건·OPIS·HUMAN REVIEW HOLD / publish 금지**  
 > 내부 저작용 문서. 실제 게임 공개 화면에는 발전소·호기·사건번호·고유 설비명·개인정보를 노출하지 않는다.
 
 ## 1. 교육 목표
@@ -120,18 +120,31 @@ Hidden Hazard Index에서만 판정하며 UI에 위험수치를 보여주지 않
 
 ## 7. 근거
 
-- 원자력안전위원회 보도자료 문안 정부 전재, 2024-04-17: https://go.seoul.co.kr/news/prnewsView.php?id=337111
+2026-10-07 재검증에서 2024-04-17 원안위 보도자료 제목 「신한울 1호기, 정기검사 중 임계 허용」이 정책브리핑 전재 인덱스에 존재함을 확인했다. 다만 자동화된 검색으로 원안위 원문 본문과 해당 페이지의 개별 이용조건을 안정적으로 확보하지 못했으므로 publish 차단을 유지한다.
+
+- 정책브리핑 전재 인덱스(서울Pn, 2024-04-17 원안위 보도자료 목록): https://go.seoul.co.kr/news/prnewsList.php?page=2073&section=success_story
+- 기존 정부 전재 페이지 기록: https://go.seoul.co.kr/news/prnewsView.php?id=337111
 - 연합뉴스, 2024-04-17, 원안위 조사결과 인용: https://www.yna.co.kr/view/AKR20240417080200017
-- 경향신문, 2024-04-17, 원안위 조사결과 및 복합원인 설명: https://www.khan.co.kr/article/202404171408011
+- 경향신문, 2024-04-17, 잠재 설비조건과 조작 오류의 복합원인 설명: https://www.khan.co.kr/article/202404171408011
+- 동아사이언스, 2024-04-17, 원안위 발표 재인용: https://www.dongascience.com/ko/news/64924
 - Kim & Park (2008), *Task Types and Error Types Involved in the Human-Related Unplanned Reactor Trip Events*, Nuclear Engineering and Technology 40(7), 615-624: https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001299669
+
+> 언론기사의 문장·사진은 공개 게임에 복제하지 않는다. HERO는 공식 사실관계를 확인한 뒤 독립 작성한 익명화·교육용 문안만 사용한다.
 
 ## 8. 승격 조건
 
-- [x] 원안위 공식 보도자료 문안 확보 및 핵심 사건사실 대조
+- [x] 2024-04-17 원안위 보도자료 존재 및 사건 핵심사실 교차확인
+- [ ] 원안위/NSSC 직접 원문 또는 정책브리핑 공식 원문 URL 확보
+- [ ] 공식 텍스트 이용조건 확인
 - [ ] OPIS 원문/상세자료 추가 확보
 - [ ] 실제 재발방지대책과 게임 방어막 매핑 검토
 - [ ] HF 전문가의 잠재조건/기여요인 검토
 - [ ] 익명화·운전절차 과노출 검토
-- [ ] 경로 시뮬레이션에서 error 0
-- [ ] 정답편향 경고 0 또는 교육적 사유 기록
+- [x] draft JSON validate PASS
+- [x] 전 경로 시뮬레이션 COMPLETE
+- [x] 4종 엔딩 reachable
+- [x] 정답편향 경고 0
+- [x] ending imbalance 경고 0
 - [ ] 관리자 상태를 draft → review로 올리기 전 human approval
+
+상세 승격 판정: [T3_SOURCE_RIGHTS_REVIEW_V1.md](T3_SOURCE_RIGHTS_REVIEW_V1.md) 참조.
