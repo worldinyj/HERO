@@ -13,7 +13,8 @@
     "test": "pnpm --dir packages/engine test && pnpm --dir apps/web test",
     "lint": "pnpm --dir apps/web lint && eslint packages/engine/src packages/schema/src packages/content/src",
     "validate:scenario": "tsx packages/schema/src/cli.ts",
-    "schema:scenario": "tsx packages/schema/src/export-schema.ts"
+    "schema:scenario": "tsx packages/schema/src/export-schema.ts",
+    "simulate:scenario": "tsx scripts/simulate-scenarios.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
