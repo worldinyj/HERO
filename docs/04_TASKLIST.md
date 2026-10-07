@@ -2,7 +2,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 버전 | **v1.3** (v1.2 + BGM/SFX 제작·웹 재생·검수 파이프라인 반영) |
+| 문서 버전 | **v1.4** (v1.3 + Direct/Root/Contributing 원인분류·방어막·재발방지대책 추적성 반영) |
 | 작성일 | 2026-10-07 |
 | 근거 | [01_PRD](01_PRD.md) · [02_TRD](02_TRD.md) · [03_UXUI](03_UXUI.md) · [05_TRACEABILITY](05_TRACEABILITY.md) |
 
