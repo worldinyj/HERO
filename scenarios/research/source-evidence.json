@@ -17,7 +17,10 @@
           "sourceClass": "official_primary",
           "url": "https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9",
           "eventSpecific": true,
-          "purpose": ["event_identity", "event_facts"],
+          "purpose": [
+            "event_identity",
+            "event_facts"
+          ],
           "rights": {
             "status": "not_used_for_reproduction",
             "license": null,
@@ -30,7 +33,10 @@
           "sourceClass": "official_primary",
           "url": "https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297",
           "eventSpecific": true,
-          "purpose": ["event_facts", "hf_context"],
+          "purpose": [
+            "event_facts",
+            "hf_context"
+          ],
           "rights": {
             "status": "unverified",
             "license": null,
@@ -43,7 +49,10 @@
           "sourceClass": "official_primary",
           "url": "https://ourplan.nssc.go.kr/boardDownload.es?bid=0004&list_no=837&seq=1",
           "eventSpecific": true,
-          "purpose": ["event_identity", "ines_classification"],
+          "purpose": [
+            "event_identity",
+            "ines_classification"
+          ],
           "rights": {
             "status": "not_used_for_reproduction",
             "license": null,
@@ -56,9 +65,28 @@
           "sourceClass": "official_locator",
           "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
           "eventSpecific": false,
-          "purpose": ["direct_record_locator"],
+          "purpose": [
+            "direct_record_locator"
+          ],
           "rights": {
             "status": "not_applicable",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s01-nssc-safety-review-2012",
+          "authority": "원자력안전위원회",
+          "sourceClass": "official_primary",
+          "url": "https://www.nssc.go.kr/ko/cms/FR_BBS_CON/BoardView.do?BBS_SEQ=3596&BOARD_SEQ=14&CONTENTS_NO=1&MENU_ID=170&SITE_NO=2",
+          "eventSpecific": true,
+          "purpose": [
+            "event_investigation",
+            "electrical_system_safety_review",
+            "corrective_action_context"
+          ],
+          "rights": {
+            "status": "not_used_for_reproduction",
             "license": null,
             "evidenceUrl": null
           }
@@ -81,7 +109,10 @@
           "sourceClass": "official_primary",
           "url": "https://www.khnp.co.kr/hanul/selectBbsNttList.do?bbsNo=120&integrDeptCode=&key=1761&pageIndex=20&searchCnd=all&searchCtgry=&searchKrwd=",
           "eventSpecific": true,
-          "purpose": ["event_date", "trip_shutdown_chronology"],
+          "purpose": [
+            "event_date",
+            "trip_shutdown_chronology"
+          ],
           "rights": {
             "status": "not_used_for_reproduction",
             "license": null,
@@ -94,7 +125,10 @@
           "sourceClass": "government_relay",
           "url": "https://go.seoul.co.kr/news/prnewsView.php?id=337111&page=1306&section=b_sec_1",
           "eventSpecific": true,
-          "purpose": ["investigation_result", "corrective_actions"],
+          "purpose": [
+            "investigation_result",
+            "corrective_actions"
+          ],
           "rights": {
             "status": "unverified",
             "license": null,
@@ -107,7 +141,25 @@
           "sourceClass": "official_locator",
           "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
           "eventSpecific": false,
-          "purpose": ["direct_record_locator"],
+          "purpose": [
+            "direct_record_locator"
+          ],
+          "rights": {
+            "status": "not_applicable",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s02-policy-briefing-index",
+          "authority": "대한민국 정책브리핑",
+          "sourceClass": "official_locator",
+          "url": "https://www.korea.kr/briefing/pressReleaseList.do",
+          "eventSpecific": false,
+          "purpose": [
+            "policy_briefing_original_locator",
+            "same_date_rights_policy_context"
+          ],
           "rights": {
             "status": "not_applicable",
             "license": null,
