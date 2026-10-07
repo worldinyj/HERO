@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 import { sha256Hex } from "./crypto.ts";
+import { rateLimited } from "./http.ts";
 
 export interface RateLimitRule {
   scope: string;
@@ -61,4 +62,14 @@ export function requestFingerprint(req: Request): string {
   const origin = req.headers.get("origin") ?? "unknown";
 
   return `${address}|${userAgent}|${origin}`;
+}
+
+
+export async function guardRateLimit(
+  req: Request,
+  admin: SupabaseClient,
+  rule: RateLimitRule,
+): Promise<Response | null> {
+  const result = await consumeRateLimit(admin, rule);
+  return result.allowed ? null : rateLimited(req, result.retryAfterSeconds);
 }
