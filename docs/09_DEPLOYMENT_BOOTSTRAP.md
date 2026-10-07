@@ -43,7 +43,7 @@ Supabase Dashboard의 Authentication > Users에서 해당 사용자의 UUID를 �
 select private.bootstrap_initial_admin(
   'AUTH_USER_UUID_HERE'::uuid,
   '관리자 실명',
-  'HEROADMIN'
+  'HERO1'
 );
 ```
 
@@ -52,6 +52,7 @@ select private.bootstrap_initial_admin(
 - 한글/영문/숫자만
 - 금칙어 포함 불가
 - 기존 닉네임과 대소문자 무시 중복 불가
+- `admin`, `manager`, `관리자`, `운영자` 등 운영권한을 연상시키는 금칙어를 포함하지 않는다. 따라서 예전 예시 `HEROADMIN`은 사용하지 않는다.
 
 ### 2.4 검증
 
@@ -121,6 +122,38 @@ order by created_at desc;
 - [ ] Supabase Kakao OAuth redirect URI 등록
 - [ ] 이메일/프로필을 불필요하게 필수 동의항목으로 요청하지 않음
 - [ ] 담당자 화면에서 카카오톡 공유 실기기 확인
+
+
+
+## 4.1 현재 외부 테스트 환경 상태 (2026-10-08)
+
+이 절은 **프로덕션 승인 기록이 아니라 현재 외부 통합 테스트의 사실 상태**다.
+
+| 항목 | 현재 상태 |
+|---|---|
+| Cloudflare Pages | `https://hero-dnr.pages.dev` 연결 |
+| Supabase project ref | `alhpooapiokyuxysdzzp` |
+| DB migration | 15건 원격 적용 확인 |
+| Edge Functions | 8개 ACTIVE 확인 |
+| Kakao OAuth | 실제 Kakao 로그인 성공 확인 |
+| Auth 사용자 | 최초 Kakao 사용자 생성 확인 |
+| 최초 Admin bootstrap | admin profile 1건 + `admin.bootstrap_initial` 감사로그 확인 |
+| 초대 정책 | profile 없는 인증 사용자는 보호 라우트에서 로그아웃 후 초대링크 안내하도록 hardening 적용 |
+| 실제 조직 초대 | plant_manager 수락 대기 초대 1건 존재. 별도 Kakao 계정으로 수락 E2E가 남아 있음 |
+| 경쟁 시나리오 | S03는 `review_ready`; 사람 검토 전에는 publish하지 않음 |
+| 릴리스 승인 | 법무/개인정보·실기기·사내망·파일럿 포함 여전히 BLOCKED |
+
+현재 외부 테스트에서 사용하는 Supabase Kakao callback은 다음과 같다.
+
+```text
+https://alhpooapiokyuxysdzzp.supabase.co/auth/v1/callback
+```
+
+현재 Pages 도메인 기준 Site URL/초대 링크 기준 도메인은 다음과 같다.
+
+```text
+https://hero-dnr.pages.dev
+```
 
 ## 5. 자동 배포 Preflight
 
