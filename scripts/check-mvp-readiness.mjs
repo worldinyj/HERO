@@ -34,6 +34,8 @@ const structuralRequirements = [
   "docs/05_TRACEABILITY.md",
   "docs/06_AUDIO_ASSET_GUIDE.md",
   "docs/07_TERMS_PRIVACY_DRAFT.md",
+  "apps/web/src/features/legal/LegalPage.tsx",
+  "scripts/check-legal-release.mjs",
   "docs/08_HP_BALANCE_REPORT.md",
   "docs/09_DEPLOYMENT_BOOTSTRAP.md",
   "docs/10_MVP_READINESS.md",
@@ -69,6 +71,7 @@ const promotion = JSON.parse(
   read("scenarios/research/promotion-status.json"),
 );
 const legal = read("docs/07_TERMS_PRIVACY_DRAFT.md");
+const legalApp = read("apps/web/src/features/legal/LegalPage.tsx");
 const deployment = read("docs/09_DEPLOYMENT_BOOTSTRAP.md");
 const audio = JSON.parse(
   read("apps/web/public/audio/audio_manifest.json"),
@@ -97,9 +100,14 @@ const scenarioStatus = competitive.map((entry) => ({
   blockers: entry.blockers ?? [],
 }));
 
-const legalPending =
+const legalDocumentPending =
   legal.includes("[확정 필요]") ||
   legal.includes("검토 초안");
+const legalAppPending =
+  legalApp.includes("[확정 필요]") ||
+  legalApp.includes("검토 초안") ||
+  legalApp.includes("개발·검토용 초안");
+const legalPending = legalDocumentPending || legalAppPending;
 
 const uncheckedDeploymentItems = (
   deployment.match(/^- \[ \]/gmu) ?? []
@@ -184,8 +192,8 @@ const gates = [
     owner: "legal+privacy",
     detail:
       !legalPending && validApproval(approvals.legalPrivacy)
-        ? "Final terms/privacy text and approval evidence are both recorded."
-        : "Final terms/privacy text and approved evidence are both required.",
+        ? "Final terms/privacy review document, shipped UI, and approval evidence are all complete."
+        : `Final legal document + shipped /terms,/privacy UI + approval evidence are required (documentPending=${legalDocumentPending}, appPending=${legalAppPending}).`,
   },
   {
     id: "staging_smoke_automation",
@@ -295,6 +303,8 @@ const report = {
   audioRuntimeReady,
   uncheckedDeploymentItems,
   releaseEvidenceUpdatedAt: releaseEvidence.updatedAt ?? null,
+  legalDocumentPending,
+  legalAppPending,
   gates,
 };
 
