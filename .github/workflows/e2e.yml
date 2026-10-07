@@ -34,7 +34,19 @@ jobs:
       - name: Start local Supabase
         shell: bash
         run: |
-          supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --output-format json > /tmp/hero-supabase.json
+          started=0
+          for attempt in 1 2 3; do
+            echo "Starting local Supabase (attempt $attempt/3)"
+            if supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --output-format json > /tmp/hero-supabase.json; then
+              started=1
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          if [ "$started" -ne 1 ]; then
+            echo "Local Supabase failed to start after 3 attempts"
+            exit 1
+          fi
           supabase status -o env > /tmp/hero-supabase.env
           grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env >> "$GITHUB_ENV"
 
