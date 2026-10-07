@@ -61,27 +61,58 @@ export function IncidentDebrief({
       </section>
 
       <section className="incident-section">
-        <h3>방어막 관점 원인 분석</h3>
+        <h3>직접원인</h3>
+        <ul className="incident-list">
+          {debrief.directCauses.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="incident-section">
+        <h3>근본원인 · 시스템적 학습 분석</h3>
         <ul className="incident-list">
           {debrief.rootCauses.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
         <p className="muted mini-copy">
-          이 항목은 HERO의 시스템적 학습 분석입니다. “작업자 실수” 하나로
-          원인을 끝내지 않고 절차·감독·설계·조직조건과 방어막의 상호작용을
-          함께 봅니다.
+          공식 조사자료의 사실과 HERO의 교육용 인과분류를 구분합니다. 근본원인은
+          사람의 마지막 행동에서 끝내지 않고 절차·감독·설계·조직조건과 방어막의
+          상호작용까지 추적합니다.
         </p>
       </section>
 
       <section className="incident-section">
-        <h3>학습 관점 기여조건</h3>
+        <h3>기여원인 · 기여요인</h3>
         <ul className="incident-list incident-list--factors">
           {debrief.contributingFactors.map((item) => (
             <li key={item}>{item}</li>
           ))}
         </ul>
       </section>
+
+      {debrief.causalChain.length > 0 ? (
+        <section className="incident-section">
+          <h3>사건 인과사슬</h3>
+          <ol className="incident-list">
+            {debrief.causalChain.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
+      {debrief.failedBarriers.length > 0 ? (
+        <section className="incident-section">
+          <h3>약화·실패한 방어막</h3>
+          <ul className="incident-list incident-list--factors">
+            {debrief.failedBarriers.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="incident-section">
         <h3>핵심 교훈 · HU Tool</h3>
