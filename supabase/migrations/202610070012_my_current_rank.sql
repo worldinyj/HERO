@@ -22,7 +22,7 @@ as $$
 declare
   v_user uuid := (select auth.uid());
 begin
-  if v_user is null or (select private.auth_role()) <> 'player' then
+  if v_user is null or (select private.auth_role()) is distinct from 'player' then
     raise exception 'player_required';
   end if;
 
