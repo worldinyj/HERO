@@ -1,28 +1,40 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
 import type { ReactNode } from "react";
-import { NavLink, Route, Routes, useLocation } from "react-router";
+import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
+import { GamePage } from "../features/play/GamePage";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
 
 function CampaignPage() {
   return (
     <section className="panel" aria-labelledby="campaign-title">
-      <p className="eyebrow">10월 시즌 · 개발 준비중</p>
+      <p className="eyebrow">10월 시즌 · 개발 중</p>
       <h2 id="campaign-title">캠페인</h2>
       <p className="muted">
-        MVP 시나리오 S01~S03이 여기에 연결됩니다. 현재는 인증·조직 기반을 구축 중입니다.
+        0장 튜토리얼은 실제 엔진으로 플레이할 수 있습니다. S01~S03은 서버 세션·콘텐츠 검수 후 순차 개방합니다.
       </p>
 
       <div className="chapter-list">
-        <article className="chapter-card">
+        <Link className="chapter-link" to="/play/s00_tutorial">
+          <article className="chapter-card chapter-card--ready">
+            <span className="chapter-index">00</span>
+            <div>
+              <strong>확인하고 말하기</strong>
+              <p>3분 튜토리얼 · 리더보드 미반영</p>
+            </div>
+            <span className="chapter-action" aria-hidden="true">▶</span>
+          </article>
+        </Link>
+
+        <article className="chapter-card chapter-card--locked">
           <span className="chapter-index">01</span>
           <div>
             <strong>오늘 오전까지 끝내야 합니다</strong>
-            <p>시간압박 · 단독작업 · 감독부족</p>
+            <p>시간압박 · 단독작업 · 감독부족 · 준비중</p>
           </div>
         </article>
 
@@ -30,7 +42,15 @@ function CampaignPage() {
           <span className="chapter-index">02</span>
           <div>
             <strong>아마 이 설비가 맞을 겁니다</strong>
-            <p>설비 오인 · Self/Peer Check</p>
+            <p>설비 오인 · Self/Peer Check · 준비중</p>
+          </div>
+        </article>
+
+        <article className="chapter-card chapter-card--locked">
+          <span className="chapter-index">03</span>
+          <div>
+            <strong>절차와 실제 상황이 조금 다릅니다</strong>
+            <p>Questioning Attitude · Stop When Unsure · 준비중</p>
           </div>
         </article>
       </div>
@@ -41,7 +61,7 @@ function CampaignPage() {
 function PlaceholderPage({ title }: { title: string }) {
   return (
     <section className="panel">
-      <p className="eyebrow">Phase 1</p>
+      <p className="eyebrow">MVP 개발 중</p>
       <h2>{title}</h2>
       <p className="muted">설계 계약에 따라 다음 단계에서 구현합니다.</p>
     </section>
@@ -58,29 +78,41 @@ function ActiveUserGate({ children }: { children: ReactNode }) {
 
 export function App() {
   const location = useLocation();
-  const publicRoute = location.pathname === "/login" || location.pathname.startsWith("/i/");
+  const publicRoute =
+    location.pathname === "/login" ||
+    location.pathname.startsWith("/i/");
+  const playRoute = location.pathname.startsWith("/play/");
 
   return (
-    <main className="app-shell">
-      <header className="hero-header">
-        <p className="eyebrow">Human Error Risk Operations</p>
-        <h1>{HERO_PRODUCT_NAME}</h1>
-        <p className="tagline">사고는 마지막 행동에서 시작되지 않는다.</p>
-        <span className="build-badge">schema {SCENARIO_SCHEMA_VERSION}</span>
-      </header>
+    <main className={playRoute ? "app-shell app-shell--play" : "app-shell"}>
+      {!playRoute ? (
+        <header className="hero-header">
+          <p className="eyebrow">Human Error Risk Operations</p>
+          <h1>{HERO_PRODUCT_NAME}</h1>
+          <p className="tagline">사고는 마지막 행동에서 시작되지 않는다.</p>
+          <span className="build-badge">schema {SCENARIO_SCHEMA_VERSION}</span>
+        </header>
+      ) : null}
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/i/:token" element={<InvitationPage />} />
         <Route path="/" element={<ActiveUserGate><CampaignPage /></ActiveUserGate>} />
         <Route
+          path="/play/:scenarioId"
+          element={<ActiveUserGate><GamePage /></ActiveUserGate>}
+        />
+        <Route
           path="/leaderboard"
           element={<ActiveUserGate><PlaceholderPage title="리더보드" /></ActiveUserGate>}
         />
-        <Route path="/me" element={<ActiveUserGate><PlaceholderPage title="내 기록" /></ActiveUserGate>} />
+        <Route
+          path="/me"
+          element={<ActiveUserGate><PlaceholderPage title="내 기록" /></ActiveUserGate>}
+        />
       </Routes>
 
-      {!publicRoute ? (
+      {!publicRoute && !playRoute ? (
         <nav className="bottom-nav" aria-label="주요 메뉴">
           <NavLink to="/" end>캠페인</NavLink>
           <NavLink to="/leaderboard">리더보드</NavLink>
