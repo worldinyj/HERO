@@ -52,7 +52,7 @@
         "OPIS/NSIC event-specific direct record URL/identifier/PDF",
         "HF/anonymization review"
       ],
-      "notes": "KHNP Hanul official bulletins confirm the 2024-01-02 trip/shutdown chronology. The full 2024-04-17 NSSC press-release text is recovered through a government relay, and the Policy Briefing catalogue confirms the original NSSC item exists on that date; however its direct detail URL/item-specific rights marker and event-specific OPIS/NSIC record remain unresolved."
+      "notes": "KHNP Hanul official bulletins confirm the 2024-01-02 trip/shutdown chronology. The full 2024-04-17 NSSC press-release text is reverified through the government relay and is used only for factual verification, not reproduction. The Policy Briefing catalogue confirms the original NSSC item exists on that date; however its direct detail URL/item-specific rights marker and event-specific OPIS/NSIC record remain unresolved. See S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md."
     },
     {
       "scenarioId": "s03_procedure_reality_gap",

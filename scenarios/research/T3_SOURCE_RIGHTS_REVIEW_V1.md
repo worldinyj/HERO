@@ -219,3 +219,12 @@ HERO는 텍스트도 그대로 복제하지 않고 사실관계를 일반화하�
 CI의 `pnpm check:source-evidence`는 `promotion-status.json`과 이 manifest를 대조한다. `sourceRightsComplete=true` 또는 `status=approved`인 경쟁 시나리오는 source/rights verdict가 모두 complete가 아니면 실패한다.
 
 이 guard는 사람의 HF·익명화 검토를 대신하지 않으며, 근거 boolean의 실수·우회 변경을 방지하는 역할만 한다.
+
+
+## 9. S01/S02 source retrieval audit
+
+2026-10-07 공식/정부 공개 경로 재검색에서 확인한 성공·미확보 항목과, 다른 페이지의 이용표시를 대상 사건에 자동 상속하지 않는 판단 근거는 다음 로그에 기록한다.
+
+- [S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md](S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md)
+
+이 로그는 source/rights gate를 완화하지 않는다. 사건별 직접 레코드와 개별 이용표시가 확보되기 전까지 S01/S02는 `SOURCE_HOLD`를 유지한다.

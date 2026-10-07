@@ -130,7 +130,7 @@
             "corrective_actions"
           ],
           "rights": {
-            "status": "unverified",
+            "status": "not_used_for_reproduction",
             "license": null,
             "evidenceUrl": null
           }

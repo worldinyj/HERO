@@ -156,3 +156,6 @@ S01 「오늘 오전까지 끝내야 합니다」는 일정압박 자체를 “�
 - [x] ending imbalance 경고 0
 
 상세 승격 판정: [T3_SOURCE_RIGHTS_REVIEW_V1.md](T3_SOURCE_RIGHTS_REVIEW_V1.md) 참조.
+
+
+추가 검색·확인 이력: [S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md](S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md)
