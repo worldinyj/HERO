@@ -54,6 +54,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 
 - 코드 lint/typecheck/test/build
 - 시나리오 schema/graph/promotion guard
+- source-evidence ↔ promotion-status 출처·권리 일관성 guard
 - S00 및 draft path simulation
 - HP 파밍·리플레이 밸런스 guard
 - PWA 설치 셸
@@ -147,3 +148,12 @@ pnpm promote:scenario -- \
 ```
 
 이 도구는 `sourceRightsComplete=true`가 이미 확정된 시나리오만 승격한다. 따라서 source/rights 증거가 남아 있는 S01/S02를 사람 승인만으로 우회 승격할 수 없다. 기본 실행은 preflight-only이며 `--apply` 없이는 저장소를 변경하지 않는다.
+
+
+### Source evidence 자동 확인
+
+```bash
+pnpm check:source-evidence
+```
+
+`sourceRightsComplete=true`만 수동으로 바꿔서는 경쟁 시나리오를 승격할 수 없다. `source-evidence.json`에서도 공식 사건 근거와 권리 근거가 모두 complete여야 promotion helper와 CI가 통과한다.
