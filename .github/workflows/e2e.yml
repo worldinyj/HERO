@@ -24,6 +24,13 @@ jobs:
       - run: corepack enable
       - run: pnpm install --no-frozen-lockfile
 
+      - name: Generate ephemeral E2E credentials
+        shell: bash
+        run: |
+          echo "HERO_E2E_PASSWORD_A=e2e-$(openssl rand -hex 18)" >> "$GITHUB_ENV"
+          echo "HERO_E2E_PASSWORD_B=e2e-$(openssl rand -hex 18)" >> "$GITHUB_ENV"
+          echo "HERO_E2E_PASSWORD_MANAGER=e2e-$(openssl rand -hex 18)" >> "$GITHUB_ENV"
+
       - name: Start local Supabase
         run: |
           supabase start --output-format json > /tmp/hero-supabase.json
