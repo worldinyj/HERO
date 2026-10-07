@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(38);
+select plan(40);
 
 insert into auth.users (id, email) values
   ('20000000-0000-0000-0000-000000000001', 'admin@hero.test'),
@@ -197,9 +197,21 @@ select results_eq(
   'player sees only own session'
 );
 select results_eq(
-  $$select count(*) from public.session_decisions$$,
+  $select count(*) from public.session_decisions$,
   array[1::bigint],
   'player sees only own decision log'
+);
+select results_eq(
+  $select count(*) from public.v_leaderboard_current_public
+    where season_key = 'rls-test-season'$,
+  array[2::bigint],
+  'active player can read current leaderboard rows for active players only'
+);
+select results_eq(
+  $select count(*) from public.v_leaderboard_current_public
+    where nickname = 'RLSOFF'$,
+  array[0::bigint],
+  'inactive players are omitted from the current leaderboard'
 );
 select is(
   (select hp_point from public.my_current_rank()),
