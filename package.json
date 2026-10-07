@@ -25,7 +25,8 @@
     "check:approval-hash": "tsx scripts/check-approval-hash-contract.ts",
     "build:review-packet": "tsx scripts/build-human-review-packet.ts",
     "check:deployment-preflight": "node scripts/check-deployment-preflight.mjs",
-    "check:audio-manifest": "node scripts/check-audio-manifest.mjs"
+    "check:audio-manifest": "node scripts/check-audio-manifest.mjs",
+    "check:staging-http": "node scripts/check-staging-http.mjs"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
