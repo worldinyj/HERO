@@ -37,3 +37,6 @@ jobs:
 
       - name: Check submit-session shared engine graph
         run: deno check --config supabase/functions/submit-session/deno.json supabase/functions/submit-session/index.ts
+
+      - name: Check admin scenario Edge Function
+        run: deno check --config supabase/functions/admin-scenario/deno.json supabase/functions/admin-scenario/index.ts
