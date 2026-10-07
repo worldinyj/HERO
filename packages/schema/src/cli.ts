@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { ScenarioSchema } from "./scenario";
-import { validateScenarioGraph } from "./validation";
+import { ScenarioSchema } from "./scenario.ts";
+import { validateScenarioGraph } from "./validation.ts";
 
 async function collectJsonFiles(target: string): Promise<string[]> {
   const stat = await import("node:fs/promises").then(({ stat }) => stat(target));
