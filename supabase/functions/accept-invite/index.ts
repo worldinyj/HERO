@@ -1,6 +1,7 @@
 import { sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { validateNickname } from "../_shared/nickname.ts";
+import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireUser } from "../_shared/supabase.ts";
 
 interface AcceptBody {
@@ -21,6 +22,14 @@ Deno.serve(async (req) => {
   try {
     const admin = adminClient();
     const user = await requireUser(req, admin);
+    const limited = await guardRateLimit(req, admin, {
+      scope: "accept-invite",
+      subject: user.id,
+      limit: 10,
+      windowSeconds: 600,
+    });
+    if (limited) return limited;
+
     const body = (await req.json()) as AcceptBody;
 
     const token = body.token?.trim();
