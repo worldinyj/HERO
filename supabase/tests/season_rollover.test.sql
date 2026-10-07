@@ -25,13 +25,13 @@ insert into public.seasons (
 );
 
 select results_eq(
-  $select count(*) from cron.job where jobname = 'hero-season-rollover'$,
+  $$select count(*) from cron.job where jobname = 'hero-season-rollover'$$,
   array[1::bigint],
   'monthly rollover cron job exists exactly once'
 );
 
 select results_eq(
-  $select schedule from cron.job where jobname = 'hero-season-rollover'$,
+  $$select schedule from cron.job where jobname = 'hero-season-rollover'$$,
   array['0 15 * * *'::text],
   'cron fires daily at 15:00 UTC so the wrapper sees KST midnight'
 );
