@@ -277,14 +277,14 @@ select throws_ok(
   'manager cannot create plants'
 );
 select throws_ok(
-  $select * from public.my_current_rank()$,
+  $$select * from public.my_current_rank()$$,
   'P0001',
   'player_required',
   'manager cannot invoke player self-rank RPC'
 );
 
 select results_eq(
-  $select count(*) from public.leaderboard_current_public_rows$,
+  $$select count(*) from public.leaderboard_current_public_rows$$,
   array[0::bigint],
   'manager cannot read player leaderboard rows'
 );
@@ -332,14 +332,14 @@ select lives_ok(
   'admin can create a plant'
 );
 select throws_ok(
-  $select * from public.my_current_rank()$,
+  $$select * from public.my_current_rank()$$,
   'P0001',
   'player_required',
   'admin cannot invoke player self-rank RPC'
 );
 
 select results_eq(
-  $select count(*) from public.leaderboard_current_public_rows$,
+  $$select count(*) from public.leaderboard_current_public_rows$$,
   array[0::bigint],
   'admin cannot read player leaderboard rows through the public view'
 );
