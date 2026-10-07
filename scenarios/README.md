@@ -90,3 +90,13 @@ pnpm simulate:scenario -- --scenario=scenarios/drafts/S03_procedure_reality_v1.j
 ```
 
 CI는 draft의 스키마·그래프 오류와 시뮬레이터 error를 차단합니다. balance warning은 연구 단계에서 허용하지만 `T3_HF_REVIEW_CHECKLIST_V1.md`에 검토/예외 사유를 남겨야 합니다.
+
+
+### 승격 게이트
+
+S01~S03의 근거·이용조건·HF/익명화·기술검증 상태는 `research/T3_SOURCE_RIGHTS_REVIEW_V1.md`에서 관리합니다.
+
+현재 원칙:
+- `SOURCE_HOLD`: source/rights/OPIS/human gate 중 하나 이상이 남아 있어 publish 금지
+- `REVIEW_READY`: 공식근거·이용조건·기술게이트는 통과했지만 사람 HF/익명화 승인이 남아 있어 publish 금지
+- 사람 승인 기록 없이는 `drafts/` → `data/` 이동 금지
