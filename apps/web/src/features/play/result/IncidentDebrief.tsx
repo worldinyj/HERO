@@ -114,6 +114,21 @@ export function IncidentDebrief({
         </section>
       ) : null}
 
+      {debrief.correctiveActions.length > 0 ? (
+        <section className="incident-section">
+          <h3>재발방지대책 연결</h3>
+          <p className="muted mini-copy">
+            아래 항목은 공식 조사자료에 제시된 조치 중 이 시나리오의 원인구조와
+            직접 연결되는 내용을 교육용으로 요약한 것입니다.
+          </p>
+          <ul className="incident-list incident-list--factors">
+            {debrief.correctiveActions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="incident-section">
         <h3>핵심 교훈 · HU Tool</h3>
         <div className="incident-lessons">
