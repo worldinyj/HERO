@@ -117,11 +117,6 @@ test("plain login without invitation is rejected", async ({
     .getByRole("button", { name: "카카오로 시작하기" })
     .click();
 
-  // E2E mode signs in with password in-place, while real Kakao OAuth
-  // returns to the requested app URL. Navigate to the protected route to
-  // exercise the same post-auth provisioning gate.
-  await page.goto("/");
-
   await expect(page).toHaveURL(/\/login\?reason=invite_required$/, {
     timeout: 15_000,
   });
