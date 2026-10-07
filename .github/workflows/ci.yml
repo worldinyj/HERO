@@ -27,6 +27,8 @@ jobs:
       - run: pnpm validate:scenario
       - name: Validate scenario drafts
         run: pnpm validate:scenario scenarios/drafts
+      - name: Check scenario promotion gate
+        run: pnpm check:scenario-promotion
       - name: Simulate research drafts
         run: |
           for scenario in scenarios/drafts/*.json; do
