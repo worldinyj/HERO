@@ -109,7 +109,7 @@ const adminManagerIdentities = {
   },
 } as const;
 
-test("admin creates manager invitation and invitee accepts it", async ({
+test("admin → manager → player invitation chain", async ({
   page,
 }, testInfo) => {
   test.setTimeout(75_000);
@@ -148,7 +148,7 @@ test("admin creates manager invitation and invitee accepts it", async ({
     page.getByRole("heading", { name: "조직 관리" }),
   ).toBeVisible();
 
-  await page.getByLabel("발전소").selectOption({ label: /E2E 발전소/ });
+  await page.getByLabel("발전소").selectOption({ label: "E2E 발전소 · E2E" });
   await page.getByLabel("담당자 이름").fill(identity.candidateName);
   await page
     .getByRole("button", { name: "담당자 초대 링크 생성" })
