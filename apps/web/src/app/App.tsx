@@ -3,6 +3,7 @@ import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
 import type { ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { AdminOrgPage } from "../features/admin/AdminOrgPage";
+import { AdminScenarioPage } from "../features/admin/AdminScenarioPage";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
@@ -128,6 +129,10 @@ export function App() {
         <Route
           path="/admin"
           element={<AdminGate><AdminOrgPage /></AdminGate>}
+        />
+        <Route
+          path="/admin/scenarios"
+          element={<AdminGate><AdminScenarioPage /></AdminGate>}
         />
         <Route
           path="/me"

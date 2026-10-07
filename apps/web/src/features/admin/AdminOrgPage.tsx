@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 
 interface PlantRow {
@@ -229,6 +230,14 @@ export function AdminOrgPage() {
   return (
     <section className="admin-page" aria-labelledby="admin-title">
       <header className="panel admin-header">
+        <nav className="admin-subnav" aria-label="관리자 메뉴">
+          <Link className="admin-subnav-link admin-subnav-link--active" to="/admin">
+            조직
+          </Link>
+          <Link className="admin-subnav-link" to="/admin/scenarios">
+            시나리오
+          </Link>
+        </nav>
         <p className="eyebrow">Super Admin</p>
         <h2 id="admin-title">조직 관리</h2>
         <p className="muted">
