@@ -1736,3 +1736,24 @@ h3 {
     grid-template-columns: 52px minmax(0, 1fr);
   }
 }
+
+
+.offline-banner {
+  position: sticky;
+  top: calc(max(8px, env(safe-area-inset-top)) + 56px);
+  z-index: 4;
+  padding: 9px 12px;
+  border: 1px solid rgba(242, 165, 65, 0.32);
+  border-radius: 12px;
+  color: #ffe0a8;
+  background: rgba(83, 56, 25, 0.92);
+  backdrop-filter: blur(12px);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.offline-start-panel {
+  display: grid;
+  gap: 14px;
+}
