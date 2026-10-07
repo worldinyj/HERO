@@ -128,6 +128,20 @@ const InitialStateSchema = z.strictObject({
   }),
 });
 
+const IncidentLessonSchema = z.strictObject({
+  title: z.string().min(1).max(140),
+  detail: z.string().min(1).max(600),
+  toolId: z.string().min(1).max(80).regex(/^[a-z0-9_:-]+$/u).optional(),
+});
+
+export const IncidentDebriefSchema = z.strictObject({
+  caseType: z.string().min(1).max(140),
+  overview: z.string().min(1).max(1400),
+  rootCauses: z.array(z.string().min(1).max(320)).min(1).max(6),
+  contributingFactors: z.array(z.string().min(1).max(320)).min(1).max(8),
+  lessons: z.array(IncidentLessonSchema).min(1).max(6),
+});
+
 export const ScenarioSchema = z.strictObject({
   schemaVersion: z.literal(SCENARIO_SCHEMA_VERSION),
   id: z.string().min(1).max(100).regex(/^[a-z0-9_-]+$/u),
@@ -139,6 +153,7 @@ export const ScenarioSchema = z.strictObject({
   startNode: z.string().min(1).max(120),
   cards: z.array(z.string().min(1).max(80)).max(8).default([]),
   initialState: InitialStateSchema,
+  incidentDebrief: IncidentDebriefSchema.optional(),
   nodes: z.record(z.string().min(1).max(120), ScenarioNodeSchema),
 });
 
@@ -148,6 +163,7 @@ export type Ending = z.infer<typeof EndingSchema>;
 export type Effects = z.infer<typeof EffectsSchema>;
 export type Choice = z.infer<typeof ChoiceSchema>;
 export type InfoAction = z.infer<typeof InfoActionSchema>;
+export type IncidentDebrief = z.infer<typeof IncidentDebriefSchema>;
 export type ScenarioNode = z.infer<typeof ScenarioNodeSchema>;
 export type Scenario = z.infer<typeof ScenarioSchema>;
 
