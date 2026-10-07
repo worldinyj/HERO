@@ -1,6 +1,6 @@
-# S03 AI Pre-Review V2 — KINS 상세 사건조사보고서 반영 후 재검토
+# S03 AI Pre-Review V3 — 원인·대책 추적성 및 공개정보 일반화 재검토
 
-> 대상: `s03_procedure_reality_gap` v2  
+> 대상: `s03_procedure_reality_gap` v3  
 > 기준일: 2026-10-07  
 > 상태: **ADVISORY HOLD — HUMAN RE-REVIEW REQUIRED**  
 > 이 문서는 AI 사전검토이며 사람의 HF/운전/익명화 승인을 대신하지 않는다.
@@ -14,7 +14,9 @@
 - Contributing Cause / Factor
 - Causal Chain
 - Failed / Weakened Barriers
+- Corrective Action traceability
 - 사건 후 Recovery HF issue의 분리
+- 공개 incidentDebrief의 정확한 운전값·고유 약어 추가 일반화
 
 콘텐츠의 원인분석 범위가 실질적으로 변경되었으므로 기존 AI advisory pass를 자동 승계하지 않는다.
 
@@ -52,6 +54,8 @@ KINS 보고서에서 직접 확인되는 핵심은 다음과 같다.
 - **운전정보 과노출:** HUMAN CONFIRMATION REQUIRED
 - **KINS taxonomy 오인 가능성:** HUMAN CONFIRMATION REQUIRED
 - **Recovery issue 분리:** PASS WITH HUMAN CONFIRMATION
+- **Cause ↔ Corrective Action 추적성:** PASS WITH HUMAN CONFIRMATION
+- **공개 운전정보 일반화:** PASS WITH HUMAN CONFIRMATION
 - **승격 준비:** HOLD
 
 ## 5. 사람 검토자가 반드시 확인할 항목
@@ -64,7 +68,8 @@ KINS 보고서에서 직접 확인되는 핵심은 다음과 같다.
 - [ ] 사건 후 비상운전절차 수행의 미흡사항을 원자로 자동정지의 원인으로 혼합하지 않는다.
 - [ ] 공개 시나리오가 실제 VPL/LDR/CVR 값·시험조건·MMIS 화면·절차번호를 재현하지 않는다.
 - [ ] HU Tool과 방어막 매핑이 실제 원전 HF 사용맥락에 적합하다.
-- [ ] incidentDebrief에서 Direct / Root / Contributing / Causal Chain / Failed Barriers가 교육적으로 이해 가능하다.
+- [ ] incidentDebrief에서 Direct / Root / Contributing / Causal Chain / Failed Barriers / Corrective Actions가 교육적으로 이해 가능하다.
+- [ ] `S03_CAUSE_TRACEABILITY_MATRIX_V1.md`의 원인-근거-방어막-대책 연결이 KINS 보고서 범위를 넘지 않는다.
 
 ## 6. 현재 콘텐츠 해시
 
@@ -72,11 +77,11 @@ KINS 보고서에서 직접 확인되는 핵심은 다음과 같다.
 
 `scenarios/drafts/S03_procedure_reality_v1.json`
 
-Version: `2`
+Version: `3`
 
 SHA-256:
 
-`8b2cefe8af290762c334fca17ae63be8f5e447cec33ca6d72190ed5e6d5369df`
+`73c40653ee8832be6fa316f3e0b58eb46cdea35361390f6cdde3110b408424f1`
 
 사람 검토는 반드시 이 해시의 콘텐츠를 기준으로 수행한다. 이후 JSON이 변경되면 다시 검토한다.
 
