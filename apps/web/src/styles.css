@@ -1433,3 +1433,51 @@ h3 {
     justify-content: flex-start;
   }
 }
+
+
+.nickname-check {
+  display: block;
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.nickname-check--ok {
+  color: #bcebd5;
+}
+
+.nickname-form {
+  display: grid;
+  gap: 10px;
+}
+
+.nickname-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.nickname-form label > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.nickname-form input {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid rgba(138, 150, 173, 0.28);
+  border-radius: 12px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: rgba(14, 22, 36, 0.72);
+  font: inherit;
+}
+
+.nickname-form input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.nickname-section .validation-box {
+  margin: 0;
+}
