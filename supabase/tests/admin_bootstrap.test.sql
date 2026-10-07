@@ -97,7 +97,7 @@ values (
 );
 
 select throws_ok(
-  $insert into public.invitations (
+  $$insert into public.invitations (
       token_hash,
       plant_id,
       target_role,
