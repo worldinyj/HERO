@@ -567,7 +567,10 @@ export function CompetitiveGamePage({
     return (
       <section className="game-page" aria-live="polite">
         <div className="game-status">
-          <span>{server.seasonKey} · {server.perspectiveRole}</span>
+          <span>
+            {server.seasonKey} · {server.perspectiveRole}
+            {server.replayOf ? " · 리플레이" : ""}
+          </span>
           <span>{formatClock(view.clockMin)}</span>
         </div>
 
@@ -649,13 +652,30 @@ export function CompetitiveGamePage({
               </div>
             ) : null}
 
+            {replayStarting ? (
+              <div className="notice" role="status">
+                선택한 결정 지점부터 새 서버 리플레이 세션을 준비하고 있습니다.
+              </div>
+            ) : null}
+
+            {replayError ? (
+              <div className="validation-box validation-box--error" role="alert">
+                리플레이를 시작하지 못했습니다: {replayError}
+              </div>
+            ) : null}
+
             <HpReview
               scenario={scenario}
               game={game}
               evaluation={confirmedEvaluation}
               mode="competitive"
-              replayEnabled={false}
+              replayEnabled={
+                submission.status === "submitted" && online && !replayStarting
+              }
               restartEnabled={false}
+              onReplay={(nodeId) => {
+                void startReplay(nodeId);
+              }}
             />
           </>
         ) : null}
