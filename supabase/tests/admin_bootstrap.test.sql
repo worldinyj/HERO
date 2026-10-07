@@ -28,11 +28,11 @@ reset role;
 set local role service_role;
 
 select throws_ok(
-  $select private.bootstrap_initial_admin(
+  $$select private.bootstrap_initial_admin(
     '60000000-0000-0000-0000-000000000001',
     'Initial Admin',
     'HEROROOT1'
-  )$,
+  )$$,
   '42501',
   null,
   'service_role cannot call the initial admin bootstrap function'
