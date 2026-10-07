@@ -99,12 +99,12 @@ function checkbox(label: string): string {
 function reviewerChecklist(): string[] {
   return [
     checkbox("공식 사실, HF 해석, HERO 교육적 재구성이 서로 구분되어 있다."),
-    checkbox("개인의 마지막 행동을 단일 원인으로 귀결하지 않고 절차·시스템·조직·방어막을 함께 다룬다."),
+    checkbox("직접원인·근본원인·기여원인/기여요인이 구분되어 있고, 사람의 마지막 행동을 근본원인으로 끝내지 않는다."),
     checkbox("Peer Check·Place Keeping·Stop When Unsure 등 HU Tool의 명칭과 적용 맥락이 실제 HF 관점에 맞다."),
     checkbox("발전소/호기/설비 Tag/실제 설정값·시험조건·복구절차를 역추적할 수 있는 정보가 과도하게 노출되지 않는다."),
     checkbox("safe stop을 실패나 소극적 행동으로 묘사하지 않는다."),
     checkbox("게임용 PSF/Hazard Index가 규제기관 공식 원인분류·HEP·개인 능력지표처럼 읽히지 않는다."),
-    checkbox("incidentDebrief의 '방어막 관점 원인 분석'이 조사기관의 공식 근본원인 판정과 명확히 구분된다."),
+    checkbox("incidentDebrief의 HERO 원인분류가 조사기관의 공식 원인분류와 명확히 구분되고, 인과사슬·실패방어막이 근거와 일치한다."),
     checkbox("공식 출처의 기관·일자·링크·이용조건 표기가 실제 공개 화면과 일치한다."),
     checkbox("선택지에 도덕적 정답 단서가 과도하지 않고, 경로/엔딩 분포가 교육목적에 적절하다."),
     checkbox("이 SHA-256의 JSON을 직접 검토했으며, 승인 후 내용 변경 시 재검토가 필요함을 이해했다."),
