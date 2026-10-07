@@ -17,7 +17,8 @@
     "simulate:scenario": "tsx scripts/simulate-scenarios.ts",
     "analyze:hp-balance": "tsx scripts/analyze-hp-balance.ts",
     "e2e": "playwright test",
-    "e2e:setup": "tsx e2e/setup-local.ts"
+    "e2e:setup": "tsx e2e/setup-local.ts",
+    "check:scenario-promotion": "tsx scripts/check-scenario-promotion.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

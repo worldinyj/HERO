@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-07",
+  "entries": [
+    {
+      "scenarioId": "s00_tutorial",
+      "file": "scenarios/data/S00_tutorial.json",
+      "status": "tutorial_exception",
+      "sourceRightsComplete": true,
+      "hfReviewComplete": true,
+      "anonymizationReviewComplete": true,
+      "humanReview": {
+        "status": "not_required",
+        "approvedBy": null,
+        "approvedAt": null
+      },
+      "notes": "Non-competitive tutorial. Incident-source promotion gate does not apply."
+    },
+    {
+      "scenarioId": "s01_time_pressure",
+      "file": "scenarios/drafts/S01_time_pressure_v1.json",
+      "status": "source_hold",
+      "sourceRightsComplete": false,
+      "hfReviewComplete": false,
+      "anonymizationReviewComplete": false,
+      "humanReview": {
+        "status": "pending",
+        "approvedBy": null,
+        "approvedAt": null
+      },
+      "blockers": [
+        "OPIS mapping",
+        "2012 KHNP item-specific rights marker",
+        "HF/anonymization review"
+      ]
+    },
+    {
+      "scenarioId": "s02_equipment_identity",
+      "file": "scenarios/drafts/S02_equipment_identity_v1.json",
+      "status": "source_hold",
+      "sourceRightsComplete": false,
+      "hfReviewComplete": false,
+      "anonymizationReviewComplete": false,
+      "humanReview": {
+        "status": "pending",
+        "approvedBy": null,
+        "approvedAt": null
+      },
+      "blockers": [
+        "Direct NSSC/Policy Briefing source URL and rights",
+        "OPIS detail",
+        "HF/anonymization review"
+      ]
+    },
+    {
+      "scenarioId": "s03_procedure_reality_gap",
+      "file": "scenarios/drafts/S03_procedure_reality_v1.json",
+      "status": "review_ready",
+      "sourceRightsComplete": true,
+      "hfReviewComplete": false,
+      "anonymizationReviewComplete": false,
+      "humanReview": {
+        "status": "pending",
+        "approvedBy": null,
+        "approvedAt": null
+      },
+      "blockers": [
+        "HF review",
+        "anonymization/operational-overexposure review",
+        "incidentDebrief final approval"
+      ]
+    }
+  ]
+}
