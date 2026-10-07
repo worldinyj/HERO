@@ -1,6 +1,6 @@
 {
   "name": "@hero/schema",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "exports": { ".": "./src/index.ts" },
@@ -11,6 +11,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@types/node": "22.20.5",
     "typescript": "^5.9.3"
   }
 }
