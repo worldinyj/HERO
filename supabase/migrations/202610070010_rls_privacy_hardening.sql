@@ -1,5 +1,30 @@
 begin;
 
+drop policy if exists "profiles_self_nickname_update" on public.profiles;
+
+revoke insert, update, delete on public.profiles from authenticated;
+revoke insert, update, delete on public.invitations from authenticated;
+revoke insert, update, delete on public.audit_logs from authenticated;
+revoke insert, update, delete on public.scenarios from authenticated;
+revoke insert, update, delete on public.scenario_versions from authenticated;
+revoke insert, update, delete on public.seasons from authenticated;
+revoke insert, update, delete on public.season_scenarios from authenticated;
+revoke insert, update, delete on public.play_sessions from authenticated;
+revoke insert, update, delete on public.session_decisions from authenticated;
+revoke insert, update, delete on public.leaderboard_snapshots from authenticated;
+
+grant select on public.profiles,
+  public.invitations,
+  public.audit_logs,
+  public.scenarios,
+  public.scenario_versions,
+  public.seasons,
+  public.season_scenarios,
+  public.play_sessions,
+  public.session_decisions,
+  public.leaderboard_snapshots
+to authenticated;
+
 drop policy if exists "play_sessions_owner_or_admin_read" on public.play_sessions;
 create policy "play_sessions_owner_or_admin_read"
 on public.play_sessions
