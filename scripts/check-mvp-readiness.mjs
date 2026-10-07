@@ -178,6 +178,20 @@ const gates = [
       "Core design, CI, E2E, scenario, deployment, release-evidence, and audio files exist.",
   },
   {
+    id: "incident_cause_traceability",
+    status:
+      checkFile("scenarios/research/cause-traceability.json") &&
+      checkFile("scripts/check-cause-traceability.ts")
+        ? "pass"
+        : "blocked",
+    owner: "automation+content",
+    detail:
+      checkFile("scenarios/research/cause-traceability.json") &&
+      checkFile("scripts/check-cause-traceability.ts")
+        ? "Machine-readable Direct/Root/Contributing cause, barrier, evidence, and corrective-action traceability guard is present; CI/RC execute the validator."
+        : "Cause traceability manifest or validator is missing.",
+  },
+  {
     id: "competitive_scenarios",
     status: approvedCompetitive.length >= 3 ? "pass" : "blocked",
     owner: "human+content",
