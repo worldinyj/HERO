@@ -21,6 +21,21 @@ export function metricAverage(state: GameState): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+export function replayImprovementPoints(
+  currentMetricAvg: number,
+  previousBestMetricAvg?: number,
+): number {
+  if (previousBestMetricAvg === undefined) return 0;
+
+  return Math.min(
+    30,
+    Math.max(
+      0,
+      Math.round((currentMetricAvg - previousBestMetricAvg) * 0.5),
+    ),
+  );
+}
+
 function keyDecisionActionId(state: GameState): string | null {
   const choices = state.log.filter(
     (entry) => entry.actionType === "choice" && entry.actionId,
@@ -55,12 +70,10 @@ export function evaluate(
     (context.reflectionAnswered ? 10 : 0) +
     (context.swissCheeseViewed ? 10 : 0);
 
-  const replayImprovement = context.previousBestMetricAvg === undefined
-    ? 0
-    : Math.min(
-        30,
-        Math.max(0, Math.round((avg - context.previousBestMetricAvg) * 0.5)),
-      );
+  const replayImprovement = replayImprovementPoints(
+    avg,
+    context.previousBestMetricAvg,
+  );
 
   const breakdown = {
     completion: 100,
