@@ -14,7 +14,8 @@
     "lint": "pnpm --dir apps/web lint && eslint packages/engine/src packages/schema/src packages/content/src",
     "validate:scenario": "tsx packages/schema/src/cli.ts",
     "schema:scenario": "tsx packages/schema/src/export-schema.ts",
-    "simulate:scenario": "tsx scripts/simulate-scenarios.ts"
+    "simulate:scenario": "tsx scripts/simulate-scenarios.ts",
+    "analyze:hp-balance": "tsx scripts/analyze-hp-balance.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
