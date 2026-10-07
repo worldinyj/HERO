@@ -37,8 +37,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | 접근성 | **READY (자동 게이트)** | WCAG 2.2 AA 자동 검사, reduced motion, 키보드/포커스 |
 | 모바일 핵심 E2E | **READY (자동 게이트)** | 초대→가입→플레이→결과→리더보드 자동 플로우 |
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
-| S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 교차확인 완료. OPIS 직접 레코드/식별번호, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
-| S02 | **SOURCE_HOLD** | 2024-04-17 원안위 보도자료 전문 문안 확보. 원안위 직접 호스트/해당 원문 개별 이용표시, OPIS 직접 레코드, HF/익명화 승인 남음 |
+| S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + 과거 OPIS 목록/현재 NSIC 진입점 확인. 사건별 direct URL/식별번호, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
+| S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 확보. 원안위 직접 조사 원문/개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 항목과 법무/개인정보 검토 잔존 |
 | 외부 배포 | **BLOCKED** | staging/prod Supabase, Cloudflare, Kakao 설정 실확인 필요 |
