@@ -1,0 +1,665 @@
+import {
+  BARRIER_CARDS,
+  act,
+  createGame,
+  evaluate,
+  getView,
+  isFinished,
+  type Evaluation,
+  type GameAction,
+  type GameState,
+} from "@hero/engine";
+import { ScenarioSchema, type Scenario } from "@hero/schema";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
+import { useAuth } from "../auth/AuthContext";
+import {
+  clearCompetitiveSession,
+  loadCompetitiveSession,
+  saveCompetitiveSession,
+  type CompetitiveServerSession,
+} from "../../lib/competitivePersistence";
+import { getSupabase } from "../../lib/supabase";
+import {
+  gameLogToSubmissionActions,
+  submitSessionWithQueue,
+  type SubmissionResult,
+} from "../../lib/submissionQueue";
+import { CausalReflection } from "./result/CausalReflection";
+import { HpReview } from "./result/HpReview";
+import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
+
+type ReviewStage = "ending" | "reflection" | "timeline" | "review";
+type SubmissionState =
+  | { status: "idle" }
+  | { status: "submitting" }
+  | { status: "submitted"; evaluation: Evaluation | null }
+  | { status: "queued"; reason: string }
+  | { status: "rejected"; reason: string };
+
+interface StartSessionResponse {
+  resumed?: boolean;
+  sessionId?: string;
+  seasonId?: string;
+  seasonKey?: string;
+  scenarioId?: string;
+  scenarioVersionId?: string;
+  scenarioVersion?: number;
+  scenario?: unknown;
+  simulationSeed?: string;
+  presentationSeed?: string;
+  perspectiveRole?: string;
+  startedAt?: string;
+  error?: string;
+}
+
+function formatClock(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60) % 24;
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function serverEvaluation(data: unknown): Evaluation | null {
+  if (!data || typeof data !== "object" || !("evaluation" in data)) {
+    return null;
+  }
+
+  const candidate = (data as { evaluation?: unknown }).evaluation;
+  if (
+    !candidate ||
+    typeof candidate !== "object" ||
+    !("hpPoint" in candidate) ||
+    typeof (candidate as { hpPoint?: unknown }).hpPoint !== "number"
+  ) {
+    return null;
+  }
+
+  return candidate as Evaluation;
+}
+
+function startSessionError(data: unknown, fallback: string): string {
+  if (
+    data &&
+    typeof data === "object" &&
+    "error" in data &&
+    typeof (data as { error?: unknown }).error === "string"
+  ) {
+    return String((data as { error: string }).error);
+  }
+
+  return fallback;
+}
+
+export function CompetitiveGamePage({
+  scenarioId,
+}: {
+  scenarioId: string;
+}) {
+  const { session, profile } = useAuth();
+  const userId = session?.user.id ?? null;
+
+  const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [server, setServer] = useState<CompetitiveServerSession | null>(null);
+  const [game, setGame] = useState<GameState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [online, setOnline] = useState(
+    () => typeof navigator === "undefined" || navigator.onLine,
+  );
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [reviewStage, setReviewStage] = useState<ReviewStage>("ending");
+  const [reflectionSelection, setReflectionSelection] = useState<string | null>(
+    null,
+  );
+  const [reflectionAnswered, setReflectionAnswered] = useState(false);
+  const [swissCheeseViewed, setSwissCheeseViewed] = useState(false);
+  const [submission, setSubmission] = useState<SubmissionState>({
+    status: "idle",
+  });
+
+  useEffect(() => {
+    function handleOnline() {
+      setOnline(true);
+    }
+    function handleOffline() {
+      setOnline(false);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!userId || profile?.role !== "player") {
+      setLoading(false);
+      return;
+    }
+
+    let active = true;
+
+    void (async () => {
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const saved = await loadCompetitiveSession(userId, scenarioId);
+
+        if (
+          saved &&
+          saved.formatVersion === 1 &&
+          saved.userId === userId &&
+          saved.scenarioId === scenarioId &&
+          saved.scenarioVersion === saved.scenario.version &&
+          saved.game.scenarioId === scenarioId &&
+          saved.game.scenarioVersion === saved.scenarioVersion
+        ) {
+          if (!active) return;
+          setScenario(saved.scenario);
+          setServer(saved.server);
+          setGame(saved.game);
+          setLoading(false);
+          return;
+        }
+
+        if (saved) {
+          await clearCompetitiveSession(userId, scenarioId);
+        }
+
+        if (!online) {
+          if (!active) return;
+          setLoadError("offline_new_session");
+          setLoading(false);
+          return;
+        }
+
+        const supabase = getSupabase();
+        const { data, error } = await supabase.functions.invoke(
+          "start-session",
+          { body: { scenarioId } },
+        );
+
+        if (error) {
+          throw new Error(startSessionError(data, error.message));
+        }
+
+        const response = data as StartSessionResponse;
+        if (
+          !response.sessionId ||
+          !response.seasonId ||
+          !response.seasonKey ||
+          !response.scenarioVersionId ||
+          typeof response.scenarioVersion !== "number" ||
+          !response.simulationSeed ||
+          !response.presentationSeed ||
+          !response.perspectiveRole ||
+          !response.startedAt
+        ) {
+          throw new Error(
+            startSessionError(response, "invalid_start_session_response"),
+          );
+        }
+
+        const parsed = ScenarioSchema.safeParse(response.scenario);
+        if (!parsed.success) {
+          throw new Error("server_scenario_schema_invalid");
+        }
+
+        if (
+          parsed.data.id !== scenarioId ||
+          parsed.data.version !== response.scenarioVersion
+        ) {
+          throw new Error("server_scenario_identity_mismatch");
+        }
+
+        const nextServer: CompetitiveServerSession = {
+          sessionId: response.sessionId,
+          seasonId: response.seasonId,
+          seasonKey: response.seasonKey,
+          scenarioVersionId: response.scenarioVersionId,
+          scenarioVersion: response.scenarioVersion,
+          perspectiveRole: response.perspectiveRole,
+          startedAt: response.startedAt,
+        };
+
+        const nextGame = createGame(parsed.data, {
+          simulationSeed: response.simulationSeed,
+          presentationSeed: response.presentationSeed,
+        });
+
+        await saveCompetitiveSession({
+          userId,
+          scenarioId,
+          scenarioVersion: parsed.data.version,
+          scenario: parsed.data,
+          server: nextServer,
+          game: nextGame,
+        });
+
+        if (!active) return;
+        setScenario(parsed.data);
+        setServer(nextServer);
+        setGame(nextGame);
+        setLoading(false);
+      } catch (cause) {
+        if (!active) return;
+        setLoadError(
+          cause instanceof Error ? cause.message : "competitive_session_failed",
+        );
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [online, profile?.role, scenarioId, userId]);
+
+  useEffect(() => {
+    setSelectedChoice(null);
+  }, [game?.nodeId]);
+
+  const view = useMemo(() => {
+    if (!scenario || !game) return null;
+    return getView(scenario, game);
+  }, [game, scenario]);
+
+  async function persist(nextGame: GameState) {
+    if (!scenario || !server || !userId) return;
+
+    await saveCompetitiveSession({
+      userId,
+      scenarioId,
+      scenarioVersion: scenario.version,
+      scenario,
+      server,
+      game: nextGame,
+    });
+  }
+
+  function dispatch(action: GameAction) {
+    if (!scenario || !game) return;
+
+    const nextGame = act(scenario, game, action);
+    setGame(nextGame);
+    void persist(nextGame).catch(() => {
+      // An already-started play remains usable even if persistence fails.
+    });
+  }
+
+  async function submitFinishedGame() {
+    if (!scenario || !server || !game || !userId) return;
+    if (!isFinished(scenario, game)) return;
+
+    setSubmission({ status: "submitting" });
+
+    try {
+      const result = await submitSessionWithQueue({
+        scenarioId,
+        body: {
+          sessionId: server.sessionId,
+          actions: gameLogToSubmissionActions(game.log),
+          reflectionAnswered: true,
+          swissCheeseViewed: true,
+        },
+      });
+
+      if (result.status === "submitted") {
+        setSubmission({
+          status: "submitted",
+          evaluation: serverEvaluation(result.data),
+        });
+        await clearCompetitiveSession(userId, scenarioId);
+        return;
+      }
+
+      if (result.status === "queued") {
+        setSubmission({ status: "queued", reason: result.reason });
+        return;
+      }
+
+      setSubmission({ status: "rejected", reason: result.reason });
+    } catch (cause) {
+      setSubmission({
+        status: "queued",
+        reason:
+          cause instanceof Error ? cause.message : "submission_queue_failed",
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (online && submission.status === "queued") {
+      void submitFinishedGame();
+    }
+    // submitFinishedGame is intentionally triggered only by connectivity/status changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, submission.status]);
+
+  if (profile?.role !== "player") {
+    return (
+      <section className="panel">
+        <p className="eyebrow">Competitive Scenario</p>
+        <h2>사용자 플레이 전용 화면입니다</h2>
+        <p className="muted">발전소담당자와 관리자는 경쟁 플레이에 참여하지 않습니다.</p>
+        <Link className="text-link" to="/">캠페인으로 돌아가기</Link>
+      </section>
+    );
+  }
+
+  if (loading) {
+    return (
+      <section className="panel">
+        <p className="eyebrow">Competitive Session</p>
+        <h2>세션을 준비하고 있습니다</h2>
+        <p className="muted">
+          저장된 진행 상태와 현재 시즌의 서버 seed를 확인합니다.
+        </p>
+      </section>
+    );
+  }
+
+  if (!scenario || !server || !game || !view) {
+    const offlineStart = loadError === "offline_new_session";
+
+    return (
+      <section className="panel">
+        <p className="eyebrow">{offlineStart ? "Offline" : "Scenario unavailable"}</p>
+        <h2>
+          {offlineStart
+            ? "새 경쟁 세션은 온라인 연결이 필요합니다"
+            : "경쟁 시나리오를 시작할 수 없습니다"}
+        </h2>
+        <p className="muted">
+          {offlineStart
+            ? "이미 이 기기에 저장된 경쟁 세션은 오프라인에서도 이어갈 수 있습니다. 연결되면 자동으로 다시 확인합니다."
+            : "현재 시즌에 게시·배정된 시나리오인지 확인해주세요."}
+        </p>
+        {loadError && !offlineStart ? (
+          <p className="error-text" role="alert">{loadError}</p>
+        ) : null}
+        <Link className="text-link" to="/">캠페인으로 돌아가기</Link>
+      </section>
+    );
+  }
+
+  const node = view.node;
+  const finished = isFinished(scenario, game);
+
+  if (finished && node.type === "ending") {
+    const localEvaluation = evaluate(scenario, game, {
+      reflectionAnswered,
+      swissCheeseViewed,
+    });
+
+    const confirmedEvaluation =
+      submission.status === "submitted" && submission.evaluation
+        ? submission.evaluation
+        : localEvaluation;
+
+    return (
+      <section className="game-page" aria-live="polite">
+        <div className="game-status">
+          <span>{server.seasonKey} · {server.perspectiveRole}</span>
+          <span>{formatClock(view.clockMin)}</span>
+        </div>
+
+        {!online ? (
+          <div className="offline-banner" role="status">
+            오프라인 · 완료 결과는 이 기기에 저장 후 재연결 시 자동 제출됩니다.
+          </div>
+        ) : null}
+
+        {reviewStage === "ending" ? (
+          <article className="ending-card">
+            <p className="eyebrow">Training Result</p>
+            <h2>{node.title}</h2>
+            <p>{node.summary}</p>
+            <p className="review-note">
+              결과는 한 사람의 마지막 행동이 아니라 조건과 방어막의 누적을
+              중심으로 돌아봅니다. 회고가 끝나면 서버가 동일 seed와 행동 로그를
+              재실행해 점수를 확정합니다.
+            </p>
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => setReviewStage("reflection")}
+            >
+              결과 돌아보기
+            </button>
+          </article>
+        ) : null}
+
+        {reviewStage === "reflection" ? (
+          <CausalReflection
+            scenario={scenario}
+            game={game}
+            selected={reflectionSelection}
+            onSelect={setReflectionSelection}
+            onContinue={() => {
+              setReflectionAnswered(true);
+              setReviewStage("timeline");
+            }}
+          />
+        ) : null}
+
+        {reviewStage === "timeline" ? (
+          <SwissCheeseTimeline
+            scenario={scenario}
+            game={game}
+            replayEnabled={false}
+            onContinue={() => {
+              setSwissCheeseViewed(true);
+              setReviewStage("review");
+              void submitFinishedGame();
+            }}
+          />
+        ) : null}
+
+        {reviewStage === "review" ? (
+          <>
+            {submission.status === "submitting" ? (
+              <div className="notice" role="status">
+                서버가 동일 seed와 행동 로그를 다시 실행해 결과를 검증하고 있습니다.
+              </div>
+            ) : null}
+
+            {submission.status === "submitted" ? (
+              <div className="notice" role="status">
+                서버 검증 완료 · 시즌 기록에 반영되었습니다.
+              </div>
+            ) : null}
+
+            {submission.status === "queued" ? (
+              <div className="offline-banner" role="status">
+                제출 대기 중 · 연결이 복구되면 자동으로 다시 전송합니다.
+              </div>
+            ) : null}
+
+            {submission.status === "rejected" ? (
+              <div className="validation-box validation-box--error" role="alert">
+                서버가 이 제출을 승인하지 않았습니다: {submission.reason}
+              </div>
+            ) : null}
+
+            <HpReview
+              scenario={scenario}
+              game={game}
+              evaluation={confirmedEvaluation}
+              mode="competitive"
+              replayEnabled={false}
+              restartEnabled={false}
+            />
+          </>
+        ) : null}
+      </section>
+    );
+  }
+
+  return (
+    <section className="game-page" aria-live="polite">
+      <div className="game-status">
+        <span>{server.seasonKey} · {server.perspectiveRole}</span>
+        <span>
+          {formatClock(view.clockMin)}
+          <small> · 마감 {formatClock(view.deadlineMin)}</small>
+        </span>
+      </div>
+
+      {!online ? (
+        <div className="offline-banner" role="status">
+          오프라인 · 진행 상태를 이 기기에 저장하고 있습니다.
+        </div>
+      ) : null}
+
+      {node.type === "scene" || node.type === "event" ? (
+        <article
+          className={node.type === "event" ? "scene-box event-box" : "scene-box"}
+        >
+          <p className="eyebrow">
+            {node.type === "event" ? "상황 변화" : node.speaker ?? "상황"}
+          </p>
+          <div className="dialogue">{node.text}</div>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => dispatch({ type: "continue" })}
+          >
+            계속
+          </button>
+        </article>
+      ) : null}
+
+      {node.type === "decision" ? (
+        <article className="decision-panel">
+          <p className="eyebrow">Decision</p>
+          <h2>{node.prompt}</h2>
+
+          {node.infoActions.length > 0 ? (
+            <div className="decision-section">
+              <h3>정보 확인</h3>
+              <div className="info-grid">
+                {node.infoActions.map((info) => {
+                  const usageId = `${view.nodeId}:${info.actionId}`;
+                  const used = view.usedInfoActions.includes(usageId);
+
+                  return (
+                    <button
+                      key={info.actionId}
+                      type="button"
+                      className="info-button"
+                      disabled={used}
+                      onClick={() =>
+                        dispatch({ type: "info", actionId: info.actionId })
+                      }
+                    >
+                      {used ? "확인 완료" : info.label}
+                      <small>+{info.timeCostMin}분</small>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {node.infoActions
+                .filter((info) =>
+                  view.usedInfoActions.includes(
+                    `${view.nodeId}:${info.actionId}`,
+                  ),
+                )
+                .map((info) => (
+                  <p key={info.actionId} className="info-reveal">
+                    {info.revealText}
+                  </p>
+                ))}
+            </div>
+          ) : null}
+
+          {view.cardsAvailable.length > 0 ? (
+            <div className="decision-section">
+              <h3>방어막 카드</h3>
+              <div className="card-tray">
+                {view.cardsAvailable
+                  .filter(
+                    (cardId) =>
+                      !node.allowedCards ||
+                      node.allowedCards.includes(cardId),
+                  )
+                  .map((cardId) => {
+                    const card = BARRIER_CARDS[cardId];
+                    if (!card) return null;
+
+                    return (
+                      <button
+                        key={cardId}
+                        type="button"
+                        className="card-button"
+                        onClick={() =>
+                          dispatch({ type: "card", cardId })
+                        }
+                      >
+                        <span>{card.label}</span>
+                        <small>+{card.timeCostMin}분</small>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="decision-section">
+            <h3>행동 선택</h3>
+            <div
+              className="choice-list"
+              role="radiogroup"
+              aria-label="행동 선택"
+            >
+              {node.choices.map((choice, index) => {
+                const selected = selectedChoice === choice.actionId;
+
+                return (
+                  <button
+                    key={choice.actionId}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    className={
+                      selected
+                        ? "choice-button choice-button--selected"
+                        : "choice-button"
+                    }
+                    onClick={() => setSelectedChoice(choice.actionId)}
+                  >
+                    <span className="choice-letter">
+                      {String.fromCharCode(65 + index)}
+                    </span>
+                    <span>{choice.label}</span>
+                    <small>+{choice.timeCostMin}분</small>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              className="primary-button confirm-choice"
+              type="button"
+              disabled={!selectedChoice}
+              onClick={() => {
+                if (!selectedChoice) return;
+                dispatch({
+                  type: "choice",
+                  actionId: selectedChoice,
+                });
+              }}
+            >
+              이 행동으로 진행
+            </button>
+          </div>
+        </article>
+      ) : null}
+    </section>
+  );
+}
