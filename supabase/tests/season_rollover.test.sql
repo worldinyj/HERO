@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(17);
 
 update public.seasons
 set status = 'scheduled'
@@ -150,17 +150,21 @@ select lives_ok(
 );
 
 select results_eq(
-  $$select
-      (select count(*) from public.audit_logs
-       where action = 'season.closed'
-         and entity_id = '61000000-0000-0000-0000-000000000001'),
-      (select count(*) from public.audit_logs
-       where action = 'season.opened'
-         and entity_id = (
-           select id::text from public.seasons where season_key = '2026-11'
-         ))$$,
-  array[1::bigint, 1::bigint],
-  'idempotent rollover does not duplicate close/open audit events'
+  $select count(*) from public.audit_logs
+    where action = 'season.closed'
+      and entity_id = '61000000-0000-0000-0000-000000000001'$,
+  array[1::bigint],
+  'idempotent rollover does not duplicate season.closed'
+);
+
+select results_eq(
+  $select count(*) from public.audit_logs
+    where action = 'season.opened'
+      and entity_id = (
+        select id::text from public.seasons where season_key = '2026-11'
+      )$,
+  array[1::bigint],
+  'idempotent rollover does not duplicate season.opened'
 );
 
 select * from finish();
