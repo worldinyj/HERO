@@ -69,6 +69,13 @@ jobs:
       - name: Run mobile E2E flow
         run: pnpm e2e
 
+      - name: Collect Edge Function log
+        if: failure()
+        run: |
+          mkdir -p test-results
+          cp /tmp/hero-functions.log test-results/hero-functions.log || true
+          cp /tmp/hero-supabase.json test-results/hero-supabase-status.json || true
+
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -76,7 +83,6 @@ jobs:
           path: |
             playwright-report/
             test-results/
-            /tmp/hero-functions.log
           retention-days: 14
 
       - name: Stop local services
