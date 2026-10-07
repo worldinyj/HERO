@@ -98,6 +98,21 @@
       "전력계통 구성·대체전원 가용성 사전확인",
       "단계별 Place Keeping·hold point",
       "감독-현장 간 닫힌고리 의사소통"
+    ],
+    "sources": [
+      {
+        "publisher": "IAEA NEWS / participating national authority",
+        "label": "Loss of shutdown cooling due to station blackout during refueling outage",
+        "url": "https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9",
+        "publishedAt": "2012-04-23",
+        "usage": "사건일·INES·LOOP/EDG/SBO 직접 사실 확인. 원문 문장·도표를 HERO에 복제하지 않음."
+      },
+      {
+        "publisher": "원자력안전위원회",
+        "label": "고리1호기 안전점검결과 및 향후조치계획 관련 제4회 회의자료",
+        "url": "https://www.nssc.go.kr/ko/cms/FR_BBS_CON/BoardView.do?BBS_SEQ=3596&BOARD_SEQ=14&CONTENTS_NO=1&MENU_ID=170&SITE_NO=2",
+        "usage": "사건 후 전력계통·종합 안전점검 및 향후조치 존재 확인용. 공개 게임에는 세부 설비정보를 복제하지 않음."
+      }
     ]
   },
   "nodes": {
