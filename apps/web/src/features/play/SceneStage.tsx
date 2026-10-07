@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDialogueDucking } from "../audio/AudioContext";
 
 function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(() => {
@@ -104,6 +105,8 @@ export function SceneStage({
   tone?: "scene" | "event";
   onContinue: () => void;
 }) {
+  useDialogueDucking(true);
+
   return (
     <article
       className={tone === "event" ? "scene-stage scene-stage--event" : "scene-stage"}
