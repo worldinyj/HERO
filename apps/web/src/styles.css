@@ -494,3 +494,145 @@ h3 {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+.leaderboard-page {
+  display: grid;
+  gap: 14px;
+}
+
+.leaderboard-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.leaderboard-heading h2 {
+  margin-bottom: 0;
+}
+
+.season-select {
+  min-height: 44px;
+  max-width: 190px;
+  border: 1px solid rgba(138, 150, 173, 0.3);
+  border-radius: 12px;
+  padding: 0 10px;
+  color: var(--ink);
+  background: rgba(22, 33, 58, 0.95);
+  font: inherit;
+}
+
+.scope-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.scope-tab {
+  min-height: 44px;
+  border: 1px solid rgba(138, 150, 173, 0.22);
+  border-radius: 12px;
+  color: var(--muted);
+  background: rgba(14, 22, 36, 0.5);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.scope-tab--active {
+  border-color: rgba(242, 165, 65, 0.55);
+  color: #111827;
+  background: var(--accent);
+  font-weight: 800;
+}
+
+.leaderboard-policy {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--safe);
+  color: #bcebd5;
+  background: rgba(76, 195, 138, 0.07);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.my-rank-card {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(242, 165, 65, 0.42);
+  border-radius: 16px;
+  background: rgba(242, 165, 65, 0.09);
+  font-size: 0.84rem;
+}
+
+.my-rank-card strong {
+  color: var(--accent);
+  font-size: 1.25rem;
+}
+
+.my-rank-card span:last-child {
+  justify-self: end;
+  color: var(--muted);
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 68px;
+  padding: 10px 12px;
+  border: 1px solid rgba(138, 150, 173, 0.16);
+  border-radius: 14px;
+  background: rgba(22, 33, 58, 0.72);
+}
+
+.leaderboard-row--mine {
+  border-color: rgba(242, 165, 65, 0.48);
+  background: rgba(242, 165, 65, 0.08);
+}
+
+.rank-number {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--accent);
+  background: rgba(242, 165, 65, 0.1);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-identity,
+.rank-score {
+  display: grid;
+  gap: 3px;
+}
+
+.rank-identity small,
+.rank-score small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.rank-score {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-score strong {
+  font-size: 1.05rem;
+}
