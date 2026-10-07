@@ -125,3 +125,25 @@ pnpm check:mvp-readiness -- --strict
 strict 모드는 BLOCKED 또는 DEFERRED gate가 남아 있으면 non-zero exit code를 반환한다.
 
 > 출시 전 최종 판단은 자동 스크립트가 아니라 운영·HF·법무·개인정보·파일럿 승인 기록을 포함해 사람이 수행한다.
+
+
+## 7. 사람 승인 후 승격 도구
+
+사람 검토가 완료된 경쟁 시나리오는 manifest와 파일을 수동 편집하지 않고 아래 helper를 사용한다.
+
+```bash
+# 상태 확인만 수행
+pnpm promote:scenario -- --scenario=s03_procedure_reality_gap
+
+# 실제 승인 후에만 적용
+pnpm promote:scenario -- \
+  --scenario=s03_procedure_reality_gap \
+  --approved-by="검토자 성명 또는 공식 역할" \
+  --approved-at=YYYY-MM-DD \
+  --confirm-hf \
+  --confirm-anonymization \
+  --confirm-debrief \
+  --apply
+```
+
+이 도구는 `sourceRightsComplete=true`가 이미 확정된 시나리오만 승격한다. 따라서 source/rights 증거가 남아 있는 S01/S02를 사람 승인만으로 우회 승격할 수 없다. 기본 실행은 preflight-only이며 `--apply` 없이는 저장소를 변경하지 않는다.
