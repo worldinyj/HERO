@@ -27,7 +27,7 @@ KAERI 연구진이 1986~2006년 국내 원전의 인적행위 관련 비계획 �
 | HERO 장 | 목표 주제 | 사건 후보 | 현재 근거 | 적합성 | 상태 |
 |---|---|---|---|---|---|
 | S01 「오늘 오전까지 끝내야 합니다」 | 시간압박·일정변경·감독/단계통제·Stop When Unsure | 2012 IAEA 전문가 미션이 분석한 정비기간 보호계통 시험 사건 | **A: IAEA NEWS + KHNP 공개 IAEA 최종보고서 + 원안위 공식 통계 사건명/INES 2 확인**, OPIS 직접 레코드·개별 이용표시 미확인 | **매우 높음**. 가용인력/시간압박, 일정재조정, 위험평가, 감독지시, 절차 sign-off가 함께 확인됨 | **SOURCE_HOLD / OPIS·rights·사람승인 전 publish 금지** |
-| S02 「아마 이 설비가 맞을 겁니다」 | 설비/조작부 오인·Self Check·Peer/Independent Verification·설비상태 | 2024-01-02 신한울 1호기 자동정지 사례: 여자계통 차단기 회로 상태 취약성과 정비원의 조작부 오인이 결합 | **A-text/C-crosscheck: 2024-04-17 원안위 보도자료 전문을 정부 보도자료 전재 페이지에서 확보 + 다수 보도 교차확인**, 원안위 직접 호스트/개별 이용조건·OPIS 직접 레코드 미확보. B: KAERI wrong-object/maintenance 패턴 | **매우 높음**. 잠재 설비조건 + 사람의 인지/행동 + 독립확인 방어막을 함께 학습 가능 | **SOURCE_HOLD / 원안위 직접원문·rights·OPIS·사람승인 전 publish 금지** |
+| S02 「아마 이 설비가 맞을 겁니다」 | 설비/조작부 오인·Self Check·Peer/Independent Verification·설비상태 | 2024-01-02 신한울 1호기 자동정지 사례: 여자계통 차단기 회로 상태 취약성과 정비원의 조작부 오인이 결합 | **A-occurrence/A-text/C-crosscheck: KHNP 한울본부 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문을 정부 전재 페이지에서 확보 + 다수 보도 교차확인**, 원안위 직접 조사 원문/개별 이용조건·OPIS/NSIC 사건별 상세 레코드 미확보. B: KAERI wrong-object/maintenance 패턴 | **매우 높음**. 잠재 설비조건 + 사람의 인지/행동 + 독립확인 방어막을 함께 학습 가능 | **SOURCE_HOLD / 원안위 직접원문·rights·OPIS·사람승인 전 publish 금지** |
 | S03 「절차와 실제 상황이 조금 다릅니다」 | 절차 사용·재확인·Questioning Attitude·시스템 피드백 | 2026년 신규 원전 시운전 중 설정 방향 입력 오류에 따른 자동정지 | **A: 원안위/정책브리핑 공식 조사결과 + 텍스트 공공누리 제1유형 확인** | **높음**. 공식 재발방지책이 조작 재확인 절차·운전시스템 반영·사례교육을 포함 | **REVIEW_READY / 사람 HF·익명화 승인 전 publish 금지** |
 
 ## 4. S02 근거 메모
@@ -41,6 +41,7 @@ KAERI 연구진이 1986~2006년 국내 원전의 인적행위 관련 비계획 �
 5. 단독작업/현장 감독 관련 상세는 언론 보도에 있으나 **공식 원문 대조 전에는 확정 사실로 사용하지 않는다.**
 
 공식/보조 출처:
+- KHNP 한울원자력본부 공식 보도자료 목록(2024-01-02 터빈정지·원자로 정지 상태 도달, 2024-01-05 계획예방정비 착수): https://www.khnp.co.kr/hanul/selectBbsNttList.do?bbsNo=120&integrDeptCode=&key=1761&pageIndex=20&searchCnd=all&searchCtgry=&searchKrwd=
 - 원자력안전위원회 보도자료 전문 정부 전재(2024-04-17): https://go.seoul.co.kr/news/prnewsView.php?id=337111&page=1306&section=b_sec_1
 - 연합뉴스(2024-04-17): https://www.yna.co.kr/view/AKR20240417080200017
 - 경향신문(2024-04-17): https://www.khan.co.kr/article/202404171408011
@@ -48,7 +49,7 @@ KAERI 연구진이 1986~2006년 국내 원전의 인적행위 관련 비계획 �
 ### S02 publish 전 필수 게이트
 
 - [x] 원안위 공식 보도자료 전문 문안 확보(정부 보도자료 전재)
-- [ ] OPIS 사건보고서 원문 또는 사건 상세자료 추가 확보
+- [ ] OPIS/NSIC 사건별 상세 레코드 URL·식별자 또는 PDF 추가 확보
 - [ ] 사건 발생일·사건분류·설비조건·재발방지책을 원문과 대조
 - [ ] 공개자료 이용조건 확인
 - [ ] “혼자 작업/감독 부재” 사실은 공식 근거 없으면 게임 사실서술에서 제외
@@ -83,6 +84,11 @@ IAEA가 KHNP 요청으로 수행한 2012 전문가 미션 공개보고서에서 
 
 추가로 원안위 공식 통계에서 사건명을 “고리 1호기 계획예방정지 중 소외전원 상실 및 비상디젤발전기 고장”, INES 2로 확인했다.
 - https://ourplan.nssc.go.kr/boardDownload.es?bid=0004&list_no=837&seq=1
+
+S01 공개체계 추적:
+- 과거 OPIS 사고·고장 목록 엔드포인트: `http://opis.kins.re.kr/opis?act=KROCA4600R`
+- 현재 원안위 공식 “원전 사고고장 현황” 진입점: https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient
+- 사건별 상세 URL/식별자/PDF는 아직 미확보.
 
 S01 남은 게이트:
 - [x] 공식 IAEA/KHNP 원문 확인

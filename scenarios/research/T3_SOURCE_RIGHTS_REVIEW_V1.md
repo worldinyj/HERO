@@ -42,6 +42,14 @@
 - 원안위 원자력안전 통계자료(사건 등급 설명): https://ourplan.nssc.go.kr/boardDownload.es?bid=0004&list_no=837&seq=1
 - 2023년 통계자료의 동일 사건 재확인: https://ourplan.nssc.go.kr/boardDownload.es?bid=0004&list_no=838&seq=1
 
+추가 locator 검증:
+
+- 과거 OPIS 사고·고장 목록 엔드포인트: `http://opis.kins.re.kr/opis?act=KROCA4600R`
+- 과거 공개 사용 예시에서 2012-02-09 고리 1호기가 INES 2 사례로 OPIS에서 조회됐음을 확인했다.
+- 현재 원안위 “원전 사고고장 현황” 공식 링크는 NSIC 사고·고장 공개화면으로 연결된다:
+  - https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient
+- 단, 현재 자동 도구에서 상세 화면 접근이 되지 않아 사건별 direct URL/identifier/PDF는 아직 확보하지 못했다.
+
 ### 권리/출처 판정
 
 - KHNP 일반 저작권정책은 **공공누리 표시가 붙은 개별 저작물만 자유이용**할 수 있다고 명시한다.
@@ -91,6 +99,12 @@
 - 동아사이언스:
   - https://www.dongascience.com/ko/news/64924
 
+- KHNP 한울원자력본부 공식 보도자료 목록(2024-01-02):
+  - https://www.khnp.co.kr/hanul/selectBbsNttList.do?bbsNo=120&integrDeptCode=&key=1761&pageIndex=20&searchCnd=all&searchCtgry=&searchKrwd=
+  - 동일 날짜 “신한울1호기 터빈정지”, “신한울1호기 원자로 정지 상태 도달”과 2024-01-05 계획예방정비 착수 기록으로 사건 시계열을 공식 보강한다.
+- 현재 원안위 사고·고장 공개 진입점(NSIC):
+  - https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient
+
 ### 권리/출처 판정
 
 - 원안위 보도자료의 존재와 핵심 사실은 교차확인됐다.
@@ -105,7 +119,7 @@
 
 - [ ] 원안위/NSSC 직접 호스트 또는 정책브리핑 해당 2024 원문 URL 확보 (전재 원문 전문은 확보 완료)
 - [ ] 해당 2024 원문 페이지의 개별 이용조건 확인
-- [ ] OPIS 원문/상세자료 대조
+- [ ] OPIS/NSIC 사건별 상세 레코드 URL·식별자/PDF 대조 (공식 공개 진입점과 KHNP 사건 시계열은 확인)
 - [ ] 재발방지대책 ↔ HERO 방어막 매핑 사람 검토
 - [ ] HF/익명화/과노출 사람 검토
 

@@ -128,6 +128,13 @@ Hidden Hazard Index에서만 판정하며 UI에 위험수치를 보여주지 않
 - 경향신문, 2024-04-17, 잠재 설비조건과 조작 오류의 복합원인 설명: https://www.khan.co.kr/article/202404171408011
 - 동아사이언스, 2024-04-17, 원안위 발표 재인용: https://www.dongascience.com/ko/news/64924
 - Kim & Park (2008), *Task Types and Error Types Involved in the Human-Related Unplanned Reactor Trip Events*, Nuclear Engineering and Technology 40(7), 615-624: https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001299669
+- 한국수력원자력 한울원자력본부 공식 보도자료 목록(2024-01-02 기록): https://www.khnp.co.kr/hanul/selectBbsNttList.do?bbsNo=120&integrDeptCode=&key=1761&pageIndex=20&searchCnd=all&searchCtgry=&searchKrwd=
+  - “신한울1호기 터빈정지”
+  - “신한울1호기 원자로 정지 상태 도달”
+  - 이어서 2024-01-05 “신한울1호기 제1차 계획예방정비 착수” 기록 확인
+- 현재 원안위 “원전 사고고장 현황”의 공식 공개 진입점(NSIC): https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient
+
+한수원 공식 기록은 **2024-01-02 사건 발생·정지상태·후속 정기검사 시계열**을 1차 자료로 보강한다. 다만 4월 조사에서 확인된 차단기 회로 상태·조작부 오인 원인 자체는 여전히 원안위 직접 원문/OPIS·NSIC 상세 레코드를 추가 확보해야 한다.
 
 > 언론기사의 문장·사진은 공개 게임에 복제하지 않는다. HERO는 공식 사실관계를 확인한 뒤 독립 작성한 익명화·교육용 문안만 사용한다.
 
@@ -136,7 +143,7 @@ Hidden Hazard Index에서만 판정하며 UI에 위험수치를 보여주지 않
 - [x] 2024-04-17 원안위 보도자료 존재 및 사건 핵심사실 교차확인
 - [ ] 원안위/NSSC 직접 호스트 또는 정책브리핑 해당 2024 원문 URL 확보 (전재 원문 전문은 확보 완료)
 - [ ] 해당 2024 원문 페이지의 개별 텍스트 이용조건 확인
-- [ ] OPIS 원문/상세자료 추가 확보
+- [ ] OPIS/NSIC 사건별 상세 레코드 URL·식별자 또는 PDF 추가 확보 (공식 NSIC 공개 진입점은 확인)
 - [ ] 실제 재발방지대책과 게임 방어막 매핑 검토
 - [ ] HF 전문가의 잠재조건/기여요인 검토
 - [ ] 익명화·운전절차 과노출 검토
