@@ -31,6 +31,10 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 const IDS = {
   plant: "71000000-0000-0000-0000-000000000001",
   manager: "70000000-0000-0000-0000-000000000001",
+  adminA: "70000000-0000-0000-0000-000000000011",
+  adminB: "70000000-0000-0000-0000-000000000012",
+  managerCandidateA: "70000000-0000-0000-0000-000000000021",
+  managerCandidateB: "70000000-0000-0000-0000-000000000022",
   playerA: "70000000-0000-0000-0000-000000000101",
   playerB: "70000000-0000-0000-0000-000000000102",
   uninvitedA: "70000000-0000-0000-0000-000000000201",
@@ -57,6 +61,36 @@ const identities = [
     invitationId: IDS.inviteB,
     inviteeName: "E2E Player B",
     token: "hero-e2e-invite-token-mobile-b-2026",
+  },
+] as const;
+
+const adminIdentities = [
+  {
+    id: IDS.adminA,
+    email: "hero-e2e-admin-a@example.test",
+    password: PASSWORD_MANAGER,
+    realName: "E2E Admin A",
+    nickname: "E2EHQ1",
+  },
+  {
+    id: IDS.adminB,
+    email: "hero-e2e-admin-b@example.test",
+    password: PASSWORD_MANAGER,
+    realName: "E2E Admin B",
+    nickname: "E2EHQ2",
+  },
+] as const;
+
+const managerCandidates = [
+  {
+    id: IDS.managerCandidateA,
+    email: "hero-e2e-manager-candidate-a@example.test",
+    password: PASSWORD_A,
+  },
+  {
+    id: IDS.managerCandidateB,
+    email: "hero-e2e-manager-candidate-b@example.test",
+    password: PASSWORD_B,
   },
 ] as const;
 
@@ -94,7 +128,12 @@ await createUser({
   password: PASSWORD_MANAGER,
 });
 
-for (const identity of [...identities, ...uninvitedIdentities]) {
+for (const identity of [
+  ...adminIdentities,
+  ...managerCandidates,
+  ...identities,
+  ...uninvitedIdentities,
+]) {
   await createUser(identity);
 }
 
@@ -116,6 +155,19 @@ const { error: managerProfileError } = await admin.from("profiles").insert({
   is_active: true,
 });
 if (managerProfileError) throw managerProfileError;
+
+for (const identity of adminIdentities) {
+  const { error } = await admin.from("profiles").insert({
+    id: identity.id,
+    plant_id: null,
+    role: "admin",
+    real_name: identity.realName,
+    nickname: identity.nickname,
+    is_active: true,
+  });
+
+  if (error) throw error;
+}
 
 for (const identity of identities) {
   const tokenHash = createHash("sha256")
@@ -209,6 +261,8 @@ console.log(
       seasonId: season.id,
       scenario: scenario.id,
       users: identities.map(({ email, token }) => ({ email, token })),
+      admins: adminIdentities.map(({ email }) => ({ email })),
+      managerCandidates: managerCandidates.map(({ email }) => ({ email })),
       uninvitedUsers: uninvitedIdentities.map(({ email }) => ({ email })),
     },
     null,
