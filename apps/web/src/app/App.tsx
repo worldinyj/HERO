@@ -1,7 +1,9 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
-import { NavLink, Route, Routes } from "react-router";
+import { NavLink, Route, Routes, useLocation } from "react-router";
 import { LoginPage } from "../features/auth/LoginPage";
+import { RequireAuth } from "../features/auth/RequireAuth";
+import { InvitationPage } from "../features/invite/InvitationPage";
 
 function CampaignPage() {
   return (
@@ -9,7 +11,7 @@ function CampaignPage() {
       <p className="eyebrow">10월 시즌 · 개발 준비중</p>
       <h2 id="campaign-title">캠페인</h2>
       <p className="muted">
-        MVP 시나리오 S01~S03이 여기에 연결됩니다. 현재는 Phase 0 기반 구축 화면입니다.
+        MVP 시나리오 S01~S03이 여기에 연결됩니다. 현재는 인증·조직 기반을 구축 중입니다.
       </p>
 
       <div className="chapter-list">
@@ -44,6 +46,9 @@ function PlaceholderPage({ title }: { title: string }) {
 }
 
 export function App() {
+  const location = useLocation();
+  const publicRoute = location.pathname === "/login" || location.pathname.startsWith("/i/");
+
   return (
     <main className="app-shell">
       <header className="hero-header">
@@ -55,16 +60,40 @@ export function App() {
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<CampaignPage />} />
-        <Route path="/leaderboard" element={<PlaceholderPage title="리더보드" />} />
-        <Route path="/me" element={<PlaceholderPage title="내 기록" />} />
+        <Route path="/i/:token" element={<InvitationPage />} />
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <CampaignPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <RequireAuth>
+              <PlaceholderPage title="리더보드" />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/me"
+          element={
+            <RequireAuth>
+              <PlaceholderPage title="내 기록" />
+            </RequireAuth>
+          }
+        />
       </Routes>
 
-      <nav className="bottom-nav" aria-label="주요 메뉴">
-        <NavLink to="/" end>캠페인</NavLink>
-        <NavLink to="/leaderboard">리더보드</NavLink>
-        <NavLink to="/me">내 기록</NavLink>
-      </nav>
+      {!publicRoute ? (
+        <nav className="bottom-nav" aria-label="주요 메뉴">
+          <NavLink to="/" end>캠페인</NavLink>
+          <NavLink to="/leaderboard">리더보드</NavLink>
+          <NavLink to="/me">내 기록</NavLink>
+        </nav>
+      ) : null}
     </main>
   );
 }
