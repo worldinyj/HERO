@@ -1,0 +1,78 @@
+# HERO Actions 절약 모드 — 배치 검증 운영 규칙
+
+> 운영 결정: 2026-10-08 KST — 사용자가 GitHub Actions 사용량 제한 가능성을 고려해 일시적인 실행 최소화와 **나중에 일괄 검증**을 요청함  
+> 범위: HERO 개발 저장소. 영구적인 CI 폐지가 아님.  
+> 상태: **BATCH-DEVELOPMENT / CI NOT VERIFIED / RELEASE BLOCKED**
+
+## 1. 자동 실행을 피하는 방법
+
+현행 CI, Database Policy Tests, E2E는 각각 `push(main)` 및 `pull_request` 이벤트로 실행된다. Release Candidate Gate와 Staging Smoke는 `workflow_dispatch` 수동 실행이다.
+
+- 작업 브랜치: `work/actions-paused-batch-20261008`
+- 기준: Draft PR #79의 `050e1aaa73190d3603949c41aa882040d3347fdd`에서 분기한 **PR 없는 개발 브랜치**
+- Actions 절약 기간에는 **`main`에 푸시/병합 금지**, **PR #79 브랜치 업데이트 금지**, **새 PR 생성 금지**, **실패한 Actions 재실행 금지**.
+- 브랜치에만 여러 커밋을 누적하면 현재 이벤트 설정에서는 자동 GitHub Actions가 시작되지 않는다. 단, 외부 설정·워크플로 규칙이 바뀌면 재확인이 필요하다.
+- 다른 협업자가 PR을 새로 열거나 `main`에 푸시하는 것은 별도 트리거이므로 저장소 단위 전면 중지와 동일하지 않다.
+- Actions Workflow 파일 자체를 비활성화하거나 삭제하지 않는다. 나중에 같은 검사로 검증하기 위해 그대로 보존한다.
+
+## 2. 이 기간에 가능한 일
+
+- 시나리오 조사, 원인-근거-방어막 추적성 및 사람 검토자료 정리
+- 앱·마이그레이션·RLS·pgTAP 테스트 코드 개선
+- 로컬 개발 환경에서 가능한 정적 검사, 테스트, 타입검사, 빌드
+- 사람 승인 미완료 사실을 유지한 채 S03 검토 요청자료 보완
+
+**원격 Supabase 스키마 변경, 외부 배포, 경쟁 시나리오 승인 및 릴리스 증거를 자동으로 성공 처리하지 않는다.**
+
+## 3. 누적 변경사항
+
+- PR #79: 리더보드 projection Migration 016의 활성 Player 순위 집계 보완 및 라이프사이클 pgTAP 19개
+- 일괄 개발 브랜치: `my_record_summary()`의 없는 시즌 컬럼 참조 수정, 실제 현재(open) 시즌으로 판정, 사용자 격리 pgTAP 8개
+- 사람 검토자료: S01·S03 관련 원인·방어막 정보의 시나리오 간 혼재 수정
+- 사용자 요청에 따라 Actions를 반복 호출하지 않음
+
+## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
+
+작업 환경에 Node/pnpm 및 필요한 의존성이 설치되어 있을 때만 실행한다.
+
+```bash
+pnpm install --no-frozen-lockfile
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm validate:scenario
+pnpm check:source-evidence
+pnpm check:cause-traceability
+pnpm check:scenario-promotion
+pnpm check:human-review-evidence
+pnpm build:review-packet -- --scenario=s03_procedure_reality_gap --check
+pnpm check:mvp-readiness
+```
+
+로컬 Docker와 Supabase CLI가 있을 때만 pgTAP 정책 테스트:
+
+```bash
+supabase db start
+supabase test db
+supabase stop --no-backup
+```
+
+검사를 실행하지 못했다면 **NOT RUN**으로 기록한다. 정적 검사 결과를 pgTAP/E2E PASS로 표시하지 않는다.
+
+## 5. Actions 사용 재개 시 일괄 절차
+
+1. 사용량/결제/Runner 차단의 상태를 GitHub UI에서 확인한다.
+2. 배치 브랜치를 최종 확인하고 기존 Draft PR #79와의 중복을 정리한다. 단일 통합 PR에 누적 변경사항을 제출한다.
+3. Actions가 정상 실행될 수 있을 때 **최종 PR SHA**에서 CI, Database Policy Tests, E2E를 실행한다. 중간 커밋마다 실행·재시도하지 않는다.
+4. 테스트 실패 시 로그를 확보해 같은 배치 브랜치에서 수정한다. 코드 성공과 Runner 실행 실패를 구분한다.
+5. 모두 PASS한 뒤 승인에 따라 `main`에 병합하고 병합 SHA에서 검증한다.
+6. staging에 migration 016 적용 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
+7. S01/S02 SOURCE_HOLD, S03 HUMAN_REVIEW_PENDING, 약관/개인정보/실기기/파일럿 등 출시 차단 게이트는 각각 별도 증거로만 해제한다.
+
+## 6. 참조
+
+- [CI 실행 차단 추적: Issue #78](https://github.com/worldinyj/HERO/issues/78)
+- [기존 Draft PR #79](https://github.com/worldinyj/HERO/pull/79)
+- `docs/10_MVP_READINESS.md`
+- `ops/release-evidence.json`
