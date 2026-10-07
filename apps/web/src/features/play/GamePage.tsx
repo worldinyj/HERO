@@ -27,13 +27,20 @@ export function GamePage() {
   const previousBestMetricAvg = useTutorialGameStore(
     (state) => state.previousBestMetricAvg,
   );
+  const hydratedScenarioId = useTutorialGameStore(
+    (state) => state.hydratedScenarioId,
+  );
+  const hydrating = useTutorialGameStore((state) => state.hydrating);
   const start = useTutorialGameStore((state) => state.start);
+  const hydrate = useTutorialGameStore((state) => state.hydrate);
   const dispatch = useTutorialGameStore((state) => state.dispatch);
   const replayAt = useTutorialGameStore((state) => state.replayAt);
   const reset = useTutorialGameStore((state) => state.reset);
 
+  const [online, setOnline] = useState(
+    () => typeof navigator === "undefined" || navigator.onLine,
+  );
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-  const [revealedInfo, setRevealedInfo] = useState<Record<string, string>>({});
   const [reviewStage, setReviewStage] = useState<ReviewStage>("ending");
   const [reflectionSelection, setReflectionSelection] = useState<string | null>(
     null,
@@ -42,16 +49,45 @@ export function GamePage() {
   const [swissCheeseViewed, setSwissCheeseViewed] = useState(false);
 
   useEffect(() => {
+    function handleOnline() {
+      setOnline(true);
+    }
+
+    function handleOffline() {
+      setOnline(false);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!scenario) return;
 
-    if (
-      !game ||
-      game.scenarioId !== scenario.id ||
-      game.scenarioVersion !== scenario.version
-    ) {
+    if (hydratedScenarioId !== scenario.id) {
+      if (!hydrating) {
+        void hydrate(scenario);
+      }
+      return;
+    }
+
+    if (!game && online && !hydrating) {
       start(scenario);
     }
-  }, [game, scenario, start]);
+  }, [
+    game,
+    hydrate,
+    hydratedScenarioId,
+    hydrating,
+    online,
+    scenario,
+    start,
+  ]);
 
   useEffect(() => {
     setSelectedChoice(null);
@@ -67,7 +103,6 @@ export function GamePage() {
     setReflectionSelection(null);
     setReflectionAnswered(false);
     setSwissCheeseViewed(false);
-    setRevealedInfo({});
   }
 
   function handleReplay(nodeId: string) {
@@ -99,6 +134,30 @@ export function GamePage() {
   }
 
   if (!game || !view) {
+    if (hydrating || hydratedScenarioId !== scenario.id) {
+      return (
+        <section className="panel">
+          <p className="eyebrow">Resume</p>
+          <h2>저장된 플레이를 확인하고 있습니다</h2>
+          <p className="muted">이 기기에 저장된 진행 상태가 있으면 이어서 시작합니다.</p>
+        </section>
+      );
+    }
+
+    if (!online) {
+      return (
+        <section className="panel offline-start-panel">
+          <p className="eyebrow">Offline</p>
+          <h2>새 플레이는 온라인 연결이 필요합니다</h2>
+          <p className="muted">
+            이미 시작해 저장된 세션은 오프라인에서도 이어갈 수 있습니다.
+            연결이 복구되면 자동으로 시작됩니다.
+          </p>
+          <Link className="text-link" to="/">캠페인으로 돌아가기</Link>
+        </section>
+      );
+    }
+
     return (
       <section className="panel">
         <p className="muted">튜토리얼을 준비하고 있습니다…</p>
@@ -124,6 +183,12 @@ export function GamePage() {
           <span>0장 튜토리얼</span>
           <span>{formatClock(view.clockMin)}</span>
         </div>
+
+        {!online ? (
+          <div className="offline-banner" role="status">
+            오프라인 · 현재 플레이는 이 기기에 자동저장됩니다.
+          </div>
+        ) : null}
 
         {reviewStage === "ending" ? (
           <article className="ending-card">
@@ -211,6 +276,12 @@ export function GamePage() {
         </span>
       </div>
 
+      {!online ? (
+        <div className="offline-banner" role="status">
+          오프라인 · 진행 상태를 이 기기에 저장하고 있습니다.
+        </div>
+      ) : null}
+
       {node.type === "scene" || node.type === "event" ? (
         <article
           className={node.type === "event" ? "scene-box event-box" : "scene-box"}
@@ -253,10 +324,6 @@ export function GamePage() {
                           type: "info",
                           actionId: info.actionId,
                         });
-                        setRevealedInfo((current) => ({
-                          ...current,
-                          [usageId]: info.revealText,
-                        }));
                       }}
                     >
                       {used ? "확인 완료" : info.label}
@@ -266,13 +333,15 @@ export function GamePage() {
                 })}
               </div>
 
-              {Object.entries(revealedInfo)
-                .filter(([usageId]) =>
-                  usageId.startsWith(`${view.nodeId}:`),
+              {node.infoActions
+                .filter((info) =>
+                  view.usedInfoActions.includes(
+                    `${view.nodeId}:${info.actionId}`,
+                  ),
                 )
-                .map(([usageId, text]) => (
-                  <p key={usageId} className="info-reveal">
-                    {text}
+                .map((info) => (
+                  <p key={info.actionId} className="info-reveal">
+                    {info.revealText}
                   </p>
                 ))}
             </div>
