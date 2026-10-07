@@ -1,6 +1,7 @@
 import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
@@ -25,6 +26,14 @@ Deno.serve(async (req) => {
   try {
     const admin = adminClient();
     const { user, profile } = await requireActiveProfile(req, admin);
+    const limited = await guardRateLimit(req, admin, {
+      scope: "create-invite",
+      subject: user.id,
+      limit: 30,
+      windowSeconds: 600,
+    });
+    if (limited) return limited;
+
     const body = (await req.json()) as CreateInviteBody;
 
     const plantId = body.plantId?.trim();

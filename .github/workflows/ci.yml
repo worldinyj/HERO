@@ -32,6 +32,17 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Check client secret leakage
+        run: |
+          node scripts/check-client-secrets.mjs
+          tracked_env="$(git ls-files | grep -E '(^|/)\.env([.]|$)' | grep -v -E '\.env\.example$' || true)"
+          if [ -n "$tracked_env" ]; then
+            echo "$tracked_env"
+            echo "Tracked runtime .env file detected"
+            exit 1
+          fi
+
+
       - name: Verify route code splitting
         run: node scripts/check-route-splitting.mjs
 

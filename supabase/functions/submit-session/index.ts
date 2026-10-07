@@ -8,6 +8,7 @@ import {
 } from "@hero/engine";
 import { ScenarioSchema } from "@hero/schema";
 import { handleOptions, json } from "../_shared/http.ts";
+import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
 interface SubmittedAction {
@@ -73,6 +74,14 @@ Deno.serve(async (req) => {
   try {
     const admin = adminClient();
     const { user, profile } = await requireActiveProfile(req, admin);
+    const limited = await guardRateLimit(req, admin, {
+      scope: "submit-session",
+      subject: user.id,
+      limit: 60,
+      windowSeconds: 300,
+    });
+    if (limited) return limited;
+
     const body = (await req.json()) as SubmitSessionBody;
     const sessionId = body.sessionId?.trim();
     const submittedActions = body.actions ?? [];
