@@ -2738,3 +2738,21 @@ h3 {
     justify-self: start;
   }
 }
+
+
+.leaderboard-sentinel {
+  width: 100%;
+  height: 1px;
+}
+
+.leaderboard-more-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 10px;
+}
+
+.leaderboard-end {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 0.76rem;
+}

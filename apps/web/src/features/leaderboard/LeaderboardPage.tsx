@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useAuth } from "../auth/AuthContext";
 import { getSupabase } from "../../lib/supabase";
 
@@ -56,6 +62,8 @@ interface DisplayRow {
   topPercent: number;
 }
 
+const PAGE_SIZE = 40;
+
 const SCOPE_LABEL: Record<Scope, string> = {
   overall: "전체",
   plant: "우리 발전소",
@@ -71,18 +79,92 @@ const JOB_LABEL: Record<string, string> = {
   worker: "작업자",
 };
 
+const CURRENT_RANK_FIELD: Record<Scope, keyof CurrentRow> = {
+  overall: "overall_rank",
+  plant: "plant_rank",
+  job: "job_rank",
+  plant_job: "plant_job_rank",
+};
+
+function mapCurrentRow(row: CurrentRow, scope: Scope): DisplayRow {
+  const rank =
+    scope === "overall"
+      ? row.overall_rank
+      : scope === "plant"
+        ? row.plant_rank
+        : scope === "job"
+          ? row.job_rank
+          : row.plant_job_rank;
+
+  const topPercent =
+    scope === "overall"
+      ? row.overall_top_percent
+      : scope === "plant"
+        ? row.plant_top_percent
+        : scope === "job"
+          ? row.job_top_percent
+          : row.plant_job_top_percent;
+
+  return {
+    nickname: row.nickname,
+    plantDisplayName: row.plant_display_name,
+    jobRole: row.job_role,
+    hpPoint: row.hp_point,
+    scenarioCount: row.scenario_count,
+    rank,
+    topPercent,
+  };
+}
+
+function mapSnapshotRow(row: SnapshotRow): DisplayRow {
+  return {
+    nickname: row.nickname,
+    plantDisplayName: row.plant_display_name,
+    jobRole: row.job_role,
+    hpPoint: row.hp_point,
+    scenarioCount: row.scenario_count,
+    rank: row.rank_position,
+    topPercent: row.top_percent,
+  };
+}
+
 export function LeaderboardPage() {
   const { profile } = useAuth();
   const [scope, setScope] = useState<Scope>("overall");
   const [seasons, setSeasons] = useState<SeasonRow[]>([]);
   const [seasonId, setSeasonId] = useState<string>("");
   const [myPlantName, setMyPlantName] = useState<string | null>(null);
-  const [currentRows, setCurrentRows] = useState<CurrentRow[]>([]);
-  const [snapshotRows, setSnapshotRows] = useState<SnapshotRow[]>([]);
+  const [rows, setRows] = useState<DisplayRow[]>([]);
+  const [myRow, setMyRow] = useState<DisplayRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const requestKeyRef = useRef("");
 
-  const selectedSeason = seasons.find((season) => season.id === seasonId) ?? null;
+  const selectedSeason =
+    seasons.find((season) => season.id === seasonId) ?? null;
+
+  const queryKey = useMemo(
+    () =>
+      [
+        selectedSeason?.id ?? "",
+        selectedSeason?.status ?? "",
+        scope,
+        myPlantName ?? "",
+        profile?.job_role ?? "",
+        profile?.nickname ?? "",
+      ].join(":"),
+    [
+      selectedSeason?.id,
+      selectedSeason?.status,
+      scope,
+      myPlantName,
+      profile?.job_role,
+      profile?.nickname,
+    ],
+  );
 
   useEffect(() => {
     let active = true;
@@ -127,60 +209,172 @@ export function LeaderboardPage() {
               ? cause.message
               : "시즌 정보를 불러오지 못했습니다.",
           );
+          setLoading(false);
         }
       }
     }
 
     void loadBase();
+
     return () => {
       active = false;
     };
   }, [profile?.plant_id]);
 
+  const fetchPage = useCallback(
+    async (
+      offset: number,
+      requestKey: string,
+    ): Promise<DisplayRow[]> => {
+      if (!selectedSeason) return [];
+
+      const supabase = getSupabase();
+      const end = offset + PAGE_SIZE - 1;
+
+      if (selectedSeason.status === "open") {
+        const rankField = CURRENT_RANK_FIELD[scope];
+        let query = supabase
+          .from("v_leaderboard_current_public")
+          .select("*")
+          .eq("season_id", selectedSeason.id);
+
+        if (scope === "plant") {
+          if (!myPlantName) return [];
+          query = query.eq("plant_display_name", myPlantName);
+        } else if (scope === "job") {
+          if (!profile?.job_role) return [];
+          query = query.eq("job_role", profile.job_role);
+        } else if (scope === "plant_job") {
+          if (!myPlantName || !profile?.job_role) return [];
+          query = query
+            .eq("plant_display_name", myPlantName)
+            .eq("job_role", profile.job_role);
+        }
+
+        const { data, error: viewError } = await query
+          .order(String(rankField), { ascending: true })
+          .order("hp_point", { ascending: false })
+          .order("nickname", { ascending: true })
+          .range(offset, end);
+
+        if (viewError) throw viewError;
+        if (requestKeyRef.current !== requestKey) return [];
+
+        return ((data ?? []) as CurrentRow[]).map((row) =>
+          mapCurrentRow(row, scope),
+        );
+      }
+
+      let query = supabase
+        .from("v_leaderboard_snapshot_public")
+        .select("*")
+        .eq("season_id", selectedSeason.id)
+        .eq("scope_type", scope);
+
+      if (scope === "plant") {
+        if (!myPlantName) return [];
+        query = query.eq("plant_display_name", myPlantName);
+      } else if (scope === "job") {
+        if (!profile?.job_role) return [];
+        query = query.eq("job_role", profile.job_role);
+      } else if (scope === "plant_job") {
+        if (!myPlantName || !profile?.job_role) return [];
+        query = query
+          .eq("plant_display_name", myPlantName)
+          .eq("job_role", profile.job_role);
+      }
+
+      const { data, error: viewError } = await query
+        .order("rank_position", { ascending: true })
+        .order("hp_point", { ascending: false })
+        .order("nickname", { ascending: true })
+        .range(offset, end);
+
+      if (viewError) throw viewError;
+      if (requestKeyRef.current !== requestKey) return [];
+
+      return ((data ?? []) as SnapshotRow[]).map(mapSnapshotRow);
+    },
+    [
+      selectedSeason,
+      scope,
+      myPlantName,
+      profile?.job_role,
+    ],
+  );
+
+  const fetchMyRow = useCallback(
+    async (requestKey: string): Promise<DisplayRow | null> => {
+      if (!selectedSeason || !profile?.nickname) return null;
+
+      const supabase = getSupabase();
+
+      if (selectedSeason.status === "open") {
+        const { data, error: viewError } = await supabase
+          .from("v_leaderboard_current_public")
+          .select("*")
+          .eq("season_id", selectedSeason.id)
+          .eq("nickname", profile.nickname)
+          .limit(1)
+          .maybeSingle();
+
+        if (viewError) throw viewError;
+        if (requestKeyRef.current !== requestKey || !data) return null;
+
+        return mapCurrentRow(data as CurrentRow, scope);
+      }
+
+      const { data, error: viewError } = await supabase
+        .from("v_leaderboard_snapshot_public")
+        .select("*")
+        .eq("season_id", selectedSeason.id)
+        .eq("scope_type", scope)
+        .eq("nickname", profile.nickname)
+        .limit(1)
+        .maybeSingle();
+
+      if (viewError) throw viewError;
+      if (requestKeyRef.current !== requestKey || !data) return null;
+
+      return mapSnapshotRow(data as SnapshotRow);
+    },
+    [selectedSeason, scope, profile?.nickname],
+  );
+
   useEffect(() => {
     if (!selectedSeason) {
+      setRows([]);
+      setMyRow(null);
+      setHasMore(false);
       setLoading(false);
       return;
     }
 
-    const season = selectedSeason;
+    const requestKey = queryKey;
+    requestKeyRef.current = requestKey;
     let active = true;
 
-    async function loadLeaderboard() {
-      setLoading(true);
-      setError(null);
+    setRows([]);
+    setMyRow(null);
+    setHasMore(false);
+    setLoading(true);
+    setLoadingMore(false);
+    setError(null);
 
+    void (async () => {
       try {
-        const supabase = getSupabase();
+        const [firstPage, ownRow] = await Promise.all([
+          fetchPage(0, requestKey),
+          fetchMyRow(requestKey),
+        ]);
 
-        if (season.status === "open") {
-          const { data, error: viewError } = await supabase
-            .from("v_leaderboard_current_public")
-            .select("*")
-            .eq("season_id", season.id)
-            .limit(500);
+        if (!active || requestKeyRef.current !== requestKey) return;
 
-          if (viewError) throw viewError;
-          if (!active) return;
-
-          setCurrentRows((data ?? []) as CurrentRow[]);
-          setSnapshotRows([]);
-        } else {
-          const { data, error: viewError } = await supabase
-            .from("v_leaderboard_snapshot_public")
-            .select("*")
-            .eq("season_id", season.id)
-            .eq("scope_type", scope)
-            .limit(500);
-
-          if (viewError) throw viewError;
-          if (!active) return;
-
-          setSnapshotRows((data ?? []) as SnapshotRow[]);
-          setCurrentRows([]);
-        }
+        setRows(firstPage);
+        setMyRow(ownRow);
+        setHasMore(firstPage.length === PAGE_SIZE);
       } catch (cause) {
-        if (active) {
+        if (active && requestKeyRef.current === requestKey) {
           setError(
             cause instanceof Error
               ? cause.message
@@ -188,106 +382,91 @@ export function LeaderboardPage() {
           );
         }
       } finally {
-        if (active) setLoading(false);
+        if (active && requestKeyRef.current === requestKey) {
+          setLoading(false);
+        }
       }
-    }
-
-    void loadLeaderboard();
+    })();
 
     return () => {
       active = false;
     };
-  }, [selectedSeason?.id, selectedSeason?.status, scope]);
+  }, [selectedSeason, queryKey, fetchPage, fetchMyRow]);
 
-  const rows = useMemo<DisplayRow[]>(() => {
-    const filterForScope = (plant: string, job: string) => {
-      if (scope === "plant") {
-        return myPlantName ? plant === myPlantName : false;
-      }
-
-      if (scope === "job") {
-        return profile?.job_role ? job === profile.job_role : false;
-      }
-
-      if (scope === "plant_job") {
-        return Boolean(
-          myPlantName &&
-            profile?.job_role &&
-            plant === myPlantName &&
-            job === profile.job_role,
-        );
-      }
-
-      return true;
-    };
-
-    if (selectedSeason?.status === "closed") {
-      return snapshotRows
-        .filter((row) => filterForScope(row.plant_display_name, row.job_role))
-        .map((row) => ({
-          nickname: row.nickname,
-          plantDisplayName: row.plant_display_name,
-          jobRole: row.job_role,
-          hpPoint: row.hp_point,
-          scenarioCount: row.scenario_count,
-          rank: row.rank_position,
-          topPercent: row.top_percent,
-        }))
-        .sort(
-          (a, b) =>
-            a.rank - b.rank ||
-            b.hpPoint - a.hpPoint ||
-            a.nickname.localeCompare(b.nickname),
-        );
+  const loadMore = useCallback(async () => {
+    if (
+      loading ||
+      loadingMore ||
+      !hasMore ||
+      !selectedSeason ||
+      requestKeyRef.current !== queryKey
+    ) {
+      return;
     }
 
-    return currentRows
-      .filter((row) => filterForScope(row.plant_display_name, row.job_role))
-      .map((row) => {
-        const rank =
-          scope === "overall"
-            ? row.overall_rank
-            : scope === "plant"
-              ? row.plant_rank
-              : scope === "job"
-                ? row.job_rank
-                : row.plant_job_rank;
+    const requestKey = queryKey;
+    const offset = rows.length;
+    setLoadingMore(true);
 
-        const topPercent =
-          scope === "overall"
-            ? row.overall_top_percent
-            : scope === "plant"
-              ? row.plant_top_percent
-              : scope === "job"
-                ? row.job_top_percent
-                : row.plant_job_top_percent;
+    try {
+      const nextRows = await fetchPage(offset, requestKey);
 
-        return {
-          nickname: row.nickname,
-          plantDisplayName: row.plant_display_name,
-          jobRole: row.job_role,
-          hpPoint: row.hp_point,
-          scenarioCount: row.scenario_count,
-          rank,
-          topPercent,
-        };
-      })
-      .sort(
-        (a, b) =>
-          a.rank - b.rank ||
-          b.hpPoint - a.hpPoint ||
-          a.nickname.localeCompare(b.nickname),
-      );
+      if (requestKeyRef.current !== requestKey) return;
+
+      setRows((current) => {
+        const existing = new Set(current.map((row) => row.nickname));
+        return [
+          ...current,
+          ...nextRows.filter((row) => !existing.has(row.nickname)),
+        ];
+      });
+      setHasMore(nextRows.length === PAGE_SIZE);
+    } catch (cause) {
+      if (requestKeyRef.current === requestKey) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "다음 순위를 불러오지 못했습니다.",
+        );
+      }
+    } finally {
+      if (requestKeyRef.current === requestKey) {
+        setLoadingMore(false);
+      }
+    }
   }, [
-    currentRows,
-    snapshotRows,
-    selectedSeason?.status,
-    scope,
-    myPlantName,
-    profile?.job_role,
+    fetchPage,
+    hasMore,
+    loading,
+    loadingMore,
+    queryKey,
+    rows.length,
+    selectedSeason,
   ]);
 
-  const myRow = rows.find((row) => row.nickname === profile?.nickname) ?? null;
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+
+    if (!sentinel || !hasMore || loading || loadingMore) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "240px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore, loading, loadingMore]);
 
   return (
     <section className="leaderboard-page" aria-labelledby="leaderboard-title">
@@ -318,7 +497,9 @@ export function LeaderboardPage() {
             type="button"
             role="tab"
             aria-selected={scope === item}
-            className={scope === item ? "scope-tab scope-tab--active" : "scope-tab"}
+            className={
+              scope === item ? "scope-tab scope-tab--active" : "scope-tab"
+            }
             onClick={() => setScope(item)}
           >
             {SCOPE_LABEL[item]}
@@ -358,37 +539,61 @@ export function LeaderboardPage() {
           </p>
         </div>
       ) : (
-        <ol
-          className="leaderboard-list"
-          aria-label={SCOPE_LABEL[scope] + " 순위"}
-        >
-          {rows.map((row, index) => {
-            const mine = row.nickname === profile?.nickname;
+        <>
+          <ol
+            className="leaderboard-list"
+            aria-label={SCOPE_LABEL[scope] + " 순위"}
+          >
+            {rows.map((row, index) => {
+              const mine = row.nickname === profile?.nickname;
 
-            return (
-              <li
-                key={row.nickname + ":" + row.rank + ":" + index}
-                className={
-                  mine
-                    ? "leaderboard-row leaderboard-row--mine"
-                    : "leaderboard-row"
-                }
-              >
-                <span className="rank-number">{row.rank}</span>
-                <div className="rank-identity">
-                  <strong>{row.nickname}</strong>
-                  <small>
-                    {row.plantDisplayName} · {JOB_LABEL[row.jobRole] ?? row.jobRole}
-                  </small>
-                </div>
-                <div className="rank-score">
-                  <strong>{row.hpPoint.toLocaleString()}</strong>
-                  <small>HP · {row.scenarioCount}장</small>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+              return (
+                <li
+                  key={row.nickname + ":" + row.rank + ":" + index}
+                  className={
+                    mine
+                      ? "leaderboard-row leaderboard-row--mine"
+                      : "leaderboard-row"
+                  }
+                >
+                  <span className="rank-number">{row.rank}</span>
+                  <div className="rank-identity">
+                    <strong>{row.nickname}</strong>
+                    <small>
+                      {row.plantDisplayName} ·{" "}
+                      {JOB_LABEL[row.jobRole] ?? row.jobRole}
+                    </small>
+                  </div>
+                  <div className="rank-score">
+                    <strong>{row.hpPoint.toLocaleString()}</strong>
+                    <small>HP · {row.scenarioCount}장</small>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+
+          <div
+            ref={sentinelRef}
+            className="leaderboard-sentinel"
+            aria-hidden="true"
+          />
+
+          {hasMore ? (
+            <button
+              type="button"
+              className="secondary-button leaderboard-more-button"
+              disabled={loadingMore}
+              onClick={() => void loadMore()}
+            >
+              {loadingMore ? "다음 순위 불러오는 중…" : "순위 더 보기"}
+            </button>
+          ) : (
+            <p className="leaderboard-end muted" role="status">
+              현재 범위의 순위를 모두 불러왔습니다.
+            </p>
+          )}
+        </>
       )}
     </section>
   );
