@@ -265,6 +265,45 @@ for (const entry of manifest.entries) {
     }
   }
 
+  if (entry.scenarioId === "s03_procedure_reality_gap" && scenario.version >= 4) {
+    const intro = scenario.nodes.intro;
+    const alignment = scenario.nodes.decision_state_alignment;
+    const safeNoAction = scenario.nodes.safe_no_action_end;
+
+    if (!intro || intro.type !== "scene") {
+      fail(`${entry.scenarioId}: v4 intro scene is required`);
+    }
+    if (intro.text.includes("절차상 다음 설정을 입력할 차례")) {
+      fail(
+        `${entry.scenarioId}: v4 must not frame the unplanned setting change as a required procedure step`,
+      );
+    }
+    if (!alignment || alignment.type !== "decision") {
+      fail(`${entry.scenarioId}: v4 state-alignment decision is required`);
+    }
+    if (!alignment.choices.some((choice) => choice.next === "safe_no_action_end")) {
+      fail(
+        `${entry.scenarioId}: v4 must offer a safe path that rechecks necessity and avoids the unneeded action`,
+      );
+    }
+    if (
+      !safeNoAction ||
+      safeNoAction.type !== "ending" ||
+      safeNoAction.ending !== "safe_stop"
+    ) {
+      fail(`${entry.scenarioId}: v4 safe_no_action_end must be a safe_stop ending`);
+    }
+
+    const absentBarrierLanguage = debrief.failedBarriers.filter((barrier) =>
+      barrier.includes("부재") || barrier.includes("미작동")
+    );
+    if (absentBarrierLanguage.length < 2) {
+      fail(
+        `${entry.scenarioId}: v4 must distinguish absent/unavailable safeguards from barriers that existed and failed`,
+      );
+    }
+  }
+
   console.log(
     `CAUSE_TRACEABILITY_STATUS ${entry.scenarioId} v${scenario.version} causes=${entry.causes.length} barriers=${entry.barriers.length} actions=${entry.correctiveActions.length}`,
   );
