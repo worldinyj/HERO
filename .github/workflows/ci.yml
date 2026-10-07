@@ -30,6 +30,9 @@ jobs:
       - name: Check source evidence consistency
         run: pnpm check:source-evidence
 
+      - name: Check incident cause traceability
+        run: pnpm check:cause-traceability
+
       - name: Check scenario promotion gate
         run: pnpm check:scenario-promotion
 
