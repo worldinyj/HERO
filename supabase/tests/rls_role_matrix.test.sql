@@ -202,13 +202,13 @@ select results_eq(
   'player sees only own decision log'
 );
 select throws_ok(
-  $update public.profiles set nickname = 'HACKED' where id = '20000000-0000-0000-0000-000000000003'$,
+  $$update public.profiles set nickname = 'HACKED' where id = '20000000-0000-0000-0000-000000000003'$$,
   '42501',
   null,
   'player cannot bypass nickname policy with direct update'
 );
 select throws_ok(
-  $update public.profiles set role = 'admin' where id = '20000000-0000-0000-0000-000000000003'$,
+  $$update public.profiles set role = 'admin' where id = '20000000-0000-0000-0000-000000000003'$$,
   '42501',
   null,
   'player cannot escalate own application role with direct profile update'
