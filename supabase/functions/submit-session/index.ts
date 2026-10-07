@@ -16,6 +16,11 @@ interface SubmittedAction {
   cardId?: string;
 }
 
+interface StoredDecision {
+  action_type: "continue" | "choice" | "info" | "card";
+  action_id: string | null;
+}
+
 interface SubmitSessionBody {
   sessionId?: string;
   actions?: SubmittedAction[];
@@ -38,6 +43,22 @@ function normalizeAction(input: SubmittedAction): GameAction {
       return { type: "card", cardId: input.cardId };
     default:
       throw new Error("invalid_action_type");
+  }
+}
+
+function storedDecisionToAction(decision: StoredDecision): GameAction {
+  switch (decision.action_type) {
+    case "continue":
+      return { type: "continue" };
+    case "choice":
+      if (!decision.action_id) throw new Error("stored_choice_action_id_missing");
+      return { type: "choice", actionId: decision.action_id };
+    case "info":
+      if (!decision.action_id) throw new Error("stored_info_action_id_missing");
+      return { type: "info", actionId: decision.action_id };
+    case "card":
+      if (!decision.action_id) throw new Error("stored_card_id_missing");
+      return { type: "card", cardId: decision.action_id };
   }
 }
 
@@ -66,7 +87,7 @@ Deno.serve(async (req) => {
 
     const { data: session, error: sessionError } = await admin
       .from("play_sessions")
-      .select("id, user_id, season_id, scenario_version_id, simulation_seed, presentation_seed, status, ending, hp_point, score_rule_version, evaluation")
+      .select("id, user_id, season_id, scenario_version_id, simulation_seed, presentation_seed, replay_of, replay_from_node, status, ending, hp_point, score_rule_version, evaluation")
       .eq("id", sessionId)
       .maybeSingle();
 
@@ -114,6 +135,34 @@ Deno.serve(async (req) => {
     });
 
     try {
+      if (session.replay_of || session.replay_from_node) {
+        if (!session.replay_of || !session.replay_from_node) {
+          return json(req, { error: "invalid_replay_session_metadata" }, 409);
+        }
+
+        const { data: sourceDecisions, error: sourceDecisionError } = await admin
+          .from("session_decisions")
+          .select("action_type, action_id")
+          .eq("session_id", session.replay_of)
+          .order("seq", { ascending: true });
+
+        if (sourceDecisionError) {
+          throw sourceDecisionError;
+        }
+
+        for (const decision of (sourceDecisions ?? []) as StoredDecision[]) {
+          if (state.nodeId === session.replay_from_node) {
+            break;
+          }
+
+          state = act(parsed.data, state, storedDecisionToAction(decision));
+        }
+
+        if (state.nodeId !== session.replay_from_node) {
+          return json(req, { error: "replay_target_not_reachable" }, 409);
+        }
+      }
+
       for (const submitted of submittedActions) {
         state = act(parsed.data, state, normalizeAction(submitted));
       }
