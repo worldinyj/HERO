@@ -9,6 +9,7 @@ import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
 import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
+import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { ManagerDashboardPage } from "../features/manager/ManagerDashboardPage";
 import { GamePage } from "../features/play/GamePage";
 import { ProfilePage } from "../features/profile/ProfilePage";
@@ -96,6 +97,8 @@ export function App() {
   const expandedNav = managerNav || adminNav;
   const publicRoute =
     location.pathname === "/login" ||
+    location.pathname === "/terms" ||
+    location.pathname === "/privacy" ||
     location.pathname.startsWith("/i/");
   const playRoute = location.pathname.startsWith("/play/");
 
@@ -112,6 +115,8 @@ export function App() {
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/i/:token" element={<InvitationPage />} />
         <Route path="/" element={<ActiveUserGate><CampaignPage /></ActiveUserGate>} />
         <Route
