@@ -55,6 +55,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 코드 lint/typecheck/test/build
 - 시나리오 schema/graph/promotion guard
 - source-evidence ↔ promotion-status 출처·권리 일관성 guard
+- 사람 승인 시나리오 SHA-256 고정 및 승인 후 내용변경 감지
 - S00 및 draft path simulation
 - HP 파밍·리플레이 밸런스 guard
 - PWA 설치 셸
@@ -91,6 +92,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - `anonymizationReviewComplete = true`
 - `humanReview.status = approved`
 - 승인자와 승인일 기록
+- 승인 시점 JSON SHA-256 기록과 현재 파일 hash 일치
 - JSON이 `scenarios/data/`에 존재
 - CI promotion/schema/path/balance gate PASS
 
