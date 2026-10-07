@@ -33,6 +33,19 @@ jobs:
       - name: Check scenario promotion gate
         run: pnpm check:scenario-promotion
 
+      - name: Check scenario human review evidence
+        run: pnpm check:human-review-evidence
+
+      - name: Preflight human review recorder
+        run: |
+          pnpm record:scenario-review -- \
+            --scenario=s03_procedure_reality_gap \
+            --area=hf_accuracy \
+            --decision=hold \
+            --reviewed-by="CI preflight" \
+            --reviewed-at=2026-10-07 \
+            --evidence-ref="ci-preflight"
+
       - name: Check approved scenario hash contract
         run: pnpm check:approval-hash
 
