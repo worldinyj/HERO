@@ -47,6 +47,9 @@ jobs:
           pnpm check:release-evidence -- --self-test
           pnpm check:release-evidence
 
+      - name: Check release evidence update helper
+        run: pnpm update:release-evidence -- --self-test
+
       - name: Check shipped legal UI contract
         run: |
           pnpm check:legal-release -- --self-test

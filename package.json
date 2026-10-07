@@ -28,7 +28,8 @@
     "check:audio-manifest": "node scripts/check-audio-manifest.mjs",
     "check:staging-http": "node scripts/check-staging-http.mjs",
     "check:release-evidence": "node scripts/check-release-evidence.mjs",
-    "check:legal-release": "node scripts/check-legal-release.mjs"
+    "check:legal-release": "node scripts/check-legal-release.mjs",
+    "update:release-evidence": "node scripts/update-release-evidence.mjs"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

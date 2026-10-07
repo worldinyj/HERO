@@ -54,7 +54,66 @@ Release Candidate Gate를 실행할 때 **성공한 Staging Smoke run ID**를 �
 
 즉 staging에서 확인하지 않은 다른 커밋을 RC로 통과시키지 않는다.
 
-## 5. 명령
+## 5. 증거 기록 helper
+
+사람 승인 결과는 가능하면 JSON을 직접 편집하지 않고 helper로 기록한다. helper는 기본이 **dry-run**이며 `--apply`를 붙여야 파일을 변경한다.
+
+일반 승인 예:
+
+```bash
+pnpm update:release-evidence -- \
+  --approval=legalPrivacy \
+  --approved-by="개인정보 담당부서" \
+  --approved-at=2026-10-07 \
+  --evidence-ref="internal:privacy-approval-001"
+
+# 출력 확인 후에만 실제 적용
+pnpm update:release-evidence -- \
+  --approval=legalPrivacy \
+  --approved-by="개인정보 담당부서" \
+  --approved-at=2026-10-07 \
+  --evidence-ref="internal:privacy-approval-001" \
+  --apply
+```
+
+실기기 승인은 4종 확인을 모두 명시해야 한다.
+
+```bash
+pnpm update:release-evidence -- \
+  --approval=realDevice \
+  --approved-by="QA Lead" \
+  --approved-at=2026-10-07 \
+  --evidence-ref="internal:device-qc-001" \
+  --kakao-in-app \
+  --android-chrome \
+  --samsung-internet \
+  --ios-safari \
+  --apply
+```
+
+파일럿 승인은 30명 이상·Blocker 0만 허용한다.
+
+```bash
+pnpm update:release-evidence -- \
+  --approval=pilot \
+  --approved-by="Pilot Owner" \
+  --approved-at=2026-10-07 \
+  --evidence-ref="internal:pilot-001" \
+  --participants=30 \
+  --blocker-count=0 \
+  --apply
+```
+
+오디오 릴리스 범위 결정:
+
+```bash
+pnpm update:release-evidence -- --audio-policy=excluded
+pnpm update:release-evidence -- --audio-policy=excluded --apply
+```
+
+helper는 실제 승인 여부를 판단하지 않는다. 승인 완료 후 사람이 제공한 추적 가능한 증거를 구조적으로 기록하고, 불완전한 실기기/파일럿 값을 실수로 승인 상태로 저장하는 것을 막는 역할만 한다.
+
+## 6. 상태 검사 명령
 
 현재 증거 상태 보고:
 
@@ -78,7 +137,7 @@ validator 자체 회귀검사:
 pnpm check:release-evidence -- --self-test
 ```
 
-## 6. Release Candidate 순서
+## 7. Release Candidate 순서
 
 1. 경쟁 시나리오 3종 사람 승인과 SHA 고정 완료
 2. 약관/개인정보 최종 문안 반영 및 승인 증거 기록
