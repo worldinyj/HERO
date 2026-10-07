@@ -11,9 +11,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       - run: corepack enable
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm lint
@@ -21,3 +27,13 @@ jobs:
       - run: pnpm validate:scenario
       - run: pnpm test
       - run: pnpm build
+
+      - name: Check invitation and start-session Edge Functions
+        run: |
+          deno check --config supabase/functions/deno.json supabase/functions/create-invite/index.ts
+          deno check --config supabase/functions/deno.json supabase/functions/peek-invite/index.ts
+          deno check --config supabase/functions/deno.json supabase/functions/accept-invite/index.ts
+          deno check --config supabase/functions/deno.json supabase/functions/start-session/index.ts
+
+      - name: Check submit-session shared engine graph
+        run: deno check --config supabase/functions/submit-session/deno.json supabase/functions/submit-session/index.ts

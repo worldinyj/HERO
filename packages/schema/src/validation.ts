@@ -1,4 +1,4 @@
-import type { Choice, MetricKey, Scenario, ScenarioNode } from "./scenario";
+import type { Choice, MetricKey, Scenario, ScenarioNode } from "./scenario.ts";
 
 export interface ScenarioIssue {
   severity: "error" | "warning";

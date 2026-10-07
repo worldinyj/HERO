@@ -1,0 +1,8 @@
+{
+  "nodeModulesDir": "auto",
+  "imports": {
+    "@hero/engine": "../../../packages/engine/src/index.ts",
+    "@hero/schema": "../../../packages/schema/src/index.ts",
+    "zod": "npm:zod@4.6.5"
+  }
+}

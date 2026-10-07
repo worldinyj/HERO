@@ -1,10 +1,10 @@
 import type { Scenario } from "@hero/schema";
-import { isFinished } from "./engine";
+import { isFinished } from "./engine.ts";
 import type {
   Evaluation,
   GameState,
   ScoreContext,
-} from "./types";
+} from "./types.ts";
 
 export const SCORE_RULE_VERSION = "1.0.0" as const;
 export const SCENARIO_HP_MAX = 310 as const;

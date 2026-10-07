@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { scenarioJsonSchema } from "./scenario";
+import { scenarioJsonSchema } from "./scenario.ts";
 
 const output = process.argv[2] ?? "scenarios/schema/hero-scenario.schema.json";
 await mkdir(path.dirname(output), { recursive: true });
