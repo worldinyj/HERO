@@ -166,8 +166,8 @@ for (const entry of evidence.entries) {
   }
 
   if (
-    (entry.sourceVerdict === "complete" ||
-      entry.rightsVerdict === "complete") &&
+    entry.sourceVerdict === "complete" &&
+    entry.rightsVerdict === "complete" &&
     entry.missing.length > 0
   ) {
     fail(
