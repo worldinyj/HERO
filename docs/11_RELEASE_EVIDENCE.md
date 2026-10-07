@@ -139,7 +139,7 @@ pnpm check:release-evidence -- --self-test
 
 ## 7. Release Candidate 순서
 
-1. 경쟁 시나리오 3종 사람 승인과 SHA 고정 완료
+1. 경쟁 시나리오 3종의 출처·권리·Direct/Root/Contributing Cause 추적성 검증 및 사람 승인과 SHA 고정 완료
 2. 약관/개인정보 최종 문안 반영 및 승인 증거 기록
 3. staging 외부 설정 완료 및 `externalDeployment` 승인 증거 기록
 4. 실기기·사내망 검증 및 증거 기록
@@ -147,7 +147,7 @@ pnpm check:release-evidence -- --self-test
 6. 오디오 정책을 `excluded` 또는 `included`로 확정
 7. 현재 `main` SHA를 staging에 배포
 8. **Staging Smoke** 수동 실행 및 PASS
-9. 같은 SHA에서 **Release Candidate Gate** 실행, Staging Smoke run ID 입력
+9. 같은 SHA에서 **Release Candidate Gate** 실행, Staging Smoke run ID 입력 — 이때 source/promotion/hash와 함께 `pnpm check:cause-traceability`도 재검증
 10. 생성된 90일 보존 evidence artifact를 최종 릴리스 승인자료에 첨부
 
 Release Candidate Gate는 실제 production 배포를 수행하지 않는다. 모든 게이트가 닫혔다는 증거 패키지를 생성하는 역할만 한다.
