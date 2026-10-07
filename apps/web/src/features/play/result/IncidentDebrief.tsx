@@ -102,6 +102,35 @@ export function IncidentDebrief({
         </div>
       </section>
 
+      {debrief.sources.length > 0 ? (
+        <section className="incident-section incident-sources">
+          <h3>공식 출처</h3>
+          <p className="muted mini-copy">
+            아래 링크는 사건 개요의 사실관계 확인 및 출처표시를 위한 공식 자료입니다.
+            HERO의 방어막 관점 분석은 해당 기관의 공식 원인분류가 아닙니다.
+          </p>
+          <ul className="incident-source-list">
+            {debrief.sources.map((source) => (
+              <li key={source.url}>
+                <a
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  aria-label={`${source.publisher} 공식 출처 새 창에서 열기`}
+                >
+                  <strong>{source.label}</strong>
+                  <span>
+                    {source.publisher}
+                    {source.publishedAt ? ` · ${source.publishedAt}` : ""}
+                  </span>
+                  {source.usage ? <small>{source.usage}</small> : null}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className="incident-section">
         <h3>다르게 해보기</h3>
         {replayEnabled && decisions.length > 0 ? (

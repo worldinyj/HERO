@@ -4,10 +4,21 @@
   "version": 1,
   "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
   "defaultPerspectiveRole": "ro",
-  "audienceJobs": ["sro", "ro", "field_operator", "supervisor", "worker"],
+  "audienceJobs": [
+    "sro",
+    "ro",
+    "field_operator",
+    "supervisor",
+    "worker"
+  ],
   "estimatedMinutes": 8,
   "startNode": "intro",
-  "cards": ["questioning_attitude", "peer_check", "place_keeping", "stop_when_unsure"],
+  "cards": [
+    "questioning_attitude",
+    "peer_check",
+    "place_keeping",
+    "stop_when_unsure"
+  ],
   "initialState": {
     "clockMin": 780,
     "deadlineMin": 825,
@@ -65,6 +76,15 @@
         "title": "예상과 다른 반응이 나오면 즉시 멈추고 확인한다.",
         "detail": "추세가 기대와 반대로 움직이면 추가 입력으로 상쇄하려 하기 전에 안전한 상태에서 원인을 확인한다.",
         "toolId": "stop_when_unsure"
+      }
+    ],
+    "sources": [
+      {
+        "publisher": "원자력안전위원회 / 대한민국 정책브리핑",
+        "label": "원자력안전위원회 공식 조사결과 보도자료",
+        "url": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156780201",
+        "publishedAt": "2026-09-04",
+        "usage": "텍스트 공공누리 제1유형(출처표시)"
       }
     ]
   },
@@ -141,7 +161,9 @@
           }
         }
       ],
-      "allowedCards": ["questioning_attitude"]
+      "allowedCards": [
+        "questioning_attitude"
+      ]
     },
     "event_prepare_setting": {
       "type": "event",
@@ -210,7 +232,10 @@
           }
         }
       ],
-      "allowedCards": ["peer_check", "place_keeping"]
+      "allowedCards": [
+        "peer_check",
+        "place_keeping"
+      ]
     },
     "hazard_setting": {
       "type": "hazard",
@@ -338,7 +363,9 @@
           }
         }
       ],
-      "allowedCards": ["stop_when_unsure"]
+      "allowedCards": [
+        "stop_when_unsure"
+      ]
     },
     "hazard_recovery": {
       "type": "hazard",

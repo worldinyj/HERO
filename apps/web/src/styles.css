@@ -1893,6 +1893,42 @@ h3 {
   line-height: 1.55;
 }
 
+.incident-source-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.incident-source-list a {
+  min-height: 58px;
+  display: grid;
+  gap: 3px;
+  padding: 11px 12px;
+  border: 1px solid rgba(111, 160, 255, 0.22);
+  border-radius: 12px;
+  color: var(--ink);
+  background: rgba(111, 160, 255, 0.06);
+  text-decoration: none;
+}
+
+.incident-source-list a:hover {
+  border-color: rgba(111, 160, 255, 0.44);
+}
+
+.incident-source-list strong {
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.incident-source-list span,
+.incident-source-list small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 359px) {
   .incident-heading,
   .incident-lessons article > div {
