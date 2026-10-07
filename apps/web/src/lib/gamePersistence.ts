@@ -1,8 +1,8 @@
 import type { GameState } from "@hero/engine";
-
-const DB_NAME = "hero-offline";
-const DB_VERSION = 1;
-const STORE_NAME = "game-sessions";
+import {
+  GAME_SESSION_STORE,
+  openHeroOfflineDb,
+} from "./offlineDb";
 
 export interface StoredGameSession {
   formatVersion: 1;
@@ -13,38 +13,16 @@ export interface StoredGameSession {
   savedAt: string;
 }
 
-function canUseIndexedDb(): boolean {
-  return typeof indexedDB !== "undefined";
-}
-
-function openDb(): Promise<IDBDatabase | null> {
-  if (!canUseIndexedDb()) return Promise.resolve(null);
-
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "scenarioId" });
-      }
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("indexeddb_open_failed"));
-  });
-}
-
 export async function saveGameSession(
   record: Omit<StoredGameSession, "formatVersion" | "savedAt">,
 ): Promise<void> {
-  const db = await openDb();
+  const db = await openHeroOfflineDb();
   if (!db) return;
 
   try {
     await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = db.transaction(GAME_SESSION_STORE, "readwrite");
+      const store = transaction.objectStore(GAME_SESSION_STORE);
 
       store.put({
         ...record,
@@ -66,13 +44,13 @@ export async function saveGameSession(
 export async function loadGameSession(
   scenarioId: string,
 ): Promise<StoredGameSession | null> {
-  const db = await openDb();
+  const db = await openHeroOfflineDb();
   if (!db) return null;
 
   try {
     return await new Promise<StoredGameSession | null>((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, "readonly");
-      const request = transaction.objectStore(STORE_NAME).get(scenarioId);
+      const transaction = db.transaction(GAME_SESSION_STORE, "readonly");
+      const request = transaction.objectStore(GAME_SESSION_STORE).get(scenarioId);
 
       request.onsuccess = () =>
         resolve((request.result as StoredGameSession | undefined) ?? null);
@@ -85,13 +63,13 @@ export async function loadGameSession(
 }
 
 export async function clearGameSession(scenarioId: string): Promise<void> {
-  const db = await openDb();
+  const db = await openHeroOfflineDb();
   if (!db) return;
 
   try {
     await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, "readwrite");
-      transaction.objectStore(STORE_NAME).delete(scenarioId);
+      const transaction = db.transaction(GAME_SESSION_STORE, "readwrite");
+      transaction.objectStore(GAME_SESSION_STORE).delete(scenarioId);
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
