@@ -1,6 +1,6 @@
 # S03 HF Brief V1 — 절차 예상과 실제 상태가 어긋나는 순간
 
-> **상태: OFFICIAL NSSC SOURCE VERIFIED / publish 금지**  
+> **상태: REVIEW_READY — OFFICIAL NSSC SOURCE + TEXT RIGHTS + TECH GATES VERIFIED / HUMAN REVIEW 전 publish 금지**  
 > 내부 저작용 문서. 실제 발전소·호기·시험명·설정치·고유 제어기기명은 공개 시나리오에서 일반화한다.
 
 ## 1. 교육 목표
@@ -25,7 +25,12 @@ S03 「절차와 실제 상황이 조금 다릅니다」는 절차를 무시하�
 - 원안위는 사건조사와 사업자의 조치 및 재발방지대책을 검토했다.
 
 공식 출처:
-- 원자력안전위원회/정책브리핑, 2026-09-04: https://admin2.korea.kr/briefing/pressReleaseView.do?newsId=156780201
+- 원자력안전위원회/정책브리핑, 2026-09-04: https://www.korea.kr/briefing/pressReleaseView.do?newsId=156780201
+
+이용조건:
+- 정책브리핑은 해당 보도자료 텍스트를 **공공누리 제1유형(출처표시)** 조건으로 이용할 수 있다고 명시한다.
+- 사진·이미지·일러스트·동영상은 별도 권리 확인이 필요하므로 HERO에는 사용하지 않는다.
+- HERO 공개문안은 원문 문장을 복사하지 않고 사건사실을 익명화·일반화하여 독립 작성한다.
 
 ## 3. HERO에서 일반화하는 부분
 
@@ -101,9 +106,16 @@ S03 「절차와 실제 상황이 조금 다릅니다」는 절차를 무시하�
 
 - [x] 원안위 공식 조사결과 확인
 - [x] 공식 재발방지책(절차 재확인·시스템 반영·교육) 확인
+- [x] 정책브리핑 텍스트 이용조건(공공누리 제1유형) 확인
 - [ ] HF 전문가 검토
 - [ ] 운전절차 과노출 검토
 - [ ] 익명화 검토
-- [ ] draft JSON validate PASS
-- [ ] 전 경로 시뮬레이션 COMPLETE
-- [ ] 정답편향 경고 0 또는 예외 사유 기록
+- [x] draft JSON validate PASS
+- [x] 전 경로 시뮬레이션 COMPLETE
+- [x] 4종 엔딩 reachable
+- [x] 정답편향 경고 0
+- [x] ending imbalance 경고 0
+
+**현재 판정: REVIEW_READY.** 사람 HF/익명화 검토 승인 뒤에만 `scenarios/data/` 승격 가능하다.
+
+상세 승격 판정: [T3_SOURCE_RIGHTS_REVIEW_V1.md](T3_SOURCE_RIGHTS_REVIEW_V1.md) 참조.
