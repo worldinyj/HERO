@@ -10,6 +10,7 @@ import {
 import { loadGameSession } from "../../lib/gamePersistence";
 import { preloadGameRoute } from "../../app/routeModules";
 import { getSupabase } from "../../lib/supabase";
+import { useAudio } from "../audio/AudioContext";
 import { useAuth } from "../auth/AuthContext";
 
 const JOB_LABEL: Record<JobRole, string> = {
@@ -142,6 +143,11 @@ export function CompetitiveBriefingPage({
   const { profile, session } = useAuth();
   const userId = session?.user.id ?? null;
   const navigate = useNavigate();
+  const {
+    settings: audioSettings,
+    manager: audioManager,
+    chooseInitialAudio,
+  } = useAudio();
   const [data, setData] = useState<BriefingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [online, setOnline] = useState(
@@ -405,10 +411,43 @@ export function CompetitiveBriefingPage({
           공개하지 않습니다. 상황을 읽고 필요한 정보를 직접 확인해보세요.
         </p>
 
+        {!audioSettings.initialized ? (
+          <section className="audio-start-choice" aria-labelledby="audio-start-title">
+            <h3 id="audio-start-title">소리 설정</h3>
+            <p>
+              오디오는 보조 정보입니다. 무음으로 시작해도 모든 판단정보와
+              피드백을 동일하게 볼 수 있습니다.
+            </p>
+            <div className="audio-start-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  void chooseInitialAudio(false);
+                }}
+              >
+                무음으로 시작
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => {
+                  void (async () => {
+                    await chooseInitialAudio(true);
+                    await audioManager.playBgm("BGM-02");
+                  })();
+                }}
+              >
+                소리 켜고 시작
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <button
           type="button"
           className="primary-button briefing-start"
-          disabled={!canStart}
+          disabled={!canStart || !audioSettings.initialized}
           onClick={() => navigate(`/play/${scenarioId}`)}
         >
           {data.resumeAvailable
@@ -421,6 +460,10 @@ export function CompetitiveBriefingPage({
         {!canStart ? (
           <p className="muted mini-copy">
             연결이 복구되면 새 경쟁 세션을 시작할 수 있습니다.
+          </p>
+        ) : !audioSettings.initialized ? (
+          <p className="muted mini-copy">
+            처음 한 번만 소리 또는 무음 시작 방식을 선택해주세요.
           </p>
         ) : null}
       </article>
