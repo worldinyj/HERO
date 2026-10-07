@@ -37,11 +37,11 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | 접근성 | **READY (자동 게이트)** | WCAG 2.2 AA 자동 검사, reduced motion, 키보드/포커스 |
 | 모바일 핵심 E2E | **READY (자동 게이트)** | 초대→가입→플레이→결과→리더보드 자동 플로우 |
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
-| S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + 과거 OPIS 목록/현재 NSIC 진입점 확인. 사건별 direct URL/식별번호, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
-| S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 확보. 원안위 직접 조사 원문/개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
-| S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
+| S01 | **SOURCE_HOLD** | IAEA/KHNP + 원안위 사건 통계 + 원안위 2012 고리1호기 전력계통 특별안전점검·종합 안전점검 결과보고서까지 확보. OPIS/NSIC 사건별 direct URL/식별번호, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
+| S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 + 정책브리핑 원문 존재/날짜 locator 확인. 해당 상세 URL·개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
+| S03 | **REVIEW_READY** | 현재 JSON SHA-256에 묶인 사람 검토 패킷 자동 생성·CI freshness 검증 완료. HF·익명화·과노출·incidentDebrief 사람 승인만 남음 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 항목과 법무/개인정보 검토 잔존 |
-| 외부 배포 | **BLOCKED** | staging/prod Supabase, Cloudflare, Kakao 설정 실확인 필요 |
+| 외부 배포 | **BLOCKED (preflight 준비완료)** | `pnpm check:deployment-preflight`로 URL·브라우저 공개키·Kakao/Supabase 등록값 계산 및 live probe 가능. 실제 staging/prod Supabase, Cloudflare, Kakao 설정 실확인 필요 |
 | 오디오 | **DEFERRED** | 생성·검수는 별도 진행. manifest는 아직 승인 asset 0건 |
 | 실기기·사내망 | **BLOCKED** | Kakao 인앱, Android Chrome, Samsung Internet, iOS Safari, 사내망 정책 |
 | 파일럿 | **BLOCKED** | 파일럿 발전소 1곳·30명 운영과 KPI 측정 필요 |
@@ -56,6 +56,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 시나리오 schema/graph/promotion guard
 - source-evidence ↔ promotion-status 출처·권리 일관성 guard
 - 사람 승인 시나리오 SHA-256 고정 및 승인 후 내용변경 감지
+- S03 사람 검토 패킷의 현재 JSON SHA-256 일치·freshness
 - S00 및 draft path simulation
 - HP 파밍·리플레이 밸런스 guard
 - PWA 설치 셸
@@ -65,6 +66,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 모바일 핵심 E2E
 - WCAG 2.2 AA 핵심 자동점검
 - 브라우저 번들 secret 노출 방지
+- 외부 배포 설정 validator self-test
+- E2E/DB용 Supabase CLI 고정 버전 사용
 
 ### 사람이 닫아야 하는 항목
 
@@ -159,3 +162,33 @@ pnpm check:source-evidence
 ```
 
 `sourceRightsComplete=true`만 수동으로 바꿔서는 경쟁 시나리오를 승격할 수 없다. `source-evidence.json`에서도 공식 사건 근거와 권리 근거가 모두 complete여야 promotion helper와 CI가 통과한다.
+
+
+## 8. 배포 preflight
+
+실제 staging/prod 키는 저장소에 커밋하지 않는다. 로컬의 gitignored 환경파일을 사용한다.
+
+```bash
+pnpm check:deployment-preflight -- \
+  --env-file=.env.staging \
+  --strict
+```
+
+실제 서비스와 Supabase Auth endpoint까지 확인하려면:
+
+```bash
+pnpm check:deployment-preflight -- \
+  --env-file=.env.staging \
+  --strict \
+  --live
+```
+
+이 도구가 PASS하더라도 Cloudflare/Kakao/Supabase 콘솔의 실제 설정과 사내망·실기기 확인을 자동 승인하는 것은 아니다.
+
+### S03 사람 검토 패킷
+
+```bash
+pnpm build:review-packet -- --scenario=s03_procedure_reality_gap
+```
+
+현재 draft와 커밋된 검토 패킷이 다르면 CI가 실패한다. 사람은 패킷에 표시된 SHA-256과 동일한 JSON을 직접 검토한 뒤에만 승격 helper를 실행한다.
