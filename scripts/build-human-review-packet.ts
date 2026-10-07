@@ -190,7 +190,7 @@ const endings = [
 const checklist = reviewerChecklist().join("\n");
 const scenarioSpecificSupport =
   entry.scenarioId === "s03_procedure_reality_gap"
-    ? "- S03 원인-근거-방어막-재발방지대책 추적표: `scenarios/research/S03_CAUSE_TRACEABILITY_MATRIX_V1.md`\\n"
+    ? "- S03 원인-근거-방어막-재발방지대책 추적표: `scenarios/research/S03_CAUSE_TRACEABILITY_MATRIX_V1.md`\n"
     : "";
 
 const promotionCommand = `pnpm promote:scenario -- \\\n  --scenario=${entry.scenarioId} \\\n  --approved-by="검토자 성명 또는 공식 역할" \\\n  --approved-at=YYYY-MM-DD \\\n  --confirm-hf \\\n  --confirm-anonymization \\\n  --confirm-debrief \\\n  --apply`;
