@@ -2,8 +2,10 @@ import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
 import { NavLink, Route, Routes, useLocation } from "react-router";
 import { LoginPage } from "../features/auth/LoginPage";
-import { RequireAuth } from "../features/auth/RequireAuth";
+import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
+
+const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
 
 function CampaignPage() {
   return (
@@ -45,6 +47,14 @@ function PlaceholderPage({ title }: { title: string }) {
   );
 }
 
+function ActiveUserGate({ children }: { children: React.ReactNode }) {
+  return (
+    <RequireAuth>
+      <RequireRole roles={[...ALL_ACTIVE_ROLES]}>{children}</RequireRole>
+    </RequireAuth>
+  );
+}
+
 export function App() {
   const location = useLocation();
   const publicRoute = location.pathname === "/login" || location.pathname.startsWith("/i/");
@@ -61,30 +71,12 @@ export function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/i/:token" element={<InvitationPage />} />
-        <Route
-          path="/"
-          element={
-            <RequireAuth>
-              <CampaignPage />
-            </RequireAuth>
-          }
-        />
+        <Route path="/" element={<ActiveUserGate><CampaignPage /></ActiveUserGate>} />
         <Route
           path="/leaderboard"
-          element={
-            <RequireAuth>
-              <PlaceholderPage title="리더보드" />
-            </RequireAuth>
-          }
+          element={<ActiveUserGate><PlaceholderPage title="리더보드" /></ActiveUserGate>}
         />
-        <Route
-          path="/me"
-          element={
-            <RequireAuth>
-              <PlaceholderPage title="내 기록" />
-            </RequireAuth>
-          }
-        />
+        <Route path="/me" element={<ActiveUserGate><PlaceholderPage title="내 기록" /></ActiveUserGate>} />
       </Routes>
 
       {!publicRoute ? (
