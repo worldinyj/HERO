@@ -68,11 +68,11 @@ select results_eq(
 );
 
 select results_eq(
-  $select count(*) from public.audit_logs
+  $$select count(*) from public.audit_logs
     where action = 'admin.bootstrap_initial'
       and actor_user_id is null
       and entity_id = '60000000-0000-0000-0000-000000000001'
-      and metadata->>'target_user_id' = '60000000-0000-0000-0000-000000000001'$,
+      and metadata->>'target_user_id' = '60000000-0000-0000-0000-000000000001'$$,
   array[1::bigint],
   'initial admin bootstrap writes an owner-originated audit event'
 );
