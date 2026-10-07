@@ -2,6 +2,7 @@ import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
 import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
+import { useAudio } from "../features/audio/AudioContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
@@ -142,6 +143,7 @@ function AdminGate({ children }: { children: ReactNode }) {
 export function App() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+  const { manager: audioManager, settings: audioSettings } = useAudio();
   const { profile, session } = useAuth();
   const managerNav = profile?.role === "plant_manager";
   const adminNav = profile?.role === "admin";
@@ -174,6 +176,28 @@ export function App() {
 
     return startSubmissionQueueProcessor(session.user.id);
   }, [profile?.is_active, profile?.role, session?.user.id]);
+
+  useEffect(() => {
+    if (!audioSettings.initialized || audioSettings.bgmMuted) {
+      audioManager.stopBgm();
+      return;
+    }
+
+    const cue = briefingRoute
+      ? "BGM-02"
+      : playRoute
+        ? "BGM-03"
+        : "BGM-01";
+
+    void audioManager.playBgm(cue);
+  }, [
+    audioManager,
+    audioSettings.bgmMuted,
+    audioSettings.initialized,
+    briefingRoute,
+    location.pathname,
+    playRoute,
+  ]);
 
   return (
     <>
