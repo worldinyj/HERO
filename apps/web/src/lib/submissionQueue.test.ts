@@ -68,6 +68,44 @@ describe("submission queue helpers", () => {
     ]);
   });
 
+  it("submits only actions after a replay log boundary", () => {
+    const log: GameLogEntry[] = [
+      {
+        step: 0,
+        nodeId: "intro",
+        actionType: "continue",
+        clockBefore: 0,
+        clockAfter: 0,
+        hazardBefore: 10,
+        hazardAfter: 10,
+      },
+      {
+        step: 1,
+        nodeId: "decision",
+        actionType: "choice",
+        actionId: "first_path",
+        clockBefore: 0,
+        clockAfter: 1,
+        hazardBefore: 10,
+        hazardAfter: 8,
+      },
+      {
+        step: 2,
+        nodeId: "replay_decision",
+        actionType: "choice",
+        actionId: "new_path",
+        clockBefore: 1,
+        clockAfter: 2,
+        hazardBefore: 8,
+        hazardAfter: 5,
+      },
+    ];
+
+    expect(gameLogToSubmissionActions(log, 2)).toEqual([
+      { type: "choice", actionId: "new_path" },
+    ]);
+  });
+
   it("retries network, throttling, and server failures", () => {
     expect(isRetryableSubmissionStatus(null)).toBe(true);
     expect(isRetryableSubmissionStatus(401)).toBe(true);
