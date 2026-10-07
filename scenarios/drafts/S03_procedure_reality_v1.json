@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "id": "s03_procedure_reality_gap",
-  "version": 3,
+  "version": 4,
   "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
   "defaultPerspectiveRole": "ro",
   "audienceJobs": [
@@ -49,7 +49,7 @@
     "rootCauses": [
       "사전에 계획되지 않은 중요 운전행위를 수행하면서 목적·방법·예상반응을 팀과 공유하고 사전 점검하는 관리 방어막이 충분히 작동하지 않았다.",
       "소내부하운전 상태에서는 출력지시값과 실제 밸브개도 기준값 사이에 편차가 생길 수 있다는 제어논리 이해가 실제 설정치 계산에 연결되지 않아 잘못된 기준값을 사용했다.",
-      "중요 설정치 입력 전 적정성을 독립적으로 확인하고 입력 후 설비반응을 즉시 감시하는 절차·팀·시스템 방어막이 오류를 조기에 차단하지 못했다."
+      "중요 설정치 입력 전 적정성을 별도 경로로 확인하고 입력 후 설비반응을 즉시 감시하는 절차·팀·시스템 방어막이 오류를 조기에 차단하지 못했다."
     ],
     "contributingFactors": [
       "시운전 참관 인원이 많은 주제어실 환경으로 인한 운전집중도 저하와 정보교환 방해",
@@ -71,8 +71,8 @@
         "toolId": "questioning_attitude"
       },
       {
-        "title": "중요 설정치는 지시를 받은 사람이 독립적으로 적정성을 확인한다.",
-        "detail": "지시값을 그대로 입력하는 대신 현재 상태, 계산근거와 기대반응을 다른 경로로 대조해 단일 착각이 그대로 설비에 반영되지 않도록 한다.",
+        "title": "중요 설정치는 지시값을 그대로 입력하지 말고 현재 상태와 계산근거를 별도 경로로 확인한다.",
+        "detail": "현재 운전상태, 계산근거와 기대반응을 다른 경로로 대조해 단일 착각이나 지시 오류가 그대로 설비에 반영되지 않도록 한다.",
         "toolId": "independent_verification"
       },
       {
@@ -106,13 +106,13 @@
       "원자로 자동정지"
     ],
     "failedBarriers": [
-      "미예정 운전행위 사전점검",
+      "미예정 운전행위 사전점검 방어막의 부재 또는 미작동",
       "주제어실 브리핑·업데이트",
       "설정치 계산의 자기진단",
-      "중요 설정치에 대한 동료확인·독립확인",
+      "중요 설정치에 대한 별도 확인·독립확인 방어막 부족",
       "조작 목적·의도에 대한 명확한 의사소통",
       "조작 후 기대반응·설비추세 감시",
-      "입력값 경고·재확인 인터페이스"
+      "입력값 경고·재확인 인터페이스 부재"
     ],
     "correctiveActions": [
       "소내부하운전에서는 해당 제한 설정 변경이 불필요함을 절차에 명확히 하고, 상태전환 시 서로 다른 제어 기준값 사이에 편차가 생길 수 있음을 절차에 반영한다.",
@@ -129,17 +129,17 @@
     "intro": {
       "type": "scene",
       "speaker": "주제어실",
-      "text": "상태전환 시험을 마치고 정상 운전상태로 복구하는 중입니다. 절차상 다음 설정을 입력할 차례지만 현재 추세가 예상과 완전히 같지는 않습니다.",
+      "text": "상태전환 시험을 마치고 계통연결을 준비하는 중입니다. 사전 계획에 없던 추가 제한 설정 변경이 제안되었고, 현재 설비 추세는 평소와 조금 다르게 보입니다.",
       "next": "decision_state_alignment"
     },
     "decision_state_alignment": {
       "type": "decision",
-      "prompt": "절차의 예상과 현재 설비 추세가 조금 다르게 보입니다. 무엇을 하시겠습니까?",
+      "prompt": "현재 운전상태에서 이 추가 설정 변경이 실제로 필요한지와 현재 설비 추세가 평소와 다른 이유를 어떻게 확인하시겠습니까?",
       "choices": [
         {
           "actionId": "pause_compare_current_state",
-          "label": "현재 상태가 절차의 전제조건과 같은지 다시 확인한다.",
-          "next": "event_prepare_setting",
+          "label": "현재 운전상태와 절차 근거를 확인해 추가 설정 변경이 필요한지 다시 판단한다.",
+          "next": "safe_no_action_end",
           "timeCostMin": 3,
           "effects": {
             "psfMultipliers": {
@@ -156,7 +156,7 @@
         },
         {
           "actionId": "share_trend_with_peer",
-          "label": "현재 추세와 다음 입력 의도를 동료에게 설명하고 확인한다.",
+          "label": "현재 상태와 추가 설정 변경의 목적·의도를 팀에 공유하고 함께 확인한다.",
           "next": "event_prepare_setting",
           "timeCostMin": 2,
           "effects": {
@@ -171,7 +171,7 @@
         },
         {
           "actionId": "continue_expected_sequence",
-          "label": "시험 직후의 일시적 변동으로 보고 예정된 순서대로 진행한다.",
+          "label": "계통연결 전 예방조치로 보고 추가 설정 변경을 그대로 진행한다.",
           "next": "event_prepare_setting",
           "timeCostMin": 0,
           "effects": {
@@ -188,8 +188,8 @@
       "infoActions": [
         {
           "actionId": "review_current_trend",
-          "label": "현재 추세와 절차가 기대하는 방향을 나란히 확인한다.",
-          "revealText": "현재 값은 회복 중이지만 변화 방향이 절차를 처음 읽었을 때 예상한 것과 다르게 해석될 여지가 있습니다.",
+          "label": "현재 운전상태와 평소 운전상태의 제어기준 관계를 비교한다.",
+          "revealText": "계통과 분리된 상태에서는 평소 정상운전 때와 제어기준 관계가 달라질 수 있어, 같은 전제를 그대로 적용하면 안 될 수 있습니다.",
           "timeCostMin": 1,
           "effects": {
             "metricsDelta": {
@@ -204,13 +204,13 @@
     },
     "event_prepare_setting": {
       "type": "event",
-      "text": "다음 단계에서는 설비 반응의 상한을 정하는 설정을 입력해야 합니다. 값 자체보다 어느 방향으로 제한되는지 확인이 중요합니다.",
+      "text": "추가 제한 설정 변경을 계속 진행하는 경우입니다. 사전 계획에 없던 조작이므로 값 자체뿐 아니라 현재 상태에서 필요한지, 어떤 기준과 방향으로 적용되는지 확인해야 합니다.",
       "next": "decision_setting_direction",
       "tone": "attention"
     },
     "decision_setting_direction": {
       "type": "decision",
-      "prompt": "중요 설정을 입력하기 직전입니다. 방향과 의도를 어떻게 확인하시겠습니까?",
+      "prompt": "추가 설정 변경을 진행하기 직전입니다. 필요성과 입력 방향을 어떻게 확인하시겠습니까?",
       "choices": [
         {
           "actionId": "peer_check_setting_direction",
@@ -229,8 +229,8 @@
         },
         {
           "actionId": "place_keep_and_recheck",
-          "label": "현재 절차 단계와 입력 목적을 짚으며 방향을 다시 확인한다.",
-          "next": "hazard_setting",
+          "label": "현재 단계에서 이 추가 설정 변경이 실제로 필요한지 절차와 운전상태를 다시 확인한다.",
+          "next": "safe_no_action_end",
           "timeCostMin": 2,
           "effects": {
             "barrierDelta": {
@@ -435,6 +435,12 @@
       "ending": "event",
       "title": "입력 방향과 재확인 방어막의 틈이 겹침",
       "summary": "상태전환의 복잡성, 입력 방향의 불확실성, 절차·팀 재확인 방어막의 취약이 겹쳐 자동정지 사건으로 이어졌습니다."
+    },
+    "safe_no_action_end": {
+      "type": "ending",
+      "ending": "safe_stop",
+      "title": "불필요한 미예정 조작을 실행하지 않음",
+      "summary": "현재 운전상태와 조작 필요성을 다시 확인해 사전 계획에 없고 필요성이 확인되지 않은 추가 설정 변경을 수행하지 않았습니다."
     }
   }
 }
