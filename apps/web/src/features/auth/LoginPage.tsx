@@ -1,18 +1,32 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { signInWithKakao } from "../../lib/supabase";
+
+function safeReturnPath(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/";
+  }
+
+  return value;
+}
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inviteRequired = searchParams.get("reason") === "invite_required";
+  const returnPath = safeReturnPath(searchParams.get("next"));
 
   async function handleLogin() {
     try {
       setPending(true);
       setError(null);
-      await signInWithKakao();
+      await signInWithKakao(returnPath);
+
+      // OAuth leaves this page for Kakao. E2E/password auth returns in-place,
+      // so continue through the same protected-route provisioning gate.
+      navigate(returnPath, { replace: true });
     } catch (cause) {
       setPending(false);
       setError(cause instanceof Error ? cause.message : "로그인을 시작하지 못했습니다.");
