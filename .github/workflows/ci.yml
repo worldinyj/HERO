@@ -30,6 +30,9 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Verify route code splitting
+        run: node scripts/check-route-splitting.mjs
+
       - name: Verify PWA shell
         run: |
           test -f apps/web/dist/manifest.webmanifest
