@@ -10,6 +10,7 @@ import { Link, useParams } from "react-router";
 import { CompetitiveGamePage } from "./CompetitiveGamePage";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
+import { SceneStage } from "./SceneStage";
 import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
 import { useTutorialGameStore } from "./gameStore";
 
@@ -273,21 +274,13 @@ export function GamePage() {
       ) : null}
 
       {node.type === "scene" || node.type === "event" ? (
-        <article
-          className={node.type === "event" ? "scene-box event-box" : "scene-box"}
-        >
-          <p className="eyebrow">
-            {node.type === "event" ? "상황 변화" : node.speaker ?? "상황"}
-          </p>
-          <div className="dialogue">{node.text}</div>
-          <button
-            className="primary-button"
-            type="button"
-            onClick={() => dispatch(scenario, { type: "continue" })}
-          >
-            계속
-          </button>
-        </article>
+        <SceneStage
+          nodeKey={view.nodeId}
+          speaker={node.type === "scene" ? node.speaker : undefined}
+          text={node.text}
+          tone={node.type === "event" ? "event" : "scene"}
+          onContinue={() => dispatch(scenario, { type: "continue" })}
+        />
       ) : null}
 
       {node.type === "decision" ? (
