@@ -96,6 +96,19 @@ const managerCandidates = [
   },
 ] as const;
 
+const playerCandidates = [
+  {
+    id: IDS.playerCandidateA,
+    email: "hero-e2e-player-candidate-a@example.test",
+    password: PASSWORD_A,
+  },
+  {
+    id: IDS.playerCandidateB,
+    email: "hero-e2e-player-candidate-b@example.test",
+    password: PASSWORD_B,
+  },
+] as const;
+
 const uninvitedIdentities = [
   {
     id: IDS.uninvitedA,
