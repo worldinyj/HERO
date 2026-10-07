@@ -36,11 +36,17 @@ select results_eq(
   'cron fires daily at 15:00 UTC so the wrapper sees KST midnight'
 );
 
+do $
+begin
+  perform private.ensure_monthly_season('2026-11-15'::date);
+end;
+$;
+
 select is(
   (
     select starts_at
     from public.seasons
-    where id = private.ensure_monthly_season('2026-11-15'::date)
+    where season_key = '2026-11'
   ),
   '2026-10-31 15:00:00+00'::timestamptz,
   'November season starts at Nov 1 00:00 KST (Oct 31 15:00 UTC)'
