@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(40);
+select plan(42);
 
 insert into auth.users (id, email) values
   ('20000000-0000-0000-0000-000000000001', 'admin@hero.test'),
@@ -277,10 +277,16 @@ select throws_ok(
   'manager cannot create plants'
 );
 select throws_ok(
-  $$select * from public.my_current_rank()$$,
+  $select * from public.my_current_rank()$,
   'P0001',
   'player_required',
   'manager cannot invoke player self-rank RPC'
+);
+
+select results_eq(
+  $select count(*) from public.v_leaderboard_current_public$,
+  array[0::bigint],
+  'manager cannot read player leaderboard rows'
 );
 
 reset role;
@@ -326,10 +332,16 @@ select lives_ok(
   'admin can create a plant'
 );
 select throws_ok(
-  $$select * from public.my_current_rank()$$,
+  $select * from public.my_current_rank()$,
   'P0001',
   'player_required',
   'admin cannot invoke player self-rank RPC'
+);
+
+select results_eq(
+  $select count(*) from public.v_leaderboard_current_public$,
+  array[0::bigint],
+  'admin cannot read player leaderboard rows through the public view'
 );
 
 reset role;
