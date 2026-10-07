@@ -29,6 +29,10 @@ const structuralRequirements = [
   ".github/workflows/database-tests.yml",
   ".github/workflows/e2e.yml",
   "apps/web/public/audio/audio_manifest.json",
+  "apps/web/src/features/audio/audioManager.ts",
+  "apps/web/src/features/audio/AudioContext.tsx",
+  "apps/web/src/features/audio/AudioSettings.tsx",
+  "scripts/check-audio-manifest.mjs",
 ];
 
 const missingFiles = structuralRequirements.filter((path) => !checkFile(path));
@@ -79,7 +83,16 @@ const uncheckedDeploymentItems = (
 ).length;
 
 const audioAssets = Array.isArray(audio.assets) ? audio.assets.length : 0;
-const audioApproved = audioAssets > 0;
+const audioApprovedAssets = Array.isArray(audio.assets)
+  ? audio.assets.filter((asset) => asset?.approved === true).length
+  : 0;
+const audioApproved = audioApprovedAssets > 0;
+const audioRuntimeReady = [
+  "apps/web/src/features/audio/audioManager.ts",
+  "apps/web/src/features/audio/AudioContext.tsx",
+  "apps/web/src/features/audio/AudioSettings.tsx",
+  "scripts/check-audio-manifest.mjs",
+].every(checkFile);
 
 const gates = [
   {
@@ -115,12 +128,20 @@ const gates = [
         : "Deployment/bootstrap checklist has no unchecked items.",
   },
   {
+    id: "audio_runtime",
+    status: audioRuntimeReady ? "pass" : "blocked",
+    owner: "automation",
+    detail: audioRuntimeReady
+      ? "AudioManager, settings, first-play choice, lazy-loading contract, and manifest validator are present."
+      : "Audio runtime or validator files are missing.",
+  },
+  {
     id: "audio_assets",
     status: audioApproved ? "pass" : "deferred",
     owner: "audio+HF+rights",
     detail: audioApproved
-      ? `${audioAssets} approved audio assets are registered.`
-      : "Audio manifest contains no approved assets. Audio generation/QC is intentionally handled separately.",
+      ? `${audioApprovedAssets} approved audio assets are registered (${audioAssets} total manifest entries).`
+      : `Audio manifest has ${audioAssets} entries but 0 approved assets. Audio generation/QC is intentionally handled separately.`,
   },
   {
     id: "real_device_pilot",
@@ -141,6 +162,8 @@ const report = {
   approvedCompetitiveScenarios: approvedCompetitive.length,
   competitiveScenarioStatus: scenarioStatus,
   audioAssets,
+  approvedAudioAssets: audioApprovedAssets,
+  audioRuntimeReady,
   uncheckedDeploymentItems,
   gates,
 };
@@ -161,7 +184,7 @@ if (jsonOutput) {
 
   console.log("");
   console.log(
-    `blocking=${blocking.length} deferred=${deferred.length} approved_scenarios=${approvedCompetitive.length}/3 audio_assets=${audioAssets}`,
+    `blocking=${blocking.length} deferred=${deferred.length} approved_scenarios=${approvedCompetitive.length}/3 audio_assets=${audioApprovedAssets}/${audioAssets}`,
   );
 }
 

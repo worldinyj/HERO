@@ -42,7 +42,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 항목과 법무/개인정보 검토 잔존 |
 | 외부 배포 | **BLOCKED** | staging/prod Supabase, Cloudflare, Kakao 설정 실확인 필요 |
-| 오디오 | **DEFERRED** | 생성·검수는 별도 진행. manifest는 아직 승인 asset 0건 |
+| 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
+| 오디오 자산 | **DEFERRED** | 생성·HF/권리/기술 QC는 별도 진행. manifest는 아직 승인 asset 0건 |
 | 실기기·사내망 | **BLOCKED** | Kakao 인앱, Android Chrome, Samsung Internet, iOS Safari, 사내망 정책 |
 | 파일럿 | **BLOCKED** | 파일럿 발전소 1곳·30명 운영과 KPI 측정 필요 |
 
@@ -65,6 +66,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 모바일 핵심 E2E
 - WCAG 2.2 AA 핵심 자동점검
 - 브라우저 번들 secret 노출 방지
+- audio manifest validator: approved asset 파일 존재·same-origin 경로·중복 ID·provenance 검증
 
 ### 사람이 닫아야 하는 항목
 
@@ -106,7 +108,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 4. staging Supabase + Cloudflare + Kakao 환경을 연결한다.
 5. 최초 admin bootstrap과 관리자→담당자→사용자 실제 초대 플로우를 검증한다.
 6. 실기기/사내망 테스트를 수행한다.
-7. 오디오를 넣을 경우 승인 asset만 manifest에 등록하고 실기기 QC를 수행한다.
+7. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
 8. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
 9. Blocker 0일 때 v1.0 프로덕션 릴리스를 승인한다.
 
