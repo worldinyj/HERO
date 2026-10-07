@@ -1,3 +1,4 @@
+import { writeAuditLog } from "../_shared/audit.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import {
@@ -161,12 +162,12 @@ async function changeSelf(req: Request, rawNickname: string) {
     new_nickname: validation.nickname,
   });
 
-  await admin.from("audit_logs").insert({
-    actor_user_id: user.id,
-    plant_id: profile.plant_id,
+  await writeAuditLog(admin, {
+    actorUserId: user.id,
+    plantId: profile.plant_id,
     action: "nickname.changed",
-    entity_type: "profile",
-    entity_id: user.id,
+    entityType: "profile",
+    entityId: user.id,
     metadata: {
       season_id: season.id,
       season_key: season.season_key,
@@ -234,12 +235,12 @@ async function forceReset(req: Request, profileId: string) {
     new_nickname: resetNickname,
   });
 
-  await admin.from("audit_logs").insert({
-    actor_user_id: user.id,
-    plant_id: profile.plant_id,
+  await writeAuditLog(admin, {
+    actorUserId: user.id,
+    plantId: profile.plant_id,
     action: "nickname.force_reset",
-    entity_type: "profile",
-    entity_id: target.id,
+    entityType: "profile",
+    entityId: target.id,
     metadata: {
       old_nickname: oldNickname,
       reset_nickname: resetNickname,
