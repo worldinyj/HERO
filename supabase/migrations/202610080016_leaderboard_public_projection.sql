@@ -206,33 +206,38 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $$
-declare
-  v_season_id uuid;
+as $
 begin
-  v_season_id := coalesce(new.season_id, old.season_id);
-
-  if
-    (tg_op = 'DELETE' and old.status = 'completed')
-    or (tg_op = 'INSERT' and new.status = 'completed')
-    or (
-      tg_op = 'UPDATE'
-      and (
-        old.status is distinct from new.status
-        or old.hp_point is distinct from new.hp_point
-        or old.completed_at is distinct from new.completed_at
-        or old.plant_id is distinct from new.plant_id
-        or old.player_job_role is distinct from new.player_job_role
-      )
-      and (old.status = 'completed' or new.status = 'completed')
-    )
-  then
-    perform private.refresh_current_leaderboard_public(v_season_id);
+  if tg_op = 'DELETE' then
+    if old.status = 'completed' then
+      perform private.refresh_current_leaderboard_public(old.season_id);
+    end if;
+    return old;
   end if;
 
-  return coalesce(new, old);
+  if tg_op = 'INSERT' then
+    if new.status = 'completed' then
+      perform private.refresh_current_leaderboard_public(new.season_id);
+    end if;
+    return new;
+  end if;
+
+  if (
+    old.status is distinct from new.status
+    or old.hp_point is distinct from new.hp_point
+    or old.completed_at is distinct from new.completed_at
+    or old.plant_id is distinct from new.plant_id
+    or old.player_job_role is distinct from new.player_job_role
+  ) and (old.status = 'completed' or new.status = 'completed') then
+    perform private.refresh_current_leaderboard_public(new.season_id);
+    if old.season_id is distinct from new.season_id then
+      perform private.refresh_current_leaderboard_public(old.season_id);
+    end if;
+  end if;
+
+  return new;
 end;
-$$;
+$;
 
 revoke all on function private.refresh_current_leaderboard_from_session()
 from public, anon, authenticated;
