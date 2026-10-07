@@ -271,7 +271,7 @@ Staging Smoke가 PASS해도 다음 항목은 별도 사람 확인이 남는다.
 5. GitHub Actions → **Release Candidate Gate** 실행
 6. 입력값 `staging_smoke_run_id`에 바로 앞 성공 run ID 입력
 7. workflow가 Staging Smoke의 이름·성공결론·main branch·**head SHA 정확 일치**를 GitHub API로 재검증
-8. strict release evidence/readiness, scenario approval, audio scope, production build를 모두 확인
+8. strict release evidence/readiness, scenario source·cause traceability·approval/hash, audio scope, production build를 모두 확인
 9. 생성된 90일 보존 RC evidence artifact를 최종 승인자료에 첨부
 
 Release Candidate Gate는 production 배포를 실행하지 않는다. 배포 승인과 실제 production 전환은 조직의 승인 절차에 따라 별도로 수행한다.
