@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { getSupabase, signInWithKakao } from "../../lib/supabase";
 
@@ -257,6 +257,12 @@ export function InvitationPage() {
           </label>
 
           <p className="notice">플레이 결과와 순위는 인사평가·징계에 사용하지 않습니다.</p>
+
+          <div className="legal-links" aria-label="정책 문서">
+            <Link to="/terms">이용약관 전문</Link>
+            <span aria-hidden="true">·</span>
+            <Link to="/privacy">개인정보 처리방침 전문</Link>
+          </div>
 
           <button
             className="primary-button"
