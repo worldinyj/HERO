@@ -162,7 +162,7 @@
 | F-RES-01 | Human Performance Review: 5대 지표(Safety·Awareness·Communication·Procedure·Challenge) | P0 |
 | F-RES-02 | **Swiss Cheese 타임라인 + 인과 회고**: "어느 시점부터 방어막이 약해졌을까요?"를 통해 여러 조건의 누적을 성찰 | P0 |
 | F-RES-03 | 가장 중요한 결정(Key Decision)과 대안 HU Tool 해설 | P0 |
-| F-RES-04 | 실사건 공개: 유형·Root Cause·Contributing Factor (익명화) | P0 |
+| F-RES-04 | 실사건 공개: 유형·**Direct Cause·Root Cause·Contributing Cause/Factor** + 인과사슬·방어막 실패 (익명화) | P0 |
 | F-RES-05 | 개인용 누적 HP 프로필(5대 학습행동 지표·강점·주의점). 관리자에게 개인 지표는 노출하지 않음 | P0 |
 | F-RES-06 | 다른 플레이어 선택 분포(익명 통계, action_id/행동문구 기준) | P1 |
 
@@ -254,7 +254,7 @@
 ### 8.3 파이프라인
 ```
 OPIS PDF 수동 수집(관리자) → 업로드 → 텍스트 추출
- → [SAGE] AI 분석: Timeline · PSF · Error Precursor · Barrier · Root/Contributing Cause
+ → [SAGE] AI 분석: Timeline · **Direct Cause · Root Cause · Contributing Cause/Factor** · PSF · Error Precursor · Barrier
  → [STORY] Scene 구성 · 대사 · 익명화
  → [LOOP] 선택지·리스크 가중치·카드·엔딩
  → Human Factor 전문가 검토/서명 → 승인 → 배포
