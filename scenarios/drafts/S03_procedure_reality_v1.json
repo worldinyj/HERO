@@ -52,8 +52,8 @@
         "toolId": "questioning_attitude"
       },
       {
-        "title": "중요 설정의 방향은 다른 사람과 독립적으로 확인한다.",
-        "detail": "입력값뿐 아니라 증가/감소 방향과 기대되는 설비반응을 동료가 별도로 확인한다.",
+        "title": "중요 설정의 방향은 동료와 함께 확인한다.",
+        "detail": "입력 전에 설정 방향과 기대되는 설비반응을 동료와 함께 확인해 조작 의도와 현재 상태가 일치하는지 확인한다.",
         "toolId": "peer_check"
       },
       {
@@ -155,7 +155,7 @@
       "choices": [
         {
           "actionId": "peer_check_setting_direction",
-          "label": "동료가 설정 방향과 기대 반응을 별도로 확인한다.",
+          "label": "입력 전에 동료와 설정 방향과 기대 반응이 일치하는지 확인한다.",
           "next": "hazard_setting",
           "timeCostMin": 3,
           "effects": {
