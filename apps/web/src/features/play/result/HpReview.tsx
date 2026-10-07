@@ -63,6 +63,8 @@ export function HpReview({
   mode = "tutorial",
   replayEnabled = true,
   restartEnabled = true,
+  onContinue,
+  continueLabel = "계속",
 }: {
   scenario: Scenario;
   game: GameState;
@@ -72,6 +74,8 @@ export function HpReview({
   mode?: "tutorial" | "competitive";
   replayEnabled?: boolean;
   restartEnabled?: boolean;
+  onContinue?: () => void;
+  continueLabel?: string;
 }) {
   const keyDecision = decisionLabel(
     scenario,
@@ -146,31 +150,33 @@ export function HpReview({
         </section>
       ) : null}
 
-      {replayEnabled && onReplay && decisions.length > 0 ? (
-        <section className="review-section">
-          <h3>다르게 해보기</h3>
-          <div className="replay-list">
-            {decisions.map((decision) => (
-              <button
-                key={decision.nodeId}
-                type="button"
-                className="secondary-button replay-button"
-                onClick={() => onReplay(decision.nodeId)}
-              >
-                <span>{decision.prompt}</span>
-                <small>이 지점부터</small>
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : mode === "competitive" ? (
-        <section className="review-section">
-          <h3>다르게 해보기</h3>
-          <p className="muted mini-copy">
-            경쟁 시나리오의 결정 지점 리플레이는 서버에 별도 세션으로 기록하는
-            기능과 함께 제공됩니다.
-          </p>
-        </section>
+      {!onContinue ? (
+        replayEnabled && onReplay && decisions.length > 0 ? (
+          <section className="review-section">
+            <h3>다르게 해보기</h3>
+            <div className="replay-list">
+              {decisions.map((decision) => (
+                <button
+                  key={decision.nodeId}
+                  type="button"
+                  className="secondary-button replay-button"
+                  onClick={() => onReplay(decision.nodeId)}
+                >
+                  <span>{decision.prompt}</span>
+                  <small>이 지점부터</small>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : mode === "competitive" ? (
+          <section className="review-section">
+            <h3>다르게 해보기</h3>
+            <p className="muted mini-copy">
+              경쟁 시나리오의 결정 지점 리플레이는 서버에 별도 세션으로 기록하는
+              기능과 함께 제공됩니다.
+            </p>
+          </section>
+        ) : null
       ) : null}
 
       <p className="muted small-copy">
@@ -180,12 +186,20 @@ export function HpReview({
       </p>
 
       <div className="ending-actions">
-        {restartEnabled && onRestart ? (
-          <button type="button" className="secondary-button" onClick={onRestart}>
-            {mode === "tutorial" ? "처음부터 다시" : "새 플레이 시작"}
+        {onContinue ? (
+          <button type="button" className="primary-button" onClick={onContinue}>
+            {continueLabel}
           </button>
-        ) : null}
-        <Link className="primary-link" to="/">캠페인으로</Link>
+        ) : (
+          <>
+            {restartEnabled && onRestart ? (
+              <button type="button" className="secondary-button" onClick={onRestart}>
+                {mode === "tutorial" ? "처음부터 다시" : "새 플레이 시작"}
+              </button>
+            ) : null}
+            <Link className="primary-link" to="/">캠페인으로</Link>
+          </>
+        )}
       </div>
     </article>
   );
