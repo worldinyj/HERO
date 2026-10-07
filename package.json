@@ -31,7 +31,8 @@
     "check:legal-release": "node scripts/check-legal-release.mjs",
     "update:release-evidence": "node scripts/update-release-evidence.mjs",
     "check:human-review-evidence": "tsx scripts/check-human-review-evidence.ts",
-    "record:scenario-review": "tsx scripts/record-human-review.ts"
+    "record:scenario-review": "tsx scripts/record-human-review.ts",
+    "check:cause-traceability": "tsx scripts/check-cause-traceability.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
