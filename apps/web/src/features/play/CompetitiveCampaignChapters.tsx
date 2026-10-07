@@ -189,7 +189,7 @@ export function CompetitiveCampaignChapters() {
           <Link
             key={chapter.slug}
             className="chapter-link"
-            to={`/play/${chapter.slug}`}
+            to={`/briefing/${chapter.slug}`}
           >
             <article className="chapter-card chapter-card--ready">
               <span className="chapter-index">
