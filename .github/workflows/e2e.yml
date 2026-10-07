@@ -75,7 +75,7 @@ jobs:
 
       - name: Start local Edge Functions
         run: |
-          supabase functions serve > /tmp/hero-functions.log 2>&1 &
+          SITE_URL=http://127.0.0.1:4173 supabase functions serve > /tmp/hero-functions.log 2>&1 &
           echo $! > /tmp/hero-functions.pid
           for i in {1..60}; do
             code="$(curl -sS -o /dev/null -w '%{http_code}' -X POST               -H 'Content-Type: application/json'               --data '{"token":"health-check-not-a-real-invite"}'               "$API_URL/functions/v1/peek-invite" || true)"
