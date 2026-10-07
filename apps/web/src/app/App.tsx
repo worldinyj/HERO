@@ -11,6 +11,7 @@ import { InvitationPage } from "../features/invite/InvitationPage";
 import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
 import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { ManagerDashboardPage } from "../features/manager/ManagerDashboardPage";
+import { CompetitiveBriefingPage } from "../features/play/CompetitiveBriefingPage";
 import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
 import { GamePage } from "../features/play/GamePage";
 import { ProfilePage } from "../features/profile/ProfilePage";
@@ -43,6 +44,13 @@ function CampaignPage() {
       </div>
     </section>
   );
+}
+
+function BriefingRoute() {
+  const match = useLocation().pathname.match(/^\/briefing\/([^/]+)$/u);
+  const scenarioId = match?.[1] ?? "";
+
+  return <CompetitiveBriefingPage scenarioId={scenarioId} />;
 }
 
 function ActiveUserGate({ children }: { children: ReactNode }) {
@@ -81,6 +89,8 @@ export function App() {
     location.pathname === "/privacy" ||
     location.pathname.startsWith("/i/");
   const playRoute = location.pathname.startsWith("/play/");
+  const briefingRoute = location.pathname.startsWith("/briefing/");
+  const immersiveRoute = playRoute || briefingRoute;
 
   useEffect(() => {
     if (
@@ -95,8 +105,8 @@ export function App() {
   }, [profile?.is_active, profile?.role, session?.user.id]);
 
   return (
-    <main className={playRoute ? "app-shell app-shell--play" : "app-shell"}>
-      {!playRoute ? (
+    <main className={immersiveRoute ? "app-shell app-shell--play" : "app-shell"}>
+      {!immersiveRoute ? (
         <header className="hero-header">
           <p className="eyebrow">Human Error Risk Operations</p>
           <h1>{HERO_PRODUCT_NAME}</h1>
@@ -111,6 +121,14 @@ export function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/i/:token" element={<InvitationPage />} />
         <Route path="/" element={<ActiveUserGate><CampaignPage /></ActiveUserGate>} />
+        <Route
+          path="/briefing/:scenarioId"
+          element={
+            <ActiveUserGate>
+              <BriefingRoute />
+            </ActiveUserGate>
+          }
+        />
         <Route
           path="/play/:scenarioId"
           element={<ActiveUserGate><GamePage /></ActiveUserGate>}
@@ -137,7 +155,7 @@ export function App() {
         />
       </Routes>
 
-      {!publicRoute && !playRoute ? (
+      {!publicRoute && !immersiveRoute ? (
         <nav
           className={expandedNav ? "bottom-nav bottom-nav--manager" : "bottom-nav"}
           aria-label="주요 메뉴"
