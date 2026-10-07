@@ -285,6 +285,7 @@ ${checklist}
 ## 6. 보조 검토자료
 
 - 공통 HF 체크리스트: \`scenarios/research/T3_HF_REVIEW_CHECKLIST_V1.md\`
+- 사람 검토 증거 기록 가이드: \`scenarios/research/HUMAN_REVIEW_EVIDENCE_GUIDE.md\`
 - 공통 사람 검토 패킷: \`scenarios/research/T3_HUMAN_REVIEW_PACKET_V1.md\`
 - 시나리오별 AI 사전검토가 있는 경우: \`scenarios/research/S03_AI_PRE_REVIEW_V1.md\`
 - source evidence: \`scenarios/research/source-evidence.json\`
@@ -298,7 +299,13 @@ ${checklist}
 pnpm promote:scenario -- --scenario=${entry.scenarioId}
 \`\`\`
 
-사람 검토가 **모두 PASS**이고 preflight의 \`draftSha256\`이 이 문서의 SHA-256과 같을 때만 아래를 실행한다.
+각 검토영역의 결과를 current SHA에 기록하고 확인한다.
+
+\`\`\`bash
+pnpm check:human-review-evidence
+\`\`\`
+
+사람 검토 5개 영역이 **동일한 current SHA에 대해 모두 PASS**이고 preflight의 \`draftSha256\`이 이 문서의 SHA-256과 같을 때만 아래를 실행한다.
 
 \`\`\`bash
 ${promotionCommand}

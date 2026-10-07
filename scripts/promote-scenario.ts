@@ -9,6 +9,10 @@ import {
 import { basename, dirname, resolve } from "node:path";
 import { ScenarioSchema } from "../packages/schema/src/scenario.ts";
 import { sha256Content } from "./scenario-approval-integrity.ts";
+import {
+  loadHumanReviewEvidence,
+  summarizeHumanReview,
+} from "./scenario-human-review.ts";
 
 type PromotionStatus =
   | "tutorial_exception"
@@ -216,6 +220,13 @@ if (parsed.data.id !== entry.scenarioId) {
   );
 }
 
+const humanReviewEvidence = loadHumanReviewEvidence(process.cwd());
+const humanReviewSummary = summarizeHumanReview(
+  humanReviewEvidence,
+  entry.scenarioId,
+  draftSha256,
+);
+
 const missingConfirmations = [
   !options.confirmHf ? "--confirm-hf" : null,
   !options.confirmAnonymization ? "--confirm-anonymization" : null,
@@ -236,6 +247,7 @@ const preflight = {
     anonymization: options.confirmAnonymization,
     incidentDebrief: options.confirmDebrief,
   },
+  humanReviewEvidence: humanReviewSummary,
   apply: options.apply,
 };
 
@@ -245,6 +257,12 @@ if (!options.apply) {
     "PROMOTE_PREFLIGHT_ONLY: no files changed. Add --apply only after the named human reviewer has completed every confirmation.",
   );
   process.exit(0);
+}
+
+if (!humanReviewSummary.complete) {
+  fail(
+    `human review evidence is incomplete for current content SHA: missing=${humanReviewSummary.missingAreas.join(",") || "-"}; held=${humanReviewSummary.heldAreas.join(",") || "-"}`,
+  );
 }
 
 if (!options.approvedBy?.trim()) {

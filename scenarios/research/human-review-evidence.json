@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {
+      "scenarioId": "s01_time_pressure",
+      "reviews": []
+    },
+    {
+      "scenarioId": "s02_equipment_identity",
+      "reviews": []
+    },
+    {
+      "scenarioId": "s03_procedure_reality_gap",
+      "reviews": []
+    }
+  ]
+}
