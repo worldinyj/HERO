@@ -876,3 +876,36 @@ select:focus-visible {
     flex-direction: column;
   }
 }
+
+
+.participant-actions {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.danger-text-button {
+  min-height: 32px;
+  border: 0;
+  padding: 0 4px;
+  color: var(--danger);
+  background: transparent;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.danger-text-button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.inactive-badge {
+  display: inline-flex;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: rgba(138, 150, 173, 0.12);
+  font-size: 0.7rem;
+}
