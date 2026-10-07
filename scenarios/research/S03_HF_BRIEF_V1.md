@@ -144,6 +144,7 @@ RCP 회전속도 감소
 상세 추적표는 다음 문서를 기준으로 한다.
 
 - `scenarios/research/S03_CAUSE_TRACEABILITY_MATRIX_V1.md`
+- `scenarios/research/cause-traceability.json` — CI 검증용 machine-readable manifest
 
 핵심 원칙:
 
