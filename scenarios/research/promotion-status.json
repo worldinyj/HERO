@@ -67,11 +67,11 @@
         "approvedAt": null
       },
       "blockers": [
-        "HF review of Direct/Root/Contributing cause classification",
+        "HF review of Direct/Root/Contributing cause classification and cause-to-action traceability",
         "anonymization/operational-overexposure review",
-        "incidentDebrief final approval for v2 content hash"
+        "incidentDebrief final approval for v3 content hash"
       ],
-      "notes": "KINS investigation report No. 2026-03 was added as an internal factual/HF analysis source. S03 v2 now separates Direct Cause, HERO-classified Root Cause, Contributing Cause/Factor, causal chain, failed barriers, and post-trip recovery HF issues. Previous advisory review does not carry forward; human re-review is required."
+      "notes": "KINS investigation report No. 2026-03 is used as an internal factual/HF analysis source. S03 v3 separates Direct Cause, HERO-classified Root Cause, Contributing Cause/Factor, causal chain, failed barriers and corrective actions, while sanitizing exact operating values from the public debrief. Previous review evidence does not carry forward; human re-review is required."
     }
   ]
 }
