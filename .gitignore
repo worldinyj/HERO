@@ -8,3 +8,5 @@ coverage/
 .vite/
 .wrangler/
 .supabase/
+playwright-report/
+test-results/
