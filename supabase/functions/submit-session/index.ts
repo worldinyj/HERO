@@ -201,9 +201,10 @@ Deno.serve(async (req) => {
           : values.reduce((sum, value) => sum + value, 0) / values.length;
       });
 
-    const previousBestMetricAvg = previousMetricAverages.length > 0
-      ? Math.max(...previousMetricAverages)
-      : undefined;
+    const previousBestMetricAvg =
+      session.replay_of && previousMetricAverages.length > 0
+        ? Math.max(...previousMetricAverages)
+        : undefined;
 
     const evaluation = evaluate(parsed.data, state, {
       reflectionAnswered: body.reflectionAnswered === true,
