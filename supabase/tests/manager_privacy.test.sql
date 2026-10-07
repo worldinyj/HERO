@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('50000000-0000-0000-0000-000000000001', 'manager@privacy.test'),
@@ -129,9 +129,21 @@ select results_eq(
 );
 
 select results_eq(
-  $$select count(*) from public.session_decisions$$,
+  $select count(*) from public.session_decisions$,
   array[0::bigint],
   'manager cannot read player decisions directly'
+);
+
+select results_eq(
+  $select count(*) from public.v_leaderboard_current_public$,
+  array[0::bigint],
+  'manager cannot read individual current leaderboard rows'
+);
+
+select results_eq(
+  $select count(*) from public.v_leaderboard_snapshot_public$,
+  array[0::bigint],
+  'manager cannot read individual historical leaderboard rows'
 );
 
 select results_eq(
