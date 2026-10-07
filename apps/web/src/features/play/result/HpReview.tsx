@@ -4,6 +4,7 @@ import type {
 } from "@hero/engine";
 import type { MetricKey, Scenario } from "@hero/schema";
 import { Link } from "react-router";
+import { HpRadar } from "./HpRadar";
 
 const METRIC_LABEL: Record<MetricKey, string> = {
   safety: "Safety",
@@ -19,6 +20,30 @@ const ENDING_LABEL = {
   near_miss: "근접오류",
   event: "사건",
 } as const;
+
+const BARRIER_LABEL: Record<string, string> = {
+  briefing: "작업전 브리핑",
+  peer_check: "Peer Check",
+  self_check: "Self Check",
+  communication: "의사소통",
+  stop: "불확실 시 중지",
+  place_keeping: "Place Keeping",
+  independent_verification: "독립검증",
+  questioning: "Questioning Attitude",
+  procedure_review: "절차 재확인",
+};
+
+function barrierLabel(id: string): string {
+  return BARRIER_LABEL[id] ?? id.replaceAll("_", " ");
+}
+
+function weakBarrierIds(evaluation: Evaluation): string[] {
+  return [
+    ...new Set(
+      evaluation.breachChain.flatMap((entry) => entry.weakBarriers),
+    ),
+  ].sort();
+}
 
 function decisionLabel(
   scenario: Scenario,
@@ -82,6 +107,7 @@ export function HpReview({
     evaluation.keyDecisionActionId,
   );
   const decisions = replayNodes(scenario, game);
+  const weakBarriers = weakBarrierIds(evaluation);
 
   return (
     <article className="review-card hp-review">
@@ -104,6 +130,7 @@ export function HpReview({
 
       <section className="review-section">
         <h3>5대 학습행동</h3>
+        <HpRadar metrics={evaluation.metrics} />
         <div className="metric-bars">
           {(Object.entries(evaluation.metrics) as Array<[MetricKey, number]>).map(
             ([key, value]) => (
@@ -126,6 +153,28 @@ export function HpReview({
             ),
           )}
         </div>
+      </section>
+
+      <section className="review-section">
+        <h3>플레이 후 확인된 취약 방어막</h3>
+        {weakBarriers.length > 0 ? (
+          <div className="risk-factor-list" aria-label="학습용 취약 방어막">
+            {weakBarriers.map((barrier) => (
+              <span key={barrier} className="risk-factor-chip">
+                ▲ {barrierLabel(barrier)}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="muted mini-copy">
+            이번 경로에서는 사건·근접오류 구간에 별도 취약 방어막이 기록되지
+            않았습니다.
+          </p>
+        )}
+        <p className="muted mini-copy">
+          이 표시는 현재 시뮬레이션 경로를 돌아보기 위한 학습용 상대 정보입니다.
+          실제 설비 위험도·HRA 확률이나 개인 역량을 의미하지 않습니다.
+        </p>
       </section>
 
       <section className="review-section">
