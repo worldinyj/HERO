@@ -99,7 +99,7 @@ export function SceneStage({
   onContinue,
 }: {
   nodeKey: string;
-  speaker?: string;
+  speaker?: string | undefined;
   text: string;
   tone?: "scene" | "event";
   onContinue: () => void;
