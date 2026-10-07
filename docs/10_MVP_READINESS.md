@@ -30,7 +30,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 |---|---|---|
 | 모노레포·React/Vite·CI | **READY** | lint, typecheck, unit test, build 자동화 |
 | 게임 엔진·점수·seed 분리 | **READY** | 서버 재실행, path simulator, HP balance guard |
-| 인증·초대·역할·RLS | **READY (코드)** | 역할 매트릭스 pgTAP, 1회용 초대, 최초 admin bootstrap |
+| 인증·초대·역할·RLS | **READY (코드)** | 역할 매트릭스 pgTAP, 1회용 초대, 최초 admin bootstrap, 초대 없는 신규 Auth 세션 자동 로그아웃/재안내 |
 | 감사로그·rate limit·secret guard | **READY** | append-only audit, service-role limiter, client-secret CI |
 | 튜토리얼·경쟁 플레이·리플레이 | **READY (코드+E2E)** | server session, offline persistence/queue, replay lineage + 모바일 리플레이 오프라인 제출/재접속 E2E PASS |
 | PWA·오프라인 셸 | **READY** | manifest, service worker, install shell, CI 검증 |
