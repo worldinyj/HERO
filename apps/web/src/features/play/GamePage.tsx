@@ -261,7 +261,6 @@ export function GamePage() {
       ) : null}
 
       <PlayNodeStage
-        scenario={scenario}
         view={view}
         onAction={(action) => dispatch(scenario, action)}
       />
