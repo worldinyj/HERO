@@ -46,6 +46,7 @@ export function ManagerPage() {
   const [teamName, setTeamName] = useState("");
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [pendingInvite, setPendingInvite] = useState(false);
+  const [pendingDeactivate, setPendingDeactivate] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -112,6 +113,47 @@ export function ManagerPage() {
       setError(cause instanceof Error ? cause.message : "초대 링크를 생성하지 못했습니다.");
     } finally {
       setPendingInvite(false);
+    }
+  }
+
+  async function deactivateUser(row: ParticipationRow) {
+    const confirmed = window.confirm(
+      row.real_name + " 사용자를 비활성화하시겠습니까? 진행 중 세션도 종료됩니다.",
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setPendingDeactivate(row.profile_id);
+      setError(null);
+
+      const supabase = getSupabase();
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "deactivate-user",
+        {
+          body: {
+            userId: row.profile_id,
+            reason: "plant_manager_action",
+          },
+        },
+      );
+
+      if (invokeError) throw invokeError;
+
+      const result = data as { deactivated?: boolean; error?: string };
+      if (!result.deactivated) {
+        throw new Error(result.error ?? "사용자를 비활성화하지 못했습니다.");
+      }
+
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "사용자를 비활성화하지 못했습니다.",
+      );
+    } finally {
+      setPendingDeactivate(null);
     }
   }
 
@@ -254,13 +296,27 @@ export function ManagerPage() {
                   {row.team_name ? " · " + row.team_name : ""}
                 </small>
               </div>
-              <div className="participant-progress">
-                <strong>{row.completed_scenario_count}장</strong>
-                <small>
-                  {row.last_activity_at
-                    ? new Date(row.last_activity_at).toLocaleDateString("ko-KR")
-                    : "활동 없음"}
-                </small>
+              <div className="participant-actions">
+                <div className="participant-progress">
+                  <strong>{row.completed_scenario_count}장</strong>
+                  <small>
+                    {row.last_activity_at
+                      ? new Date(row.last_activity_at).toLocaleDateString("ko-KR")
+                      : "활동 없음"}
+                  </small>
+                </div>
+                {row.is_active ? (
+                  <button
+                    type="button"
+                    className="danger-text-button"
+                    disabled={pendingDeactivate === row.profile_id}
+                    onClick={() => void deactivateUser(row)}
+                  >
+                    {pendingDeactivate === row.profile_id ? "처리중…" : "비활성화"}
+                  </button>
+                ) : (
+                  <span className="inactive-badge">비활성</span>
+                )}
               </div>
             </div>
           ))}
