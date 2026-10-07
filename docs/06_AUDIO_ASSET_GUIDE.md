@@ -110,6 +110,47 @@ HERO/
 
 ---
 
+### 6.1 런타임 manifest 필드
+
+승인된 파일을 `apps/web/public/audio`에 넣을 때 `audio_manifest.json`의 `assets`에 다음 런타임 필드를 추가한다.
+
+| 필드 | 예 | 설명 |
+|---|---|---|
+| `id` | `BGM-01` | 큐 시트의 안정 ID |
+| `kind` | `bgm` / `sfx` / `stinger` | 재생 종류 |
+| `path` | `/audio/bgm/bgm_campaign_map_v1.mp3` | same-origin 배포 경로 |
+| `approved` | `true` | HF·권리·기술 QC를 모두 통과한 경우에만 true |
+| `loop` | `true` | BGM 반복 여부 |
+| `defaultVolume` | `0.8` | 0~1 asset 보정값 |
+| `preload` | `essential` / `scene` / `none` | 초기 캐시 정책 |
+| `provenance` | object | 승인 자산의 tool/model/promptHash/생성일/권리·HF·기술 검토자 |
+
+런타임은 `approved=true`이면서 `/audio/` 아래 same-origin 경로인 asset만 재생한다. 승인 asset은 실제 파일과 provenance가 모두 있어야 `pnpm check:audio-manifest`를 통과한다.
+
+`preload=essential`은 UI/선택 확정처럼 짧고 반복 사용되는 **승인 SFX에만** 사용한다. BGM은 최초 LCP 시 다운로드하지 않고 해당 장면에서 처음 요청될 때 lazy-load한다.
+
+예시:
+
+```json
+{
+  "id": "SFX-02",
+  "kind": "sfx",
+  "path": "/audio/sfx/sfx_choice_confirm_v1.mp3",
+  "approved": true,
+  "defaultVolume": 0.8,
+  "preload": "essential",
+  "provenance": {
+    "tool": "Google Flow",
+    "model": "사용한 모델명",
+    "promptHash": "sha256:...",
+    "generatedAt": "YYYY-MM-DD",
+    "licenseReviewedBy": "검토자",
+    "hfReviewedBy": "검토자",
+    "technicalReviewedBy": "검토자"
+  }
+}
+```
+
 ## 7. 검수 게이트
 
 각 asset은 배포 전 아래를 모두 PASS 해야 한다.

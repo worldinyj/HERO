@@ -1,6 +1,7 @@
 import type { GameAction, GameView } from "@hero/engine";
 import type { ScenarioNode } from "@hero/schema";
 import { useEffect, useState } from "react";
+import { useAudio } from "../../audio/AudioContext";
 import { ChoiceSheet } from "../ChoiceSheet";
 import { BarrierCardTray } from "./BarrierCardTray";
 
@@ -16,6 +17,7 @@ export function DecisionStage({
   onAction: (action: GameAction) => void;
 }) {
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const { manager: audioManager } = useAudio();
 
   useEffect(() => {
     setSelectedChoice(null);
@@ -46,6 +48,7 @@ export function DecisionStage({
                   disabled={used}
                   onClick={() => {
                     setSelectedChoice(null);
+                    void audioManager.playSfx("SFX-05");
                     onAction({ type: "info", actionId: info.actionId });
                   }}
                 >
@@ -85,6 +88,7 @@ export function DecisionStage({
         onSelect={setSelectedChoice}
         onConfirm={(actionId) => {
           setSelectedChoice(null);
+          void audioManager.playSfx("SFX-02");
           onAction({ type: "choice", actionId });
         }}
       />

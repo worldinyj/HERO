@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useAudio } from "../../audio/AudioContext";
 import { SceneStage } from "../SceneStage";
 
 export function EventAlert({
@@ -9,6 +11,12 @@ export function EventAlert({
   text: string;
   onContinue: () => void;
 }) {
+  const { manager: audioManager } = useAudio();
+
+  useEffect(() => {
+    void audioManager.playSfx("SFX-07");
+  }, [audioManager, nodeKey]);
+
   return (
     <div className="event-alert" role="status" aria-label="상황 변화">
       <SceneStage

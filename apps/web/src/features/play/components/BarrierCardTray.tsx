@@ -1,5 +1,6 @@
 import { BARRIER_CARDS } from "@hero/engine";
 import { useEffect, useMemo, useState } from "react";
+import { useAudio } from "../../audio/AudioContext";
 
 export function BarrierCardTray({
   availableCardIds,
@@ -11,6 +12,7 @@ export function BarrierCardTray({
   onUse: (cardId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const { manager: audioManager } = useAudio();
   const [lastUsedCard, setLastUsedCard] = useState<string | null>(null);
 
   const cards = useMemo(
@@ -68,6 +70,7 @@ export function BarrierCardTray({
               className="card-button"
               onClick={() => {
                 setLastUsedCard(card.id);
+                void audioManager.playSfx("SFX-04");
                 onUse(card.id);
               }}
             >
