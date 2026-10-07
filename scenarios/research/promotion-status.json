@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-07",
+  "updatedAt": "2026-10-08",
   "entries": [
     {
       "scenarioId": "s00_tutorial",
@@ -71,7 +71,7 @@
         "anonymization/operational-overexposure review",
         "incidentDebrief final approval for v3 content hash"
       ],
-      "notes": "KINS investigation report No. 2026-03 is used as an internal factual/HF analysis source. S03 v3 separates Direct Cause, HERO-classified Root Cause, Contributing Cause/Factor, causal chain, failed barriers and corrective actions, while sanitizing exact operating values from the public debrief. Previous review evidence does not carry forward; human re-review is required."
+      "notes": "KINS investigation report No. 2026-03 is used as an internal factual/HF analysis source. S03 v4 corrects the gameplay premise so the triggering setting change is presented as an unplanned, nonessential action rather than a required procedure step, adds a safe path that rechecks necessity before acting, and keeps Direct/Root/Contributing cause, failed/absent barriers, corrective actions, recovery-HF boundary, and public sanitization explicit. Human re-review is required for the current v4 content hash."
     }
   ]
 }
