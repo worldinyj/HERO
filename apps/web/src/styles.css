@@ -12,6 +12,7 @@
   --muted: #8a96ad;
   --accent: #f2a541;
   --barrier: #6fa0ff;
+  --danger: #f2685c;
 }
 
 * { box-sizing: border-box; }
@@ -26,6 +27,12 @@ body {
 }
 
 button, a { -webkit-tap-highlight-color: transparent; }
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
 
 .app-shell {
   width: min(100%, 480px);
@@ -70,6 +77,33 @@ h1 {
   padding: 20px;
   background: rgba(22, 33, 58, 0.92);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+}
+
+.auth-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.kakao-button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  background: #fee500;
+  color: #191919;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.kakao-button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.error-text {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
 }
 
 .chapter-list {
