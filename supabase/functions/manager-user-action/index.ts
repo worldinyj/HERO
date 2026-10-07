@@ -1,3 +1,4 @@
+import { writeAuditLog, writeAuditLogs } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
@@ -72,12 +73,12 @@ async function cancelInvite(
 
   if (error) throw error;
 
-  await admin.from("audit_logs").insert({
-    actor_user_id: userId,
-    plant_id: plantId,
+  await writeAuditLog(admin, {
+    actorUserId: userId,
+    plantId,
     action: "invitation.canceled",
-    entity_type: "invitation",
-    entity_id: invitation.id,
+    entityType: "invitation",
+    entityId: invitation.id,
     metadata: {
       target_role: invitation.target_role,
       invitee_name: invitation.invitee_name,
@@ -138,23 +139,23 @@ async function reissueInvite(
     throw plantError ?? new Error("plant_not_found");
   }
 
-  await admin.from("audit_logs").insert([
+  await writeAuditLogs(admin, [
     {
-      actor_user_id: userId,
-      plant_id: plantId,
+      actorUserId: userId,
+      plantId,
       action: "invitation.canceled_for_reissue",
-      entity_type: "invitation",
-      entity_id: invitation.id,
+      entityType: "invitation",
+      entityId: invitation.id,
       metadata: {
         replacement_invitation_id: replacement.id,
       },
     },
     {
-      actor_user_id: userId,
-      plant_id: plantId,
+      actorUserId: userId,
+      plantId,
       action: "invitation.reissued",
-      entity_type: "invitation",
-      entity_id: replacement.id,
+      entityType: "invitation",
+      entityId: replacement.id,
       metadata: {
         replaced_invitation_id: invitation.id,
         job_role: invitation.job_role,
@@ -216,12 +217,12 @@ async function setPlayerActive(
 
   if (updateError) throw updateError;
 
-  await admin.from("audit_logs").insert({
-    actor_user_id: userId,
-    plant_id: plantId,
+  await writeAuditLog(admin, {
+    actorUserId: userId,
+    plantId,
     action: isActive ? "player.reactivated" : "player.deactivated",
-    entity_type: "profile",
-    entity_id: target.id,
+    entityType: "profile",
+    entityId: target.id,
     metadata: {
       real_name: target.real_name,
       nickname: target.nickname,
