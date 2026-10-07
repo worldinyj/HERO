@@ -413,7 +413,13 @@ export function LeaderboardPage() {
 
       if (requestKeyRef.current !== requestKey) return;
 
-      setRows((current) => [...current, ...nextRows]);
+      setRows((current) => {
+        const existing = new Set(current.map((row) => row.nickname));
+        return [
+          ...current,
+          ...nextRows.filter((row) => !existing.has(row.nickname)),
+        ];
+      });
       setHasMore(nextRows.length === PAGE_SIZE);
     } catch (cause) {
       if (requestKeyRef.current === requestKey) {
