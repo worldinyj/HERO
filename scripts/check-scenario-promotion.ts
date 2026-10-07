@@ -1,5 +1,9 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  approvedContentHashMatches,
+  isSha256Hex,
+} from "./scenario-approval-integrity.ts";
 
 type PromotionStatus =
   | "tutorial_exception"
@@ -19,6 +23,7 @@ interface PromotionEntry {
     approvedBy: string | null;
     approvedAt: string | null;
   };
+  approvedContentSha256?: string | null;
 }
 
 interface PromotionManifest {
@@ -102,6 +107,19 @@ for (const file of scenarioFiles("scenarios/data")) {
   if (!approved) {
     fail(
       `competitive shipping scenario is not fully human-approved: ${id} (${entry.status})`,
+    );
+  }
+
+  if (!isSha256Hex(entry.approvedContentSha256)) {
+    fail(
+      `approved competitive scenario is missing a valid approvedContentSha256: ${id}`,
+    );
+  }
+
+  const shippingContent = readFileSync(file);
+  if (!approvedContentHashMatches(entry.approvedContentSha256, shippingContent)) {
+    fail(
+      `approved competitive scenario content changed after human approval: ${id}`,
     );
   }
 }

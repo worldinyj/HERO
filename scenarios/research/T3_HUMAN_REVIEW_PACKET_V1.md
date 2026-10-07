@@ -115,8 +115,8 @@
 1. `promotion-status.json`에 HF/익명화 검토 완료를 기록한다.
 2. `humanReview.status = "approved"`, 승인자, 승인일을 기록한다.
 3. `status = "approved"`로 변경한다.
-4. JSON을 `scenarios/drafts/`에서 `scenarios/data/`로 승격한다.
-5. CI promotion guard + schema/graph + path simulation을 통과시킨다.
+4. JSON을 `scenarios/drafts/`에서 `scenarios/data/`로 승격하고, 승격 도구가 승인 시점의 SHA-256을 `approvedContentSha256`에 기록한다.
+5. CI promotion guard가 현재 파일 hash와 승인 hash의 일치를 확인한 뒤 schema/graph + path simulation을 통과시킨다.
 6. 관리자에서 scenario version을 업로드하고 review → published 전환한다.
 
 CI는 사람승인 정보가 없는 경쟁 JSON이 `scenarios/data/`에 들어오면 실패한다.
@@ -137,6 +137,7 @@ preflight는 다음을 확인한다.
 - source 파일이 `scenarios/drafts/` 아래에 있는지
 - draft JSON이 ScenarioSchema를 통과하는지
 - manifest scenarioId와 JSON id가 같은지
+- 현재 검토 대상 JSON의 SHA-256 (`draftSha256`)
 
 실제 승격은 **검토자가 HF·익명화/운전정보 과노출·incidentDebrief를 모두 확인한 뒤**에만 실행한다.
 
@@ -163,4 +164,4 @@ pnpm analyze:hp-balance
 pnpm check:mvp-readiness
 ```
 
-최종 커밋/PR은 CI의 promotion/schema/path/balance/E2E/DB 정책 게이트를 모두 통과해야 한다.
+최종 커밋/PR은 CI의 promotion/schema/path/balance/E2E/DB 정책 게이트를 모두 통과해야 한다. 승인 후 JSON을 수정하면 `approvedContentSha256` 불일치로 promotion guard가 실패하므로, 콘텐츠 변경이 필요하면 다시 사람검토·재승인을 수행한다.

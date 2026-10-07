@@ -21,7 +21,8 @@
     "check:scenario-promotion": "tsx scripts/check-scenario-promotion.ts",
     "check:mvp-readiness": "node scripts/check-mvp-readiness.mjs",
     "promote:scenario": "tsx scripts/promote-scenario.ts",
-    "check:source-evidence": "tsx scripts/check-source-evidence.ts"
+    "check:source-evidence": "tsx scripts/check-source-evidence.ts",
+    "check:approval-hash": "tsx scripts/check-approval-hash-contract.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

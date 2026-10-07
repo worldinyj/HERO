@@ -33,6 +33,9 @@ jobs:
       - name: Check scenario promotion gate
         run: pnpm check:scenario-promotion
 
+      - name: Check approved scenario hash contract
+        run: pnpm check:approval-hash
+
       - name: Preflight scenario promotion helper
         run: pnpm promote:scenario -- --scenario=s03_procedure_reality_gap
 
