@@ -29,8 +29,11 @@ function fixture() {
     incidentDebrief: {
       caseType: "공개 사건 일반화",
       overview: "공식 공개자료의 사실관계를 일반화한 사건 개요입니다.",
+      directCauses: ["사건 직전의 직접적인 행위·설비 트리거"],
       rootCauses: ["방어막 관점 교육 분석"],
       contributingFactors: ["교육용 기여조건"],
+      causalChain: ["직접 트리거 → 설비 반응 → 사건"],
+      failedBarriers: ["독립확인 방어막"],
       lessons: [
         {
           title: "멈추고 확인한다.",
@@ -73,7 +76,17 @@ describe("incident debrief source attribution schema", () => {
     ]);
   });
 
-  it("keeps older incident debriefs backward compatible with an empty source list", () => {
+  it("requires direct causes for every incident debrief", () => {
+    const input = fixture();
+    delete (input.incidentDebrief as { directCauses?: unknown }).directCauses;
+
+    expect(ScenarioSchema.safeParse(input).success).toBe(false);
+  });
+
+  it("keeps optional causal arrays and older source lists backward compatible", () => {
+    const input = fixture();
+    delete (input.incidentDebrief as { causalChain?: unknown }).causalChain;
+    delete (input.incidentDebrief as { failedBarriers?: unknown }).failedBarriers;
     const input = fixture();
     delete (input.incidentDebrief as { sources?: unknown }).sources;
 
