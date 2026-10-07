@@ -90,6 +90,22 @@
             "license": null,
             "evidenceUrl": null
           }
+        },
+        {
+          "id": "s01-safewatch-opis-locator",
+          "authority": "행정안전부 안전모아 / 원자력안전위원회 제공정보",
+          "sourceClass": "official_locator",
+          "url": "https://safewatch.safemap.go.kr/contact/selectNsopSafetyChck.do",
+          "eventSpecific": false,
+          "purpose": [
+            "direct_record_locator",
+            "opis_backed_accident_list"
+          ],
+          "rights": {
+            "status": "not_applicable",
+            "license": null,
+            "evidenceUrl": null
+          }
         }
       ]
     },
@@ -159,6 +175,22 @@
           "purpose": [
             "policy_briefing_original_locator",
             "same_date_rights_policy_context"
+          ],
+          "rights": {
+            "status": "not_applicable",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s02-safewatch-opis-locator",
+          "authority": "행정안전부 안전모아 / 원자력안전위원회 제공정보",
+          "sourceClass": "official_locator",
+          "url": "https://safewatch.safemap.go.kr/contact/selectNsopSafetyChck.do",
+          "eventSpecific": false,
+          "purpose": [
+            "direct_record_locator",
+            "opis_backed_accident_list"
           ],
           "rights": {
             "status": "not_applicable",
