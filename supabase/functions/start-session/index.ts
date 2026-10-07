@@ -141,6 +141,19 @@ Deno.serve(async (req) => {
       ) {
         return json(req, { error: "invalid_replay_source" }, 409);
       }
+
+      const { data: replayDecision, error: replayDecisionError } = await admin
+        .from("session_decisions")
+        .select("id")
+        .eq("session_id", sourceReplay.id)
+        .eq("node_id", replayFromNode)
+        .eq("action_type", "choice")
+        .limit(1)
+        .maybeSingle();
+
+      if (replayDecisionError || !replayDecision) {
+        return json(req, { error: "invalid_replay_target" }, 409);
+      }
     }
 
     const presentationSeed = crypto.randomUUID();

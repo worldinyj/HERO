@@ -13,6 +13,9 @@ export interface CompetitiveServerSession {
   scenarioVersion: number;
   perspectiveRole: string;
   startedAt: string;
+  replayOf: string | null;
+  replayFromNode: string | null;
+  submissionLogStart: number;
 }
 
 export interface StoredCompetitiveSession {
