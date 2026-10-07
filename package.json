@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@12.9.1",
-  "engines": { "node": ">=20.19.0" },
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "pnpm --dir apps/web dev",
     "build": "pnpm --dir apps/web build",
@@ -18,5 +20,6 @@
     "tsx": "4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0"
-  }
+  },
+  "type": "module"
 }
