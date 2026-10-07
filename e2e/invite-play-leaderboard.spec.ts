@@ -90,6 +90,10 @@ const adminManagerIdentities = {
     candidatePasswordEnv: "HERO_E2E_PASSWORD_A",
     candidateName: "E2E Manager Candidate A",
     nickname: "E2ELEAD1",
+    playerEmail: "hero-e2e-player-candidate-a@example.test",
+    playerPasswordEnv: "HERO_E2E_PASSWORD_A",
+    playerName: "E2E Invited Player A",
+    playerNickname: "E2ETEAM1",
   },
   "mobile-360x800": {
     adminEmail: "hero-e2e-admin-b@example.test",
@@ -98,6 +102,10 @@ const adminManagerIdentities = {
     candidatePasswordEnv: "HERO_E2E_PASSWORD_B",
     candidateName: "E2E Manager Candidate B",
     nickname: "E2ELEAD2",
+    playerEmail: "hero-e2e-player-candidate-b@example.test",
+    playerPasswordEnv: "HERO_E2E_PASSWORD_B",
+    playerName: "E2E Invited Player B",
+    playerNickname: "E2ETEAM2",
   },
 } as const;
 
@@ -117,9 +125,10 @@ test("admin creates manager invitation and invitee accepts it", async ({
 
   const adminPassword = process.env[identity.adminPasswordEnv];
   const candidatePassword = process.env[identity.candidatePasswordEnv];
+  const playerPassword = process.env[identity.playerPasswordEnv];
 
-  if (!adminPassword || !candidatePassword) {
-    throw new Error("missing_e2e_admin_or_manager_candidate_password");
+  if (!adminPassword || !candidatePassword || !playerPassword) {
+    throw new Error("missing_e2e_invitation_chain_password");
   }
 
   await page.goto("/login");
@@ -194,6 +203,62 @@ test("admin creates manager invitation and invitee accepts it", async ({
   await page.goto("/manager");
   await expect(
     page.getByRole("heading", { name: "발전소 참여 현황" }),
+  ).toBeVisible();
+
+  await page.getByLabel("이름").fill(identity.playerName);
+  await page.getByLabel("직무").selectOption("worker");
+  await page.getByLabel("팀/조").fill("E2E Team");
+  await page.getByRole("button", { name: "초대 링크 생성" }).click();
+
+  const playerInviteCode = page.locator(".invite-result-box code");
+  await expect(playerInviteCode).toContainText("/i/");
+  const playerInviteUrl = (await playerInviteCode.textContent())?.trim();
+
+  if (!playerInviteUrl) {
+    throw new Error("player_invite_url_missing");
+  }
+
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+
+  await page.goto(playerInviteUrl);
+  await expect(
+    page.getByRole("heading", {
+      name: `${identity.playerName} 님, 초대되었습니다`,
+    }),
+  ).toBeVisible();
+
+  await page.evaluate(
+    ({ email, password }) => {
+      window.sessionStorage.setItem("hero:e2e-email", email);
+      window.sessionStorage.setItem("hero:e2e-password", password);
+    },
+    { email: identity.playerEmail, password: playerPassword },
+  );
+
+  await page.getByRole("button", { name: "카카오로 시작하기" }).click();
+
+  const playerNickname = page.locator('input[placeholder^="2~12자"]');
+  await expect(playerNickname).toBeVisible();
+  await playerNickname.fill(identity.playerNickname);
+  await expect(
+    page.getByText("사용 가능한 닉네임입니다."),
+  ).toBeVisible();
+
+  const playerCheckboxes = page.getByRole("checkbox");
+  await playerCheckboxes.nth(0).check();
+  await playerCheckboxes.nth(1).check();
+
+  await page
+    .getByRole("button", { name: "초대 수락하고 시작하기" })
+    .click();
+
+  await expect(page).toHaveURL("/");
+  await page.goto("/leaderboard");
+  await expect(
+    page.getByRole("heading", { name: "리더보드" }),
   ).toBeVisible();
 });
 
