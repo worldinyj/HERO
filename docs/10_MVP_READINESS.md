@@ -32,15 +32,15 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | 게임 엔진·점수·seed 분리 | **READY** | 서버 재실행, path simulator, HP balance guard |
 | 인증·초대·역할·RLS | **READY (코드)** | 역할 매트릭스 pgTAP, 1회용 초대, 최초 admin bootstrap |
 | 감사로그·rate limit·secret guard | **READY** | append-only audit, service-role limiter, client-secret CI |
-| 튜토리얼·경쟁 플레이·리플레이 | **READY (코드)** | server session, offline persistence/queue, replay lineage |
+| 튜토리얼·경쟁 플레이·리플레이 | **READY (코드+E2E)** | server session, offline persistence/queue, replay lineage + 모바일 리플레이 오프라인 제출/재접속 E2E PASS |
 | PWA·오프라인 셸 | **READY** | manifest, service worker, install shell, CI 검증 |
 | 리더보드·월간 시즌 | **READY (코드)** | pagination, KST rollover test, snapshot, self rank |
 | 담당자 프라이버시 | **READY (코드)** | 개인 점수/선택 차단, n<5 억제, 닉네임↔HP 역조회 차단 |
 | 접근성 | **READY (자동 게이트)** | WCAG 2.2 AA 자동 검사, reduced motion, 키보드/포커스 |
-| 모바일 핵심 E2E | **READY (자동 게이트)** | 초대→가입→플레이→결과→리더보드 자동 플로우 |
+| 모바일 핵심 E2E | **READY (자동 게이트)** | 360×800/390×844: 초대→가입→플레이→결과→리플레이→오프라인 제출 큐→재접속 자동제출→리더보드 자동 플로우 |
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
-| S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + 과거 OPIS 목록/현재 NSIC 진입점 확인. 사건별 direct URL/식별번호, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
-| S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 확보. 원안위 직접 조사 원문/개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
+| S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + NSIC/과거 OPIS + 안전모아 OPIS 연계 locator 확인. 사건별 direct URL/식별번호/PDF, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
+| S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 + 안전모아 OPIS 연계 locator 확인. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
 | 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | 실제 값 연결·체크리스트 완료·외부배포 승인 증거 + 동일 SHA Staging Smoke PASS 필요 |
@@ -65,7 +65,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - Deno Edge Function 타입검사
 - audit helper 우회 금지
 - DB RLS·manager privacy·rate limit pgTAP
-- 모바일 핵심 E2E
+- 모바일 핵심 E2E: 2종 모바일 뷰포트에서 초대→플레이→서버확정→결정지점 리플레이→오프라인 완료/큐잉→재접속 자동제출→리더보드 개인정보 경계
 - WCAG 2.2 AA 핵심 자동점검
 - 브라우저 번들 secret 노출 방지
 - staging HTTP/SPA/PWA/보안헤더 validator 자체 self-test
@@ -114,13 +114,13 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 4. staging Supabase + Cloudflare + Kakao 환경을 연결한다.
 5. GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
 6. 최초 admin bootstrap과 관리자→담당자→사용자 실제 초대 플로우를 검증한다.
-6. 실기기/사내망 테스트를 수행한다.
-7. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
-8. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
-9. 법무·외부배포·실기기·사내망·파일럿 승인 증거를 `ops/release-evidence.json`에 기록하고 오디오 정책을 `excluded` 또는 `included`로 확정한다.
-10. 릴리스 대상 `main` SHA를 staging에 배포하고 **Staging Smoke**를 PASS시킨다.
-11. 같은 SHA에서 **Release Candidate Gate**를 실행해 Staging Smoke run ID와 모든 증거를 검증한다.
-12. RC evidence artifact를 최종 승인자료로 첨부하고 Blocker 0일 때 v1.0 프로덕션 릴리스를 승인한다.
+7. 실기기/사내망 테스트를 수행한다.
+8. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
+9. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
+10. 법무·외부배포·실기기·사내망·파일럿 승인 증거를 `ops/release-evidence.json`에 기록하고 오디오 정책을 `excluded` 또는 `included`로 확정한다.
+11. 릴리스 대상 `main` SHA를 staging에 배포하고 **Staging Smoke**를 PASS시킨다.
+12. 같은 SHA에서 **Release Candidate Gate**를 실행해 Staging Smoke run ID와 모든 증거를 검증한다.
+13. RC evidence artifact를 최종 승인자료로 첨부하고 Blocker 0일 때 v1.0 프로덕션 릴리스를 승인한다.
 
 ## 6. readiness 명령
 
