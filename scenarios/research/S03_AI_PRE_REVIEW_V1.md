@@ -1,86 +1,87 @@
-# S03 AI Pre-Review V1 — Human Review 지원용
+# S03 AI Pre-Review V2 — KINS 상세 사건조사보고서 반영 후 재검토
 
-> 대상: `s03_procedure_reality_gap`  
+> 대상: `s03_procedure_reality_gap` v2  
 > 기준일: 2026-10-07  
-> 상태: **ADVISORY PASS — HUMAN APPROVAL REQUIRED**  
-> 이 문서는 자동/AI 사전검토이며 `promotion-status.json`의 human approval을 대신하지 않는다.
+> 상태: **ADVISORY HOLD — HUMAN RE-REVIEW REQUIRED**  
+> 이 문서는 AI 사전검토이며 사람의 HF/운전/익명화 승인을 대신하지 않는다.
 
-## 1. 검토 범위
+## 1. 재검토 사유
 
-다음 네 범위를 사람 검토 전에 사전 점검했다.
+기존 V1은 2026-09-04 원자력안전위원회 보도자료를 중심으로 검토했다. 이후 사용자 제공 KINS 「원전 사고·고장 조사 보고서 제2026-03호(260811SU3)」 전체본이 추가되어, S03의 사건원인 구조를 단순한 “설정방향 입력 오류 + 재확인 방어막” 수준에서 다음 구조로 재작성했다.
 
-1. HF/HU Tool 표현 정합성
-2. Just Culture 및 개인책임 과도집중 여부
-3. 익명화·운전정보 과노출 여부
-4. 공식 조사결과와 HERO 교육적 재구성의 경계
+- Direct Cause
+- Root Cause — HERO 교육용 분류
+- Contributing Cause / Factor
+- Causal Chain
+- Failed / Weakened Barriers
+- 사건 후 Recovery HF issue의 분리
 
-기술적 graph/schema/path/balance 검증은 기존 CI 결과를 따른다.
+콘텐츠의 원인분석 범위가 실질적으로 변경되었으므로 기존 AI advisory pass를 자동 승계하지 않는다.
 
-## 2. 사전 판정
+## 2. 소스 기반 확인사항
 
-| 항목 | AI 사전판정 | 근거/메모 |
+KINS 보고서에서 직접 확인되는 핵심은 다음과 같다.
+
+1. 소내부하운전 중 VPL 설정치를 변경하면서 CVR이 아닌 LDR을 기준으로 낮은 설정값을 입력했다.
+2. 설정값 오류로 터빈제어밸브 개도가 감소하고 발전기 주파수와 RCP 속도가 감소했다.
+3. RCP 속도 저하가 원자로보호신호와 자동정지로 이어졌다.
+4. VPL 변경은 사건 직전 필수적인 조작이 아니었고 사전 계획되지 않았다.
+5. 주제어실 브리핑/업데이트가 사용되지 않았다.
+6. 지시받은 설정값의 적정성 검토, Questioning Attitude·자기진단, 변경 후 상태감시가 미흡했다.
+7. 다수의 시운전 참관 인원과 경쟁 운전업무가 집중도·정보교환에 영향을 주었다.
+8. 재발방지대책에는 MMIS 경고/재확인, 미예정 운전행위 사전점검, 교육·시뮬레이터 반영 등이 포함된다.
+
+## 3. AI 사전분류
+
+| 구분 | AI 사전분류 | 사람 검토 포인트 |
 |---|---|---|
-| 공식 사건 사실관계 | PASS | 2026-09-04 원안위 보도자료의 설정방향 입력 오류, 자동정지, 재확인 절차·시스템 보강, 교육 조치를 사실기반 축으로 사용 |
-| source/rights | PASS | `source-evidence.json`에서 source/rights verdict complete. 정책브리핑 텍스트 공공누리 제1유형 확인 |
-| 실제 발전소/호기 노출 | PASS | 공개 draft에는 실제 발전소/호기명 없음 |
-| 고유 설비명/Tag 노출 | PASS | “설비 반응의 상한을 정하는 설정” 수준으로 일반화 |
-| 실제 설정값/시험출력 노출 | PASS | 실제 설정값·출력값·시각·운전화면 재현 없음 |
-| 실제 운전절차 재현 위험 | PASS WITH HUMAN CONFIRMATION | 단계는 교육용 의사결정 구조로 일반화되어 있으나 운전/HF 검토자가 실제 절차를 역추론할 수 없는지 최종 확인 필요 |
-| 개인 단일원인 프레이밍 | PASS | 입력 오류 사실은 인정하되 절차·시스템·재확인·팀 방어막으로 학습을 확장 |
-| Questioning Attitude | PASS | 절차 무시가 아니라 절차 전제와 현재 상태의 불일치 확인으로 표현 |
-| Peer Check | PASS AFTER WORDING REFINEMENT | “독립적으로 확인” 표현을 제거해 Independent Verification과의 혼동 가능성을 낮춤 |
-| Three-way Communication | PASS AFTER WORDING REFINEMENT | draft에 명시적 Three-way Communication Tool이 없어 HF Brief를 “명확한 팀 커뮤니케이션”으로 정리 |
-| Place Keeping | HUMAN CONFIRMATION | 상태전환 중 현재 단계·입력 목적 유지라는 교육적 용도는 타당해 보이나 실제 적용 적절성 확인 필요 |
-| Stop When Unsure | PASS WITH HUMAN CONFIRMATION | 예상과 반대 추세에서 추가 입력보다 중지·안정·확인을 우선하는 방어행동으로 표현 |
-| PSF/Hazard Index | PASS | HF Brief에서 게임용 PSF가 공식 원인분류가 아님을 명시하며 UI에서도 실제 HRA/HEP로 제시하지 않음 |
-| 사건 디브리프 경계 | PASS WITH UI REFINEMENT | UI에서 공식자료 기반 사건개요와 “방어막 관점 원인 분석”을 구분하는 별도 PR과 함께 검토 권장 |
+| Direct Cause | 설정치 오입력 및 그에 따른 제어밸브/주파수/RCP 속도 저하 | 직접원인의 범위를 인적행위와 물리적 트리거로 나눈 방식이 적절한지 |
+| Root Cause RC-1 | 미예정 중요 운전행위 관리 방어막 부족 | KINS가 공식 root cause taxonomy로 명명한 것처럼 읽히지 않는지 |
+| Root Cause RC-2 | 운전상태별 LDR/CVR 관계에 대한 mental model gap | 지식/이해 부족으로 과도 단순화하지 않았는지 |
+| Root Cause RC-3 | 중요 설정치 검증·사후감시 방어막 부족 | Peer Check·Independent Verification·Self Check의 역할 구분이 적절한지 |
+| Contributing Factors | 참관인원, 경쟁업무, 신속한 계통병입 인식, 외부계통 과도 우려, briefing 미사용, QA/self-check 미흡, 사후감시 미흡 | 원인과 단순 상황조건의 경계가 적절한지 |
+| Recovery HF | EOP 수행 중 과다급수·추가 과냉·MSIS 조정 | 자동정지의 발생원인과 섞이지 않았는지 |
 
-## 3. 이번 사전검토에서 수정한 표현
+## 4. 현재 AI 사전판정
 
-### Peer Check
+- **사건 사실과 HERO 교육해석의 분리:** PASS WITH HUMAN CONFIRMATION
+- **Direct / Root / Contributing 계층 분리:** PASS WITH HUMAN CONFIRMATION
+- **개인 단일원인 프레이밍 회피:** PASS
+- **Just Culture 방향:** PASS WITH HUMAN CONFIRMATION
+- **HU Tool 매핑:** HUMAN CONFIRMATION REQUIRED
+- **운전정보 과노출:** HUMAN CONFIRMATION REQUIRED
+- **KINS taxonomy 오인 가능성:** HUMAN CONFIRMATION REQUIRED
+- **Recovery issue 분리:** PASS WITH HUMAN CONFIRMATION
+- **승격 준비:** HOLD
 
-수정 전에는 “다른 사람과 독립적으로 확인”, “동료가 별도로 확인” 문구가 있어 **Independent Verification**과 혼동될 여지가 있었다.
+## 5. 사람 검토자가 반드시 확인할 항목
 
-수정 후:
+- [ ] KINS가 실제로 명시한 사실과 HERO가 분류한 Root Cause를 구분할 수 있다.
+- [ ] “설정치 잘못 입력”을 근본원인으로 끝내지 않는다.
+- [ ] 미예정 운전행위 관리, 운전모드별 mental model, 독립검증/사후감시가 근거 범위를 넘지 않는다.
+- [ ] 주제어실 참관 인원·경쟁업무·신속성 인식 등을 기여요인으로 두는 것이 과도한 인과추정이 아니다.
+- [ ] 보호계통 동작 자체를 실패한 방어막으로 표현하지 않는다.
+- [ ] 사건 후 비상운전절차 수행의 미흡사항을 원자로 자동정지의 원인으로 혼합하지 않는다.
+- [ ] 공개 시나리오가 실제 VPL/LDR/CVR 값·시험조건·MMIS 화면·절차번호를 재현하지 않는다.
+- [ ] HU Tool과 방어막 매핑이 실제 원전 HF 사용맥락에 적합하다.
+- [ ] incidentDebrief에서 Direct / Root / Contributing / Causal Chain / Failed Barriers가 교육적으로 이해 가능하다.
 
-- “중요 설정의 방향은 동료와 함께 확인한다.”
-- “입력 전에 설정 방향과 기대되는 설비반응을 동료와 함께 확인해 조작 의도와 현재 상태가 일치하는지 확인한다.”
-- 선택지: “입력 전에 동료와 설정 방향과 기대 반응이 일치하는지 확인한다.”
+## 6. 현재 콘텐츠 해시
 
-### Communication
+검토 대상 JSON:
 
-HF Brief의 “Peer Check / Three-way Communication”을 “Peer Check와 명확한 팀 커뮤니케이션”으로 수정했다.
+`scenarios/drafts/S03_procedure_reality_v1.json`
 
-이유:
+Version: `2`
 
-- 현재 draft는 Three-way Communication의 정식 sender-receiver-confirm 구조를 독립 HU Tool로 구현하지 않는다.
-- 구현되지 않은 특정 Tool을 사용했다고 과장하지 않고 실제 시나리오 행동 수준에 맞춘다.
+SHA-256:
 
-## 4. 사람 검토자가 최종 확인할 항목
+`8b2cefe8af290762c334fca17ae63be8f5e447cec33ca6d72190ed5e6d5369df`
 
-- [ ] 실제 운전/HF 관점에서 Peer Check·Place Keeping·Stop When Unsure 적용이 자연스럽다.
-- [ ] 게임의 상태전환·설정방향 묘사만으로 실제 절차/화면/고유 설비를 역추론하기 어렵다.
-- [ ] 사건 개요의 공식 사실과 HERO의 시스템적 학습 분석이 명확히 구분된다.
-- [ ] `incidentDebrief.rootCauses` 문구가 규제기관 공식 근본원인 판정으로 오해되지 않는다.
-- [ ] near_miss/event가 낮은 비율인 현재 밸런스가 교육적으로 허용된다.
-- [ ] source attribution이 공개 화면 또는 관련 정보 화면에서 충분히 표시된다.
-- [ ] 최종 공개문안이 개인의 실수보다 방어막·절차·시스템 개선을 중심에 둔다.
+사람 검토는 반드시 이 해시의 콘텐츠를 기준으로 수행한다. 이후 JSON이 변경되면 다시 검토한다.
 
-## 5. 사람 승인 이후
+## 7. 승격 조건
 
-사람 검토 완료 전에는 상태를 변경하지 않는다.
+현재는 **사람 검토 전 승격 금지**이다.
 
-승인 후에만:
-
-```bash
-pnpm promote:scenario -- \
-  --scenario=s03_procedure_reality_gap \
-  --approved-by="검토자 성명 또는 공식 역할" \
-  --approved-at=YYYY-MM-DD \
-  --confirm-hf \
-  --confirm-anonymization \
-  --confirm-debrief \
-  --apply
-```
-
-이후 CI의 source-evidence / promotion / schema / path / balance / E2E / DB 정책 게이트를 모두 통과시킨다.
+HF 정확성, 원자력 운전/정비 맥락, 익명화·운전정보 과노출, 교육/Just Culture, incidentDebrief·출처경계의 검토가 동일 SHA에 대해 모두 PASS인 경우에만 promotion workflow를 진행한다.
