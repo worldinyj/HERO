@@ -171,6 +171,38 @@ export function ManagerDashboardPage() {
     }
   }
 
+  async function handleNicknameReset(profileId: string) {
+    try {
+      setActionPending(`nickname:${profileId}`);
+      setError(null);
+      const supabase = getSupabase();
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "nickname-action",
+        {
+          body: {
+            action: "force-reset",
+            profileId,
+          },
+        },
+      );
+
+      if (invokeError) throw invokeError;
+
+      const result = data as { reset?: boolean; error?: string };
+      if (!result.reset) {
+        throw new Error(result.error ?? "닉네임 초기화에 실패했습니다.");
+      }
+
+      await loadDashboard();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "닉네임 초기화에 실패했습니다.",
+      );
+    } finally {
+      setActionPending(null);
+    }
+  }
+
   async function handlePlayerActive(profileId: string, isActive: boolean) {
     try {
       setActionPending(`player:${profileId}`);
@@ -305,16 +337,32 @@ export function ManagerDashboardPage() {
                 <div className="manager-row-meta">
                   <strong>{Number(row.completed_scenarios)}장 완료</strong>
                   <span>{formatDateTime(row.last_activity_at)}</span>
-                  <button
-                    type="button"
-                    className="text-button"
-                    disabled={actionPending === `player:${row.profile_id}`}
-                    onClick={() =>
-                      void handlePlayerActive(row.profile_id, !row.is_active)
-                    }
-                  >
-                    {row.is_active ? "비활성화" : "재활성화"}
-                  </button>
+                  <div className="inline-actions manager-inline-actions">
+                    <button
+                      type="button"
+                      className="text-button"
+                      disabled={
+                        actionPending === `nickname:${row.profile_id}` ||
+                        actionPending === `player:${row.profile_id}`
+                      }
+                      onClick={() => void handleNicknameReset(row.profile_id)}
+                    >
+                      닉네임 초기화
+                    </button>
+                    <button
+                      type="button"
+                      className="text-button"
+                      disabled={
+                        actionPending === `player:${row.profile_id}` ||
+                        actionPending === `nickname:${row.profile_id}`
+                      }
+                      onClick={() =>
+                        void handlePlayerActive(row.profile_id, !row.is_active)
+                      }
+                    >
+                      {row.is_active ? "비활성화" : "재활성화"}
+                    </button>
+                  </div>
                 </div>
               </article>
             ))}
