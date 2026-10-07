@@ -166,3 +166,6 @@ Hidden Hazard Index에서만 판정하며 UI에 위험수치를 보여주지 않
 - [ ] 관리자 상태를 draft → review로 올리기 전 human approval
 
 상세 승격 판정: [T3_SOURCE_RIGHTS_REVIEW_V1.md](T3_SOURCE_RIGHTS_REVIEW_V1.md) 참조.
+
+
+추가 검색·확인 이력: [S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md](S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md)
