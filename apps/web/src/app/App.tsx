@@ -11,6 +11,7 @@ import { InvitationPage } from "../features/invite/InvitationPage";
 import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
 import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { ManagerDashboardPage } from "../features/manager/ManagerDashboardPage";
+import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
 import { GamePage } from "../features/play/GamePage";
 import { ProfilePage } from "../features/profile/ProfilePage";
 import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
@@ -38,29 +39,7 @@ function CampaignPage() {
           </article>
         </Link>
 
-        <article className="chapter-card chapter-card--locked">
-          <span className="chapter-index">01</span>
-          <div>
-            <strong>오늘 오전까지 끝내야 합니다</strong>
-            <p>시간압박 · 단독작업 · 감독부족 · 준비중</p>
-          </div>
-        </article>
-
-        <article className="chapter-card chapter-card--locked">
-          <span className="chapter-index">02</span>
-          <div>
-            <strong>아마 이 설비가 맞을 겁니다</strong>
-            <p>설비 오인 · Self/Peer Check · 준비중</p>
-          </div>
-        </article>
-
-        <article className="chapter-card chapter-card--locked">
-          <span className="chapter-index">03</span>
-          <div>
-            <strong>절차와 실제 상황이 조금 다릅니다</strong>
-            <p>Questioning Attitude · Stop When Unsure · 준비중</p>
-          </div>
-        </article>
+        <CompetitiveCampaignChapters />
       </div>
     </section>
   );
