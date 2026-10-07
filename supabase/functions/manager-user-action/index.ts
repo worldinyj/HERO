@@ -1,6 +1,7 @@
 import { writeAuditLog, writeAuditLogs } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
 type Action = "cancel-invite" | "reissue-invite" | "set-player-active";
@@ -247,6 +248,13 @@ Deno.serve(async (req) => {
   try {
     const { admin, user, plantId } = await requireManager(req);
     const body = (await req.json()) as RequestBody;
+    const limited = await guardRateLimit(req, admin, {
+      scope: `manager-user-action:${body.action ?? "unknown"}`,
+      subject: user.id,
+      limit: 40,
+      windowSeconds: 600,
+    });
+    if (limited) return limited;
 
     switch (body.action) {
       case "cancel-invite": {
