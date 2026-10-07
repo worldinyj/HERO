@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-07",
+  "updatedAt": "2026-10-08",
   "entries": [
     {
       "scenarioId": "s03_procedure_reality_gap",
-      "scenarioVersion": 3,
+      "scenarioVersion": 4,
       "sourceDocument": {
         "authority": "한국원자력안전기술원(KINS)",
         "documentId": "제2026-03호(260811SU3)",
@@ -18,121 +18,275 @@
           "classification": "direct",
           "label": "현재 밸브개도 기준보다 낮은 제한 설정값 입력으로 터빈제어밸브가 닫힘",
           "provenance": "kins_explicit_fact",
-          "evidenceAnchors": ["§3.2.2 본문 9-11쪽"],
-          "barriers": ["B-03", "B-04", "B-07"],
-          "correctiveActions": ["CA-01", "CA-05", "CA-06"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 9-11쪽"
+          ],
+          "barriers": [
+            "B-03",
+            "B-04",
+            "B-07"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-05",
+            "CA-06"
+          ]
         },
         {
           "id": "DC-02",
           "classification": "direct",
           "label": "제어밸브 폐쇄 이후 터빈·발전기 주파수 및 원자로냉각재펌프 속도 감소가 보호신호와 자동정지로 연결",
           "provenance": "kins_explicit_event_chain",
-          "evidenceAnchors": ["사건요약", "§2 사건 경위", "§3.2.2", "붙임 1 사건전개 개략도"],
-          "barriers": ["B-06"],
-          "correctiveActions": ["CA-01", "CA-05", "CA-06"]
+          "evidenceAnchors": [
+            "사건요약",
+            "§2 사건 경위",
+            "§3.2.2",
+            "붙임 1 사건전개 개략도"
+          ],
+          "barriers": [
+            "B-06"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-05",
+            "CA-06"
+          ]
         },
         {
           "id": "RC-01",
           "classification": "root",
           "label": "미예정 중요 운전행위를 실행하기 전 목적·근거·방법·예상반응·방어막을 재검토하는 관리방어막 부족",
           "provenance": "hero_classification_from_kins_findings",
-          "evidenceAnchors": ["§3.2.2 본문 10-11쪽"],
-          "barriers": ["B-01", "B-02"],
-          "correctiveActions": ["CA-03", "CA-07"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 10-11쪽"
+          ],
+          "barriers": [
+            "B-01",
+            "B-02"
+          ],
+          "correctiveActions": [
+            "CA-03",
+            "CA-07"
+          ]
         },
         {
           "id": "RC-02",
           "classification": "root",
           "label": "운전상태에 따라 두 제어 기준값의 관계가 달라지는 조건이 실제 설정치 계산의 mental model에 반영되지 않음",
           "provenance": "hero_classification_from_kins_explicit_finding",
-          "evidenceAnchors": ["§3.2.2 본문 9-11쪽"],
-          "barriers": ["B-03", "B-05"],
-          "correctiveActions": ["CA-01", "CA-02", "CA-05", "CA-08"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 9-11쪽"
+          ],
+          "barriers": [
+            "B-03",
+            "B-05"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-02",
+            "CA-05",
+            "CA-08"
+          ]
         },
         {
           "id": "RC-03",
           "classification": "root",
           "label": "중요 설정치 입력 전 검증과 입력 후 기대반응 감시가 단일 오류를 차단하도록 중첩되지 않음",
           "provenance": "hero_classification_from_kins_explicit_finding",
-          "evidenceAnchors": ["§3.2.2 본문 10-11쪽"],
-          "barriers": ["B-03", "B-04", "B-05", "B-06", "B-07"],
-          "correctiveActions": ["CA-01", "CA-02", "CA-05", "CA-06"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 10-11쪽"
+          ],
+          "barriers": [
+            "B-03",
+            "B-04",
+            "B-05",
+            "B-06",
+            "B-07"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-02",
+            "CA-05",
+            "CA-06"
+          ]
         },
         {
           "id": "CF-01",
           "classification": "contributing",
           "label": "다수의 시운전 참관 인원으로 운전집중도 저하 및 정보교환 저해",
           "provenance": "kins_explicit_finding",
-          "evidenceAnchors": ["§3.2.2 본문 10-11쪽"],
-          "barriers": ["B-08"],
-          "correctiveActions": ["CA-04"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 10-11쪽"
+          ],
+          "barriers": [
+            "B-08"
+          ],
+          "correctiveActions": [
+            "CA-04"
+          ]
         },
         {
           "id": "CF-02",
           "classification": "contributing",
           "label": "설정치 입력 담당 운전원이 온도제어 등 경쟁 업무에 동시에 주의를 배분",
           "provenance": "kins_explicit_context",
-          "evidenceAnchors": ["§3.2.2 본문 10-11쪽"],
-          "barriers": ["B-09"],
-          "correctiveActions": ["CA-03", "CA-07"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 10-11쪽"
+          ],
+          "barriers": [
+            "B-09"
+          ],
+          "correctiveActions": [
+            "CA-03",
+            "CA-07"
+          ]
         },
         {
           "id": "CF-03",
           "classification": "contributing",
           "label": "터빈 진동 경험과 계통연결 후 과도 우려로 신속한 계통연결 및 추가 제한 필요성을 판단",
           "provenance": "kins_explicit_context_and_evaluation",
-          "evidenceAnchors": ["§3.2.2 본문 9-10쪽"],
-          "barriers": ["B-01", "B-05"],
-          "correctiveActions": ["CA-03", "CA-07"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 9-10쪽"
+          ],
+          "barriers": [
+            "B-01",
+            "B-05"
+          ],
+          "correctiveActions": [
+            "CA-03",
+            "CA-07"
+          ]
         },
         {
           "id": "CF-04",
           "classification": "contributing",
           "label": "미예정 조작의 목적과 진행방법을 팀에 충분히 공유하지 않음",
           "provenance": "kins_explicit_finding",
-          "evidenceAnchors": ["§3.2.2 본문 10-11쪽"],
-          "barriers": ["B-02"],
-          "correctiveActions": ["CA-02", "CA-07"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 10-11쪽"
+          ],
+          "barriers": [
+            "B-02"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-07"
+          ]
         },
         {
           "id": "CF-05",
           "classification": "contributing",
           "label": "Questioning Attitude와 자기진단 사용 미흡",
           "provenance": "kins_explicit_finding",
-          "evidenceAnchors": ["§3.2.2 본문 11쪽"],
-          "barriers": ["B-03", "B-05"],
-          "correctiveActions": ["CA-02", "CA-08"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 11쪽"
+          ],
+          "barriers": [
+            "B-03",
+            "B-05"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-08"
+          ]
         },
         {
           "id": "CF-06",
           "classification": "contributing",
           "label": "설정 변경 후 관련 계통·기기 상태감시 미흡",
           "provenance": "kins_explicit_finding",
-          "evidenceAnchors": ["§3.2.2 본문 11쪽"],
-          "barriers": ["B-06"],
-          "correctiveActions": ["CA-01", "CA-08"]
+          "evidenceAnchors": [
+            "§3.2.2 본문 11쪽"
+          ],
+          "barriers": [
+            "B-06"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-08"
+          ]
         }
       ],
       "barriers": [
-        {"id": "B-01", "label": "미예정 운전행위 사전점검"},
-        {"id": "B-02", "label": "주제어실 Briefing / Update"},
-        {"id": "B-03", "label": "Self Check / 자기진단"},
-        {"id": "B-04", "label": "Peer Check / Independent Verification"},
-        {"id": "B-05", "label": "Questioning Attitude"},
-        {"id": "B-06", "label": "Expected-response monitoring"},
-        {"id": "B-07", "label": "입력값 경고·재확인 인터페이스"},
-        {"id": "B-08", "label": "주제어실 출입·집중도 관리"},
-        {"id": "B-09", "label": "경쟁업무·주의분산 관리"}
+        {
+          "id": "B-01",
+          "label": "미예정 운전행위 사전점검 방어막(사건 당시 부재/미작동)"
+        },
+        {
+          "id": "B-02",
+          "label": "주제어실 Briefing / Update"
+        },
+        {
+          "id": "B-03",
+          "label": "Self Check / 자기진단"
+        },
+        {
+          "id": "B-04",
+          "label": "중요 설정치의 별도 확인 / Peer Check / Independent Verification 방어막"
+        },
+        {
+          "id": "B-05",
+          "label": "Questioning Attitude"
+        },
+        {
+          "id": "B-06",
+          "label": "Expected-response monitoring"
+        },
+        {
+          "id": "B-07",
+          "label": "입력값 경고·재확인 인터페이스(사건 당시 부재)"
+        },
+        {
+          "id": "B-08",
+          "label": "주제어실 출입·집중도 관리"
+        },
+        {
+          "id": "B-09",
+          "label": "경쟁업무·주의분산 관리"
+        }
       ],
       "correctiveActions": [
-        {"id": "CA-01", "label": "운영절차서에 불필요 조작 회피, 제어 기준값 편차 가능성, 조작 전 비교와 조작 후 감시를 반영", "evidenceAnchor": "§3.5 단기조치 1"},
-        {"id": "CA-02", "label": "자기진단·Questioning Attitude·조작 목적과 의도 명확화 특별교육", "evidenceAnchor": "§3.5 단기조치 2"},
-        {"id": "CA-03", "label": "중요 시운전시험의 발전부장 Oversight 강화", "evidenceAnchor": "§3.5 단기조치 3"},
-        {"id": "CA-04", "label": "중요 시운전시험 중 주제어실 출입관리 강화", "evidenceAnchor": "§3.5 단기조치 4"},
-        {"id": "CA-05", "label": "관련 기준값 인접 경고·추가정보를 제공하는 화면 개선", "evidenceAnchor": "§3.5 장기조치 1"},
-        {"id": "CA-06", "label": "설정값 적용 전 재확인 단계 추가", "evidenceAnchor": "§3.5 장기조치 2"},
-        {"id": "CA-07", "label": "절차적 근거·대상기기·조작/감시·예상반응·운전방벽을 검토하는 미예정 운전행위 사전점검", "evidenceAnchor": "§3.5 장기조치 3"},
-        {"id": "CA-08", "label": "제어논리 재교육, Must-know OE, 사건 모의 시뮬레이터 훈련", "evidenceAnchor": "§3.5 장기조치 4"}
+        {
+          "id": "CA-01",
+          "label": "운영절차서에 불필요 조작 회피, 제어 기준값 편차 가능성, 조작 전 비교와 조작 후 감시를 반영",
+          "evidenceAnchor": "§3.5 단기조치 1"
+        },
+        {
+          "id": "CA-02",
+          "label": "자기진단·Questioning Attitude·조작 목적과 의도 명확화 특별교육",
+          "evidenceAnchor": "§3.5 단기조치 2"
+        },
+        {
+          "id": "CA-03",
+          "label": "중요 시운전시험의 발전부장 Oversight 강화",
+          "evidenceAnchor": "§3.5 단기조치 3"
+        },
+        {
+          "id": "CA-04",
+          "label": "중요 시운전시험 중 주제어실 출입관리 강화",
+          "evidenceAnchor": "§3.5 단기조치 4"
+        },
+        {
+          "id": "CA-05",
+          "label": "관련 기준값 인접 경고·추가정보를 제공하는 화면 개선",
+          "evidenceAnchor": "§3.5 장기조치 1"
+        },
+        {
+          "id": "CA-06",
+          "label": "설정값 적용 전 재확인 단계 추가",
+          "evidenceAnchor": "§3.5 장기조치 2"
+        },
+        {
+          "id": "CA-07",
+          "label": "절차적 근거·대상기기·조작/감시·예상반응·운전방벽을 검토하는 미예정 운전행위 사전점검",
+          "evidenceAnchor": "§3.5 장기조치 3"
+        },
+        {
+          "id": "CA-08",
+          "label": "제어논리 재교육, Must-know OE, 사건 모의 시뮬레이터 훈련",
+          "evidenceAnchor": "§3.5 장기조치 4"
+        }
       ],
       "recoveryBoundary": {
         "separateFromInitiatingCause": true,
