@@ -185,6 +185,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedBulkUrl, setCopiedBulkUrl] = useState<string | null>(null);
 
   async function createInvite(input: BulkInput): Promise<InviteLinkResult> {
     if (!profile?.plant_id) {
@@ -285,6 +286,34 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
     } catch (cause) {
       setBulkInputs([]);
       setError(cause instanceof Error ? cause.message : "CSV를 읽지 못했습니다.");
+    }
+  }
+
+  async function handleBulkShare(row: BulkResult) {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "HERO 초대장",
+          text: `${row.name}님 HERO 교육 초대장입니다.`,
+          url: row.inviteUrl,
+        });
+        return;
+      }
+
+      await navigator.clipboard.writeText(row.inviteUrl);
+      setCopiedBulkUrl(row.inviteUrl);
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === "AbortError") return;
+      setError(`${row.name}님의 링크 공유/복사에 실패했습니다.`);
+    }
+  }
+
+  async function handleBulkCopy(row: BulkResult) {
+    try {
+      await navigator.clipboard.writeText(row.inviteUrl);
+      setCopiedBulkUrl(row.inviteUrl);
+    } catch {
+      setError(`${row.name}님의 링크 복사에 실패했습니다.`);
     }
   }
 
@@ -425,6 +454,37 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           {bulkResults.length > 0 ? (
             <div className="invite-result-box">
               <strong>{bulkResults.length}명 링크 생성 완료</strong>
+
+              <div className="bulk-invite-results">
+                {bulkResults.map((row) => (
+                  <article key={row.inviteUrl} className="bulk-invite-row">
+                    <div>
+                      <strong>{row.name}</strong>
+                      <span>
+                        {JOB_OPTIONS.find((item) => item.value === row.jobRole)?.label ?? row.jobRole}
+                        {row.teamName ? ` · ${row.teamName}` : ""}
+                      </span>
+                    </div>
+                    <div className="inline-actions">
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => void handleBulkShare(row)}
+                      >
+                        공유
+                      </button>
+                      <button
+                        type="button"
+                        className="text-button"
+                        onClick={() => void handleBulkCopy(row)}
+                      >
+                        {copiedBulkUrl === row.inviteUrl ? "복사 완료" : "복사"}
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+
               <button
                 type="button"
                 className="secondary-button"
