@@ -62,16 +62,6 @@ function CampaignPage() {
   );
 }
 
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <section className="panel">
-      <p className="eyebrow">MVP 개발 중</p>
-      <h2>{title}</h2>
-      <p className="muted">설계 계약에 따라 다음 단계에서 구현합니다.</p>
-    </section>
-  );
-}
-
 function ActiveUserGate({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
