@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(17);
+select plan(18);
 
 update public.seasons
 set status = 'scheduled'
@@ -36,11 +36,11 @@ select results_eq(
   'cron fires daily at 15:00 UTC so the wrapper sees KST midnight'
 );
 
-do $
-begin
-  perform private.ensure_monthly_season('2026-11-15'::date);
-end;
-$;
+select lives_ok(
+  'select private.ensure_monthly_season(''2026-11-15''::date)',
+  'ensure_monthly_season creates the requested KST calendar month'
+);
+
 
 select is(
   (
@@ -156,19 +156,19 @@ select lives_ok(
 );
 
 select results_eq(
-  $select count(*) from public.audit_logs
-    where action = 'season.closed'
-      and entity_id = '61000000-0000-0000-0000-000000000001'$,
+  'select count(*) from public.audit_logs
+    where action = ''season.closed''
+      and entity_id = ''61000000-0000-0000-0000-000000000001''',
   array[1::bigint],
   'idempotent rollover does not duplicate season.closed'
 );
 
 select results_eq(
-  $select count(*) from public.audit_logs
-    where action = 'season.opened'
+  'select count(*) from public.audit_logs
+    where action = ''season.opened''
       and entity_id = (
-        select id::text from public.seasons where season_key = '2026-11'
-      )$,
+        select id::text from public.seasons where season_key = ''2026-11''
+      )',
   array[1::bigint],
   'idempotent rollover does not duplicate season.opened'
 );
