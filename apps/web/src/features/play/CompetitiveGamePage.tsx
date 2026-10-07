@@ -165,7 +165,14 @@ export function CompetitiveGamePage({
         ) {
           if (!active) return;
           setScenario(saved.scenario);
-          setServer(saved.server);
+          setServer({
+            ...saved.server,
+            replayOf: saved.server.replayOf ?? null,
+            replayFromNode: saved.server.replayFromNode ?? null,
+            submissionLogStart: Number.isInteger(saved.server.submissionLogStart)
+              ? saved.server.submissionLogStart
+              : 0,
+          });
           setGame(saved.game);
           setLoading(false);
           return;
@@ -221,6 +228,45 @@ export function CompetitiveGamePage({
           throw new Error("server_scenario_identity_mismatch");
         }
 
+        const replayOf = response.replayOf ?? null;
+        const replayFromNode = response.replayFromNode ?? null;
+
+        if (Boolean(replayOf) !== Boolean(replayFromNode)) {
+          throw new Error("invalid_replay_session_metadata");
+        }
+
+        let nextGame: GameState;
+        let submissionLogStart = 0;
+
+        if (replayOf && replayFromNode) {
+          const { data: sourceDecisions, error: sourceDecisionError } =
+            await supabase
+              .from("session_decisions")
+              .select("action_type, action_id")
+              .eq("session_id", replayOf)
+              .order("seq", { ascending: true });
+
+          if (sourceDecisionError) {
+            throw sourceDecisionError;
+          }
+
+          nextGame = restoreReplayPrefix(
+            parsed.data,
+            {
+              simulationSeed: response.simulationSeed,
+              presentationSeed: response.presentationSeed,
+            },
+            (sourceDecisions ?? []) as StoredDecisionRow[],
+            replayFromNode,
+          );
+          submissionLogStart = nextGame.log.length;
+        } else {
+          nextGame = createGame(parsed.data, {
+            simulationSeed: response.simulationSeed,
+            presentationSeed: response.presentationSeed,
+          });
+        }
+
         const nextServer: CompetitiveServerSession = {
           sessionId: response.sessionId,
           seasonId: response.seasonId,
@@ -229,12 +275,10 @@ export function CompetitiveGamePage({
           scenarioVersion: response.scenarioVersion,
           perspectiveRole: response.perspectiveRole,
           startedAt: response.startedAt,
+          replayOf,
+          replayFromNode,
+          submissionLogStart,
         };
-
-        const nextGame = createGame(parsed.data, {
-          simulationSeed: response.simulationSeed,
-          presentationSeed: response.presentationSeed,
-        });
 
         await saveCompetitiveSession({
           userId,
