@@ -101,3 +101,25 @@
 - S03: 기존 `REVIEW_READY` 유지
 
 이 문서는 검색 실패를 근거로 권리나 공식성을 추정하지 않기 위한 감사 기록이다.
+
+## 5. 추가 공식 locator 확인 — 안전모아(OPIS 연계)
+
+2026-10-07 추가 확인:
+
+- 행정안전부 **안전모아·진단모아 안전정보 통합공개시스템**의 원자력 발전시설 화면은 사고·고장정보 표에 `번호 / 시설 / 발생일자 / 사건제목 / 원자로출력 / 발전기출력 / 계통 / 원인 / 정지유형 / 등급` 필드를 제공한다.
+- 같은 화면은 안전성능지표와 사고·고장정보에 대해 **“본 정보는 원전안전운영 정보시스템(OPIS)에서 제공되었습니다.”**라고 명시한다.
+- 안전정보 공개항목 안내에서는 원자력 분야 담당부처를 원자력안전위원회로 표시한다.
+- URL: https://safewatch.safemap.go.kr/contact/selectNsopSafetyChck.do
+
+### 증거 해석
+
+이 페이지는 S01/S02 모두에 대해 **공식/공공 OPIS 연계 locator**로 추가한다. 다만 현재 텍스트 기반 회수에서는 대상 사건의 행이 노출되지 않았고 사건별 상세 URL·고유 식별자·PDF도 확보되지 않았다.
+
+따라서 다음은 변경하지 않는다.
+
+- S01 `sourceVerdict=partial`, `rightsVerdict=partial`, `SOURCE_HOLD`
+- S02 `sourceVerdict=partial`, `rightsVerdict=partial`, `SOURCE_HOLD`
+- 사건별 OPIS/NSIC 직접 레코드 확보 requirement
+- 개별 저작물 이용표시 requirement
+
+이 locator는 다음 수동 브라우저 확인에서 발전소/호기 선택 후 사고·고장정보 행을 찾아 원 OPIS/NSIC 식별자로 연결하기 위한 보조 경로로만 사용한다.
