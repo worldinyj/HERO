@@ -130,7 +130,7 @@
           }
         }
       ],
-      "allowedCards": ["self_check_star", "independent_verification", "stop_when_unsure"]
+      "allowedCards": ["self_check_star"]
     },
     "scene_after_identification": {
       "type": "scene",
@@ -217,7 +217,7 @@
           }
         }
       ],
-      "allowedCards": ["self_check_star", "independent_verification", "stop_when_unsure"]
+      "allowedCards": ["independent_verification", "stop_when_unsure"]
     },
     "hazard_identity": {
       "type": "hazard",
