@@ -27,7 +27,8 @@
     "check:deployment-preflight": "node scripts/check-deployment-preflight.mjs",
     "check:audio-manifest": "node scripts/check-audio-manifest.mjs",
     "check:staging-http": "node scripts/check-staging-http.mjs",
-    "check:release-evidence": "node scripts/check-release-evidence.mjs"
+    "check:release-evidence": "node scripts/check-release-evidence.mjs",
+    "check:legal-release": "node scripts/check-legal-release.mjs"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

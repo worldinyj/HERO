@@ -79,6 +79,9 @@ jobs:
       - name: Verify human release evidence
         run: pnpm check:release-evidence -- --strict
 
+      - name: Verify shipped legal UI is final
+        run: pnpm check:legal-release -- --strict
+
       - name: Verify scenario source and approval gates
         run: |
           pnpm check:source-evidence

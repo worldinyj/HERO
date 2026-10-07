@@ -67,7 +67,10 @@ pnpm check:release-evidence -- --json
 
 ```bash
 pnpm check:release-evidence -- --strict
+pnpm check:legal-release -- --strict
 ```
+
+법무/개인정보 검사는 승인 증거만 보지 않는다. 검토문서와 실제 배포되는 `/terms`, `/privacy` UI 양쪽에서 `검토 초안`·`[확정 필요]` 표식이 제거되고 핵심 정책 문구가 유지되어야 통과한다.
 
 validator 자체 회귀검사:
 

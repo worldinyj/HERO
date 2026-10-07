@@ -8,7 +8,8 @@
 | 현재 판정 | **프로덕션 RELEASE BLOCKED / 내부 개발·통합 준비 완료에 가까움** |
 | 자동 확인 | `pnpm check:mvp-readiness` |
 | 사람 승인 증거 | `ops/release-evidence.json` / `pnpm check:release-evidence` |
-| 출시 강제 게이트 | `pnpm check:mvp-readiness -- --strict` + GitHub **Release Candidate Gate** |
+| 출시 강제 게이트 | `pnpm check:legal-release -- --strict
+pnpm check:mvp-readiness -- --strict` + GitHub **Release Candidate Gate** |
 
 ## 1. 판정 원칙
 
@@ -70,6 +71,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - staging HTTP/SPA/PWA/보안헤더 validator 자체 self-test
 - GitHub **Staging Smoke** workflow 구조 준비(실제 외부 값 연결 후 수동 실행)
 - release evidence validator + same-commit **Release Candidate Gate**
+- legal release validator: 검토문서와 실제 배포 `/terms`·`/privacy` UI의 초안 표식·필수 정책 문구 동시 검증
 - audio manifest validator: approved asset 파일 존재·same-origin 경로·중복 ID·provenance 검증
 
 ### 사람이 닫아야 하는 항목
@@ -127,6 +129,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 ```bash
 pnpm check:mvp-readiness
 pnpm check:mvp-readiness -- --json
+pnpm check:legal-release
 ```
 
 실제 Release Candidate 판정 때는 strict 모드를 사용한다.
