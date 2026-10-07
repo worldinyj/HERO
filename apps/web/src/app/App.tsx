@@ -2,11 +2,14 @@ import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
 import type { ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
+import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
 import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
+import { ManagerPage } from "../features/manager/ManagerPage";
 import { GamePage } from "../features/play/GamePage";
+import { MyRecordsPage } from "../features/profile/MyRecordsPage";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
 
@@ -77,8 +80,17 @@ function ActiveUserGate({ children }: { children: ReactNode }) {
   );
 }
 
+function ManagerGate({ children }: { children: ReactNode }) {
+  return (
+    <RequireAuth>
+      <RequireRole roles={["plant_manager"]}>{children}</RequireRole>
+    </RequireAuth>
+  );
+}
+
 export function App() {
   const location = useLocation();
+  const { profile } = useAuth();
   const publicRoute =
     location.pathname === "/login" ||
     location.pathname.startsWith("/i/");
@@ -109,15 +121,29 @@ export function App() {
         />
         <Route
           path="/me"
-          element={<ActiveUserGate><PlaceholderPage title="내 기록" /></ActiveUserGate>}
+          element={<ActiveUserGate><MyRecordsPage /></ActiveUserGate>}
+        />
+        <Route
+          path="/manager"
+          element={<ManagerGate><ManagerPage /></ManagerGate>}
         />
       </Routes>
 
       {!publicRoute && !playRoute ? (
-        <nav className="bottom-nav" aria-label="주요 메뉴">
+        <nav
+          className={
+            profile?.role === "plant_manager"
+              ? "bottom-nav bottom-nav--manager"
+              : "bottom-nav"
+          }
+          aria-label="주요 메뉴"
+        >
           <NavLink to="/" end>캠페인</NavLink>
           <NavLink to="/leaderboard">리더보드</NavLink>
           <NavLink to="/me">내 기록</NavLink>
+          {profile?.role === "plant_manager" ? (
+            <NavLink to="/manager">발전소</NavLink>
+          ) : null}
         </nav>
       ) : null}
     </main>
