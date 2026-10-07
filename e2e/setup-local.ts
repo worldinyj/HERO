@@ -33,6 +33,8 @@ const IDS = {
   manager: "70000000-0000-0000-0000-000000000001",
   playerA: "70000000-0000-0000-0000-000000000101",
   playerB: "70000000-0000-0000-0000-000000000102",
+  uninvitedA: "70000000-0000-0000-0000-000000000201",
+  uninvitedB: "70000000-0000-0000-0000-000000000202",
   inviteA: "72000000-0000-0000-0000-000000000101",
   inviteB: "72000000-0000-0000-0000-000000000102",
   scenario: "73000000-0000-0000-0000-000000000001",
@@ -58,6 +60,19 @@ const identities = [
   },
 ] as const;
 
+const uninvitedIdentities = [
+  {
+    id: IDS.uninvitedA,
+    email: "hero-e2e-uninvited-a@example.test",
+    password: PASSWORD_A,
+  },
+  {
+    id: IDS.uninvitedB,
+    email: "hero-e2e-uninvited-b@example.test",
+    password: PASSWORD_B,
+  },
+] as const;
+
 async function createUser(input: {
   id: string;
   email: string;
@@ -79,7 +94,7 @@ await createUser({
   password: PASSWORD_MANAGER,
 });
 
-for (const identity of identities) {
+for (const identity of [...identities, ...uninvitedIdentities]) {
   await createUser(identity);
 }
 
@@ -194,6 +209,7 @@ console.log(
       seasonId: season.id,
       scenario: scenario.id,
       users: identities.map(({ email, token }) => ({ email, token })),
+      uninvitedUsers: uninvitedIdentities.map(({ email }) => ({ email })),
     },
     null,
     2,
