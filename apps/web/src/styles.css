@@ -27,13 +27,43 @@ body {
     var(--bg);
 }
 
-button, a, input { -webkit-tap-highlight-color: transparent; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
   outline: 3px solid #ffffff;
-  outline-offset: 2px;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 100;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: #111827;
+  background: #ffffff;
+  font-weight: 900;
+  text-decoration: none;
+  transform: translate(-50%, -160%);
+  transition: transform 120ms ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translate(-50%, 0);
+}
+
+.app-shell:focus {
+  outline: none;
 }
 
 .app-shell {
