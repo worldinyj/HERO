@@ -33,7 +33,7 @@
         "2012 KHNP item-specific rights marker",
         "HF/anonymization review"
       ],
-      "notes": "IAEA/KHNP source, NSSC official statistics, and NSSC post-event Kori-1 electrical/system safety-review materials identify and substantiate the 2012 event. Historical OPIS accident-list endpoint and current NSIC accident-list entrypoint are located, but the event-specific OPIS/NSIC record/identifier and 2012 KHNP item-specific rights marker remain unresolved."
+      "notes": "S01 v2 now separates the IAEA-confirmed direct physical event chain (protective-relay test human error → LOOP; one emergency source unavailable for maintenance; the available EDG failed to start → SBO/shutdown-cooling loss) from HERO root/contributing HF conditions such as schedule change, configuration control, procedure, supervision and communication. Source/rights blockers remain unchanged."
     },
     {
       "scenarioId": "s02_equipment_identity",
@@ -52,7 +52,7 @@
         "OPIS/NSIC event-specific direct record URL/identifier/PDF",
         "HF/anonymization review"
       ],
-      "notes": "KHNP Hanul official bulletins confirm the 2024-01-02 trip/shutdown chronology. The full 2024-04-17 NSSC press-release text is reverified through the government relay and is used only for factual verification, not reproduction. The Policy Briefing catalogue confirms the original NSSC item exists on that date; however its direct detail URL/item-specific rights marker and event-specific OPIS/NSIC record remain unresolved. See S01_S02_SOURCE_RETRIEVAL_LOG_20261007.md."
+      "notes": "S02 v2 now separates the source-supported direct conditions (incorrect breaker circuit state + control-button misidentification/operation → turbine-generator stop → reactor shutdown sequence) from HERO barrier/root-cause analysis, and includes only the high-level corrective actions supported by the 2024 NSSC government-relay text. Direct official result URL/item rights and OPIS/NSIC event record are still unresolved."
     },
     {
       "scenarioId": "s03_procedure_reality_gap",
