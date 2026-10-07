@@ -1,23 +1,68 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
-import { useEffect, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
-import { AdminOrgPage } from "../features/admin/AdminOrgPage";
-import { AdminScenarioPage } from "../features/admin/AdminScenarioPage";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
-import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
 import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
-import { ManagerDashboardPage } from "../features/manager/ManagerDashboardPage";
-import { CompetitiveBriefingPage } from "../features/play/CompetitiveBriefingPage";
 import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
-import { GamePage } from "../features/play/GamePage";
-import { ProfilePage } from "../features/profile/ProfilePage";
 import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
+import {
+  loadAdminOrgPageModule,
+  loadAdminScenarioPageModule,
+  loadBriefingPageModule,
+  loadGamePageModule,
+  loadLeaderboardPageModule,
+  loadManagerPageModule,
+  loadProfilePageModule,
+  preloadBriefingRoute,
+} from "./routeModules";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
+
+const GamePage = lazy(() =>
+  loadGamePageModule().then((module) => ({ default: module.GamePage })),
+);
+const CompetitiveBriefingPage = lazy(() =>
+  loadBriefingPageModule().then((module) => ({
+    default: module.CompetitiveBriefingPage,
+  })),
+);
+const LeaderboardPage = lazy(() =>
+  loadLeaderboardPageModule().then((module) => ({
+    default: module.LeaderboardPage,
+  })),
+);
+const ProfilePage = lazy(() =>
+  loadProfilePageModule().then((module) => ({ default: module.ProfilePage })),
+);
+const ManagerDashboardPage = lazy(() =>
+  loadManagerPageModule().then((module) => ({
+    default: module.ManagerDashboardPage,
+  })),
+);
+const AdminOrgPage = lazy(() =>
+  loadAdminOrgPageModule().then((module) => ({
+    default: module.AdminOrgPage,
+  })),
+);
+const AdminScenarioPage = lazy(() =>
+  loadAdminScenarioPageModule().then((module) => ({
+    default: module.AdminScenarioPage,
+  })),
+);
+
+function RouteLoading() {
+  return (
+    <section className="panel route-loading" role="status" aria-live="polite">
+      <p className="eyebrow">HERO</p>
+      <h2>화면을 준비하고 있습니다</h2>
+      <p className="muted">필요한 기능만 불러오는 중입니다.</p>
+    </section>
+  );
+}
 
 function CampaignPage() {
   return (
@@ -29,7 +74,13 @@ function CampaignPage() {
       </p>
 
       <div className="chapter-list">
-        <Link className="chapter-link" to="/briefing/s00_tutorial">
+        <Link
+          className="chapter-link"
+          to="/briefing/s00_tutorial"
+          onPointerEnter={preloadBriefingRoute}
+          onPointerDown={preloadBriefingRoute}
+          onFocus={preloadBriefingRoute}
+        >
           <article className="chapter-card chapter-card--ready">
             <span className="chapter-index">00</span>
             <div>
@@ -115,6 +166,7 @@ export function App() {
         </header>
       ) : null}
 
+      <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/terms" element={<TermsPage />} />
@@ -154,6 +206,7 @@ export function App() {
           element={<ActiveUserGate><ProfilePage /></ActiveUserGate>}
         />
       </Routes>
+      </Suspense>
 
       {!publicRoute && !immersiveRoute ? (
         <nav
