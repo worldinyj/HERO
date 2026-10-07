@@ -202,13 +202,13 @@ select results_eq(
   'player sees only own decision log'
 );
 select results_eq(
-  $$select count(*) from public.v_leaderboard_current_public
+  $$select count(*) from public.leaderboard_current_public_rows
     where season_key = 'rls-test-season'$$,
   array[2::bigint],
   'active player can read current leaderboard rows for active players only'
 );
 select results_eq(
-  $$select count(*) from public.v_leaderboard_current_public
+  $$select count(*) from public.leaderboard_current_public_rows
     where nickname = 'RLSOFF'$$,
   array[0::bigint],
   'inactive players are omitted from the current leaderboard'
@@ -284,7 +284,7 @@ select throws_ok(
 );
 
 select results_eq(
-  $select count(*) from public.v_leaderboard_current_public$,
+  $select count(*) from public.leaderboard_current_public_rows$,
   array[0::bigint],
   'manager cannot read player leaderboard rows'
 );
@@ -339,7 +339,7 @@ select throws_ok(
 );
 
 select results_eq(
-  $select count(*) from public.v_leaderboard_current_public$,
+  $select count(*) from public.leaderboard_current_public_rows$,
   array[0::bigint],
   'admin cannot read player leaderboard rows through the public view'
 );
@@ -363,9 +363,9 @@ select results_eq(
   'inactive player cannot read own decision logs directly'
 );
 select results_eq(
-  $$select count(*) from public.v_leaderboard_current_public$$,
+  $$select count(*) from public.leaderboard_current_public_rows$$,
   array[0::bigint],
-  'inactive player cannot read the public leaderboard'
+  'inactive player cannot read the public leaderboard projection'
 );
 select throws_ok(
   $$select * from public.my_current_rank()$$,
