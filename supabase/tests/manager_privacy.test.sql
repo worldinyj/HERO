@@ -172,13 +172,13 @@ select results_eq(
 );
 
 select results_eq(
-  $$select count(*) from public.v_leaderboard_current_public$$,
+  $$select count(*) from public.leaderboard_current_public_rows$$,
   array[0::bigint],
   'manager cannot read individual current leaderboard rows'
 );
 
 select results_eq(
-  $$select count(*) from public.v_leaderboard_snapshot_public$$,
+  $$select count(*) from public.leaderboard_snapshot_public_rows$$,
   array[0::bigint],
   'manager cannot read individual historical leaderboard rows'
 );
