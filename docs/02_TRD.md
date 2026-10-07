@@ -225,6 +225,15 @@ RLS는 모든 개인정보 테이블에 활성화한다. `service_role`은 Supab
 - 이동은 R2 승인 워크플로로 별도 처리
 - 최초 admin은 수동 부트스트랩
 
+### 6.1 카카오톡 공유 SDK
+
+- 담당자 초대 공유는 카카오 JavaScript SDK의 `Kakao.Share.sendDefault()`를 우선 사용한다.
+- SDK는 앱 초기 로드에 포함하지 않고 사용자가 공유 버튼을 누를 때 지연 로드한다.
+- 현재 검증된 고정값: JavaScript SDK **2.8.2 + SRI**. 버전 업그레이드는 공식 Download 문서의 새 SRI와 함께 변경한다.
+- `VITE_KAKAO_JS_KEY`는 Kakao Developers의 JavaScript 키이며 브라우저에서 사용하는 공개 플랫폼 키다. REST API 키·Admin 키 같은 비밀키는 절대 `VITE_*`로 노출하지 않는다.
+- Kakao Developers에서 실제 서비스/프리뷰 도메인을 **JavaScript SDK domain**과 메시지 링크용 **Web domain**에 등록한다.
+- SDK 키 누락·로드 실패·공유 실패 시 Web Share API → 클립보드 복사 순으로 graceful fallback한다.
+
 ---
 
 ## 7. 시나리오 JSON
