@@ -50,6 +50,9 @@ function scenario(includeDebrief: boolean): Scenario {
               "Self Check",
               "Peer Check",
             ],
+            correctiveActions: [
+              "식별 확인 절차와 현장 표시를 개선한다.",
+            ],
             contributingFactors: [
               "시간압박",
               "유사한 설비 표식",
@@ -100,6 +103,7 @@ describe("incident debrief schema contract", () => {
     expect(parsed.incidentDebrief?.rootCauses).toHaveLength(2);
     expect(parsed.incidentDebrief?.causalChain).toHaveLength(1);
     expect(parsed.incidentDebrief?.failedBarriers).toHaveLength(2);
+    expect(parsed.incidentDebrief?.correctiveActions).toHaveLength(1);
     expect(
       validateScenarioGraph(parsed).some(
         (issue) => issue.code === "missing_incident_debrief",
