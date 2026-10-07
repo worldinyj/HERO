@@ -1,6 +1,7 @@
 import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { buildInviteUrl } from "../_shared/inviteUrl.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -71,6 +72,9 @@ Deno.serve(async (req) => {
     }
 
     const token = randomToken();
+    // Validate SITE_URL and construct the one-time link BEFORE inserting the
+    // invitation. A missing/bad URL must never create an unrecoverable token.
+    const inviteUrl = buildInviteUrl(Deno.env.get("SITE_URL"), token);
     const tokenHash = await sha256Hex(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -104,13 +108,6 @@ Deno.serve(async (req) => {
         job_role: targetRole === "player" ? body.jobRole : null,
       },
     });
-
-    const siteUrl = Deno.env.get("SITE_URL");
-    if (!siteUrl) {
-      throw new Error("missing_site_url");
-    }
-
-    const inviteUrl = new URL(`/i/${token}`, siteUrl).toString();
 
     return json(req, {
       invitationId: invitation.id,

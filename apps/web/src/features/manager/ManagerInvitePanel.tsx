@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
+import { nextInviteBatchRange, MAX_INVITES_PER_RUN } from "./bulkInviteBatch";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -185,6 +186,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   const [bulkFileName, setBulkFileName] = useState("");
   const [bulkInputs, setBulkInputs] = useState<BulkInput[]>([]);
   const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
+  const [bulkInfo, setBulkInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedBulkUrl, setCopiedBulkUrl] = useState<string | null>(null);
@@ -272,15 +274,24 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   }
 
   async function handleCsvFile(file: File | null) {
-    if (!file) return;
+    if (!file || bulkPending) return;
+
+    // Invite URLs are shown only once. Never silently destroy partially
+    // generated links when a new file is chosen.
+    if (bulkResults.length > 0) {
+      setError("기존 초대 링크를 CSV로 저장한 뒤 '새 목록 시작'을 눌러주세요.");
+      return;
+    }
 
     try {
       setError(null);
-      setBulkResults([]);
+      setBulkInfo(null);
+      const inputs = parseInviteCsv(await file.text());
       setBulkFileName(file.name);
-      setBulkInputs(parseInviteCsv(await file.text()));
+      setBulkInputs(inputs);
     } catch (cause) {
       setBulkInputs([]);
+      setBulkFileName("");
       setError(cause instanceof Error ? cause.message : "CSV를 읽지 못했습니다.");
     }
   }
@@ -311,17 +322,25 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   }
 
   async function handleBulkCreate() {
-    if (bulkInputs.length === 0) {
-      setError("먼저 CSV 파일을 선택해주세요.");
+    if (bulkPending || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length) {
       return;
     }
+
+    // Keep successes even if the next request fails. Retrying resumes at the
+    // first unfinished index, so one-time links are not generated twice.
+    const results = [...bulkResults];
+    const initialCount = results.length;
+    const indices = nextInviteBatchRange(initialCount, bulkInputs.length);
 
     try {
       setBulkPending(true);
       setError(null);
-      const results: BulkResult[] = [];
+      setBulkInfo(null);
 
-      for (const input of bulkInputs) {
+      for (const index of indices) {
+        const input = bulkInputs[index];
+        if (!input) throw new Error("초대 목록 항목을 찾지 못했습니다.");
+
         const result = await createInvite(input);
         results.push({
           ...input,
@@ -329,17 +348,22 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           expiresAt: result.expiresAt,
           plantDisplayName: result.plantDisplayName,
         });
+        // Persist every successful link to the UI immediately.
+        setBulkResults([...results]);
       }
 
-      setBulkResults(results);
-      onChanged();
+      setBulkInfo(
+        results.length === bulkInputs.length
+          ? `${results.length}명 초대 링크 생성이 완료되었습니다. CSV를 안전하게 보관해주세요.`
+          : `${results.length}/${bulkInputs.length}명 완료. 이번 실행은 ${MAX_INVITES_PER_RUN}건 이하로 제한됩니다. 남은 항목은 서버 요청 한도가 회복된 후 재개해주세요.`,
+      );
     } catch (cause) {
+      setBulkResults([...results]);
       setError(
-        cause instanceof Error
-          ? `일괄 초대 중 중단되었습니다: ${cause.message}`
-          : "일괄 초대 생성에 실패했습니다.",
+        `${results.length}/${bulkInputs.length}명 생성 후 중단되었습니다. 이미 생성된 링크를 CSV로 저장하고, 서버 요청 한도가 회복되면 남은 항목만 재개하세요. 상세: ${cause instanceof Error ? cause.message : "초대 생성 실패"}`,
       );
     } finally {
+      if (results.length > initialCount) onChanged();
       setBulkPending(false);
     }
   }
@@ -420,7 +444,8 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
         <div className="manager-invite-form">
           <strong>CSV 일괄 초대</strong>
           <p className="muted mini-copy">
-            헤더: name, job_role, team_name · 최대 200명
+            헤더: name, job_role, team_name · 파일 최대 200명 · 한 번에 최대 {MAX_INVITES_PER_RUN}건
+            (서버는 계정당 10분에 30회 요청 제한)
           </p>
 
           <label className="file-drop compact-file-drop">
@@ -428,22 +453,35 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
             <input
               type="file"
               accept=".csv,text/csv"
-              onChange={(event) => void handleCsvFile(event.target.files?.[0] ?? null)}
+              disabled={bulkPending}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0] ?? null;
+                event.currentTarget.value = "";
+                void handleCsvFile(file);
+              }}
             />
           </label>
 
           {bulkInputs.length > 0 ? (
-            <p className="notice">{bulkInputs.length}명을 확인했습니다. 생성 후 링크 CSV를 다운로드할 수 있습니다.</p>
+            <p className="notice">{bulkInputs.length}명 중 {bulkResults.length}명 생성 완료. 생성된 링크는 즉시 아래에 표시되며 CSV로 저장할 수 있습니다.</p>
           ) : null}
 
           <button
             type="button"
             className="primary-button"
-            disabled={bulkPending || bulkInputs.length === 0}
+            disabled={bulkPending || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length}
             onClick={() => void handleBulkCreate()}
           >
-            {bulkPending ? `${bulkInputs.length}명 생성 중…` : "일괄 링크 생성"}
+            {bulkPending
+              ? `${bulkResults.length}/${bulkInputs.length}명 생성 중…`
+              : bulkResults.length === 0
+                ? "일괄 링크 생성 시작"
+                : bulkResults.length === bulkInputs.length
+                  ? "전체 생성 완료"
+                  : `남은 ${bulkInputs.length - bulkResults.length}명 재개`}
           </button>
+
+          {bulkInfo ? <p className="notice" role="status">{bulkInfo}</p> : null}
 
           {bulkResults.length > 0 ? (
             <div className="invite-result-box">
@@ -484,7 +522,23 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
                 className="secondary-button"
                 onClick={() => downloadBulkCsv(bulkResults)}
               >
-                링크 CSV 다운로드
+                생성된 {bulkResults.length}명 링크 CSV 다운로드
+              </button>
+              <p className="muted mini-copy">일회용 링크는 다시 조회할 수 없습니다. 새 파일을 시작하기 전에 반드시 저장해주세요.</p>
+              <button
+                type="button"
+                className="text-button"
+                disabled={bulkPending}
+                onClick={() => {
+                  setBulkResults([]);
+                  setBulkInputs([]);
+                  setBulkFileName("");
+                  setBulkInfo(null);
+                  setError(null);
+                  setCopiedBulkUrl(null);
+                }}
+              >
+                새 목록 시작 (현재 화면의 링크 지우기)
               </button>
             </div>
           ) : null}
