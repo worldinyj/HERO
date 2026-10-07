@@ -49,11 +49,13 @@ export function SwissCheeseTimeline({
   game,
   onContinue,
   onReplay,
+  replayEnabled = true,
 }: {
   scenario: Scenario;
   game: GameState;
   onContinue: () => void;
-  onReplay: (nodeId: string) => void;
+  onReplay?: (nodeId: string) => void;
+  replayEnabled?: boolean;
 }) {
   const entries = game.log.filter(
     (entry) =>
@@ -73,7 +75,7 @@ export function SwissCheeseTimeline({
 
       <ol className="swiss-timeline">
         {entries.map((entry) => {
-          const replayable = entry.actionType === "choice";
+          const replayable = replayEnabled && Boolean(onReplay) && entry.actionType === "choice";
 
           return (
             <li
@@ -121,7 +123,7 @@ export function SwissCheeseTimeline({
                   <button
                     type="button"
                     className="text-button timeline-replay"
-                    onClick={() => onReplay(entry.nodeId)}
+                    onClick={() => onReplay?.(entry.nodeId)}
                   >
                     이 지점부터 리플레이
                   </button>

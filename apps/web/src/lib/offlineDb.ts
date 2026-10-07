@@ -1,6 +1,7 @@
 export const HERO_OFFLINE_DB_NAME = "hero-offline";
-export const HERO_OFFLINE_DB_VERSION = 2;
+export const HERO_OFFLINE_DB_VERSION = 3;
 export const GAME_SESSION_STORE = "game-sessions";
+export const COMPETITIVE_SESSION_STORE = "competitive-sessions";
 export const SUBMISSION_QUEUE_STORE = "submission-queue";
 
 function canUseIndexedDb(): boolean {
@@ -21,6 +22,14 @@ export function openHeroOfflineDb(): Promise<IDBDatabase | null> {
 
       if (!db.objectStoreNames.contains(GAME_SESSION_STORE)) {
         db.createObjectStore(GAME_SESSION_STORE, { keyPath: "scenarioId" });
+      }
+
+      if (!db.objectStoreNames.contains(COMPETITIVE_SESSION_STORE)) {
+        const competitive = db.createObjectStore(COMPETITIVE_SESSION_STORE, {
+          keyPath: "key",
+        });
+        competitive.createIndex("userId", "userId", { unique: false });
+        competitive.createIndex("scenarioId", "scenarioId", { unique: false });
       }
 
       if (!db.objectStoreNames.contains(SUBMISSION_QUEUE_STORE)) {
