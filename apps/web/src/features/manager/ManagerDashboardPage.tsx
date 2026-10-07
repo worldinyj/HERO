@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../../lib/supabase";
+import { ManagerInvitePanel } from "./ManagerInvitePanel";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -55,46 +56,38 @@ export function ManagerDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
+  const loadDashboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const supabase = getSupabase();
 
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        const supabase = getSupabase();
+      const [participation, pending, aggregate] = await Promise.all([
+        supabase.rpc("manager_participation_rows"),
+        supabase.rpc("manager_pending_invites"),
+        supabase.rpc("manager_job_aggregates"),
+      ]);
 
-        const [participation, pending, aggregate] = await Promise.all([
-          supabase.rpc("manager_participation_rows"),
-          supabase.rpc("manager_pending_invites"),
-          supabase.rpc("manager_job_aggregates"),
-        ]);
+      const firstError = participation.error ?? pending.error ?? aggregate.error;
+      if (firstError) throw firstError;
 
-        const firstError = participation.error ?? pending.error ?? aggregate.error;
-        if (firstError) throw firstError;
-        if (!active) return;
-
-        setParticipants((participation.data ?? []) as ParticipationRow[]);
-        setPendingInvites((pending.data ?? []) as PendingInviteRow[]);
-        setAggregates((aggregate.data ?? []) as AggregateRow[]);
-      } catch (cause) {
-        if (active) {
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "발전소 참여 현황을 불러오지 못했습니다.",
-          );
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
+      setParticipants((participation.data ?? []) as ParticipationRow[]);
+      setPendingInvites((pending.data ?? []) as PendingInviteRow[]);
+      setAggregates((aggregate.data ?? []) as AggregateRow[]);
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "발전소 참여 현황을 불러오지 못했습니다.",
+      );
+    } finally {
+      setLoading(false);
     }
-
-    void load();
-    return () => {
-      active = false;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const summary = useMemo(() => {
     const completedUsers = participants.filter(
@@ -159,6 +152,8 @@ export function ManagerDashboardPage() {
           <strong>{summary.completedScenarios}</strong>
         </article>
       </div>
+
+      <ManagerInvitePanel onChanged={() => void loadDashboard()} />
 
       <section className="panel manager-section">
         <div className="section-heading">
