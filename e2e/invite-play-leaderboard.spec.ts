@@ -71,9 +71,10 @@ const identities = {
   },
 } as const;
 
-test("invitation → mocked Kakao → play → result → leaderboard", async ({
+test("invitation → play → replay offline queue → leaderboard", async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   const identity =
     identities[testInfo.project.name as keyof typeof identities];
 
@@ -209,6 +210,53 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
     page.getByRole("heading", { name: /\d+ HP/ }),
   ).toBeVisible();
   await expectWcag22Aa(page, "HP review");
+
+  const replayButton = page.getByRole("button", {
+    name: /작업 대상을 확신하기 어려운 상황입니다/,
+  });
+  await expect(replayButton).toBeVisible();
+  await replayButton.click();
+
+  const replayChoice = page.getByRole("radio", {
+    name: /동료에게 함께 확인해 달라고 요청한다/,
+  });
+  await expect(replayChoice).toBeVisible();
+  await expect(page.getByText(/리플레이/, { exact: false })).toBeVisible();
+
+  await page.context().setOffline(true);
+
+  await replayChoice.click();
+  await expect(replayChoice).toHaveAttribute("aria-checked", "true");
+  await replayChoice.click();
+
+  await expect(
+    page.getByRole("heading", { name: "확인 후 진행" }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "결과 돌아보기" })
+    .click();
+
+  await page
+    .getByRole("radio", { name: /상황이 시작되기 전부터/ })
+    .click();
+  await page
+    .getByRole("button", { name: "내 생각 확인" })
+    .click();
+
+  await page
+    .getByRole("button", { name: "HP 리뷰 보기" })
+    .click();
+
+  await expect(
+    page.getByText(/제출 대기 중/),
+  ).toBeVisible({ timeout: 10_000 });
+
+  await page.context().setOffline(false);
+
+  await expect(
+    page.getByText("서버 검증 완료 · 시즌 기록에 반영되었습니다."),
+  ).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("link", { name: "캠페인으로" }).click();
   await page.getByRole("link", { name: "리더보드" }).click();
