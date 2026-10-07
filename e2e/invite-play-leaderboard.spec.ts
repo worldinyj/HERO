@@ -3,14 +3,14 @@ import { expect, test } from "@playwright/test";
 const identities = {
   "mobile-390x844": {
     email: "hero-e2e-a@example.test",
-    password: "HeroE2E!2026A",
+    passwordEnv: "HERO_E2E_PASSWORD_A",
     token: "hero-e2e-invite-token-mobile-a-2026",
     inviteeName: "E2E Player A",
     nickname: "E2EHERO1",
   },
   "mobile-360x800": {
     email: "hero-e2e-b@example.test",
-    password: "HeroE2E!2026B",
+    passwordEnv: "HERO_E2E_PASSWORD_B",
     token: "hero-e2e-invite-token-mobile-b-2026",
     inviteeName: "E2E Player B",
     nickname: "E2EHERO2",
@@ -27,12 +27,17 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
     throw new Error(`unknown_e2e_project:${testInfo.project.name}`);
   }
 
+  const password = process.env[identity.passwordEnv];
+  if (!password) {
+    throw new Error(`missing_e2e_password:${identity.passwordEnv}`);
+  }
+
   await page.addInitScript(
-    ({ email, password }) => {
+    ({ email, password: runtimePassword }) => {
       window.sessionStorage.setItem("hero:e2e-email", email);
-      window.sessionStorage.setItem("hero:e2e-password", password);
+      window.sessionStorage.setItem("hero:e2e-password", runtimePassword);
     },
-    { email: identity.email, password: identity.password },
+    { email: identity.email, password },
   );
 
   await page.goto(`/i/${identity.token}`);
