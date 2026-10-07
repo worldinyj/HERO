@@ -351,7 +351,7 @@ export function CompetitiveGamePage({
         scenarioId,
         body: {
           sessionId: server.sessionId,
-          actions: gameLogToSubmissionActions(game.log),
+          actions: gameLogToSubmissionActions(game.log, server.submissionLogStart),
           reflectionAnswered: true,
           swissCheeseViewed: true,
         },
@@ -378,6 +378,122 @@ export function CompetitiveGamePage({
         reason:
           cause instanceof Error ? cause.message : "submission_queue_failed",
       });
+    }
+  }
+
+  async function startReplay(nodeId: string) {
+    if (
+      !scenario ||
+      !server ||
+      !game ||
+      !userId ||
+      !online ||
+      submission.status !== "submitted"
+    ) {
+      return;
+    }
+
+    setReplayStarting(true);
+    setReplayError(null);
+
+    try {
+      const sourceSessionId = server.sessionId;
+      const sourceLog = game.log;
+      const supabase = getSupabase();
+
+      const { data, error } = await supabase.functions.invoke(
+        "start-session",
+        {
+          body: {
+            scenarioId,
+            replayOf: sourceSessionId,
+            replayFromNode: nodeId,
+          },
+        },
+      );
+
+      if (error) {
+        throw new Error(startSessionError(data, error.message));
+      }
+
+      const response = data as StartSessionResponse;
+      if (
+        !response.sessionId ||
+        !response.seasonId ||
+        !response.seasonKey ||
+        !response.scenarioVersionId ||
+        typeof response.scenarioVersion !== "number" ||
+        !response.simulationSeed ||
+        !response.presentationSeed ||
+        !response.perspectiveRole ||
+        !response.startedAt ||
+        response.replayOf !== sourceSessionId ||
+        response.replayFromNode !== nodeId
+      ) {
+        throw new Error(
+          startSessionError(response, "invalid_replay_start_response"),
+        );
+      }
+
+      const parsed = ScenarioSchema.safeParse(response.scenario);
+      if (!parsed.success) {
+        throw new Error("server_scenario_schema_invalid");
+      }
+
+      if (
+        parsed.data.id !== scenarioId ||
+        parsed.data.version !== response.scenarioVersion
+      ) {
+        throw new Error("server_scenario_identity_mismatch");
+      }
+
+      const nextGame = replayFrom(
+        parsed.data,
+        {
+          simulationSeed: response.simulationSeed,
+          presentationSeed: response.presentationSeed,
+        },
+        sourceLog,
+        nodeId,
+      );
+
+      const nextServer: CompetitiveServerSession = {
+        sessionId: response.sessionId,
+        seasonId: response.seasonId,
+        seasonKey: response.seasonKey,
+        scenarioVersionId: response.scenarioVersionId,
+        scenarioVersion: response.scenarioVersion,
+        perspectiveRole: response.perspectiveRole,
+        startedAt: response.startedAt,
+        replayOf: sourceSessionId,
+        replayFromNode: nodeId,
+        submissionLogStart: nextGame.log.length,
+      };
+
+      await saveCompetitiveSession({
+        userId,
+        scenarioId,
+        scenarioVersion: parsed.data.version,
+        scenario: parsed.data,
+        server: nextServer,
+        game: nextGame,
+      });
+
+      setScenario(parsed.data);
+      setServer(nextServer);
+      setGame(nextGame);
+      setSelectedChoice(null);
+      setReviewStage("ending");
+      setReflectionSelection(null);
+      setReflectionAnswered(false);
+      setSwissCheeseViewed(false);
+      setSubmission({ status: "idle" });
+    } catch (cause) {
+      setReplayError(
+        cause instanceof Error ? cause.message : "replay_start_failed",
+      );
+    } finally {
+      setReplayStarting(false);
     }
   }
 
