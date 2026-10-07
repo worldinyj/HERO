@@ -216,7 +216,7 @@ export function App() {
         />
         <Route
           path="/leaderboard"
-          element={<ActiveUserGate><LeaderboardPage /></ActiveUserGate>}
+          element={<PlayerGate><LeaderboardPage /></PlayerGate>}
         />
         <Route
           path="/manager"
