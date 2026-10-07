@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(33);
+select plan(38);
 
 insert into auth.users (id, email) values
   ('20000000-0000-0000-0000-000000000001', 'admin@hero.test'),
@@ -197,9 +197,19 @@ select results_eq(
   'player sees only own session'
 );
 select results_eq(
-  $$select count(*) from public.session_decisions$$,
+  $select count(*) from public.session_decisions$,
   array[1::bigint],
   'player sees only own decision log'
+);
+select is(
+  (select hp_point from public.my_current_rank()),
+  250,
+  'player self-rank RPC returns only own open-season HP'
+);
+select is(
+  (select overall_rank from public.my_current_rank()),
+  1,
+  'player self-rank RPC returns own overall rank'
 );
 select throws_ok(
   $$update public.profiles set nickname = 'HACKED' where id = '20000000-0000-0000-0000-000000000003'$$,
@@ -249,10 +259,16 @@ select results_eq(
   'manager cannot read player decision logs directly'
 );
 select throws_ok(
-  $$insert into public.plants (code, name, display_name) values ('NOPE', 'Nope', 'Nope')$$,
+  $insert into public.plants (code, name, display_name) values ('NOPE', 'Nope', 'Nope')$,
   '42501',
   null,
   'manager cannot create plants'
+);
+select throws_ok(
+  $select * from public.my_current_rank()$,
+  'P0001',
+  'player_required',
+  'manager cannot invoke player self-rank RPC'
 );
 
 reset role;
@@ -294,8 +310,14 @@ select results_eq(
   'admin can read all decision logs'
 );
 select lives_ok(
-  $$insert into public.plants (code, name, display_name) values ('RLS-C', 'RLS Plant C', 'RLS C')$$,
+  $insert into public.plants (code, name, display_name) values ('RLS-C', 'RLS Plant C', 'RLS C')$,
   'admin can create a plant'
+);
+select throws_ok(
+  $select * from public.my_current_rank()$,
+  'P0001',
+  'player_required',
+  'admin cannot invoke player self-rank RPC'
 );
 
 reset role;
@@ -317,9 +339,15 @@ select results_eq(
   'inactive player cannot read own decision logs directly'
 );
 select results_eq(
-  $$select count(*) from public.v_leaderboard_current_public$$,
+  $select count(*) from public.v_leaderboard_current_public$,
   array[0::bigint],
   'inactive player cannot read the public leaderboard'
+);
+select throws_ok(
+  $select * from public.my_current_rank()$,
+  'P0001',
+  'player_required',
+  'inactive player cannot invoke player self-rank RPC'
 );
 
 reset role;
