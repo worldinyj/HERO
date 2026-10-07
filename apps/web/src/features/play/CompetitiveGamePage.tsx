@@ -716,7 +716,10 @@ export function CompetitiveGamePage({
   return (
     <section className="game-page" aria-live="polite">
       <div className="game-status">
-        <span>{server.seasonKey} · {server.perspectiveRole}</span>
+        <span>
+          {server.seasonKey} · {server.perspectiveRole}
+          {server.replayOf ? " · 리플레이" : ""}
+        </span>
         <GameClock
           clockMin={view.clockMin}
           deadlineMin={view.deadlineMin}
