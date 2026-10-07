@@ -18,6 +18,14 @@ begin
     raise exception 'user_id_required';
   end if;
 
+  if exists (
+    select 1
+    from public.profiles p
+    where p.role = 'admin'
+  ) then
+    raise exception 'admin_already_exists';
+  end if;
+
   if v_real_name = '' then
     raise exception 'real_name_required';
   end if;
@@ -37,14 +45,6 @@ begin
       and lower(v_nickname) like '%' || lower(nft.term) || '%'
   ) then
     raise exception 'nickname_forbidden';
-  end if;
-
-  if exists (
-    select 1
-    from public.profiles p
-    where p.role = 'admin'
-  ) then
-    raise exception 'admin_already_exists';
   end if;
 
   if not exists (
@@ -92,8 +92,8 @@ begin
     v_nickname,
     null,
     true,
-    now(),
-    now()
+    null,
+    null
   );
 
   insert into public.audit_logs (
@@ -105,14 +105,15 @@ begin
     metadata
   )
   values (
-    p_user_id,
+    null,
     null,
     'admin.bootstrap_initial',
     'profile',
     p_user_id::text,
     jsonb_build_object(
       'method', 'private.bootstrap_initial_admin',
-      'initial_admin', true
+      'initial_admin', true,
+      'target_user_id', p_user_id
     )
   );
 
