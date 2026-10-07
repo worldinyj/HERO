@@ -71,8 +71,16 @@ select throws_ok(
   'bootstrap refuses to create a second admin'
 );
 
+insert into public.plants (id, code, name, display_name)
+values (
+  '61000000-0000-0000-0000-000000000001',
+  'BOOTSTRAP',
+  'Bootstrap Test Plant',
+  'Bootstrap'
+);
+
 select throws_ok(
-  $$insert into public.invitations (
+  $insert into public.invitations (
       token_hash,
       plant_id,
       target_role,
@@ -82,7 +90,7 @@ select throws_ok(
     )
     values (
       'admin-invite-must-fail',
-      gen_random_uuid(),
+      '61000000-0000-0000-0000-000000000001',
       'admin',
       'Should Fail',
       '60000000-0000-0000-0000-000000000001',
