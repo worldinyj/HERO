@@ -115,6 +115,14 @@ function ActiveUserGate({ children }: { children: ReactNode }) {
   );
 }
 
+function PlayerGate({ children }: { children: ReactNode }) {
+  return (
+    <RequireAuth>
+      <RequireRole roles={["player"]}>{children}</RequireRole>
+    </RequireAuth>
+  );
+}
+
 function ManagerGate({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
@@ -235,7 +243,7 @@ export function App() {
           aria-label="주요 메뉴"
         >
           <NavLink to="/" end>캠페인</NavLink>
-          <NavLink to="/leaderboard">리더보드</NavLink>
+          {profile?.role === "player" ? <NavLink to="/leaderboard">리더보드</NavLink> : null}
           {managerNav ? <NavLink to="/manager">발전소</NavLink> : null}
           {adminNav ? <NavLink to="/admin">관리</NavLink> : null}
           <NavLink to="/me">내 기록</NavLink>
