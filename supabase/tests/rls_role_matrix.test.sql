@@ -197,19 +197,19 @@ select results_eq(
   'player sees only own session'
 );
 select results_eq(
-  $select count(*) from public.session_decisions$,
+  $$select count(*) from public.session_decisions$$,
   array[1::bigint],
   'player sees only own decision log'
 );
 select results_eq(
-  $select count(*) from public.v_leaderboard_current_public
-    where season_key = 'rls-test-season'$,
+  $$select count(*) from public.v_leaderboard_current_public
+    where season_key = 'rls-test-season'$$,
   array[2::bigint],
   'active player can read current leaderboard rows for active players only'
 );
 select results_eq(
-  $select count(*) from public.v_leaderboard_current_public
-    where nickname = 'RLSOFF'$,
+  $$select count(*) from public.v_leaderboard_current_public
+    where nickname = 'RLSOFF'$$,
   array[0::bigint],
   'inactive players are omitted from the current leaderboard'
 );
