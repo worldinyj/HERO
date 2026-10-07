@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('50000000-0000-0000-0000-000000000001', 'manager@privacy.test'),
@@ -59,13 +59,50 @@ insert into public.scenario_versions (
 
 insert into public.seasons (
   id, season_key, title, starts_at, ends_at, status
+) values
+  (
+    '53000000-0000-0000-0000-000000000003',
+    'privacy-test-season',
+    'Privacy Test Season',
+    now() - interval '1 day',
+    now() + interval '1 day',
+    'open'
+  ),
+  (
+    '53000000-0000-0000-0000-000000000004',
+    'privacy-closed-season',
+    'Privacy Closed Season',
+    now() - interval '40 days',
+    now() - interval '10 days',
+    'closed'
+  );
+
+insert into public.leaderboard_snapshots (
+  season_id,
+  scope_type,
+  scope_plant_id,
+  scope_job_role,
+  user_id,
+  nickname,
+  plant_display_name,
+  player_job_role,
+  hp_point,
+  scenario_count,
+  rank_position,
+  top_percent
 ) values (
-  '53000000-0000-0000-0000-000000000003',
-  'privacy-test-season',
-  'Privacy Test Season',
-  now() - interval '1 day',
-  now() + interval '1 day',
-  'open'
+  '53000000-0000-0000-0000-000000000004',
+  'overall',
+  null,
+  null,
+  '50000000-0000-0000-0000-000000000002',
+  'PRIVW1',
+  'Privacy A',
+  'worker',
+  222,
+  3,
+  1,
+  20
 );
 
 insert into public.play_sessions (
@@ -132,6 +169,18 @@ select results_eq(
   $$select count(*) from public.session_decisions$$,
   array[0::bigint],
   'manager cannot read player decisions directly'
+);
+
+select results_eq(
+  $$select count(*) from public.v_leaderboard_current_public$$,
+  array[0::bigint],
+  'manager cannot read individual current leaderboard rows'
+);
+
+select results_eq(
+  $$select count(*) from public.v_leaderboard_snapshot_public$$,
+  array[0::bigint],
+  'manager cannot read individual historical leaderboard rows'
 );
 
 select results_eq(
