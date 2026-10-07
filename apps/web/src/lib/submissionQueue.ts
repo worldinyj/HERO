@@ -75,6 +75,7 @@ export function isRetryableSubmissionStatus(
 ): boolean {
   return (
     status === null ||
+    status === 401 ||
     status === 408 ||
     status === 425 ||
     status === 429 ||
