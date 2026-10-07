@@ -14,6 +14,11 @@
 
 현재 상태: **SOURCE_HOLD**
 
+v4 핵심 정정:
+- KINS §3.2.2에 맞춰 설정 변경을 ‘절차상 필수 다음 단계’가 아니라 **사전 계획되지 않았고 당시 꼭 필요하지 않았던 추가 조작**으로 표현
+- 조작 필요성 자체를 재확인하고 필요성이 없으면 실행하지 않는 safe-stop 경로 추가
+- 사건 당시 부재한 사전점검/입력 재확인 UI를 기존 방어막 실패처럼 표현하지 않도록 수정
+
 기술결과:
 - JSON/graph PASS
 - 전 경로 COMPLETE
@@ -75,11 +80,11 @@
 
 ## S03 — 절차와 실제 상황이 조금 다릅니다
 
-현재 상태: **REVIEW_READY — S03 v3 / HUMAN RE-REVIEW REQUIRED**
+현재 상태: **REVIEW_READY — S03 v4 / HUMAN RE-REVIEW REQUIRED**
 
 검토 추적:
 - GitHub Issue: `#76 S03 v3 human review — HF / operations / anonymization / Just Culture / debrief`
-- 현재 검토 대상 SHA-256: `73c40653ee8832be6fa316f3e0b58eb46cdea35361390f6cdde3110b408424f1`
+- 현재 검토 대상 SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
 - AI 사전검토: PASS WITH HUMAN CONFIRMATION (사람 승인 대체 아님)
 
 공식/권리:
@@ -102,6 +107,7 @@
 - [ ] 직접원인(설정치 입력 오류/물리적 트리거), HERO 근본원인 분류, 기여원인을 명확히 구분한다.
 - [ ] `S03_CAUSE_TRACEABILITY_MATRIX_V1.md`에서 각 원인·기여요인이 KINS 근거, 실패/약화 방어막, 관련 재발방지대책과 추적 가능하다.
 - [ ] 입력 오류만 강조하지 않고 미예정 운전행위 관리·운전모드 mental model·검증/감시 방어막을 함께 보여준다.
+- [ ] 게임 도입부가 해당 설정 변경을 필수 절차 단계로 오해하게 하지 않고, 필요성 재확인을 실제 선택지로 제공한다.
 - [ ] Questioning Attitude를 “절차를 무시하는 태도”로 오해하게 하지 않는다.
 - [ ] Peer Check·Place Keeping·Stop When Unsure의 역할이 사실과 교육목적에 맞는다.
 - [ ] 게임용 PSF/Hazard Index를 공식 원인분류·HEP처럼 표현하지 않는다.
