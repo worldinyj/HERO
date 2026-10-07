@@ -10,7 +10,7 @@ S03 「절차와 실제 상황이 조금 다릅니다」는 절차를 무시하�
 - 현재 설비상태와 절차가 전제하는 상태가 같은지 확인
 - 설정값의 **방향/의도**를 입력 전에 다시 확인
 - 예상과 다른 추세가 보이면 Questioning Attitude 사용
-- Peer Check / Three-way Communication으로 입력 의도와 결과를 공유
+- Peer Check와 명확한 팀 커뮤니케이션으로 입력 의도와 기대 반응을 공유
 - 불확실하면 Stop When Unsure
 - 사건 뒤에는 개인 재교육만이 아니라 절차·시스템 피드백 방어막을 개선
 
@@ -64,7 +64,7 @@ S03 「절차와 실제 상황이 조금 다릅니다」는 절차를 무시하�
 
 - Questioning Attitude
 - Peer Check
-- Three-way Communication
+- 명확한 팀 커뮤니케이션
 - Place Keeping
 - Stop When Unsure
 
@@ -78,7 +78,7 @@ S03 「절차와 실제 상황이 조금 다릅니다」는 절차를 무시하�
 
 ### Decision 2 — 설정 방향을 입력하기 전
 
-- 독립적인 Peer Check로 방향 확인
+- 입력 전 동료와 설정 방향·기대 반응의 일치 여부 확인
 - Place Keeping으로 현재 단계·입력 의도를 재확인
 - 입력 후 반응을 보며 조정
 
