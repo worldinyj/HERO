@@ -8,6 +8,7 @@ import {
   type StoredCompetitiveSession,
 } from "../../lib/competitivePersistence";
 import { loadGameSession } from "../../lib/gamePersistence";
+import { preloadGameRoute } from "../../app/routeModules";
 import { getSupabase } from "../../lib/supabase";
 import { useAuth } from "../auth/AuthContext";
 
@@ -281,6 +282,12 @@ export function CompetitiveBriefingPage({
     return data.scenario.cards
       .map((id) => BARRIER_CARDS[id])
       .filter((card): card is NonNullable<typeof card> => card !== undefined);
+  }, [data]);
+
+  useEffect(() => {
+    if (data) {
+      preloadGameRoute();
+    }
   }, [data]);
 
   const localScenario = getScenarioById(scenarioId);
