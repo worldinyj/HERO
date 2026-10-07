@@ -1,0 +1,201 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.API_URL;
+const SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SERVICE_ROLE_KEY;
+const PASSWORD_A = process.env.HERO_E2E_PASSWORD_A;
+const PASSWORD_B = process.env.HERO_E2E_PASSWORD_B;
+const PASSWORD_MANAGER = process.env.HERO_E2E_PASSWORD_MANAGER;
+
+if (
+  !SUPABASE_URL ||
+  !SERVICE_ROLE_KEY ||
+  !PASSWORD_A ||
+  !PASSWORD_B ||
+  !PASSWORD_MANAGER
+) {
+  throw new Error("Local Supabase and ephemeral E2E passwords are required.");
+}
+
+const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+  },
+});
+
+const IDS = {
+  plant: "71000000-0000-0000-0000-000000000001",
+  manager: "70000000-0000-0000-0000-000000000001",
+  playerA: "70000000-0000-0000-0000-000000000101",
+  playerB: "70000000-0000-0000-0000-000000000102",
+  inviteA: "72000000-0000-0000-0000-000000000101",
+  inviteB: "72000000-0000-0000-0000-000000000102",
+  scenario: "73000000-0000-0000-0000-000000000001",
+  version: "73000000-0000-0000-0000-000000000002",
+} as const;
+
+const identities = [
+  {
+    id: IDS.playerA,
+    email: "hero-e2e-a@example.test",
+    password: PASSWORD_A,
+    invitationId: IDS.inviteA,
+    inviteeName: "E2E Player A",
+    token: "hero-e2e-invite-token-mobile-a-2026",
+  },
+  {
+    id: IDS.playerB,
+    email: "hero-e2e-b@example.test",
+    password: PASSWORD_B,
+    invitationId: IDS.inviteB,
+    inviteeName: "E2E Player B",
+    token: "hero-e2e-invite-token-mobile-b-2026",
+  },
+] as const;
+
+async function createUser(input: {
+  id: string;
+  email: string;
+  password: string;
+}) {
+  const { error } = await admin.auth.admin.createUser({
+    id: input.id,
+    email: input.email,
+    password: input.password,
+    email_confirm: true,
+  });
+
+  if (error) throw error;
+}
+
+await createUser({
+  id: IDS.manager,
+  email: "hero-e2e-manager@example.test",
+  password: PASSWORD_MANAGER,
+});
+
+for (const identity of identities) {
+  await createUser(identity);
+}
+
+const { error: plantError } = await admin.from("plants").insert({
+  id: IDS.plant,
+  code: "E2E",
+  name: "E2E Test Plant",
+  display_name: "E2E 발전소",
+  is_active: true,
+});
+if (plantError) throw plantError;
+
+const { error: managerProfileError } = await admin.from("profiles").insert({
+  id: IDS.manager,
+  plant_id: IDS.plant,
+  role: "plant_manager",
+  real_name: "E2E Manager",
+  nickname: "E2EMANAGER",
+  is_active: true,
+});
+if (managerProfileError) throw managerProfileError;
+
+for (const identity of identities) {
+  const tokenHash = createHash("sha256")
+    .update(identity.token)
+    .digest("hex");
+
+  const { error } = await admin.from("invitations").insert({
+    id: identity.invitationId,
+    token_hash: tokenHash,
+    plant_id: IDS.plant,
+    target_role: "player",
+    invitee_name: identity.inviteeName,
+    job_role: "worker",
+    team_name: "E2E",
+    created_by: IDS.manager,
+    expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+  });
+
+  if (error) throw error;
+}
+
+const scenario = JSON.parse(
+  readFileSync(
+    resolve(process.cwd(), "e2e/fixtures/e2e_competitive.json"),
+    "utf8",
+  ),
+);
+
+const { error: scenarioError } = await admin.from("scenarios").insert({
+  id: IDS.scenario,
+  slug: scenario.id,
+  title: scenario.title,
+  is_competitive: true,
+  is_active: true,
+});
+if (scenarioError) throw scenarioError;
+
+const { error: versionError } = await admin.from("scenario_versions").insert({
+  id: IDS.version,
+  scenario_id: IDS.scenario,
+  version: scenario.version,
+  status: "published",
+  default_perspective_role: scenario.defaultPerspectiveRole,
+  content: scenario,
+  published_at: new Date().toISOString(),
+});
+if (versionError) throw versionError;
+
+const now = new Date().toISOString();
+let { data: season, error: seasonError } = await admin
+  .from("seasons")
+  .select("id")
+  .eq("status", "open")
+  .lte("starts_at", now)
+  .gt("ends_at", now)
+  .order("starts_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+if (seasonError) throw seasonError;
+
+if (!season) {
+  const { data: createdSeason, error } = await admin
+    .from("seasons")
+    .insert({
+      season_key: "e2e-season",
+      title: "E2E 시즌",
+      starts_at: new Date(Date.now() - 3_600_000).toISOString(),
+      ends_at: new Date(Date.now() + 86_400_000).toISOString(),
+      status: "open",
+    })
+    .select("id")
+    .single();
+
+  if (error) throw error;
+  season = createdSeason;
+}
+
+const { error: bindingError } = await admin.from("season_scenarios").insert({
+  season_id: season.id,
+  scenario_version_id: IDS.version,
+  simulation_seed: "e2e-simulation-seed-2026-10",
+  is_active: true,
+});
+if (bindingError) throw bindingError;
+
+console.log(
+  JSON.stringify(
+    {
+      ready: true,
+      seasonId: season.id,
+      scenario: scenario.id,
+      users: identities.map(({ email, token }) => ({ email, token })),
+    },
+    null,
+    2,
+  ),
+);
