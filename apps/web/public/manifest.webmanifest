@@ -1,0 +1,22 @@
+{
+  "name": "HERO — Human Error Risk Operations",
+  "short_name": "HERO",
+  "description": "원전 인적오류 예방 학습 시뮬레이션",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0e1624",
+  "theme_color": "#0e1624",
+  "lang": "ko-KR",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
