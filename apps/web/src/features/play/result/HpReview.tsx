@@ -1,9 +1,8 @@
 import type {
   Evaluation,
   GameState,
-  MetricKey,
 } from "@hero/engine";
-import type { Scenario } from "@hero/schema";
+import type { MetricKey, Scenario } from "@hero/schema";
 import { Link } from "react-router";
 
 const METRIC_LABEL: Record<MetricKey, string> = {
