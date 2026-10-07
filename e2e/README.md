@@ -85,3 +85,18 @@ The gate covers WCAG 2.0/2.1/2.2 A and AA axe rules. It also verifies:
 Automated axe checks do not replace real-device screen-reader, browser zoom,
 or human usability review. T7-02/T7-03 still require final manual checks on the
 target mobile browsers.
+
+
+## 추가 무결성 흐름
+
+모바일 E2E는 최초 경쟁 세션을 서버 검증까지 완료한 뒤 다음을 추가로 확인한다.
+
+1. HP 리뷰의 결정지점 리플레이 버튼으로 새 `replay_of` 세션 시작
+2. 새 리플레이 세션이 열린 뒤 브라우저 네트워크를 offline으로 전환
+3. 다른 선택으로 리플레이 완료
+4. 완료 제출이 IndexedDB submission queue에 대기 상태로 저장됨
+5. online 복귀 이벤트 후 같은 사용자 큐가 자동 flush됨
+6. 서버 재실행 검증 완료 메시지 확인
+7. 이후 리더보드에서 닉네임 노출·실명 비노출을 다시 확인
+
+이 검증은 리플레이 prefix 중복 제출 방지 단위테스트와 별개로 실제 브라우저/Edge Function/IndexedDB 연결을 종단 간 확인한다.
