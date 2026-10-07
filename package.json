@@ -25,7 +25,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.0.0",
     "@playwright/test": "1.63.0",
-    "@supabase/supabase-js": "2.117.2"
+    "@supabase/supabase-js": "2.117.2",
+    "@axe-core/playwright": "4.13.0"
   },
   "type": "module"
 }
