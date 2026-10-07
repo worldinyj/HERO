@@ -11,8 +11,12 @@
 | 3 | [03_UXUI.md](03_UXUI.md) | UX/UI — 모바일 우선 흐름, 공명전식 전술 비주얼노벨, 인과 회고, 관리자/담당자 화면 |
 | 4 | [04_TASKLIST.md](04_TASKLIST.md) | 구현 작업 — Phase 0~7(MVP), Release 2/3 백로그, 완료 기준 |
 | 5 | [05_TRACEABILITY.md](05_TRACEABILITY.md) | 문서 간 추적성 — 공통 계약, 요구사항군→설계/화면/작업 매핑, 릴리스 경계 |
-| 6 | [06_AUDIO_ASSET_GUIDE.md](06_AUDIO_ASSET_GUIDE.md) | BGM/SFX 제작·검수·파일명·manifest·웹 재생 정책 |\n| 7 | [07_TERMS_PRIVACY_DRAFT.md](07_TERMS_PRIVACY_DRAFT.md) | 이용약관·개인정보 처리방침 검토 초안, 확정 필요 항목 체크리스트 |
-| 8 | [08_HP_BALANCE_REPORT.md](08_HP_BALANCE_REPORT.md) | HP Point 밸런스, 파밍·리플레이 남용 검토 및 자동 검증 기준 |\n| 9 | [09_DEPLOYMENT_BOOTSTRAP.md](09_DEPLOYMENT_BOOTSTRAP.md) | 최초 admin 부트스트랩 및 배포 준비 |\n| 10 | [10_MVP_READINESS.md](10_MVP_READINESS.md) | MVP 출시 준비 상태, 자동 게이트와 사람/외부 승인 blocker |
+| 6 | [06_AUDIO_ASSET_GUIDE.md](06_AUDIO_ASSET_GUIDE.md) | BGM/SFX 제작·검수·파일명·manifest·웹 재생 정책 |
+| 7 | [07_TERMS_PRIVACY_DRAFT.md](07_TERMS_PRIVACY_DRAFT.md) | 이용약관·개인정보 처리방침 검토 초안, 확정 필요 항목 체크리스트 |
+| 8 | [08_HP_BALANCE_REPORT.md](08_HP_BALANCE_REPORT.md) | HP Point 밸런스, 파밍·리플레이 남용 검토 및 자동 검증 기준 |
+| 9 | [09_DEPLOYMENT_BOOTSTRAP.md](09_DEPLOYMENT_BOOTSTRAP.md) | 최초 admin 부트스트랩 및 배포 준비 |
+| 10 | [10_MVP_READINESS.md](10_MVP_READINESS.md) | MVP 출시 준비 상태, 자동 게이트와 사람/외부 승인 blocker |
+| 11 | [11_RELEASE_EVIDENCE.md](11_RELEASE_EVIDENCE.md) | 사람 승인 증거 manifest, 오디오 릴리스 범위, commit-bound RC gate |
 
 원본 기획서: 원전 인적오류 예방 시뮬레이션 게임 기획서 v0.1
 
@@ -26,4 +30,5 @@
 6. **기술 최신화**: Vite 8.x, React 19.3+, WCAG 2.2 AA 기준. Cloudflare Pages는 정적 SPA 용도로 유지하되 Workers 전환 가능 구조.
 7. **OPIS 활용 원칙**: “작업자 실수”에서 분석을 끝내지 않고 PSF·절차·감독·설계·조직조건·방어막까지 포함.
 8. **오디오 파이프라인 추가**: Google Flow Music/Lyria 계열로 BGM을 제작하고, SFX/foley는 승인된 Google Flow 오디오 도구 또는 동급 생성도구를 사용. 생성물은 검수 후 `public/audio/`에 저장하며 manifest로 출처·프롬프트·버전을 추적. 실제 원전 경보음과 혼동되는 SFX는 금지.
-\n- [09_DEPLOYMENT_BOOTSTRAP.md](09_DEPLOYMENT_BOOTSTRAP.md) — 최초 admin 부트스트랩 및 배포 준비\n
+
+- [09_DEPLOYMENT_BOOTSTRAP.md](09_DEPLOYMENT_BOOTSTRAP.md) — 최초 admin 부트스트랩 및 배포 준비\n
