@@ -203,7 +203,7 @@ select results_eq(
 );
 select results_eq(
   $$select count(*) from public.leaderboard_current_public_rows
-    where season_key = 'rls-test-season'$$,
+    where season_id = '30000000-0000-0000-0000-000000000003'$$,
   array[2::bigint],
   'active player can read current leaderboard rows for active players only'
 );
