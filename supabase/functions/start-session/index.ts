@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
     const { user, profile } = await requireActiveProfile(req, admin);
     const body = (await req.json()) as StartSessionBody;
     const scenarioSlug = body.scenarioId?.trim();
+    const replayFromNode = body.replayFromNode?.trim();
 
     if (profile.role !== "player") {
       return json(req, { error: "player_role_required" }, 403);
@@ -31,6 +32,10 @@ Deno.serve(async (req) => {
 
     if (!profile.plant_id || !scenarioSlug || !profile.job_role) {
       return json(req, { error: "profile_or_scenario_incomplete" }, 400);
+    }
+
+    if (Boolean(body.replayOf) !== Boolean(replayFromNode)) {
+      return json(req, { error: "replay_source_and_target_required_together" }, 400);
     }
 
     const now = nowIso();
@@ -107,14 +112,16 @@ Deno.serve(async (req) => {
         simulationSeed: existing.simulation_seed,
         presentationSeed: existing.presentation_seed,
         perspectiveRole: version.default_perspective_role,
+        replayOf: existing.replay_of,
+        replayFromNode: existing.replay_from_node,
         startedAt: existing.started_at,
       });
     }
 
-    if (body.replayOf) {
+    if (body.replayOf && replayFromNode) {
       const { data: sourceReplay, error: replayError } = await admin
         .from("play_sessions")
-        .select("id, user_id, scenario_version_id, status")
+        .select("id, user_id, season_id, scenario_version_id, status")
         .eq("id", body.replayOf)
         .maybeSingle();
 
@@ -122,6 +129,7 @@ Deno.serve(async (req) => {
         replayError ||
         !sourceReplay ||
         sourceReplay.user_id !== user.id ||
+        sourceReplay.season_id !== season.id ||
         sourceReplay.scenario_version_id !== version.id ||
         sourceReplay.status !== "completed"
       ) {
@@ -143,7 +151,7 @@ Deno.serve(async (req) => {
         simulation_seed: seasonScenario.simulation_seed,
         presentation_seed: presentationSeed,
         replay_of: body.replayOf ?? null,
-        replay_from_node: body.replayFromNode?.trim() || null,
+        replay_from_node: replayFromNode ?? null,
         status: "in_progress",
       })
       .select("id, started_at")
@@ -168,6 +176,8 @@ Deno.serve(async (req) => {
       simulationSeed: seasonScenario.simulation_seed,
       presentationSeed,
       perspectiveRole: version.default_perspective_role,
+      replayOf: body.replayOf ?? null,
+      replayFromNode: replayFromNode ?? null,
       startedAt: created.started_at,
     }, 201);
   } catch (cause) {
