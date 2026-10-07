@@ -43,7 +43,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S02 | **SOURCE_HOLD (v2)** | 확보된 원안위 보도자료 전재 기준 Direct Cause/물리 인과사슬(잘못된 회로상태 + 조작부 오인→터빈·발전기 정지→원자로 정지)과 HERO 방어막 분석을 분리하고, 원문이 명시한 회로정비·인적오류 방지 설비개선만 corrective action으로 반영. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY (v3)** | KINS 상세보고서 기반 Direct/Root/Contributing + 인과사슬·방어막·재발방지대책 추적성 및 공개정보 일반화 완료. HF·운전맥락·익명화·incidentDebrief 사람 승인 남음 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
-| 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | 실제 값 연결·체크리스트 완료·외부배포 승인 증거 + 동일 SHA Staging Smoke PASS 필요 |
+| 외부 배포 | **CONNECTED / RELEASE BLOCKED** | Cloudflare Pages + Supabase + Kakao 실연동 및 최초 Admin bootstrap 확인. 동일 SHA Staging Smoke, 실기기·사내망·외부배포 승인 증거는 남음 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
 | 오디오 자산 | **DEFERRED** | `audioPolicy=deferred`. RC 전에 `excluded` 또는 `included`를 명시 결정. included면 승인 asset + audioQc 증거 필요 |
 | 실기기·사내망 | **BLOCKED** | 4종 실기기 확인 + 사내망/개인폰 정책 승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
@@ -115,7 +115,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 3. 개인정보 운영주체·담당부서·보유기간·처리위탁/국외이전을 확정한다.
 4. staging Supabase + Cloudflare + Kakao 환경을 연결한다.
 5. GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
-6. 최초 admin bootstrap과 관리자→담당자→사용자 실제 초대 플로우를 검증한다.
+6. 최초 admin bootstrap은 완료되었다. 이어서 관리자→담당자→사용자 실제 초대 플로우를 별도 Kakao 계정으로 검증한다.
 7. 실기기/사내망 테스트를 수행한다.
 8. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
 9. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
