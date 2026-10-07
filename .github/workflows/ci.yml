@@ -34,6 +34,7 @@ jobs:
           deno check --config supabase/functions/deno.json supabase/functions/peek-invite/index.ts
           deno check --config supabase/functions/deno.json supabase/functions/accept-invite/index.ts
           deno check --config supabase/functions/deno.json supabase/functions/start-session/index.ts
+          deno check --config supabase/functions/deno.json supabase/functions/deactivate-user/index.ts
 
       - name: Check submit-session shared engine graph
         run: deno check --config supabase/functions/submit-session/deno.json supabase/functions/submit-session/index.ts
