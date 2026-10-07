@@ -25,9 +25,9 @@ export function getSupabase(): SupabaseClient {
   return client;
 }
 
-export async function signInWithKakao(): Promise<void> {
+export async function signInWithKakao(returnPath = "/"): Promise<void> {
   const supabase = getSupabase();
-  const redirectTo = new URL("/", window.location.origin).toString();
+  const redirectTo = new URL(returnPath, window.location.origin).toString();
 
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "kakao",
