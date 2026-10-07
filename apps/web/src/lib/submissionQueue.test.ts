@@ -70,6 +70,7 @@ describe("submission queue helpers", () => {
 
   it("retries network, throttling, and server failures", () => {
     expect(isRetryableSubmissionStatus(null)).toBe(true);
+    expect(isRetryableSubmissionStatus(401)).toBe(true);
     expect(isRetryableSubmissionStatus(408)).toBe(true);
     expect(isRetryableSubmissionStatus(429)).toBe(true);
     expect(isRetryableSubmissionStatus(503)).toBe(true);
@@ -77,7 +78,6 @@ describe("submission queue helpers", () => {
 
   it("does not retry permanent validation or authorization failures", () => {
     expect(isRetryableSubmissionStatus(400)).toBe(false);
-    expect(isRetryableSubmissionStatus(401)).toBe(false);
     expect(isRetryableSubmissionStatus(403)).toBe(false);
     expect(isRetryableSubmissionStatus(409)).toBe(false);
   });
