@@ -33,7 +33,7 @@
         "2012 KHNP item-specific rights marker",
         "HF/anonymization review"
       ],
-      "notes": "IAEA/KHNP source and NSSC official statistics identify the 2012 event and INES 2. Historical OPIS accident-list endpoint and current NSIC accident-list entrypoint are located, but the event-specific direct record/identifier and 2012 KHNP item-specific rights marker remain unresolved."
+      "notes": "IAEA/KHNP source, NSSC official statistics, and NSSC post-event Kori-1 electrical/system safety-review materials identify and substantiate the 2012 event. Historical OPIS accident-list endpoint and current NSIC accident-list entrypoint are located, but the event-specific OPIS/NSIC record/identifier and 2012 KHNP item-specific rights marker remain unresolved."
     },
     {
       "scenarioId": "s02_equipment_identity",
@@ -52,7 +52,7 @@
         "OPIS/NSIC event-specific direct record URL/identifier/PDF",
         "HF/anonymization review"
       ],
-      "notes": "KHNP Hanul official bulletins confirm the 2024-01-02 trip/shutdown chronology, and the full 2024-04-17 NSSC press-release text is recovered through a government relay. Current NSIC accident-list entrypoint is located; direct NSSC investigation host/rights and event-specific OPIS/NSIC record remain unresolved."
+      "notes": "KHNP Hanul official bulletins confirm the 2024-01-02 trip/shutdown chronology. The full 2024-04-17 NSSC press-release text is recovered through a government relay, and the Policy Briefing catalogue confirms the original NSSC item exists on that date; however its direct detail URL/item-specific rights marker and event-specific OPIS/NSIC record remain unresolved."
     },
     {
       "scenarioId": "s03_procedure_reality_gap",
