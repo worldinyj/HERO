@@ -87,11 +87,12 @@ describe("incident debrief source attribution schema", () => {
     const input = fixture();
     delete (input.incidentDebrief as { causalChain?: unknown }).causalChain;
     delete (input.incidentDebrief as { failedBarriers?: unknown }).failedBarriers;
-    const input = fixture();
     delete (input.incidentDebrief as { sources?: unknown }).sources;
 
     const parsed = ScenarioSchema.parse(input);
 
+    expect(parsed.incidentDebrief?.causalChain).toEqual([]);
+    expect(parsed.incidentDebrief?.failedBarriers).toEqual([]);
     expect(parsed.incidentDebrief?.sources).toEqual([]);
   });
 
