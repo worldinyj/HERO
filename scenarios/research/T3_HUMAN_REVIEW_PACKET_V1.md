@@ -1,7 +1,7 @@
 # HERO T3 Human Review Packet V1
 
 > 대상: S01~S03 경쟁 시나리오 초안  
-> 기준일: 2026-10-07  
+> 기준일: 2026-10-08  
 > 자동판정은 사람승인을 대신하지 않는다.
 
 ## 검토 방법
@@ -76,6 +76,11 @@
 ## S03 — 절차와 실제 상황이 조금 다릅니다
 
 현재 상태: **REVIEW_READY — S03 v3 / HUMAN RE-REVIEW REQUIRED**
+
+검토 추적:
+- GitHub Issue: `#76 S03 v3 human review — HF / operations / anonymization / Just Culture / debrief`
+- 현재 검토 대상 SHA-256: `73c40653ee8832be6fa316f3e0b58eb46cdea35361390f6cdde3110b408424f1`
+- AI 사전검토: PASS WITH HUMAN CONFIRMATION (사람 승인 대체 아님)
 
 공식/권리:
 - 원안위 2026-09-04 공식 조사결과 확인
