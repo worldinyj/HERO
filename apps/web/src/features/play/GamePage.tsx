@@ -7,6 +7,7 @@ import {
 } from "@hero/engine";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
+import { CompetitiveGamePage } from "./CompetitiveGamePage";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
 import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
@@ -119,18 +120,7 @@ export function GamePage() {
   }
 
   if (!scenario) {
-    return (
-      <section className="panel">
-        <p className="eyebrow">Scenario unavailable</p>
-        <h2>시나리오를 찾을 수 없습니다</h2>
-        <p className="muted">
-          현재 웹 플레이에는 0장 튜토리얼만 연결되어 있습니다.
-        </p>
-        <Link className="text-link" to="/">
-          캠페인으로 돌아가기
-        </Link>
-      </section>
-    );
+    return <CompetitiveGamePage scenarioId={scenarioId} />;
   }
 
   if (!game || !view) {
