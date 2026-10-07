@@ -1,18 +1,17 @@
 import { getScenarioById } from "@hero/content";
 import {
-  BARRIER_CARDS,
   evaluate,
   getView,
   isFinished,
 } from "@hero/engine";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { ChoiceSheet } from "./ChoiceSheet";
 import { CompetitiveGamePage } from "./CompetitiveGamePage";
 import { GameClock } from "./GameClock";
+import { EndingStamp } from "./components/EndingStamp";
+import { PlayNodeStage } from "./components/PlayNodeStage";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
-import { SceneStage } from "./SceneStage";
 import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
 import { useTutorialGameStore } from "./gameStore";
 
@@ -38,7 +37,6 @@ export function GamePage() {
   const [online, setOnline] = useState(
     () => typeof navigator === "undefined" || navigator.onLine,
   );
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [reviewStage, setReviewStage] = useState<ReviewStage>("ending");
   const [reflectionSelection, setReflectionSelection] = useState<string | null>(
     null,
@@ -86,10 +84,6 @@ export function GamePage() {
     scenario,
     start,
   ]);
-
-  useEffect(() => {
-    setSelectedChoice(null);
-  }, [game?.nodeId]);
 
   const view = useMemo(() => {
     if (!scenario || !game) return null;
@@ -181,6 +175,7 @@ export function GamePage() {
           <article className="ending-card">
             <p className="eyebrow">Training Result</p>
             <h2>{node.title}</h2>
+            <EndingStamp ending={node.ending} />
             <p>{node.summary}</p>
 
             <div className="tutorial-score">
@@ -269,109 +264,10 @@ export function GamePage() {
         </div>
       ) : null}
 
-      {node.type === "scene" || node.type === "event" ? (
-        <SceneStage
-          nodeKey={view.nodeId}
-          speaker={node.type === "scene" ? node.speaker : undefined}
-          text={node.text}
-          tone={node.type === "event" ? "event" : "scene"}
-          onContinue={() => dispatch(scenario, { type: "continue" })}
-        />
-      ) : null}
-
-      {node.type === "decision" ? (
-        <article className="decision-panel">
-          <p className="eyebrow">Decision</p>
-          <h2>{node.prompt}</h2>
-
-          {node.infoActions.length > 0 ? (
-            <div className="decision-section">
-              <h3>정보 확인</h3>
-              <div className="info-grid">
-                {node.infoActions.map((info) => {
-                  const usageId = `${view.nodeId}:${info.actionId}`;
-                  const used = view.usedInfoActions.includes(usageId);
-
-                  return (
-                    <button
-                      key={info.actionId}
-                      type="button"
-                      className="info-button"
-                      disabled={used}
-                      onClick={() => {
-                        dispatch(scenario, {
-                          type: "info",
-                          actionId: info.actionId,
-                        });
-                      }}
-                    >
-                      {used ? "확인 완료" : info.label}
-                      <small>+{info.timeCostMin}분</small>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {node.infoActions
-                .filter((info) =>
-                  view.usedInfoActions.includes(
-                    `${view.nodeId}:${info.actionId}`,
-                  ),
-                )
-                .map((info) => (
-                  <p key={info.actionId} className="info-reveal">
-                    {info.revealText}
-                  </p>
-                ))}
-            </div>
-          ) : null}
-
-          {view.cardsAvailable.length > 0 ? (
-            <div className="decision-section">
-              <h3>방어막 카드</h3>
-              <div className="card-tray">
-                {view.cardsAvailable
-                  .filter(
-                    (cardId) =>
-                      !node.allowedCards ||
-                      node.allowedCards.includes(cardId),
-                  )
-                  .map((cardId) => {
-                    const card = BARRIER_CARDS[cardId];
-                    if (!card) return null;
-
-                    return (
-                      <button
-                        key={cardId}
-                        type="button"
-                        className="card-button"
-                        onClick={() =>
-                          dispatch(scenario, { type: "card", cardId })
-                        }
-                      >
-                        <span>{card.label}</span>
-                        <small>+{card.timeCostMin}분</small>
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-          ) : null}
-
-          <ChoiceSheet
-            choices={node.choices}
-            selectedActionId={selectedChoice}
-            onSelect={setSelectedChoice}
-            onConfirm={(actionId) => {
-              setSelectedChoice(null);
-              dispatch(scenario, {
-                type: "choice",
-                actionId,
-              });
-            }}
-          />
-        </article>
-      ) : null}
+      <PlayNodeStage
+        view={view}
+        onAction={(action) => dispatch(scenario, action)}
+      />
     </section>
   );
 }

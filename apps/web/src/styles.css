@@ -2395,3 +2395,160 @@ h3 {
     animation: none;
   }
 }
+
+
+.barrier-tray {
+  display: grid;
+  gap: 10px;
+}
+
+.barrier-tray-toggle {
+  min-height: 48px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(111, 160, 255, 0.35);
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: rgba(111, 160, 255, 0.08);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.barrier-tray-toggle strong {
+  display: grid;
+  min-width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  color: #d7e3ff;
+  background: rgba(111, 160, 255, 0.16);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.barrier-tray-toggle small {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.card-tray--expanded {
+  animation: tray-reveal 180ms ease-out;
+}
+
+.barrier-use-feedback {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(76, 195, 138, 0.26);
+  border-radius: 12px;
+  color: #bcebd5;
+  background: rgba(76, 195, 138, 0.08);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  animation: barrier-confirm 260ms ease-out;
+}
+
+.event-alert {
+  animation: event-arrive 220ms ease-out;
+}
+
+.ending-stamp {
+  width: fit-content;
+  display: grid;
+  gap: 2px;
+  min-width: 132px;
+  padding: 10px 14px;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+  transform: rotate(-1.5deg);
+  font-variant-numeric: tabular-nums;
+  animation: ending-stamp-arrive 220ms ease-out;
+}
+
+.ending-stamp span {
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  opacity: 0.72;
+}
+
+.ending-stamp strong {
+  font-size: 1rem;
+}
+
+.ending-stamp--safe_complete,
+.ending-stamp--safe_stop {
+  color: #bcebd5;
+  background: rgba(76, 195, 138, 0.08);
+}
+
+.ending-stamp--near_miss {
+  color: #ffe0a8;
+  background: rgba(242, 165, 65, 0.08);
+}
+
+.ending-stamp--event {
+  color: #ffd1cc;
+  background: rgba(242, 104, 92, 0.08);
+}
+
+@keyframes tray-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes barrier-confirm {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes event-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ending-stamp-arrive {
+  from {
+    opacity: 0;
+    transform: rotate(-4deg) scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: rotate(-1.5deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-tray--expanded,
+  .barrier-use-feedback,
+  .event-alert,
+  .ending-stamp {
+    animation: none;
+  }
+}
