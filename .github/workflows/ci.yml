@@ -36,6 +36,7 @@ jobs:
           test -f apps/web/dist/pwa-icon.svg
           grep -q 'rel="manifest"' apps/web/dist/index.html
           grep -q 'registerHeroServiceWorker' apps/web/src/main.tsx
+          node --check apps/web/public/sw.js
           node -e "const fs=require('fs'); const m=JSON.parse(fs.readFileSync('apps/web/dist/manifest.webmanifest','utf8')); if(m.name!=='HERO — Human Error Risk Operations'||m.display!=='standalone'||m.start_url!=='/'||!Array.isArray(m.icons)||m.icons.length===0) process.exit(1)"
 
       - name: Check invitation and start-session Edge Functions
