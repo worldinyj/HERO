@@ -286,12 +286,7 @@ async function saveScenario(
       })
       .eq("id", scenarioId);
 
-    if (updateError) {
-      if (updateError.message?.includes("scenario_source_evidence_required")) {
-        throw new Error("scenario_source_evidence_required");
-      }
-      throw updateError;
-    }
+    if (updateError) throw updateError;
   } else {
     const { data: created, error: createError } = await admin
       .from("scenarios")
@@ -413,7 +408,12 @@ async function setStatus(
     .select("id, version, status, approved_at, published_at")
     .single();
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    if (updateError.message?.includes("scenario_source_evidence_required")) {
+      throw new Error("scenario_source_evidence_required");
+    }
+    throw updateError;
+  }
 
   await writeAuditLog(admin, {
     actorUserId: userId,
