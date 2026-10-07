@@ -36,9 +36,19 @@ function scenario(includeDebrief: boolean): Scenario {
             caseType: "작업 대상 식별 오류",
             overview:
               "작업 준비와 식별 확인이 충분히 연결되지 않은 상태에서 작업이 진행되어 방어막이 약화된 사건을 일반화해 재구성했습니다.",
+            directCauses: [
+              "작업 대상 또는 조작부를 잘못 식별한 상태에서 조작이 이루어졌다.",
+            ],
             rootCauses: [
               "작업 전 식별 확인 절차와 현장 조건의 연결이 충분하지 않았다.",
               "감독·상호확인 방어막이 실제 작업 시점에 효과적으로 작동하지 않았다.",
+            ],
+            causalChain: [
+              "식별 불확실성 → 잘못된 조작 → 예상하지 못한 설비반응",
+            ],
+            failedBarriers: [
+              "Self Check",
+              "Peer Check",
             ],
             contributingFactors: [
               "시간압박",
@@ -86,7 +96,10 @@ describe("incident debrief schema contract", () => {
   it("accepts anonymized public learning metadata", () => {
     const parsed = scenario(true);
 
+    expect(parsed.incidentDebrief?.directCauses).toHaveLength(1);
     expect(parsed.incidentDebrief?.rootCauses).toHaveLength(2);
+    expect(parsed.incidentDebrief?.causalChain).toHaveLength(1);
+    expect(parsed.incidentDebrief?.failedBarriers).toHaveLength(2);
     expect(
       validateScenarioGraph(parsed).some(
         (issue) => issue.code === "missing_incident_debrief",
