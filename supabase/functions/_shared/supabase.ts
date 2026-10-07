@@ -38,23 +38,26 @@ export async function requireUser(req: Request, admin = adminClient()): Promise<
   return data.user;
 }
 
+export type ActiveProfile = {
+  id: string;
+  plant_id: string | null;
+  role: "admin" | "plant_manager" | "player";
+  job_role: "sro" | "ro" | "field_operator" | "supervisor" | "worker" | null;
+  is_active: boolean;
+};
+
 export async function requireActiveProfile(
   req: Request,
   admin = adminClient(),
 ): Promise<{
   user: User;
-  profile: {
-    id: string;
-    plant_id: string | null;
-    role: "admin" | "plant_manager" | "player";
-    is_active: boolean;
-  };
+  profile: ActiveProfile;
 }> {
   const user = await requireUser(req, admin);
 
   const { data: profile, error } = await admin
     .from("profiles")
-    .select("id, plant_id, role, is_active")
+    .select("id, plant_id, role, job_role, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -64,11 +67,6 @@ export async function requireActiveProfile(
 
   return {
     user,
-    profile: profile as {
-      id: string;
-      plant_id: string | null;
-      role: "admin" | "plant_manager" | "player";
-      is_active: boolean;
-    },
+    profile: profile as ActiveProfile,
   };
 }
