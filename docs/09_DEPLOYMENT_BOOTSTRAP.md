@@ -195,3 +195,64 @@ CI에서는 실제 운영 키 없이 validator 자체의 good/bad fixture를 `--
 - 승인된 BGM/SFX 자산
 
 이 항목이 확정되기 전에는 내부 개발/스테이징 검증까지만 진행하고 프로덕션 공개는 하지 않는다.
+
+
+## 7. GitHub staging smoke workflow
+
+실제 staging 프로젝트와 도메인이 준비되면 로컬 명령을 반복하지 않고 GitHub Actions의 **Staging Smoke** workflow를 수동 실행한다.
+
+### 7.1 GitHub Environment 생성
+
+Repository → Settings → Environments에서 `staging` environment를 만들고 다음 Secrets를 등록한다.
+
+- `HERO_STAGING_URL` — 예: `https://hero-staging.example.com`
+- `HERO_STAGING_SUPABASE_URL` — staging Supabase project URL
+- `HERO_STAGING_SUPABASE_ANON_KEY` — 브라우저용 anon/publishable key만 허용
+- `HERO_STAGING_KAKAO_JS_KEY` — Kakao JavaScript key
+
+`service_role`, `sb_secret_...` 등 서버 비밀키는 이 workflow에 등록하지 않는다.
+
+필요하면 `staging` environment에 required reviewer를 설정해 외부 네트워크 검증이 승인 없이 실행되지 않도록 한다.
+
+### 7.2 실행
+
+GitHub → Actions → **Staging Smoke** → Run workflow.
+
+workflow는 순서대로 다음을 확인한다.
+
+1. 4개 staging Secret 존재 여부
+2. 기존 deployment preflight의 URL/key 형식 및 Supabase Auth live health
+3. `/`, `/login`, `/privacy`, `/terms`, `/leaderboard` deep-link가 SPA shell로 HTTP 200 응답
+4. Cloudflare `_headers`의 핵심 보안 헤더
+5. `manifest.webmanifest`과 `sw.js`의 실제 배포 상태
+6. staging Supabase의 `peek-invite` Edge Function이 HERO 형식의 `invitation_not_found` 응답을 반환하는지
+7. preflight/HTTP 결과 JSON을 Actions artifact로 14일 보관
+
+### 7.3 로컬 동일 검사
+
+배포된 URL만 빠르게 확인할 때:
+
+```bash
+pnpm check:staging-http -- \
+  --app-url=https://hero-staging.example.com \
+  --strict
+```
+
+validator 자체 회귀검사는 외부 네트워크 없이 실행 가능하다.
+
+```bash
+pnpm check:staging-http -- --self-test
+```
+
+### 7.4 판정
+
+Staging Smoke가 PASS해도 다음 항목은 별도 사람 확인이 남는다.
+
+- 실제 Kakao 로그인/공유(특히 Kakao 인앱 브라우저)
+- Android Chrome/Samsung Internet/iOS Safari 실기기
+- 사내망/개인폰 접속 정책
+- 개인정보/법무 승인
+- 경쟁 시나리오 사람 승인
+- 파일럿 운영
+
+즉 이 workflow는 **외부 배포 구성과 웹/Edge 기본 동작을 자동 검증하는 staging gate**이며 프로덕션 출시 승인 자체를 대신하지 않는다.

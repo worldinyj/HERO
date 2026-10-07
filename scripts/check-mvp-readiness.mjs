@@ -33,6 +33,8 @@ const structuralRequirements = [
   "apps/web/src/features/audio/AudioContext.tsx",
   "apps/web/src/features/audio/AudioSettings.tsx",
   "scripts/check-audio-manifest.mjs",
+  "scripts/check-staging-http.mjs",
+  ".github/workflows/staging-smoke.yml",
 ];
 
 const missingFiles = structuralRequirements.filter((path) => !checkFile(path));
@@ -117,6 +119,20 @@ const gates = [
     detail: legalPending
       ? "Terms/privacy document still contains review-draft or [확정 필요] markers."
       : "Terms/privacy finalization markers are cleared.",
+  },
+  {
+    id: "staging_smoke_automation",
+    status:
+      checkFile("scripts/check-staging-http.mjs") &&
+      checkFile(".github/workflows/staging-smoke.yml")
+        ? "pass"
+        : "blocked",
+    owner: "automation",
+    detail:
+      checkFile("scripts/check-staging-http.mjs") &&
+      checkFile(".github/workflows/staging-smoke.yml")
+        ? "Manual staging smoke workflow is ready for real external credentials."
+        : "Staging smoke workflow or validator is missing.",
   },
   {
     id: "external_deployment",

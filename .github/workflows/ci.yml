@@ -66,6 +66,9 @@ jobs:
       - name: Check deployment preflight contract
         run: pnpm check:deployment-preflight -- --self-test
 
+      - name: Check staging HTTP smoke validator contract
+        run: pnpm check:staging-http -- --self-test
+
       - name: Check approved audio manifest
         run: pnpm check:audio-manifest
 
