@@ -48,9 +48,22 @@ jobs:
             exit 1
           fi
           supabase status -o env > /tmp/hero-supabase.env
-          grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env \
-            | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' \
-            >> "$GITHUB_ENV"
+
+          # Supabase CLI versions may quote env values differently. Parse the
+          # trusted local CLI output in the shell, then write normalized values.
+          set -a
+          source /tmp/hero-supabase.env
+          set +a
+
+          if [ -z "${API_URL:-}" ] || [ -z "${ANON_KEY:-}" ] || [ -z "${SERVICE_ROLE_KEY:-}" ]; then
+            echo "Required local Supabase variables are missing"
+            cat /tmp/hero-supabase.env
+            exit 1
+          fi
+
+          printf 'API_URL=%s\n' "$API_URL" >> "$GITHUB_ENV"
+          printf 'ANON_KEY=%s\n' "$ANON_KEY" >> "$GITHUB_ENV"
+          printf 'SERVICE_ROLE_KEY=%s\n' "$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
 
       - name: Configure E2E web environment
         run: |
