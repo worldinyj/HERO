@@ -1,6 +1,6 @@
 # S01 HF Brief V1 — 일정압박·시험단계 통제·감독
 
-> **상태: OFFICIAL IAEA/KHNP SOURCE VERIFIED / OPIS MAPPING HOLD / publish 금지**  
+> **상태: SOURCE_HOLD — OFFICIAL IAEA/KHNP SOURCE VERIFIED / OPIS·RIGHTS·HUMAN REVIEW HOLD / publish 금지**  
 > 내부 저작용 문서. 공개 게임에는 실제 발전소명·호기·시험설비명·개인/업체 식별정보를 노출하지 않는다.
 
 ## 1. 교육 목표
@@ -26,7 +26,12 @@ S01 「오늘 오전까지 끝내야 합니다」는 일정압박 자체를 “�
 - 사건은 단일 행동만이 아니라 비정상적인 작업일정/설비 가용성 조합과 시험 중 인적행위가 겹쳐 확대됐다.
 
 출처:
-- IAEA Expert Mission Report (KHNP 공개본): https://www.khnp.co.kr/main/downloadBbsFile.do?atchmnflNo=7419
+- IAEA NEWS 사건기록 — *Loss of shutdown cooling due to station blackout during refueling outage*: https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9
+- KHNP 공개 IAEA 최종보고서 안내: https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297
+- IAEA Expert Mission Report (KHNP 공개 첨부): https://www.khnp.co.kr/main/downloadBbsFile.do?atchmnflNo=7419
+- KHNP 저작권정책: https://www.khnp.co.kr/main/contents.do?key=406
+
+> KHNP 일반 저작권정책은 공공누리 표시가 부착된 개별 저작물의 자유이용을 허용한다. 자동 검증에서는 2012년 해당 게시물/첨부 자체의 공공누리 표시를 확정하지 못했으므로, 원문 문장·사진·도표를 공개 게임에 복제하지 않고 사실관계만 독립적으로 일반화한다.
 
 ## 3. 공개 시나리오에서 제거할 실제정보
 
@@ -104,9 +109,13 @@ S01 「오늘 오전까지 끝내야 합니다」는 일정압박 자체를 “�
 
 - [x] IAEA/KHNP 공개 원문 확인
 - [ ] OPIS 사건번호/원문 매핑
-- [ ] 공개자료 이용조건 확인
+- [ ] 해당 2012 KHNP 게시물/첨부의 개별 이용표시 확인
 - [ ] HF 전문가 검토
 - [ ] 익명화/운전정보 과노출 검토
-- [ ] draft JSON validate PASS
-- [ ] 전 경로 시뮬레이션 COMPLETE
-- [ ] 정답편향 경고 0 또는 예외 사유 기록
+- [x] draft JSON validate PASS
+- [x] 전 경로 시뮬레이션 COMPLETE
+- [x] 4종 엔딩 reachable
+- [x] 정답편향 경고 0
+- [x] ending imbalance 경고 0
+
+상세 승격 판정: [T3_SOURCE_RIGHTS_REVIEW_V1.md](T3_SOURCE_RIGHTS_REVIEW_V1.md) 참조.
