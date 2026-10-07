@@ -166,19 +166,19 @@ select results_eq(
 );
 
 select results_eq(
-  $select count(*) from public.session_decisions$,
+  $$select count(*) from public.session_decisions$$,
   array[0::bigint],
   'manager cannot read player decisions directly'
 );
 
 select results_eq(
-  $select count(*) from public.v_leaderboard_current_public$,
+  $$select count(*) from public.v_leaderboard_current_public$$,
   array[0::bigint],
   'manager cannot read individual current leaderboard rows'
 );
 
 select results_eq(
-  $select count(*) from public.v_leaderboard_snapshot_public$,
+  $$select count(*) from public.v_leaderboard_snapshot_public$$,
   array[0::bigint],
   'manager cannot read individual historical leaderboard rows'
 );
