@@ -2315,3 +2315,83 @@ h3 {
     text-align: left;
   }
 }
+
+
+.game-clock {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1px 7px;
+  align-items: baseline;
+  justify-items: end;
+  min-width: 112px;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-clock__value {
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.game-clock small {
+  color: var(--muted);
+  font-size: 0.67rem;
+  white-space: nowrap;
+}
+
+.game-clock__delta {
+  position: absolute;
+  right: 0;
+  bottom: -24px;
+  z-index: 6;
+  padding: 4px 8px;
+  border: 1px solid rgba(242, 165, 65, 0.42);
+  border-radius: 999px;
+  color: #ffe0a8;
+  background: rgba(83, 56, 25, 0.96);
+  font-size: 0.72rem;
+  font-weight: 900;
+  animation: hero-time-cost 1.1s ease-out both;
+}
+
+.game-clock--attention .game-clock__value {
+  color: #ffd79d;
+}
+
+.game-clock--urgent .game-clock__value,
+.game-clock--overdue .game-clock__value {
+  color: #ffaaa1;
+}
+
+.game-clock--urgent,
+.game-clock--overdue {
+  border-radius: 8px;
+  background: rgba(242, 104, 92, 0.06);
+}
+
+@keyframes hero-time-cost {
+  0% {
+    opacity: 0;
+    transform: translateY(7px) scale(0.94);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-clock__delta {
+    animation: none;
+  }
+}
