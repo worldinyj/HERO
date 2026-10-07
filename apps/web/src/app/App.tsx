@@ -1,6 +1,6 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
-import { Suspense, lazy, useEffect, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
@@ -133,6 +133,7 @@ function AdminGate({ children }: { children: ReactNode }) {
 
 export function App() {
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
   const { profile, session } = useAuth();
   const managerNav = profile?.role === "plant_manager";
   const adminNav = profile?.role === "admin";
@@ -147,6 +148,14 @@ export function App() {
   const immersiveRoute = playRoute || briefingRoute;
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      mainRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (
       !session?.user.id ||
       profile?.role !== "player" ||
@@ -159,7 +168,16 @@ export function App() {
   }, [profile?.is_active, profile?.role, session?.user.id]);
 
   return (
-    <main className={immersiveRoute ? "app-shell app-shell--play" : "app-shell"}>
+    <>
+      <a className="skip-link" href="#hero-main-content">
+        본문으로 건너뛰기
+      </a>
+      <main
+        id="hero-main-content"
+        ref={mainRef}
+        tabIndex={-1}
+        className={immersiveRoute ? "app-shell app-shell--play" : "app-shell"}
+      >
       {!immersiveRoute ? (
         <header className="hero-header">
           <p className="eyebrow">Human Error Risk Operations</p>
@@ -223,6 +241,7 @@ export function App() {
           <NavLink to="/me">내 기록</NavLink>
         </nav>
       ) : null}
-    </main>
+      </main>
+    </>
   );
 }
