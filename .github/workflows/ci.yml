@@ -25,6 +25,14 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm validate:scenario
+      - name: Validate scenario drafts
+        run: pnpm validate:scenario scenarios/drafts
+      - name: Simulate research drafts
+        run: |
+          for scenario in scenarios/drafts/*.json; do
+            echo "=== $scenario ==="
+            pnpm simulate:scenario -- --scenario="$scenario"
+          done
       - name: Run scenario path simulation
         run: pnpm simulate:scenario
       - name: Analyze HP balance and farming guards

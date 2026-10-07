@@ -1,0 +1,373 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "s01_time_pressure",
+  "version": 1,
+  "title": "1장 · 오늘 오전까지 끝내야 합니다",
+  "defaultPerspectiveRole": "worker",
+  "audienceJobs": ["sro", "ro", "field_operator", "supervisor", "worker"],
+  "estimatedMinutes": 8,
+  "startNode": "intro",
+  "cards": ["prejob_briefing", "place_keeping", "three_way_communication", "stop_when_unsure"],
+  "initialState": {
+    "clockMin": 540,
+    "deadlineMin": 570,
+    "baseHazard": 58,
+    "psf": {
+      "time_pressure": 1.35,
+      "schedule_change": 1.25,
+      "familiarity": 1.15
+    },
+    "barriers": {
+      "briefing": 0.1,
+      "place_keeping": 0.1,
+      "communication": 0.1,
+      "supervision": 0.1
+    },
+    "metrics": {
+      "safety": 50,
+      "awareness": 50,
+      "communication": 50,
+      "procedure": 50,
+      "challenge": 50
+    }
+  },
+  "incidentDebrief": {
+    "caseType": "정비 시험 일정변경과 단계통제 방어막이 겹친 사건",
+    "overview": "정비기간 중 시험 일정이 변경되고 가용 인력과 다음 작업 일정의 압박이 있는 상황에서 작업단계 통제와 감독·절차 방어막이 충분히 작동하지 않아 설비상태가 악화된 실제 사건을 교육 목적으로 일반화했다.",
+    "rootCauses": [
+      "작업일정 변경 시 위험평가·승인·설비상태 확인을 다시 묶어 관리하는 과정이 충분히 강하지 않았다.",
+      "협력업체 교육·절차·감독과 단계별 hold point가 안전관련 작업의 attention to detail을 충분히 보장하지 못했다."
+    ],
+    "contributingFactors": [
+      "자격 인력의 가용성 제약과 다음 작업 일정으로 인한 시간압박",
+      "원래 계획과 다른 일정 재조정",
+      "익숙한 반복시험에서 생길 수 있는 과도한 자신감",
+      "절차의 사전조건·위험·오류 결과 및 단계별 sign-off 부족",
+      "감독 지시와 현장 수행 사이의 커뮤니케이션 방어막 취약"
+    ],
+    "lessons": [
+      {
+        "title": "일정이 바뀌면 브리핑과 위험평가도 다시 맞춘다.",
+        "detail": "원래 계획에 대한 브리핑이 끝났더라도 작업순서·인력·설비상태가 바뀌면 변경된 조건을 다시 공유한다.",
+        "toolId": "prejob_briefing"
+      },
+      {
+        "title": "중요 단계는 위치를 잃지 않고 hold point를 지킨다.",
+        "detail": "익숙한 작업일수록 단계표시와 완료 확인을 사용해 다음 단계로 조기에 넘어가지 않도록 한다.",
+        "toolId": "place_keeping"
+      },
+      {
+        "title": "중지 지시는 송·수신 의미가 같도록 확인한다.",
+        "detail": "중요 지시는 복창과 확인으로 닫힌 고리를 만들고, 불확실하면 진행하지 않는다.",
+        "toolId": "three_way_communication"
+      },
+      {
+        "title": "일정보다 불확실성의 해소를 우선할 수 있다.",
+        "detail": "시간압박이 있어도 조건이 달라졌거나 지시가 불명확하면 안전하게 멈추고 확인한다.",
+        "toolId": "stop_when_unsure"
+      }
+    ]
+  },
+  "nodes": {
+    "intro": {
+      "type": "scene",
+      "speaker": "작업팀",
+      "text": "오늘 예정된 시험 순서가 일부 바뀌었습니다. 이 시험을 마치면 팀 일부는 다음 작업 장소로 이동해야 합니다.",
+      "next": "decision_schedule"
+    },
+    "decision_schedule": {
+      "type": "decision",
+      "prompt": "원래 계획과 작업순서가 달라졌습니다. 시험을 시작하기 전에 무엇을 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "rebrief_changed_schedule",
+          "label": "변경된 순서와 위험요인을 반영해 짧게 재브리핑한다.",
+          "next": "event_hold_instruction",
+          "timeCostMin": 5,
+          "effects": {
+            "psfMultipliers": {
+              "schedule_change": 0.8
+            },
+            "barrierDelta": {
+              "briefing": 0.4
+            },
+            "metricsDelta": {
+              "communication": 5,
+              "safety": 4
+            }
+          }
+        },
+        {
+          "actionId": "confirm_changed_boundary",
+          "label": "현재 작업경계와 가용조건을 문서와 다시 대조한다.",
+          "next": "event_hold_instruction",
+          "timeCostMin": 3,
+          "effects": {
+            "barrierDelta": {
+              "supervision": 0.25
+            },
+            "metricsDelta": {
+              "awareness": 3,
+              "procedure": 7
+            }
+          }
+        },
+        {
+          "actionId": "use_original_briefing",
+          "label": "기존 브리핑 내용이 있으므로 변경된 순서만 기억하고 시작한다.",
+          "next": "event_hold_instruction",
+          "timeCostMin": 0,
+          "effects": {
+            "metricsDelta": {
+              "challenge": -3
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "review_schedule_changes",
+          "label": "바뀐 작업순서와 팀 이동계획을 확인한다.",
+          "revealText": "시험 순서뿐 아니라 일부 인력의 다음 작업 시작시간도 앞당겨져 있습니다.",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": ["prejob_briefing"]
+    },
+    "event_hold_instruction": {
+      "type": "event",
+      "text": "시험 중 감독자로부터 현재 단계에서 멈추고 다음 단계로 진행하지 말라는 지시가 전달됩니다.",
+      "next": "decision_hold_point",
+      "tone": "attention"
+    },
+    "decision_hold_point": {
+      "type": "decision",
+      "prompt": "다음 작업 일정은 가까워지고 있습니다. 현재 단계에서 어떻게 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "hold_and_verify_conditions",
+          "label": "현재 단계에 머물며 진행 조건이 충족됐는지 다시 확인한다.",
+          "next": "hazard_step_control",
+          "timeCostMin": 1,
+          "effects": {
+            "barrierDelta": {
+              "place_keeping": 0.4
+            },
+            "metricsDelta": {
+              "procedure": 6,
+              "challenge": 4
+            }
+          }
+        },
+        {
+          "actionId": "repeat_back_hold_instruction",
+          "label": "중지 지시를 복창하고 다음 진행 조건을 감독자와 맞춘다.",
+          "next": "hazard_step_control",
+          "timeCostMin": 2,
+          "effects": {
+            "barrierDelta": {
+              "communication": 0.4
+            },
+            "metricsDelta": {
+              "communication": 8,
+              "awareness": 2
+            }
+          }
+        },
+        {
+          "actionId": "advance_familiar_test_step",
+          "label": "익숙한 시험이고 시간이 촉박하므로 준비된 다음 단계까지 진행한다.",
+          "next": "hazard_step_control",
+          "timeCostMin": 0,
+          "effects": {
+            "psfMultipliers": {
+              "familiarity": 1.1
+            },
+            "metricsDelta": {
+              "procedure": -5,
+              "challenge": -4
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "read_current_hold_point",
+          "label": "현재 단계의 완료조건과 다음 단계 시작조건을 다시 읽는다.",
+          "revealText": "현재 단계는 확인이 끝나기 전 다음 단계로 넘어가지 않도록 구분되어 있습니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "procedure": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": ["place_keeping", "three_way_communication"]
+    },
+    "hazard_step_control": {
+      "type": "hazard",
+      "threshold": 52,
+      "jitter": 4,
+      "passNext": "event_test_stable",
+      "breachNext": "event_unexpected_condition",
+      "tag": "schedule_step_control"
+    },
+    "event_test_stable": {
+      "type": "event",
+      "text": "진행조건을 다시 맞춘 뒤 시험은 예상 범위 안에서 진행됩니다.",
+      "next": "decision_closeout",
+      "tone": "positive"
+    },
+    "decision_closeout": {
+      "type": "decision",
+      "prompt": "시험을 마무리하면서 다음 작업 인계까지 어떻게 연결하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "closeout_and_handover",
+          "label": "현재 상태와 남은 주의사항을 다음 작업팀에 인계한다.",
+          "next": "safe_complete_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "communication": 5,
+              "procedure": 3
+            }
+          }
+        },
+        {
+          "actionId": "verify_final_state",
+          "label": "최종 설비상태를 다시 확인한 뒤 작업을 종료한다.",
+          "next": "safe_complete_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4,
+              "safety": 4
+            }
+          }
+        },
+        {
+          "actionId": "pause_handover_due_uncertainty",
+          "label": "남은 불확실성이 있어 다음 작업 인계를 잠시 보류한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 3,
+          "effects": {
+            "metricsDelta": {
+              "challenge": 6,
+              "safety": 3
+            }
+          }
+        }
+      ],
+      "infoActions": [],
+      "allowedCards": []
+    },
+    "event_unexpected_condition": {
+      "type": "event",
+      "text": "예상하지 못한 설비상태 변화가 나타났습니다. 시험을 계속하기보다 현재 상태를 보호하는 판단이 필요합니다.",
+      "next": "decision_recovery",
+      "tone": "attention"
+    },
+    "decision_recovery": {
+      "type": "decision",
+      "prompt": "예상하지 못한 상태가 나타난 직후 무엇을 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "stop_and_report_condition",
+          "label": "시험을 중지하고 상태를 보호한 뒤 즉시 보고한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "safety": 8,
+              "communication": 5,
+              "challenge": 8
+            }
+          }
+        },
+        {
+          "actionId": "coordinate_limited_recovery",
+          "label": "팀과 상태를 확인한 뒤 승인된 범위 안에서 복구를 시도한다.",
+          "next": "hazard_recovery",
+          "timeCostMin": 3,
+          "effects": {
+            "psfMultipliers": {
+              "time_pressure": 0.85
+            },
+            "barrierDelta": {
+              "communication": 0.2
+            },
+            "metricsDelta": {
+              "communication": 5,
+              "procedure": 5
+            }
+          }
+        },
+        {
+          "actionId": "finish_step_then_report",
+          "label": "현재 시험 단계를 끝낸 뒤 상태를 정리해 보고한다.",
+          "next": "hazard_recovery",
+          "timeCostMin": 0,
+          "effects": {
+            "metricsDelta": {
+              "safety": -6,
+              "challenge": -4
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "review_current_indications",
+          "label": "현재 표시와 팀의 관찰내용을 다시 모은다.",
+          "revealText": "한 가지 표시만으로는 원인을 단정하기 어렵고, 작업중지 상태에서 추가 확인이 필요합니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": ["stop_when_unsure"]
+    },
+    "hazard_recovery": {
+      "type": "hazard",
+      "threshold": 58,
+      "jitter": 4,
+      "passNext": "near_miss_end",
+      "breachNext": "event_end",
+      "tag": "unexpected_condition_escalation"
+    },
+    "safe_complete_end": {
+      "type": "ending",
+      "ending": "safe_complete",
+      "title": "변경된 조건을 다시 맞춰 완료",
+      "summary": "일정은 조금 늦어졌지만 변경된 조건을 다시 공유하고 단계통제 방어막을 지켜 시험을 완료했습니다."
+    },
+    "safe_stop_end": {
+      "type": "ending",
+      "ending": "safe_stop",
+      "title": "일정보다 안전한 중지를 선택",
+      "summary": "작업 압박이 있는 상황에서도 불확실성을 인정하고 시험을 중지했습니다. 안전한 중지는 중요한 성공 경로입니다."
+    },
+    "near_miss_end": {
+      "type": "ending",
+      "ending": "near_miss",
+      "title": "예상 밖 상태 뒤 확대를 막음",
+      "summary": "단계통제 방어막이 약해져 예상하지 못한 상태가 나타났지만, 추가 확인과 팀 조정으로 확대를 막았습니다."
+    },
+    "event_end": {
+      "type": "ending",
+      "ending": "event",
+      "title": "일정·절차·감독의 틈이 겹침",
+      "summary": "시간압박, 변경된 작업계획, 단계통제와 커뮤니케이션 방어막의 취약이 겹쳐 사건으로 이어졌습니다."
+    }
+  }
+}
