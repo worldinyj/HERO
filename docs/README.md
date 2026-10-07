@@ -26,3 +26,4 @@
 6. **기술 최신화**: Vite 8.x, React 19.3+, WCAG 2.2 AA 기준. Cloudflare Pages는 정적 SPA 용도로 유지하되 Workers 전환 가능 구조.
 7. **OPIS 활용 원칙**: “작업자 실수”에서 분석을 끝내지 않고 PSF·절차·감독·설계·조직조건·방어막까지 포함.
 8. **오디오 파이프라인 추가**: Google Flow Music/Lyria 계열로 BGM을 제작하고, SFX/foley는 승인된 Google Flow 오디오 도구 또는 동급 생성도구를 사용. 생성물은 검수 후 `public/audio/`에 저장하며 manifest로 출처·프롬프트·버전을 추적. 실제 원전 경보음과 혼동되는 SFX는 금지.
+\n- [09_DEPLOYMENT_BOOTSTRAP.md](09_DEPLOYMENT_BOOTSTRAP.md) — 최초 admin 부트스트랩 및 배포 준비\n
