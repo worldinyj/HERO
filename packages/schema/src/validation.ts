@@ -10,7 +10,8 @@ export interface ScenarioIssue {
     | "no_ending_path"
     | "duplicate_action_id"
     | "duplicate_card_id"
-    | "dominant_choice";
+    | "dominant_choice"
+    | "missing_incident_debrief";
   message: string;
 }
 
@@ -110,6 +111,16 @@ export function validateScenarioGraph(scenario: Scenario): ScenarioIssue[] {
         }
       }
     }
+  }
+
+  if (scenario.id !== "s00_tutorial" && !scenario.incidentDebrief) {
+    issues.push({
+      severity: "warning",
+      path: "incidentDebrief",
+      code: "missing_incident_debrief",
+      message:
+        "경쟁 시나리오는 배포 전 익명화된 실사건 공개(사건유형·근본원인·기여요인·HU Tool 교훈)를 작성해야 합니다.",
+    });
   }
 
   if (new Set(scenario.cards).size !== scenario.cards.length) {
