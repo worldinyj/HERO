@@ -3,24 +3,20 @@ import {
   type GameAction,
   type GameView,
 } from "@hero/engine";
-import type { Scenario } from "@hero/schema";
+import type { ScenarioNode } from "@hero/schema";
 import { useEffect, useMemo, useState } from "react";
 
+type DecisionNode = Extract<ScenarioNode, { type: "decision" }>;
+
 export function DecisionStage({
-  scenario,
+  node,
   view,
   onAction,
 }: {
-  scenario: Scenario;
+  node: DecisionNode;
   view: GameView;
   onAction: (action: GameAction) => void;
 }) {
-  const node = view.node;
-
-  if (node.type !== "decision") {
-    return null;
-  }
-
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [cardsOpen, setCardsOpen] = useState(false);
   const [lastUsedCard, setLastUsedCard] = useState<string | null>(null);
