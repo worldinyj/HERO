@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ChoiceSheet } from "./ChoiceSheet";
 import { CompetitiveGamePage } from "./CompetitiveGamePage";
+import { GameClock } from "./GameClock";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
 import { SceneStage } from "./SceneStage";
@@ -16,12 +17,6 @@ import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
 import { useTutorialGameStore } from "./gameStore";
 
 type ReviewStage = "ending" | "reflection" | "timeline" | "review";
-
-function formatClock(totalMinutes: number): string {
-  const hours = Math.floor(totalMinutes / 60) % 24;
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
 
 export function GamePage() {
   const { scenarioId = "" } = useParams();
@@ -173,7 +168,7 @@ export function GamePage() {
       <section className="game-page" aria-live="polite">
         <div className="game-status">
           <span>0장 튜토리얼</span>
-          <span>{formatClock(view.clockMin)}</span>
+          <GameClock clockMin={view.clockMin} deadlineMin={view.deadlineMin} />
         </div>
 
         {!online ? (
@@ -262,10 +257,10 @@ export function GamePage() {
     <section className="game-page" aria-live="polite">
       <div className="game-status">
         <span>0장 · {scenario.defaultPerspectiveRole}</span>
-        <span>
-          {formatClock(view.clockMin)}
-          <small> · 마감 {formatClock(view.deadlineMin)}</small>
-        </span>
+        <GameClock
+          clockMin={view.clockMin}
+          deadlineMin={view.deadlineMin}
+        />
       </div>
 
       {!online ? (
