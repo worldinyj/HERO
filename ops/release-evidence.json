@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "release": "1.0.0",
+  "updatedAt": "2026-10-07",
+  "audioPolicy": "deferred",
+  "approvals": {
+    "legalPrivacy": {
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidenceRef": null
+    },
+    "externalDeployment": {
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidenceRef": null
+    },
+    "realDevice": {
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidenceRef": null,
+      "checks": {
+        "kakaoInApp": false,
+        "androidChrome": false,
+        "samsungInternet": false,
+        "iosSafari": false
+      }
+    },
+    "intranetPolicy": {
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidenceRef": null
+    },
+    "pilot": {
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidenceRef": null,
+      "participants": 0,
+      "blockerCount": null
+    },
+    "audioQc": {
+      "status": "pending",
+      "approvedBy": null,
+      "approvedAt": null,
+      "evidenceRef": null
+    }
+  }
+}
