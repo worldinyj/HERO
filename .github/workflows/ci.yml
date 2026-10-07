@@ -42,6 +42,11 @@ jobs:
       - name: Check S03 human review packet freshness
         run: pnpm build:review-packet -- --scenario=s03_procedure_reality_gap --check
 
+      - name: Check release evidence validator contract
+        run: |
+          pnpm check:release-evidence -- --self-test
+          pnpm check:release-evidence
+
       - name: Report MVP release readiness
         run: pnpm check:mvp-readiness
       - name: Simulate research drafts
