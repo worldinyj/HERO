@@ -134,12 +134,12 @@ order by created_at desc;
 | Cloudflare Pages | `https://hero-dnr.pages.dev` 연결 |
 | Supabase project ref | `alhpooapiokyuxysdzzp` |
 | DB migration | 15건 원격 적용 확인 |
-| Edge Functions | 8개 ACTIVE 확인 |
+| Edge Functions | 8개 ACTIVE 확인. `manager-user-action` v3에서 admin의 plant_manager 초대 재발급/취소를 지원 |
 | Kakao OAuth | 실제 Kakao 로그인 성공 확인 |
 | Auth 사용자 | 최초 Kakao 사용자 생성 확인 |
 | 최초 Admin bootstrap | admin profile 1건 + `admin.bootstrap_initial` 감사로그 확인 |
 | 초대 정책 | profile 없는 인증 사용자는 보호 라우트에서 로그아웃 후 초대링크 안내하도록 hardening 적용 |
-| 실제 조직 초대 | plant_manager 수락 대기 초대 1건 존재. 별도 Kakao 계정으로 수락 E2E가 남아 있음 |
+| 실제 조직 초대 | plant_manager 수락 대기 초대 1건 존재. 로컬 자동 E2E에서 admin → plant_manager → player 초대·수락 체인을 검증하고, admin 화면에 대기 중 담당자 초대 재발급/취소 기능을 추가함. 실제 Kakao 계정 기반 수락 확인은 남아 있음 |
 | 경쟁 시나리오 | S03는 `review_ready`; 사람 검토 전에는 publish하지 않음 |
 | 릴리스 승인 | 법무/개인정보·실기기·사내망·파일럿 포함 여전히 BLOCKED |
 
