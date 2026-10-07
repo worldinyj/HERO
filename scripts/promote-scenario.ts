@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { ScenarioSchema } from "../packages/schema/src/scenario.ts";
+import { sha256Content } from "./scenario-approval-integrity.ts";
 
 type PromotionStatus =
   | "tutorial_exception"
@@ -27,6 +28,7 @@ interface PromotionEntry {
     approvedBy: string | null;
     approvedAt: string | null;
   };
+  approvedContentSha256?: string | null;
   blockers?: string[];
   notes?: string;
 }
@@ -155,6 +157,7 @@ if (entry.status === "approved") {
     sourceRightsComplete: entry.sourceRightsComplete,
     file: entry.file,
     humanReview: entry.humanReview,
+    approvedContentSha256: entry.approvedContentSha256 ?? null,
     apply: false,
   }, null, 2));
   console.log("PROMOTE_PREFLIGHT_ALREADY_APPROVED: no files changed.");
@@ -194,7 +197,9 @@ if (!existsSync(draftPath)) {
   fail(`draft file does not exist: ${entry.file}`);
 }
 
-const rawScenario = JSON.parse(readFileSync(draftPath, "utf8"));
+const draftContent = readFileSync(draftPath, "utf8");
+const draftSha256 = sha256Content(draftContent);
+const rawScenario = JSON.parse(draftContent);
 const parsed = ScenarioSchema.safeParse(rawScenario);
 
 if (!parsed.success) {
@@ -223,6 +228,7 @@ const preflight = {
   sourceRightsComplete: entry.sourceRightsComplete,
   draft: entry.file,
   target: `scenarios/data/${basename(entry.file)}`,
+  draftSha256,
   approvedBy: options.approvedBy,
   approvedAt: options.approvedAt,
   confirmations: {
@@ -273,11 +279,12 @@ entry.humanReview = {
   approvedBy: options.approvedBy.trim(),
   approvedAt: options.approvedAt,
 };
+entry.approvedContentSha256 = draftSha256;
 entry.file = targetRelative;
 entry.blockers = [];
 entry.notes = [
   entry.notes?.trim(),
-  `Human promotion recorded ${options.approvedAt} by ${options.approvedBy.trim()}; HF, anonymization/operational-overexposure, and incidentDebrief confirmations were explicitly attested.`,
+  `Human promotion recorded ${options.approvedAt} by ${options.approvedBy.trim()}; HF, anonymization/operational-overexposure, and incidentDebrief confirmations were explicitly attested. Approved content SHA-256: ${draftSha256}.`,
 ]
   .filter(Boolean)
   .join(" ");
@@ -294,6 +301,7 @@ rmSync(draftPath);
 console.log(JSON.stringify({
   ...preflight,
   target: targetRelative,
+  approvedContentSha256: draftSha256,
   apply: true,
 }, null, 2));
 console.log(
