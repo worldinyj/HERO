@@ -1369,3 +1369,67 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+
+.manager-row--inactive {
+  opacity: 0.68;
+}
+
+.manager-name-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.manager-name-line .status-pill {
+  margin-top: 0;
+}
+
+.manager-inline-actions {
+  justify-content: flex-end;
+}
+
+.danger-text-button {
+  color: var(--danger);
+}
+
+.bulk-invite-results {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.bulk-invite-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(138, 150, 173, 0.16);
+  border-radius: 10px;
+  background: rgba(14, 22, 36, 0.48);
+}
+
+.bulk-invite-row > div:first-child {
+  min-width: 0;
+}
+
+.bulk-invite-row span {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+@media (max-width: 359px) {
+  .bulk-invite-row {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-inline-actions {
+    justify-content: flex-start;
+  }
+}
