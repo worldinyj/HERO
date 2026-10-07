@@ -1,6 +1,7 @@
 import { writeAuditLog } from "../_shared/audit.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { validateNickname } from "../_shared/nickname.ts";
+import { guardRateLimit } from "../_shared/rateLimit.ts";
 import {
   adminClient,
   requireActiveProfile,
@@ -34,6 +35,14 @@ async function currentSeason(admin: ReturnType<typeof adminClient>) {
 async function checkNickname(req: Request, rawNickname: string) {
   const admin = adminClient();
   const user = await requireUser(req, admin);
+  const limited = await guardRateLimit(req, admin, {
+    scope: "nickname:check",
+    subject: user.id,
+    limit: 120,
+    windowSeconds: 300,
+  });
+  if (limited) return limited;
+
   const result = await validateNickname(admin, rawNickname, user.id);
 
   return json(req, {
@@ -46,6 +55,13 @@ async function checkNickname(req: Request, rawNickname: string) {
 async function nicknameStatus(req: Request) {
   const admin = adminClient();
   const { user, profile } = await requireActiveProfile(req, admin);
+  const limited = await guardRateLimit(req, admin, {
+    scope: "nickname:status",
+    subject: user.id,
+    limit: 120,
+    windowSeconds: 300,
+  });
+  if (limited) return limited;
 
   if (profile.role !== "player") {
     return json(req, {
@@ -95,6 +111,13 @@ async function nicknameStatus(req: Request) {
 async function changeSelf(req: Request, rawNickname: string) {
   const admin = adminClient();
   const { user, profile } = await requireActiveProfile(req, admin);
+  const limited = await guardRateLimit(req, admin, {
+    scope: "nickname:change-self",
+    subject: user.id,
+    limit: 10,
+    windowSeconds: 600,
+  });
+  if (limited) return limited;
 
   if (profile.role !== "player") {
     return json(req, { error: "player_role_required" }, 403);
@@ -186,6 +209,13 @@ async function changeSelf(req: Request, rawNickname: string) {
 async function forceReset(req: Request, profileId: string) {
   const admin = adminClient();
   const { user, profile } = await requireActiveProfile(req, admin);
+  const limited = await guardRateLimit(req, admin, {
+    scope: "nickname:force-reset",
+    subject: user.id,
+    limit: 30,
+    windowSeconds: 600,
+  });
+  if (limited) return limited;
 
   if (profile.role !== "plant_manager" || !profile.plant_id) {
     return json(req, { error: "plant_manager_required" }, 403);
