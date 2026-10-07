@@ -64,3 +64,23 @@
 | 최종 콘텐츠 승인 |  | HOLD / PASS |  |  |
 
 **모든 사람이 PASS하기 전에는 `published` 상태로 전환하지 않는다.**
+
+
+## G. 검토 증거 기록
+
+각 사람 검토 결과는 체크박스만 표시하지 않고 current scenario SHA-256에 묶어 `scenarios/research/human-review-evidence.json`에 기록한다.
+
+```bash
+pnpm record:scenario-review -- \
+  --scenario=<scenario_id> \
+  --area=<hf_accuracy|operations_context|anonymization|just_culture|incident_debrief> \
+  --decision=<pass|hold> \
+  --reviewed-by="검토자 성명 또는 공식 역할" \
+  --reviewed-at=YYYY-MM-DD \
+  --evidence-ref="내부 검토문서/티켓/결재 참조" \
+  --apply
+
+pnpm check:human-review-evidence
+```
+
+동일 콘텐츠 SHA에 대해 5개 검토영역이 모두 PASS하기 전에는 최종 승격을 적용하지 않는다. 시나리오 JSON이 변경되어 SHA가 달라지면 기존 PASS는 새 버전에 자동 승계되지 않는다.
