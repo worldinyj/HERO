@@ -41,7 +41,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 확보. 원안위 직접 조사 원문/개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY** | HF·익명화·과노출·incidentDebrief 사람 승인 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 항목과 법무/개인정보 검토 잔존 |
-| 외부 배포 | **BLOCKED** | staging/prod Supabase, Cloudflare, Kakao 설정 실확인 필요 |
+| 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | GitHub Staging Smoke는 준비됨. staging/prod Supabase, Cloudflare, Kakao 실제 값 연결·실행 필요 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
 | 오디오 자산 | **DEFERRED** | 생성·HF/권리/기술 QC는 별도 진행. manifest는 아직 승인 asset 0건 |
 | 실기기·사내망 | **BLOCKED** | Kakao 인앱, Android Chrome, Samsung Internet, iOS Safari, 사내망 정책 |
@@ -66,6 +66,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - 모바일 핵심 E2E
 - WCAG 2.2 AA 핵심 자동점검
 - 브라우저 번들 secret 노출 방지
+- staging HTTP/SPA/PWA/보안헤더 validator 자체 self-test
+- GitHub **Staging Smoke** workflow 구조 준비(실제 외부 값 연결 후 수동 실행)
 - audio manifest validator: approved asset 파일 존재·same-origin 경로·중복 ID·provenance 검증
 
 ### 사람이 닫아야 하는 항목
@@ -106,7 +108,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 2. S01/S02의 남은 직접 원문·개별 이용조건·OPIS 레코드 식별을 확정하고 동일 사람 검토를 수행한다.
 3. 개인정보 운영주체·담당부서·보유기간·처리위탁/국외이전을 확정한다.
 4. staging Supabase + Cloudflare + Kakao 환경을 연결한다.
-5. 최초 admin bootstrap과 관리자→담당자→사용자 실제 초대 플로우를 검증한다.
+5. GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
+6. 최초 admin bootstrap과 관리자→담당자→사용자 실제 초대 플로우를 검증한다.
 6. 실기기/사내망 테스트를 수행한다.
 7. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
 8. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
