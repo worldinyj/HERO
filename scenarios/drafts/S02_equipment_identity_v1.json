@@ -4,10 +4,20 @@
   "version": 1,
   "title": "2장 · 아마 이 설비가 맞을 겁니다",
   "defaultPerspectiveRole": "worker",
-  "audienceJobs": ["sro", "ro", "field_operator", "supervisor", "worker"],
+  "audienceJobs": [
+    "sro",
+    "ro",
+    "field_operator",
+    "supervisor",
+    "worker"
+  ],
   "estimatedMinutes": 8,
   "startNode": "intro",
-  "cards": ["self_check_star", "independent_verification", "stop_when_unsure"],
+  "cards": [
+    "self_check_star",
+    "independent_verification",
+    "stop_when_unsure"
+  ],
   "initialState": {
     "clockMin": 570,
     "deadlineMin": 600,
@@ -61,6 +71,21 @@
         "detail": "불확실한 상태에서 일정 준수보다 안전한 중지와 추가 확인을 우선한다.",
         "toolId": "stop_when_unsure"
       }
+    ],
+    "directCauses": [
+      "의도와 다르게 구성된 전원 관련 회로 상태에서 정비원이 조작부를 상태표시 요소로 오인해 조작한 두 조건이 결합하여 설비 정지로 이어졌다."
+    ],
+    "causalChain": [
+      "잠재적인 회로·설비 상태 이상",
+      "조작부와 상태표시 요소의 식별 불확실성",
+      "잘못된 대상·조작부 조작",
+      "독립확인 방어막이 사건 확대를 차단하지 못함",
+      "설비 정지"
+    ],
+    "failedBarriers": [
+      "작업대상·조작부 식별",
+      "실제 설비상태 독립확인",
+      "Self Check·Peer Check"
     ]
   },
   "nodes": {
@@ -130,7 +155,9 @@
           }
         }
       ],
-      "allowedCards": ["self_check_star"]
+      "allowedCards": [
+        "self_check_star"
+      ]
     },
     "scene_after_identification": {
       "type": "scene",
@@ -217,7 +244,10 @@
           }
         }
       ],
-      "allowedCards": ["independent_verification", "stop_when_unsure"]
+      "allowedCards": [
+        "independent_verification",
+        "stop_when_unsure"
+      ]
     },
     "hazard_identity": {
       "type": "hazard",
@@ -342,7 +372,9 @@
           }
         }
       ],
-      "allowedCards": ["stop_when_unsure"]
+      "allowedCards": [
+        "stop_when_unsure"
+      ]
     },
     "hazard_recovery": {
       "type": "hazard",
