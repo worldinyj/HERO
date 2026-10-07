@@ -27,6 +27,8 @@ jobs:
       - run: pnpm validate:scenario
       - name: Run scenario path simulation
         run: pnpm simulate:scenario
+      - name: Analyze HP balance and farming guards
+        run: pnpm analyze:hp-balance
       - run: pnpm test
       - run: pnpm build
 
