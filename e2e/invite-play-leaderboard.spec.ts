@@ -82,6 +82,121 @@ const uninvitedIdentities = {
   },
 } as const;
 
+const adminManagerIdentities = {
+  "mobile-390x844": {
+    adminEmail: "hero-e2e-admin-a@example.test",
+    adminPasswordEnv: "HERO_E2E_PASSWORD_MANAGER",
+    candidateEmail: "hero-e2e-manager-candidate-a@example.test",
+    candidatePasswordEnv: "HERO_E2E_PASSWORD_A",
+    candidateName: "E2E Manager Candidate A",
+    nickname: "E2ELEAD1",
+  },
+  "mobile-360x800": {
+    adminEmail: "hero-e2e-admin-b@example.test",
+    adminPasswordEnv: "HERO_E2E_PASSWORD_MANAGER",
+    candidateEmail: "hero-e2e-manager-candidate-b@example.test",
+    candidatePasswordEnv: "HERO_E2E_PASSWORD_B",
+    candidateName: "E2E Manager Candidate B",
+    nickname: "E2ELEAD2",
+  },
+} as const;
+
+test("admin creates manager invitation and invitee accepts it", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(75_000);
+
+  const identity =
+    adminManagerIdentities[
+      testInfo.project.name as keyof typeof adminManagerIdentities
+    ];
+
+  if (!identity) {
+    throw new Error(`unknown_e2e_project:${testInfo.project.name}`);
+  }
+
+  const adminPassword = process.env[identity.adminPasswordEnv];
+  const candidatePassword = process.env[identity.candidatePasswordEnv];
+
+  if (!adminPassword || !candidatePassword) {
+    throw new Error("missing_e2e_admin_or_manager_candidate_password");
+  }
+
+  await page.goto("/login");
+  await page.evaluate(
+    ({ email, password }) => {
+      window.sessionStorage.setItem("hero:e2e-email", email);
+      window.sessionStorage.setItem("hero:e2e-password", password);
+    },
+    { email: identity.adminEmail, password: adminPassword },
+  );
+
+  await page.getByRole("button", { name: "카카오로 시작하기" }).click();
+  await expect(page).toHaveURL("/", { timeout: 15_000 });
+
+  await page.goto("/admin");
+  await expect(
+    page.getByRole("heading", { name: "조직 관리" }),
+  ).toBeVisible();
+
+  await page.getByLabel("발전소").selectOption({ label: /E2E 발전소/ });
+  await page.getByLabel("담당자 이름").fill(identity.candidateName);
+  await page
+    .getByRole("button", { name: "담당자 초대 링크 생성" })
+    .click();
+
+  const inviteCode = page.locator(".invite-result-box code");
+  await expect(inviteCode).toContainText("/i/");
+  const inviteUrl = (await inviteCode.textContent())?.trim();
+
+  if (!inviteUrl) {
+    throw new Error("manager_invite_url_missing");
+  }
+
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+
+  await page.goto(inviteUrl);
+  await expect(
+    page.getByRole("heading", {
+      name: `${identity.candidateName} 님, 초대되었습니다`,
+    }),
+  ).toBeVisible();
+
+  await page.evaluate(
+    ({ email, password }) => {
+      window.sessionStorage.setItem("hero:e2e-email", email);
+      window.sessionStorage.setItem("hero:e2e-password", password);
+    },
+    { email: identity.candidateEmail, password: candidatePassword },
+  );
+
+  await page.getByRole("button", { name: "카카오로 시작하기" }).click();
+
+  const nickname = page.locator('input[placeholder^="2~12자"]');
+  await expect(nickname).toBeVisible();
+  await nickname.fill(identity.nickname);
+  await expect(
+    page.getByText("사용 가능한 닉네임입니다."),
+  ).toBeVisible();
+
+  const checkboxes = page.getByRole("checkbox");
+  await checkboxes.nth(0).check();
+  await checkboxes.nth(1).check();
+
+  await page
+    .getByRole("button", { name: "초대 수락하고 시작하기" })
+    .click();
+
+  await expect(page).toHaveURL("/");
+  await page.goto("/manager");
+  await expect(
+    page.getByRole("heading", { name: "발전소 참여 현황" }),
+  ).toBeVisible();
+});
+
 test("plain login without invitation is rejected", async ({
   page,
 }, testInfo) => {
