@@ -1,5 +1,6 @@
 import { sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { validateNickname } from "../_shared/nickname.ts";
 import { adminClient, requireUser } from "../_shared/supabase.ts";
 
 interface AcceptBody {
@@ -7,11 +8,6 @@ interface AcceptBody {
   nickname?: string;
   termsAccepted?: boolean;
   privacyAccepted?: boolean;
-}
-
-function validNickname(value: string): boolean {
-  const length = Array.from(value).length;
-  return length >= 2 && length <= 12;
 }
 
 Deno.serve(async (req) => {
@@ -30,8 +26,13 @@ Deno.serve(async (req) => {
     const token = body.token?.trim();
     const nickname = body.nickname?.trim();
 
-    if (!token || !nickname || !validNickname(nickname)) {
+    if (!token || !nickname) {
       return json(req, { error: "invalid_request" }, 400);
+    }
+
+    const nicknameValidation = await validateNickname(admin, nickname, user.id);
+    if (!nicknameValidation.valid) {
+      return json(req, { error: nicknameValidation.error }, 409);
     }
 
     if (!body.termsAccepted || !body.privacyAccepted) {
@@ -44,7 +45,7 @@ Deno.serve(async (req) => {
     const { data, error } = await admin.rpc("accept_invitation_atomic", {
       p_token_hash: tokenHash,
       p_user_id: user.id,
-      p_nickname: nickname,
+      p_nickname: nicknameValidation.nickname,
       p_terms_at: acceptedAt,
       p_privacy_at: acceptedAt,
     });

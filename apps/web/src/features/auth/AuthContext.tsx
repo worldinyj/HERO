@@ -20,6 +20,7 @@ export interface HeroProfile {
   real_name: string;
   nickname: string;
   is_active: boolean;
+  nickname_reset_required: boolean;
 }
 
 interface AuthState {
@@ -36,7 +37,7 @@ async function loadProfile(userId: string): Promise<HeroProfile | null> {
   const supabase = getSupabase();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, plant_id, role, job_role, real_name, nickname, is_active")
+    .select("id, plant_id, role, job_role, real_name, nickname, is_active, nickname_reset_required")
     .eq("id", userId)
     .maybeSingle();
 

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabase } from "../../lib/supabase";
+import { useAuth } from "../auth/AuthContext";
 
 interface LearningMetrics {
   safety: number;
@@ -55,6 +56,25 @@ interface MyRecordSummary {
   current_season: CurrentSeason | null;
 }
 
+interface NicknameStatus {
+  canChange: boolean;
+  resetRequired: boolean;
+  changedThisSeason: boolean;
+  seasonKey: string | null;
+  seasonTitle?: string | null;
+  nickname?: string;
+  reason?: string | null;
+}
+
+const NICKNAME_ERROR_LABEL: Record<string, string> = {
+  nickname_length: "닉네임은 2~12자로 입력해주세요.",
+  nickname_characters: "닉네임은 한글·영문·숫자만 사용할 수 있습니다.",
+  nickname_forbidden: "사용할 수 없는 단어가 포함되어 있습니다.",
+  nickname_taken: "이미 사용 중인 닉네임입니다.",
+  nickname_change_limit_reached: "이번 시즌의 닉네임 변경 기회를 이미 사용했습니다.",
+  no_open_season: "현재 열린 시즌이 없어 닉네임을 변경할 수 없습니다.",
+};
+
 const METRIC_LABELS: Array<[keyof Omit<LearningMetrics, "completed_sessions">, string]> = [
   ["safety", "Safety"],
   ["awareness", "Awareness"],
@@ -80,9 +100,35 @@ function formatDate(value: string): string {
 }
 
 export function ProfilePage() {
+  const { profile, refreshProfile } = useAuth();
   const [data, setData] = useState<MyRecordSummary | null>(null);
+  const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus | null>(null);
+  const [newNickname, setNewNickname] = useState("");
+  const [nicknameCheck, setNicknameCheck] = useState<{
+    checking: boolean;
+    available: boolean;
+    error: string | null;
+  } | null>(null);
+  const [nicknamePending, setNicknamePending] = useState(false);
+  const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadNicknameStatus = useCallback(async () => {
+    if (profile?.role !== "player") {
+      setNicknameStatus(null);
+      return;
+    }
+
+    const supabase = getSupabase();
+    const { data: result, error: invokeError } = await supabase.functions.invoke(
+      "nickname-action",
+      { body: { action: "status" } },
+    );
+
+    if (invokeError) throw invokeError;
+    setNicknameStatus(result as NicknameStatus);
+  }, [profile?.role]);
 
   useEffect(() => {
     let active = true;
@@ -118,6 +164,70 @@ export function ProfilePage() {
     };
   }, []);
 
+  useEffect(() => {
+    void loadNicknameStatus().catch((cause) => {
+      setNicknameMessage(
+        cause instanceof Error
+          ? cause.message
+          : "닉네임 정책을 불러오지 못했습니다.",
+      );
+    });
+  }, [loadNicknameStatus]);
+
+  useEffect(() => {
+    if (profile?.role !== "player") {
+      setNicknameCheck(null);
+      return;
+    }
+
+    const value = newNickname.trim();
+    if (Array.from(value).length < 2) {
+      setNicknameCheck(null);
+      return;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          setNicknameCheck({ checking: true, available: false, error: null });
+          const supabase = getSupabase();
+          const { data: result, error: invokeError } = await supabase.functions.invoke(
+            "nickname-action",
+            { body: { action: "check", nickname: value } },
+          );
+
+          if (invokeError) throw invokeError;
+          if (!active) return;
+
+          const response = result as {
+            available?: boolean;
+            error?: string | null;
+          };
+
+          setNicknameCheck({
+            checking: false,
+            available: response.available === true,
+            error: response.error ?? null,
+          });
+        } catch {
+          if (active) {
+            setNicknameCheck({
+              checking: false,
+              available: false,
+              error: "nickname_check_failed",
+            });
+          }
+        }
+      })();
+    }, 350);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [newNickname, profile?.role]);
+
   const strongestMetric = useMemo(() => {
     if (!data) return null;
 
@@ -127,6 +237,69 @@ export function ProfilePage() {
         : best,
     );
   }, [data]);
+
+  async function handleNicknameChange() {
+    if (!newNickname.trim() || nicknameCheck?.available !== true) return;
+
+    try {
+      setNicknamePending(true);
+      setNicknameMessage(null);
+      const supabase = getSupabase();
+      const { data: result, error: invokeError } = await supabase.functions.invoke(
+        "nickname-action",
+        {
+          body: {
+            action: "change-self",
+            nickname: newNickname.trim(),
+          },
+        },
+      );
+
+      if (invokeError) throw invokeError;
+
+      const response = result as {
+        changed?: boolean;
+        nickname?: string;
+        error?: string;
+      };
+
+      if (response.error) {
+        throw new Error(
+          NICKNAME_ERROR_LABEL[response.error] ?? response.error,
+        );
+      }
+
+      const nextNickname = response.nickname;
+      if (nextNickname) {
+        setData((current) =>
+          current
+            ? {
+                ...current,
+                profile: {
+                  ...current.profile,
+                  nickname: nextNickname,
+                },
+              }
+            : current,
+        );
+      }
+
+      setNewNickname("");
+      setNicknameCheck(null);
+      setNicknameMessage(
+        response.changed === false
+          ? "현재 닉네임과 같습니다."
+          : "닉네임이 변경되었습니다.",
+      );
+      await refreshProfile();
+      await loadNicknameStatus();
+    } catch (cause) {
+      const raw = cause instanceof Error ? cause.message : "닉네임 변경에 실패했습니다.";
+      setNicknameMessage(NICKNAME_ERROR_LABEL[raw] ?? raw);
+    } finally {
+      setNicknamePending(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -164,6 +337,84 @@ export function ProfilePage() {
           개인 능력·적성·인사평가 지표가 아닙니다.
         </p>
       </header>
+
+      {data.profile.role === "player" ? (
+        <section className="panel profile-section nickname-section">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Nickname</p>
+              <h3>리더보드 닉네임</h3>
+            </div>
+            <span className="count-badge">
+              {nicknameStatus?.resetRequired
+                ? "재설정 필요"
+                : nicknameStatus?.canChange
+                  ? "변경 가능"
+                  : "변경 완료"}
+            </span>
+          </div>
+
+          {nicknameStatus?.resetRequired ? (
+            <p className="validation-box validation-box--error">
+              담당자에 의해 닉네임이 초기화되었습니다. 새 닉네임을 설정해주세요.
+              이 재설정은 시즌 1회 변경 제한과 별도로 허용됩니다.
+            </p>
+          ) : (
+            <p className="muted mini-copy">
+              활성 시즌당 1회 변경할 수 있습니다.
+              {nicknameStatus?.seasonTitle ? ` 현재: ${nicknameStatus.seasonTitle}` : ""}
+            </p>
+          )}
+
+          <div className="nickname-form">
+            <label>
+              <span>새 닉네임</span>
+              <input
+                value={newNickname}
+                onChange={(event) => setNewNickname(event.target.value)}
+                minLength={2}
+                maxLength={12}
+                placeholder="2~12자 · 한글/영문/숫자"
+                disabled={nicknameStatus?.canChange === false}
+              />
+            </label>
+            <span
+              className={
+                nicknameCheck?.available
+                  ? "nickname-check nickname-check--ok"
+                  : "nickname-check"
+              }
+            >
+              {nicknameCheck?.checking
+                ? "사용 가능 여부 확인 중…"
+                : nicknameCheck?.available
+                  ? "사용 가능한 닉네임입니다."
+                  : nicknameCheck?.error
+                    ? NICKNAME_ERROR_LABEL[nicknameCheck.error] ??
+                      "닉네임을 확인해주세요."
+                    : nicknameStatus?.canChange === false
+                      ? "이번 시즌 변경 기회를 이미 사용했습니다."
+                      : "리더보드에는 이 닉네임만 공개됩니다."}
+            </span>
+            <button
+              type="button"
+              className="primary-button"
+              disabled={
+                nicknamePending ||
+                nicknameStatus?.canChange !== true ||
+                nicknameCheck?.available !== true
+              }
+              onClick={() => void handleNicknameChange()}
+            >
+              {nicknamePending ? "변경 중…" : "닉네임 변경"}
+            </button>
+          </div>
+
+          {nicknameMessage ? (
+            <p className="notice" role="status">{nicknameMessage}</p>
+          ) : null}
+        </section>
+      ) : null}
 
       {data.current_season ? (
         <section className="profile-season-card" aria-label="현재 시즌">

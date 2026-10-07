@@ -43,3 +43,6 @@ jobs:
 
       - name: Check manager user action Edge Function
         run: deno check --config supabase/functions/deno.json supabase/functions/manager-user-action/index.ts
+
+      - name: Check nickname policy Edge Function
+        run: deno check --config supabase/functions/deno.json supabase/functions/nickname-action/index.ts
