@@ -1,0 +1,81 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  mobile-flow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: corepack enable
+      - run: pnpm install --no-frozen-lockfile
+
+      - name: Start local Supabase
+        run: |
+          supabase start --output-format json > /tmp/hero-supabase.json
+          echo "SUPABASE_URL=$(jq -r '.env.API_URL' /tmp/hero-supabase.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$(jq -r '.env.ANON_KEY' /tmp/hero-supabase.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.env.SERVICE_ROLE_KEY' /tmp/hero-supabase.json)" >> "$GITHUB_ENV"
+
+      - name: Configure E2E web environment
+        run: |
+          cat > apps/web/.env.e2e.local <<EOF
+          VITE_SUPABASE_URL=$SUPABASE_URL
+          VITE_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          VITE_E2E_MODE=true
+          EOF
+
+      - name: Start local Edge Functions
+        run: |
+          supabase functions serve > /tmp/hero-functions.log 2>&1 &
+          echo $! > /tmp/hero-functions.pid
+          for i in {1..60}; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "$SUPABASE_URL/functions/v1/peek-invite" || true)"
+            if [ "$code" != "000" ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/hero-functions.log
+          exit 1
+
+      - name: Seed E2E users, invitations, season, and scenario
+        run: pnpm e2e:setup
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run mobile E2E flow
+        run: pnpm e2e
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: hero-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+            /tmp/hero-functions.log
+          retention-days: 14
+
+      - name: Stop local services
+        if: always()
+        run: |
+          if [ -f /tmp/hero-functions.pid ]; then
+            kill "$(cat /tmp/hero-functions.pid)" || true
+          fi
+          supabase stop --no-backup || true
