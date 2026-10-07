@@ -34,7 +34,7 @@ jobs:
       - name: Start local Supabase
         shell: bash
         run: |
-          supabase start --output-format json > /tmp/hero-supabase.json
+          supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor --output-format json > /tmp/hero-supabase.json
           supabase status -o env > /tmp/hero-supabase.env
           grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env >> "$GITHUB_ENV"
 
