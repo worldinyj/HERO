@@ -1,15 +1,12 @@
 import type { GameAction, GameView } from "@hero/engine";
-import type { Scenario } from "@hero/schema";
 import { SceneStage } from "../SceneStage";
 import { DecisionStage } from "./DecisionStage";
 import { EventAlert } from "./EventAlert";
 
 export function PlayNodeStage({
-  scenario,
   view,
   onAction,
 }: {
-  scenario: Scenario;
   view: GameView;
   onAction: (action: GameAction) => void;
 }) {
@@ -41,7 +38,7 @@ export function PlayNodeStage({
     return (
       <DecisionStage
         key={view.nodeId}
-        scenario={scenario}
+        node={node}
         view={view}
         onAction={onAction}
       />
