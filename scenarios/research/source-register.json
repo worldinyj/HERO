@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-07",
+  "sources": [
+    {
+      "id": "S01-NSSC-20120316",
+      "scenarioIds": [
+        "s01_time_pressure"
+      ],
+      "authority": "원자력안전위원회",
+      "sourceType": "official_press_release",
+      "title": "고리 1호기 전원상실 사건 관련 현장조사",
+      "publishedDate": "2012-03-16",
+      "url": "https://m.korea.kr/briefing/pressReleaseView.do?newsId=155817203",
+      "evidenceUse": "사건 발생과 규제기관 조사 사실 확인",
+      "verificationStatus": "verified",
+      "usageReviewStatus": "pending"
+    },
+    {
+      "id": "S01-IAEA-KHNP-2012",
+      "scenarioIds": [
+        "s01_time_pressure"
+      ],
+      "authority": "IAEA / KHNP 공개본",
+      "sourceType": "official_expert_mission_report",
+      "title": "Expert Mission Report on Kori-1 Station Blackout and Nuclear Safety Culture",
+      "publishedDate": "2012",
+      "url": "https://www.khnp.co.kr/main/downloadBbsFile.do?atchmnflNo=7419",
+      "evidenceUse": "일정 재조정, 시간압박, 감독 지시, 절차·교육·감독 HF 구조",
+      "verificationStatus": "verified",
+      "usageReviewStatus": "pending"
+    },
+    {
+      "id": "S02-NSSC-20240417",
+      "scenarioIds": [
+        "s02_equipment_identity"
+      ],
+      "authority": "원자력안전위원회 보도자료 문안",
+      "sourceType": "official_press_release_mirror",
+      "title": "신한울 1호기, 정기검사 중 임계 허용",
+      "publishedDate": "2024-04-17",
+      "url": "https://go.seoul.co.kr/news/prnewsView.php?id=337111",
+      "evidenceUse": "잘못된 차단기 회로 상태, 조작부 오인, 설비개선 재발방지책",
+      "verificationStatus": "verified",
+      "usageReviewStatus": "pending"
+    },
+    {
+      "id": "S02-YONHAP-20240417",
+      "scenarioIds": [
+        "s02_equipment_identity"
+      ],
+      "authority": "연합뉴스",
+      "sourceType": "supporting_news",
+      "title": "올초 신한울 1호기 자동정지, 버튼 하나 잘못 누른 '인재'",
+      "publishedDate": "2024-04-17",
+      "url": "https://www.yna.co.kr/view/AKR20240417080200017",
+      "evidenceUse": "원안위 발표 보조 확인",
+      "verificationStatus": "verified_supporting",
+      "usageReviewStatus": "not_for_game_copy"
+    },
+    {
+      "id": "S03-NSSC-20260904",
+      "scenarioIds": [
+        "s03_procedure_reality_gap"
+      ],
+      "authority": "원자력안전위원회 / 정책브리핑",
+      "sourceType": "official_investigation_release",
+      "title": "신규 원전 시운전 중 자동정지 사건 조사결과",
+      "publishedDate": "2026-09-04",
+      "url": "https://admin2.korea.kr/briefing/pressReleaseView.do?newsId=156780201",
+      "evidenceUse": "설정 방향 입력 오류와 절차 재확인·시스템 반영·교육 재발방지책",
+      "verificationStatus": "verified",
+      "usageReviewStatus": "pending"
+    },
+    {
+      "id": "COMMON-KAERI-KNS-2008",
+      "scenarioIds": [
+        "s01_time_pressure",
+        "s02_equipment_identity",
+        "s03_procedure_reality_gap"
+      ],
+      "authority": "KAERI / Korean Nuclear Society",
+      "sourceType": "peer_reviewed_opis_analysis",
+      "title": "Task Types and Error Types Involved in the Human-Related Unplanned Reactor Trip Events",
+      "publishedDate": "2008",
+      "url": "https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001299669",
+      "evidenceUse": "국내 OPIS 기반 작업유형·wrong object/wrong action 등 일반 HF 패턴",
+      "verificationStatus": "verified",
+      "usageReviewStatus": "citation_only"
+    }
+  ]
+}
