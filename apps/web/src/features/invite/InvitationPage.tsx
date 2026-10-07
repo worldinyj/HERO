@@ -15,6 +15,13 @@ interface InvitePreview {
   reason?: string;
 }
 
+const NICKNAME_ERROR_LABEL: Record<string, string> = {
+  nickname_length: "닉네임은 2~12자로 입력해주세요.",
+  nickname_characters: "닉네임은 한글·영문·숫자만 사용할 수 있습니다.",
+  nickname_forbidden: "사용할 수 없는 단어가 포함되어 있습니다.",
+  nickname_taken: "이미 사용 중인 닉네임입니다.",
+};
+
 const JOB_LABEL: Record<string, string> = {
   sro: "SRO",
   ro: "RO",
@@ -29,6 +36,11 @@ export function InvitationPage() {
   const { session, refreshProfile } = useAuth();
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [nickname, setNickname] = useState("");
+  const [nicknameCheck, setNicknameCheck] = useState<{
+    checking: boolean;
+    available: boolean;
+    error: string | null;
+  } | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [pending, setPending] = useState(false);
@@ -64,6 +76,60 @@ export function InvitationPage() {
     if (preview.targetRole === "plant_manager") return "발전소담당자";
     return preview.jobRole ? JOB_LABEL[preview.jobRole] ?? preview.jobRole : "사용자";
   }, [preview]);
+
+  useEffect(() => {
+    if (!session) {
+      setNicknameCheck(null);
+      return;
+    }
+
+    const value = nickname.trim();
+    if (Array.from(value).length < 2) {
+      setNicknameCheck(null);
+      return;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          setNicknameCheck({ checking: true, available: false, error: null });
+          const supabase = getSupabase();
+          const { data, error: invokeError } = await supabase.functions.invoke(
+            "nickname-action",
+            { body: { action: "check", nickname: value } },
+          );
+
+          if (invokeError) throw invokeError;
+          if (!active) return;
+
+          const result = data as {
+            available?: boolean;
+            error?: string | null;
+          };
+
+          setNicknameCheck({
+            checking: false,
+            available: result.available === true,
+            error: result.error ?? null,
+          });
+        } catch {
+          if (active) {
+            setNicknameCheck({
+              checking: false,
+              available: false,
+              error: "nickname_check_failed",
+            });
+          }
+        }
+      })();
+    }, 350);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [nickname, session]);
 
   async function handleKakaoLogin() {
     try {
@@ -150,8 +216,26 @@ export function InvitationPage() {
               minLength={2}
               maxLength={12}
               autoComplete="nickname"
-              placeholder="2~12자"
+              placeholder="2~12자 · 한글/영문/숫자"
+              aria-describedby="nickname-check"
             />
+            <span
+              id="nickname-check"
+              className={
+                nicknameCheck?.available
+                  ? "nickname-check nickname-check--ok"
+                  : "nickname-check"
+              }
+            >
+              {nicknameCheck?.checking
+                ? "사용 가능 여부 확인 중…"
+                : nicknameCheck?.available
+                  ? "사용 가능한 닉네임입니다."
+                  : nicknameCheck?.error
+                    ? NICKNAME_ERROR_LABEL[nicknameCheck.error] ??
+                      "닉네임을 확인해주세요."
+                    : "리더보드에는 닉네임만 표시됩니다."}
+            </span>
           </label>
 
           <label className="check-row">
@@ -180,6 +264,7 @@ export function InvitationPage() {
             disabled={
               pending ||
               Array.from(nickname.trim()).length < 2 ||
+              nicknameCheck?.available !== true ||
               !termsAccepted ||
               !privacyAccepted
             }
