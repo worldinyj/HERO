@@ -83,7 +83,7 @@ v4 핵심 정정:
 현재 상태: **REVIEW_READY — S03 v4 / HUMAN RE-REVIEW REQUIRED**
 
 검토 추적:
-- GitHub Issue: `#76 S03 v3 human review — HF / operations / anonymization / Just Culture / debrief`
+- GitHub Issue: `#76 S03 v4 human review — HF / operations / anonymization / Just Culture / debrief`
 - 현재 검토 대상 SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
 - AI 사전검토: PASS WITH HUMAN CONFIRMATION (사람 승인 대체 아님)
 
@@ -97,8 +97,8 @@ v4 핵심 정정:
 기술결과:
 - JSON/graph PASS
 - 전 경로 COMPLETE
-- 6,624 terminal paths
-- safe_complete 65% / safe_stop 33% / near_miss 1% / event <1%
+- 3,519 terminal paths
+- safe_complete 54% / safe_stop 43% / near_miss 3% / event <1%
 - dominant choice warning 0
 - ending imbalance warning 0
 
