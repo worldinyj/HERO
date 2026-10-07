@@ -329,6 +329,17 @@ export function ProfilePage() {
         <p className="eyebrow">My Record</p>
         <h2>내 기록을 불러오지 못했습니다</h2>
         <p className="error-text">{error ?? "데이터가 없습니다."}</p>
+        <p className="muted mini-copy">
+          기록 조회 오류와 관계없이 계정에서는 안전하게 로그아웃할 수 있습니다.
+        </p>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={signOutPending}
+          onClick={() => void handleSignOut()}
+        >
+          {signOutPending ? "로그아웃 중…" : "로그아웃"}
+        </button>
       </section>
     );
   }
