@@ -63,6 +63,9 @@ jobs:
           grep -q 'sha384-zt/G7/KfaRQ9dT/QIkS0ujMtzouJqzuSJcXVQu50x0rl/+mD1dc70AeOejVbMD9E' apps/web/src/lib/kakaoShare.ts
           grep -q 'VITE_KAKAO_JS_KEY=' apps/web/.env.example
 
+      - name: Check deployment preflight contract
+        run: pnpm check:deployment-preflight -- --self-test
+
       - name: Check client secret leakage
         run: |
           node scripts/check-client-secrets.mjs
