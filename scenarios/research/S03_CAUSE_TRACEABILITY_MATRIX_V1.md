@@ -3,11 +3,12 @@
 > 대상: `s03_procedure_reality_gap`  
 > 기준자료: KINS 「원전 사고·고장 조사 보고서 제2026-03호(260811SU3)」  
 > 기준일: 2026-10-07  
-> 상태: **REVIEW_SUPPORT — HUMAN HF/OPERATIONS REVIEW REQUIRED**
+> 상태: **REVIEW_SUPPORT — HUMAN HF/OPERATIONS REVIEW REQUIRED**  
+> 기계검증 원본: `scenarios/research/cause-traceability.json` · CI: `pnpm check:cause-traceability`
 
 ## 1. 목적
 
-이 문서는 S03의 사건원인 분석이 조사보고서의 사실과 재발방지대책에 어떻게 연결되는지 검토자가 추적할 수 있도록 만든 내부 검토자료다.
+이 문서는 S03의 사건원인 분석이 조사보고서의 사실과 재발방지대책에 어떻게 연결되는지 검토자가 추적할 수 있도록 만든 내부 검토자료다. 동일 구조는 `cause-traceability.json`에 기계 판독형으로 저장되며 CI가 scenario version, 원인 개수, barrier/action 참조, 공개정보 일반화를 검증한다.
 
 HERO는 다음을 엄격히 구분한다.
 
