@@ -35,6 +35,8 @@ const IDS = {
   adminB: "70000000-0000-0000-0000-000000000012",
   managerCandidateA: "70000000-0000-0000-0000-000000000021",
   managerCandidateB: "70000000-0000-0000-0000-000000000022",
+  playerCandidateA: "70000000-0000-0000-0000-000000000031",
+  playerCandidateB: "70000000-0000-0000-0000-000000000032",
   playerA: "70000000-0000-0000-0000-000000000101",
   playerB: "70000000-0000-0000-0000-000000000102",
   uninvitedA: "70000000-0000-0000-0000-000000000201",
@@ -131,6 +133,7 @@ await createUser({
 for (const identity of [
   ...adminIdentities,
   ...managerCandidates,
+  ...playerCandidates,
   ...identities,
   ...uninvitedIdentities,
 ]) {
@@ -263,6 +266,7 @@ console.log(
       users: identities.map(({ email, token }) => ({ email, token })),
       admins: adminIdentities.map(({ email }) => ({ email })),
       managerCandidates: managerCandidates.map(({ email }) => ({ email })),
+      playerCandidates: playerCandidates.map(({ email }) => ({ email })),
       uninvitedUsers: uninvitedIdentities.map(({ email }) => ({ email })),
     },
     null,
