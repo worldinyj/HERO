@@ -77,7 +77,7 @@ export function AdminScenarioPage() {
   const [statusPending, setStatusPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function invoke(body: unknown) {
+  async function invoke(body: Record<string, unknown>) {
     const supabase = getSupabase();
     const { data, error: invokeError } = await supabase.functions.invoke(
       "admin-scenario",
