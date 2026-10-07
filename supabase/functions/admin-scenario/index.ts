@@ -140,7 +140,7 @@ async function setStatus(
 ) {
   const { data: current, error: currentError } = await admin
     .from("scenario_versions")
-    .select("id, scenario_id, version, status")
+    .select("id, scenario_id, version, status, content")
     .eq("id", scenarioVersionId)
     .maybeSingle();
 
@@ -154,6 +154,18 @@ async function setStatus(
   }
 
   if (targetStatus === "published") {
+    const parsed = ScenarioSchema.safeParse(current.content);
+    if (!parsed.success) {
+      throw new Error("scenario_content_invalid");
+    }
+
+    if (
+      parsed.data.id !== "s00_tutorial" &&
+      !parsed.data.incidentDebrief
+    ) {
+      throw new Error("scenario_incident_debrief_required");
+    }
+
     const { error: archiveError } = await admin
       .from("scenario_versions")
       .update({ status: "archived" })
@@ -289,7 +301,9 @@ Deno.serve(async (req) => {
           ? 403
           : message === "scenario_version_already_exists"
             ? 409
-            : message.startsWith("invalid_status_transition")
+            : message === "scenario_incident_debrief_required" ||
+                message === "scenario_content_invalid" ||
+                message.startsWith("invalid_status_transition")
               ? 409
               : 500;
 
