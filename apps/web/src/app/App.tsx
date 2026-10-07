@@ -1,5 +1,6 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
+import type { ReactNode } from "react";
 import { NavLink, Route, Routes, useLocation } from "react-router";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
@@ -47,7 +48,7 @@ function PlaceholderPage({ title }: { title: string }) {
   );
 }
 
-function ActiveUserGate({ children }: { children: React.ReactNode }) {
+function ActiveUserGate({ children }: { children: ReactNode }) {
   return (
     <RequireAuth>
       <RequireRole roles={[...ALL_ACTIVE_ROLES]}>{children}</RequireRole>
