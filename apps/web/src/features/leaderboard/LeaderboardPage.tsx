@@ -234,7 +234,7 @@ export function LeaderboardPage() {
       if (selectedSeason.status === "open") {
         const rankField = CURRENT_RANK_FIELD[scope];
         let query = supabase
-          .from("v_leaderboard_current_public")
+          .from("leaderboard_current_public_rows")
           .select("*")
           .eq("season_id", selectedSeason.id);
 
@@ -266,7 +266,7 @@ export function LeaderboardPage() {
       }
 
       let query = supabase
-        .from("v_leaderboard_snapshot_public")
+        .from("leaderboard_snapshot_public_rows")
         .select("*")
         .eq("season_id", selectedSeason.id)
         .eq("scope_type", scope);
@@ -311,7 +311,7 @@ export function LeaderboardPage() {
 
       if (selectedSeason.status === "open") {
         const { data, error: viewError } = await supabase
-          .from("v_leaderboard_current_public")
+          .from("leaderboard_current_public_rows")
           .select("*")
           .eq("season_id", selectedSeason.id)
           .eq("nickname", profile.nickname)
@@ -325,7 +325,7 @@ export function LeaderboardPage() {
       }
 
       const { data, error: viewError } = await supabase
-        .from("v_leaderboard_snapshot_public")
+        .from("leaderboard_snapshot_public_rows")
         .select("*")
         .eq("season_id", selectedSeason.id)
         .eq("scope_type", scope)
