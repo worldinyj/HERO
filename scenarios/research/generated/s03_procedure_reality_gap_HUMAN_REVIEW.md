@@ -21,9 +21,9 @@
 
 ### 현재 blocker
 
-- HF review
+- HF review of Direct/Root/Contributing cause classification
 - anonymization/operational-overexposure review
-- incidentDebrief final approval
+- incidentDebrief final approval for v2 content hash
 
 ## 2. 시나리오 기본정보
 
