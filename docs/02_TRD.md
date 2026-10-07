@@ -2,7 +2,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 버전 | **v1.3** |
+| 문서 버전 | **v1.4** |
 | 작성일 | 2026-10-07 |
 | 근거 | [01_PRD](01_PRD.md) |
 | 관련 | [03_UXUI](03_UXUI.md) · [04_TASKLIST](04_TASKLIST.md) · [05_TRACEABILITY](05_TRACEABILITY.md) · [06_AUDIO_ASSET_GUIDE](06_AUDIO_ASSET_GUIDE.md) |
@@ -350,8 +350,13 @@ start-session
    psf
    barriers
    organizationalConditions
+   directCauses
    rootCauses
    contributingFactors
+   causalChain
+   failedBarriers
+   correctiveActions
+→ cause-evidence-corrective-action traceability check
 → 시나리오 JSON 초안
 → schema 검증
 → SAGE/GUARD 전문가 검토
@@ -361,6 +366,10 @@ start-session
 - 자동 대량 크롤링은 MVP/R2 범위에 두지 않는다.
 - 인명·호기·고유 설비 Tag·세부 운전값은 익명화/일반화한다.
 - “작업자 실수”만을 Root Cause로 제시하면 검토 실패.
+- 조사기관이 명시한 사실/평가와 HERO의 Direct·Root·Contributing 분류를 구분한다.
+- Root Cause/Contributing Factor 각각은 근거 구간과 관련 방어막·재발방지대책까지 추적 가능해야 한다.
+- 보호계통의 정상 안전동작을 실패방어막으로 분류하지 않는다.
+- Trip initiation cause와 post-event recovery HF issue를 별도 원인사슬로 관리한다.
 - 최소한 PSF·절차·감독·설계·조직조건·방어막 관점을 함께 검토한다.
 
 ---
