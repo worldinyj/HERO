@@ -8,10 +8,12 @@ import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
 type ScenarioStatus = "draft" | "review" | "approved" | "published" | "archived";
 
-type RequestBody =
-  | { action?: "list" }
-  | { action: "upload"; scenario?: unknown }
-  | { action: "set-status"; scenarioVersionId?: string; status?: ScenarioStatus };
+interface RequestBody {
+  action?: "list" | "upload" | "set-status";
+  scenario?: unknown;
+  scenarioVersionId?: string;
+  status?: ScenarioStatus;
+}
 
 const TRANSITIONS: Record<ScenarioStatus, ScenarioStatus[]> = {
   draft: ["review", "archived"],
