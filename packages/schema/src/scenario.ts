@@ -145,8 +145,11 @@ const IncidentLessonSchema = z.strictObject({
 export const IncidentDebriefSchema = z.strictObject({
   caseType: z.string().min(1).max(140),
   overview: z.string().min(1).max(1400),
+  directCauses: z.array(z.string().min(1).max(320)).min(1).max(6),
   rootCauses: z.array(z.string().min(1).max(320)).min(1).max(6),
   contributingFactors: z.array(z.string().min(1).max(320)).min(1).max(8),
+  causalChain: z.array(z.string().min(1).max(320)).max(10).default([]),
+  failedBarriers: z.array(z.string().min(1).max(320)).max(10).default([]),
   lessons: z.array(IncidentLessonSchema).min(1).max(6),
   sources: z.array(IncidentSourceSchema).max(4).default([]),
 });
