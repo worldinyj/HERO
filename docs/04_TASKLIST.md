@@ -68,7 +68,7 @@
 |---|---|---|---|---|---|
 | T3-01 | OPIS 인적오류 사건 후보 수집 (10~15건 PDF) 👤 | SAGE | M | — | 이용조건 확인, 후보 목록 |
 | T3-02 | 후보 선별 (PRD §8.2: 의사결정·시스템적 학습성·공개적합성) → S01~S03 근거사건 확정 👤 | SAGE | S | T3-01 | 선별표 |
-| T3-03 | 사건별 HF 분석 (Timeline·PSF·Precursor·Barrier·원인) | SAGE | M | T3-02 | 분석서 3건 |
+| T3-03 | 사건별 HF 분석 (**Direct Cause·Root Cause·Contributing Cause/Factor**·Timeline·PSF·Precursor·Barrier·Causal Chain) | SAGE | M | T3-02 | 분석서 3건 |
 | T3-04 | S01 "오늘 오전까지" 시나리오 작성 (scene·대사·익명화) | STORY | M | T3-03 | JSON 초안 |
 | T3-05 | S02 "아마 이 설비가" | STORY | M | T3-03 | JSON 초안 |
 | T3-06 | S03 "절차와 실제가" | STORY | M | T3-03 | JSON 초안 |
