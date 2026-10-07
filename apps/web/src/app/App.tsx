@@ -9,6 +9,7 @@ import { InvitationPage } from "../features/invite/InvitationPage";
 import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
 import { ManagerDashboardPage } from "../features/manager/ManagerDashboardPage";
 import { GamePage } from "../features/play/GamePage";
+import { ProfilePage } from "../features/profile/ProfilePage";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
 
@@ -125,7 +126,7 @@ export function App() {
         />
         <Route
           path="/me"
-          element={<ActiveUserGate><PlaceholderPage title="내 기록" /></ActiveUserGate>}
+          element={<ActiveUserGate><ProfilePage /></ActiveUserGate>}
         />
       </Routes>
 
