@@ -85,8 +85,11 @@ export function isRetryableSubmissionStatus(
 
 export function gameLogToSubmissionActions(
   log: GameLogEntry[],
+  startIndex = 0,
 ): SessionSubmissionAction[] {
-  return log.flatMap<SessionSubmissionAction>((entry) => {
+  const safeStart = Math.max(0, Math.min(log.length, Math.trunc(startIndex)));
+
+  return log.slice(safeStart).flatMap<SessionSubmissionAction>((entry) => {
     if (entry.actionType === "hazard_check") return [];
 
     if (entry.actionType === "continue") {
