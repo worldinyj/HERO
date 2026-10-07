@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "s03_procedure_reality_gap",
+  "version": 1,
+  "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
+  "defaultPerspectiveRole": "ro",
+  "audienceJobs": ["sro", "ro", "field_operator", "supervisor", "worker"],
+  "estimatedMinutes": 8,
+  "startNode": "intro",
+  "cards": ["questioning_attitude", "peer_check", "place_keeping", "stop_when_unsure"],
+  "initialState": {
+    "clockMin": 780,
+    "deadlineMin": 825,
+    "baseHazard": 55,
+    "psf": {
+      "mode_transition": 1.2,
+      "direction_ambiguity": 1.25,
+      "expectation_bias": 1.15
+    },
+    "barriers": {
+      "procedure_alignment": 0.15,
+      "peer_check": 0.05,
+      "place_keeping": 0.1,
+      "questioning": 0.05,
+      "stop": 0.05
+    },
+    "metrics": {
+      "safety": 50,
+      "awareness": 50,
+      "communication": 50,
+      "procedure": 50,
+      "challenge": 50
+    }
+  },
+  "incidentDebrief": {
+    "caseType": "상태전환 중 설정 방향 입력 오류로 자동정지한 사건",
+    "overview": "시운전 시험 후 설비 출력을 복구하는 과정에서 출력변동을 제한하려는 설정 입력이 의도와 반대 방향으로 적용되어 자동정지로 이어진 실제 사건을 일반화했다. 이후 조작 재확인 단계가 절차와 시스템에 보강되고 사례교육이 시행됐다.",
+    "rootCauses": [
+      "중요 설정을 입력하기 전 의도·방향을 재확인하는 방어막이 오류를 차단하기에 충분하지 않았다.",
+      "상태전환 중 예상과 실제 설비반응의 차이를 조기에 포착하고 팀이 공유하도록 돕는 절차·시스템 방어막의 보강이 필요했다."
+    ],
+    "contributingFactors": [
+      "시운전 시험 뒤 상태를 복구하는 전환상황의 복잡성",
+      "설정 방향을 해석하고 입력하는 과정의 불확실성",
+      "예상한 설비반응에 맞춰 판단하기 쉬운 기대편향",
+      "중요 입력 전 재확인과 팀 확인의 필요성"
+    ],
+    "lessons": [
+      {
+        "title": "절차의 전제와 현재 설비상태가 같은지 질문한다.",
+        "detail": "절차 단계와 실제 추세가 다르게 보이면 다음 입력보다 먼저 상태와 전제를 다시 확인한다.",
+        "toolId": "questioning_attitude"
+      },
+      {
+        "title": "중요 설정의 방향은 다른 사람과 독립적으로 확인한다.",
+        "detail": "입력값뿐 아니라 증가/감소 방향과 기대되는 설비반응을 동료가 별도로 확인한다.",
+        "toolId": "peer_check"
+      },
+      {
+        "title": "현재 단계와 입력 의도를 잃지 않는다.",
+        "detail": "상태전환 중에는 Place Keeping으로 현재 단계·목적·다음 조건을 명확히 유지한다.",
+        "toolId": "place_keeping"
+      },
+      {
+        "title": "예상과 다른 반응이 나오면 즉시 멈추고 확인한다.",
+        "detail": "추세가 기대와 반대로 움직이면 추가 입력으로 상쇄하려 하기 전에 안전한 상태에서 원인을 확인한다.",
+        "toolId": "stop_when_unsure"
+      }
+    ]
+  },
+  "nodes": {
+    "intro": {
+      "type": "scene",
+      "speaker": "주제어실",
+      "text": "상태전환 시험을 마치고 정상 운전상태로 복구하는 중입니다. 절차상 다음 설정을 입력할 차례지만 현재 추세가 예상과 완전히 같지는 않습니다.",
+      "next": "decision_state_alignment"
+    },
+    "decision_state_alignment": {
+      "type": "decision",
+      "prompt": "절차의 예상과 현재 설비 추세가 조금 다르게 보입니다. 무엇을 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "pause_compare_current_state",
+          "label": "현재 상태가 절차의 전제조건과 같은지 다시 확인한다.",
+          "next": "event_prepare_setting",
+          "timeCostMin": 3,
+          "effects": {
+            "psfMultipliers": {
+              "mode_transition": 0.9
+            },
+            "barrierDelta": {
+              "questioning": 0.35
+            },
+            "metricsDelta": {
+              "awareness": 5,
+              "challenge": 6
+            }
+          }
+        },
+        {
+          "actionId": "share_trend_with_peer",
+          "label": "현재 추세와 다음 입력 의도를 동료에게 설명하고 확인한다.",
+          "next": "event_prepare_setting",
+          "timeCostMin": 2,
+          "effects": {
+            "barrierDelta": {
+              "peer_check": 0.25
+            },
+            "metricsDelta": {
+              "communication": 7,
+              "awareness": 2
+            }
+          }
+        },
+        {
+          "actionId": "continue_expected_sequence",
+          "label": "시험 직후의 일시적 변동으로 보고 예정된 순서대로 진행한다.",
+          "next": "event_prepare_setting",
+          "timeCostMin": 0,
+          "effects": {
+            "psfMultipliers": {
+              "expectation_bias": 1.1
+            },
+            "metricsDelta": {
+              "awareness": -3,
+              "challenge": -2
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "review_current_trend",
+          "label": "현재 추세와 절차가 기대하는 방향을 나란히 확인한다.",
+          "revealText": "현재 값은 회복 중이지만 변화 방향이 절차를 처음 읽었을 때 예상한 것과 다르게 해석될 여지가 있습니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": ["questioning_attitude"]
+    },
+    "event_prepare_setting": {
+      "type": "event",
+      "text": "다음 단계에서는 설비 반응의 상한을 정하는 설정을 입력해야 합니다. 값 자체보다 어느 방향으로 제한되는지 확인이 중요합니다.",
+      "next": "decision_setting_direction",
+      "tone": "attention"
+    },
+    "decision_setting_direction": {
+      "type": "decision",
+      "prompt": "중요 설정을 입력하기 직전입니다. 방향과 의도를 어떻게 확인하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "peer_check_setting_direction",
+          "label": "동료가 설정 방향과 기대 반응을 별도로 확인한다.",
+          "next": "hazard_setting",
+          "timeCostMin": 3,
+          "effects": {
+            "barrierDelta": {
+              "peer_check": 0.45
+            },
+            "metricsDelta": {
+              "communication": 6,
+              "safety": 4
+            }
+          }
+        },
+        {
+          "actionId": "place_keep_and_recheck",
+          "label": "현재 절차 단계와 입력 목적을 짚으며 방향을 다시 확인한다.",
+          "next": "hazard_setting",
+          "timeCostMin": 2,
+          "effects": {
+            "barrierDelta": {
+              "place_keeping": 0.4
+            },
+            "metricsDelta": {
+              "awareness": 3,
+              "procedure": 6
+            }
+          }
+        },
+        {
+          "actionId": "enter_then_watch_response",
+          "label": "입력 후 추세를 보면서 필요하면 바로 조정한다.",
+          "next": "hazard_setting",
+          "timeCostMin": 0,
+          "effects": {
+            "metricsDelta": {
+              "awareness": -2,
+              "challenge": -2
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "compare_direction_cues",
+          "label": "증가·감소 방향을 나타내는 표시를 다시 확인한다.",
+          "revealText": "같은 숫자라도 제한값이 적용되는 방향에 따라 설비반응은 반대로 나타날 수 있습니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "procedure": 3,
+              "awareness": 3
+            }
+          }
+        }
+      ],
+      "allowedCards": ["peer_check", "place_keeping"]
+    },
+    "hazard_setting": {
+      "type": "hazard",
+      "threshold": 50,
+      "jitter": 4,
+      "passNext": "event_expected_response",
+      "breachNext": "event_reverse_trend",
+      "tag": "setting_direction_uncertainty"
+    },
+    "event_expected_response": {
+      "type": "event",
+      "text": "설정 적용 뒤 설비 추세가 의도한 범위 안에서 움직입니다.",
+      "next": "decision_complete",
+      "tone": "positive"
+    },
+    "decision_complete": {
+      "type": "decision",
+      "prompt": "상태가 안정되는 동안 어떤 방식으로 다음 단계에 인계하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "document_and_handover_trend",
+          "label": "설정 의도와 확인한 추세를 기록하고 팀에 인계한다.",
+          "next": "safe_complete_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "communication": 5,
+              "procedure": 4
+            }
+          }
+        },
+        {
+          "actionId": "monitor_before_handover",
+          "label": "추세를 조금 더 관찰한 뒤 안정 상태를 확인하고 인계한다.",
+          "next": "safe_complete_end",
+          "timeCostMin": 3,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 5,
+              "safety": 3
+            }
+          }
+        },
+        {
+          "actionId": "hold_due_remaining_uncertainty",
+          "label": "남은 불확실성을 이유로 다음 단계 인계를 잠시 보류한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 3,
+          "effects": {
+            "metricsDelta": {
+              "challenge": 7,
+              "safety": 2
+            }
+          }
+        }
+      ],
+      "infoActions": [],
+      "allowedCards": []
+    },
+    "event_reverse_trend": {
+      "type": "event",
+      "text": "설정 적용 직후 추세가 기대와 반대 방향으로 움직이기 시작합니다.",
+      "next": "decision_recovery",
+      "tone": "attention"
+    },
+    "decision_recovery": {
+      "type": "decision",
+      "prompt": "예상과 반대되는 추세가 나타났습니다. 다음 행동은 무엇입니까?",
+      "choices": [
+        {
+          "actionId": "stop_input_stabilize_report",
+          "label": "추가 입력을 멈추고 상태를 안정시킨 뒤 팀에 보고한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "safety": 8,
+              "communication": 5,
+              "challenge": 8
+            }
+          }
+        },
+        {
+          "actionId": "team_check_limited_recovery",
+          "label": "팀과 입력 방향·현재 상태를 확인한 뒤 제한된 복구를 시도한다.",
+          "next": "hazard_recovery",
+          "timeCostMin": 3,
+          "effects": {
+            "barrierDelta": {
+              "peer_check": 0.2
+            },
+            "metricsDelta": {
+              "communication": 5,
+              "procedure": 5,
+              "awareness": 2
+            }
+          }
+        },
+        {
+          "actionId": "counter_adjust_immediately",
+          "label": "추세를 빠르게 되돌리기 위해 반대 방향 입력으로 상쇄를 시도한다.",
+          "next": "hazard_recovery",
+          "timeCostMin": 0,
+          "effects": {
+            "psfMultipliers": {
+              "direction_ambiguity": 1.1
+            },
+            "metricsDelta": {
+              "safety": -5,
+              "challenge": -3
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "inspect_response_direction",
+          "label": "현재 설정과 실제 설비반응 방향을 다시 비교한다.",
+          "revealText": "현재 반응은 추가 입력보다 먼저 입력 방향과 적용 상태를 재확인해야 할 정도로 예상과 다릅니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": ["stop_when_unsure"]
+    },
+    "hazard_recovery": {
+      "type": "hazard",
+      "threshold": 58,
+      "jitter": 4,
+      "passNext": "near_miss_end",
+      "breachNext": "event_end",
+      "tag": "reverse_trend_escalation"
+    },
+    "safe_complete_end": {
+      "type": "ending",
+      "ending": "safe_complete",
+      "title": "절차와 현재 상태를 다시 맞춰 완료",
+      "summary": "예상과 실제 추세의 차이를 확인하고 입력 방향을 다시 검증해 안전하게 상태전환을 마쳤습니다."
+    },
+    "safe_stop_end": {
+      "type": "ending",
+      "ending": "safe_stop",
+      "title": "추가 입력보다 안전한 중지를 선택",
+      "summary": "예상과 다른 반응에서 추가 입력을 멈추고 상태를 안정시켰습니다. 중지는 중요한 방어행동입니다."
+    },
+    "near_miss_end": {
+      "type": "ending",
+      "ending": "near_miss",
+      "title": "반대 추세를 확인하고 확대를 막음",
+      "summary": "재확인 방어막이 늦게 작동했지만 팀 확인과 제한된 복구로 사건 확대를 막았습니다."
+    },
+    "event_end": {
+      "type": "ending",
+      "ending": "event",
+      "title": "입력 방향과 재확인 방어막의 틈이 겹침",
+      "summary": "상태전환의 복잡성, 입력 방향의 불확실성, 절차·팀 재확인 방어막의 취약이 겹쳐 자동정지 사건으로 이어졌습니다."
+    }
+  }
+}
