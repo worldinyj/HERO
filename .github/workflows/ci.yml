@@ -27,8 +27,12 @@ jobs:
       - run: pnpm validate:scenario
       - name: Validate scenario drafts
         run: pnpm validate:scenario scenarios/drafts
-      - name: Simulate S02 research draft
-        run: pnpm simulate:scenario -- --scenario=scenarios/drafts/S02_equipment_identity_v1.json
+      - name: Simulate research drafts
+        run: |
+          for scenario in scenarios/drafts/*.json; do
+            echo "=== $scenario ==="
+            pnpm simulate:scenario -- --scenario="$scenario"
+          done
       - name: Run scenario path simulation
         run: pnpm simulate:scenario
       - name: Analyze HP balance and farming guards
