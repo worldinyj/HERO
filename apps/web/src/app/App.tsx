@@ -29,7 +29,7 @@ function CampaignPage() {
       </p>
 
       <div className="chapter-list">
-        <Link className="chapter-link" to="/play/s00_tutorial">
+        <Link className="chapter-link" to="/briefing/s00_tutorial">
           <article className="chapter-card chapter-card--ready">
             <span className="chapter-index">00</span>
             <div>
