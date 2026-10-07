@@ -1,5 +1,6 @@
 import { sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { guardRateLimit, requestFingerprint } from "../_shared/rateLimit.ts";
 import { adminClient } from "../_shared/supabase.ts";
 
 Deno.serve(async (req) => {
@@ -18,7 +19,23 @@ Deno.serve(async (req) => {
     }
 
     const admin = adminClient();
+
+    const sourceLimited = await guardRateLimit(req, admin, {
+      scope: "peek-invite:source",
+      subject: requestFingerprint(req),
+      limit: 60,
+      windowSeconds: 600,
+    });
+    if (sourceLimited) return sourceLimited;
+
     const tokenHash = await sha256Hex(token);
+    const tokenLimited = await guardRateLimit(req, admin, {
+      scope: "peek-invite:token",
+      subject: tokenHash,
+      limit: 10,
+      windowSeconds: 600,
+    });
+    if (tokenLimited) return tokenLimited;
 
     const { data, error } = await admin
       .from("invitations")
