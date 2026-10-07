@@ -20,3 +20,6 @@ verify_jwt = true
 
 [functions.manager-user-action]
 verify_jwt = true
+
+[functions.nickname-action]
+verify_jwt = true
