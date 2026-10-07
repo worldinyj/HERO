@@ -1,4 +1,6 @@
 import type { Ending } from "@hero/schema";
+import { useEffect } from "react";
+import { useAudio } from "../../audio/AudioContext";
 
 const ENDING_LABEL: Record<Ending, string> = {
   safe_complete: "안전 완료",
@@ -8,6 +10,12 @@ const ENDING_LABEL: Record<Ending, string> = {
 };
 
 export function EndingStamp({ ending }: { ending: Ending }) {
+  const { manager: audioManager } = useAudio();
+
+  useEffect(() => {
+    void audioManager.playSfx("SFX-10");
+  }, [audioManager, ending]);
+
   return (
     <div
       className={`ending-stamp ending-stamp--${ending}`}
