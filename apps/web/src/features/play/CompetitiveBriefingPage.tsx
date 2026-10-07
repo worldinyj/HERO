@@ -1,3 +1,4 @@
+import { getScenarioById } from "@hero/content";
 import { BARRIER_CARDS } from "@hero/engine";
 import { ScenarioSchema, type JobRole, type Scenario } from "@hero/schema";
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +7,7 @@ import {
   loadCompetitiveSession,
   type StoredCompetitiveSession,
 } from "../../lib/competitivePersistence";
+import { loadGameSession } from "../../lib/gamePersistence";
 import { getSupabase } from "../../lib/supabase";
 import { useAuth } from "../auth/AuthContext";
 
@@ -23,6 +25,7 @@ interface BriefingData {
   seasonTitle: string;
   version: number;
   resumeAvailable: boolean;
+  competitive: boolean;
 }
 
 function situationPreview(scenario: Scenario): string {
@@ -115,6 +118,7 @@ async function loadServerBriefing(
     seasonTitle: String(season.title),
     version: Number(version.version),
     resumeAvailable: false,
+    competitive: true,
   };
 }
 
@@ -125,6 +129,7 @@ function fromSavedSession(saved: StoredCompetitiveSession): BriefingData {
     seasonTitle: saved.server.seasonKey,
     version: saved.scenarioVersion,
     resumeAvailable: true,
+    competitive: true,
   };
 }
 
@@ -162,6 +167,55 @@ export function CompetitiveBriefingPage({
   }, []);
 
   useEffect(() => {
+    const localScenario = getScenarioById(scenarioId);
+
+    if (localScenario) {
+      let active = true;
+
+      void (async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+          const saved = await loadGameSession(scenarioId);
+
+          if (!active) return;
+
+          setData({
+            scenario: localScenario,
+            seasonKey: "tutorial",
+            seasonTitle: "0장 튜토리얼",
+            version: localScenario.version,
+            resumeAvailable:
+              Boolean(saved) &&
+              saved?.scenarioVersion === localScenario.version,
+            competitive: false,
+          });
+        } catch (cause) {
+          if (!active) return;
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "tutorial_briefing_load_failed",
+          );
+          setData({
+            scenario: localScenario,
+            seasonKey: "tutorial",
+            seasonTitle: "0장 튜토리얼",
+            version: localScenario.version,
+            resumeAvailable: false,
+            competitive: false,
+          });
+        } finally {
+          if (active) setLoading(false);
+        }
+      })();
+
+      return () => {
+        active = false;
+      };
+    }
+
     if (!userId || profile?.role !== "player") {
       setLoading(false);
       return;
@@ -229,7 +283,9 @@ export function CompetitiveBriefingPage({
       .filter((card): card is NonNullable<typeof card> => card !== undefined);
   }, [data]);
 
-  if (profile?.role !== "player") {
+  const localScenario = getScenarioById(scenarioId);
+
+  if (!localScenario && profile?.role !== "player") {
     return (
       <section className="briefing-page">
         <header className="briefing-backbar">
@@ -348,7 +404,11 @@ export function CompetitiveBriefingPage({
           disabled={!canStart}
           onClick={() => navigate(`/play/${scenarioId}`)}
         >
-          {data.resumeAvailable ? "이어하기" : "출발"}
+          {data.resumeAvailable
+            ? "이어하기"
+            : data.competitive
+              ? "출발"
+              : "튜토리얼 시작"}
         </button>
 
         {!canStart ? (
