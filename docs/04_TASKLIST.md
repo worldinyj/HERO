@@ -148,8 +148,8 @@
 |---|---|---|---|
 | R2-01 | opis_reports 테이블·Storage 버킷·업로드 UI | FORGE | M |
 | R2-02 | 브라우저 pdf.js 텍스트 추출 (+스캔본 OCR 방안) | FORGE | M |
-| R2-03 | `ai-analyze` Edge (구조화 출력 프롬프트, 익명화 후처리) | FORGE+SAGE | L |
-| R2-04 | `ai-draft-scenario` (분석 → 시나리오 JSON 초안, 스키마 강제) | FORGE+STORY | L |
+| R2-03 | `ai-analyze` Edge (Timeline·Direct/Root/Contributing Cause·PSF·Barrier·Corrective Action 구조화 + 사실/HERO 해석 provenance + 익명화 후처리) | FORGE+SAGE | L |
+| R2-04 | `ai-draft-scenario` (분석 → 시나리오 JSON 초안, 원인-방어막-대책 추적성 및 공개정보 sanitization 스키마 강제) | FORGE+STORY | L |
 | R2-05 | 검토 체크리스트·서명 워크플로 | FORGE+GUARD | M |
 | R2-06 | 칭호·배지 시스템 | LOOP+FORGE | M |
 | R2-07 | 발전소 대항전 탭 | FORGE | M |
