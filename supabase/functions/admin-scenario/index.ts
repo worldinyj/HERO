@@ -5,6 +5,7 @@ import {
   type Scenario,
 } from "@hero/schema";
 import { handleOptions, json } from "../_shared/http.ts";
+import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
 type ScenarioStatus = "draft" | "review" | "approved" | "published" | "archived";
@@ -223,6 +224,13 @@ Deno.serve(async (req) => {
     const { admin, user } = await requireAdmin(req);
     const body = (await req.json()) as RequestBody;
     const action = body.action ?? "list";
+    const limited = await guardRateLimit(req, admin, {
+      scope: `admin-scenario:${action}`,
+      subject: user.id,
+      limit: action === "list" ? 120 : 30,
+      windowSeconds: action === "list" ? 300 : 600,
+    });
+    if (limited) return limited;
 
     if (action === "list") {
       return json(req, { versions: await listVersions(admin) });
