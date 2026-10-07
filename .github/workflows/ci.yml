@@ -40,3 +40,6 @@ jobs:
 
       - name: Check admin scenario Edge Function
         run: deno check --config supabase/functions/admin-scenario/deno.json supabase/functions/admin-scenario/index.ts
+
+      - name: Check manager user action Edge Function
+        run: deno check --config supabase/functions/deno.json supabase/functions/manager-user-action/index.ts
