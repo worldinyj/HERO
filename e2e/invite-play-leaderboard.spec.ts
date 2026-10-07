@@ -512,5 +512,5 @@ test("invitation → play → replay offline queue → leaderboard", async ({
     page.getByRole("button", { name: "로그아웃" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "로그아웃" }).click();
-  await expect(page).toHaveURL("/login");
+  await expect(page).toHaveURL(/\/login\?next=%2Fme$/);
 });
