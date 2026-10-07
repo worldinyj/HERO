@@ -5,6 +5,7 @@ import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { InvitationPage } from "../features/invite/InvitationPage";
+import { LeaderboardPage } from "../features/leaderboard/LeaderboardPage";
 import { GamePage } from "../features/play/GamePage";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
@@ -104,7 +105,7 @@ export function App() {
         />
         <Route
           path="/leaderboard"
-          element={<ActiveUserGate><PlaceholderPage title="리더보드" /></ActiveUserGate>}
+          element={<ActiveUserGate><LeaderboardPage /></ActiveUserGate>}
         />
         <Route
           path="/me"

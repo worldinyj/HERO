@@ -7,10 +7,6 @@ interface StartSessionBody {
   replayFromNode?: string;
 }
 
-function nowIso(): string {
-  return new Date().toISOString();
-}
-
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
@@ -38,7 +34,7 @@ Deno.serve(async (req) => {
       return json(req, { error: "replay_source_and_target_required_together" }, 400);
     }
 
-    const now = nowIso();
+    const now = new Date().toISOString();
 
     const { data: season, error: seasonError } = await admin
       .from("seasons")
@@ -66,35 +62,45 @@ Deno.serve(async (req) => {
       return json(req, { error: "competitive_scenario_not_found" }, 404);
     }
 
+    const { data: bindings, error: bindingError } = await admin
+      .from("season_scenarios")
+      .select("scenario_version_id, simulation_seed")
+      .eq("season_id", season.id)
+      .eq("is_active", true);
+
+    if (bindingError || !bindings || bindings.length === 0) {
+      return json(req, { error: "scenario_not_enabled_for_season" }, 409);
+    }
+
+    const boundVersionIds = bindings.map((item) => item.scenario_version_id);
+
     const { data: version, error: versionError } = await admin
       .from("scenario_versions")
       .select("id, version, content, default_perspective_role")
       .eq("scenario_id", scenario.id)
       .eq("status", "published")
+      .in("id", boundVersionIds)
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (versionError || !version) {
-      return json(req, { error: "published_scenario_version_not_found" }, 404);
+      return json(req, { error: "scenario_not_enabled_for_season" }, 409);
     }
 
-    const { data: seasonScenario, error: seasonScenarioError } = await admin
-      .from("season_scenarios")
-      .select("simulation_seed")
-      .eq("season_id", season.id)
-      .eq("scenario_version_id", version.id)
-      .eq("is_active", true)
-      .maybeSingle();
+    const seasonScenario = bindings.find(
+      (item) => item.scenario_version_id === version.id,
+    );
 
-    if (seasonScenarioError || !seasonScenario) {
-      return json(req, { error: "scenario_not_enabled_for_season" }, 409);
+    if (!seasonScenario) {
+      return json(req, { error: "scenario_seed_missing" }, 500);
     }
 
     const { data: existing } = await admin
       .from("play_sessions")
       .select("id, simulation_seed, presentation_seed, replay_of, replay_from_node, started_at")
       .eq("user_id", user.id)
+      .eq("season_id", season.id)
       .eq("scenario_version_id", version.id)
       .eq("status", "in_progress")
       .maybeSingle();
