@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@hero/engine": "../../../packages/engine/src/index.ts",
+    "@hero/schema": "../../../packages/schema/src/index.ts"
+  }
+}
