@@ -148,6 +148,11 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
   ).toBeVisible();
   await expectWcag22Aa(page, "chapter briefing");
 
+  await expect(
+    page.getByRole("button", { name: "무음으로 시작" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "무음으로 시작" }).click();
+
   await page
     .getByRole("button", { name: /출발|이어하기/ })
     .click();
