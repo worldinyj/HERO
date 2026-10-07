@@ -363,12 +363,12 @@ select results_eq(
   'inactive player cannot read own decision logs directly'
 );
 select results_eq(
-  $$$select count(*) from public.v_leaderboard_current_public$$$,
+  $select count(*) from public.v_leaderboard_current_public$,
   array[0::bigint],
   'inactive player cannot read the public leaderboard'
 );
 select throws_ok(
-  $$$select * from public.my_current_rank()$$$,
+  $select * from public.my_current_rank()$,
   'P0001',
   'player_required',
   'inactive player cannot invoke player self-rank RPC'
