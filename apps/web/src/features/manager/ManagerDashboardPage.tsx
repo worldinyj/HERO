@@ -68,9 +68,9 @@ export function ManagerDashboardPage() {
   const [copiedReissue, setCopiedReissue] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = useCallback(async () => {
+  const loadDashboard = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      if (!background) setLoading(true);
       setError(null);
       const supabase = getSupabase();
 
@@ -93,7 +93,7 @@ export function ManagerDashboardPage() {
           : "발전소 참여 현황을 불러오지 못했습니다.",
       );
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
   }, []);
 
@@ -143,7 +143,7 @@ export function ManagerDashboardPage() {
         action: "cancel-invite",
         invitationId,
       });
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "초대 취소에 실패했습니다.");
     } finally {
@@ -162,7 +162,7 @@ export function ManagerDashboardPage() {
       });
 
       setReissueResult(result as unknown as ReissueResult);
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "새 초대 링크 생성에 실패했습니다.",
@@ -194,7 +194,7 @@ export function ManagerDashboardPage() {
         throw new Error(result.error ?? "닉네임 초기화에 실패했습니다.");
       }
 
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "닉네임 초기화에 실패했습니다.",
@@ -213,7 +213,7 @@ export function ManagerDashboardPage() {
         profileId,
         isActive,
       });
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "사용자 상태 변경에 실패했습니다.",
@@ -294,7 +294,7 @@ export function ManagerDashboardPage() {
         </article>
       </div>
 
-      <ManagerInvitePanel onChanged={() => void loadDashboard()} />
+      <ManagerInvitePanel onChanged={() => void loadDashboard(true)} />
 
       <section className="panel manager-section">
         <div className="section-heading">
