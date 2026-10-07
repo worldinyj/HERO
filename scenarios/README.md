@@ -78,7 +78,7 @@ pnpm simulate:scenario -- --strict
 - `drafts/`: 아직 원문확인/사람승인이 끝나지 않은 시나리오 JSON
 - `data/`: 실제 앱·기본 CI가 사용하는 승인된 시나리오 JSON
 
-현재 S01/S02 조사 초안은 `drafts/`에 있으며, **요구된 공식 원문/OPIS 대조와 HF 사람 승인 전에는 `data/`로 이동하거나 published 상태로 전환하지 않습니다.**
+현재 S01/S02/S03 조사 초안은 `drafts/`에 있으며, **각 사건의 근거 게이트와 HF 사람 승인 전에는 `data/`로 이동하거나 published 상태로 전환하지 않습니다.**
 
 Draft 검증:
 
@@ -86,6 +86,7 @@ Draft 검증:
 pnpm validate:scenario scenarios/drafts
 pnpm simulate:scenario -- --scenario=scenarios/drafts/S01_time_pressure_v1.json
 pnpm simulate:scenario -- --scenario=scenarios/drafts/S02_equipment_identity_v1.json
+pnpm simulate:scenario -- --scenario=scenarios/drafts/S03_procedure_reality_v1.json
 ```
 
 CI는 draft의 스키마·그래프 오류와 시뮬레이터 error를 차단합니다. balance warning은 연구 단계에서 허용하지만 `T3_HF_REVIEW_CHECKLIST_V1.md`에 검토/예외 사유를 남겨야 합니다.
