@@ -807,3 +807,148 @@ h3 {
     text-align: left;
   }
 }
+
+
+.profile-page {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-header {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-season-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid rgba(242, 165, 65, 0.28);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(242, 165, 65, 0.12), rgba(22, 33, 58, 0.92));
+}
+
+.profile-season-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.profile-season-card > div > strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 1.35rem;
+}
+
+.profile-rank {
+  text-align: right;
+}
+
+.profile-rank strong {
+  display: block;
+  color: var(--accent);
+  font-size: 1.5rem;
+}
+
+.profile-section {
+  display: grid;
+  gap: 14px;
+}
+
+.metric-bars {
+  display: grid;
+  gap: 14px;
+}
+
+.metric-row {
+  display: grid;
+  gap: 7px;
+}
+
+.metric-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.82rem;
+}
+
+.metric-label span {
+  color: #d7deeb;
+}
+
+.metric-label strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(138, 150, 173, 0.14);
+}
+
+.metric-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--barrier), var(--accent));
+}
+
+.profile-insight {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(111, 160, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(111, 160, 255, 0.07);
+  color: #d7e3ff;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.record-list {
+  display: grid;
+  gap: 8px;
+}
+
+.record-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 66px;
+  padding: 12px;
+  border: 1px solid rgba(138, 150, 173, 0.16);
+  border-radius: 14px;
+  background: rgba(14, 22, 36, 0.45);
+}
+
+.record-row > div {
+  min-width: 0;
+}
+
+.record-row span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.record-row > strong {
+  color: #d7e3ff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 359px) {
+  .profile-season-card,
+  .record-row {
+    align-items: flex-start;
+  }
+
+  .record-row {
+    grid-template-columns: 1fr;
+  }
+}
