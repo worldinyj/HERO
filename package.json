@@ -8,7 +8,7 @@
     "dev": "pnpm --dir apps/web dev",
     "build": "pnpm --dir apps/web build",
     "typecheck": "pnpm --dir packages/schema typecheck && pnpm --dir packages/engine typecheck && pnpm --dir apps/web typecheck",
-    "test": "pnpm --dir apps/web test",
+    "test": "pnpm --dir packages/engine test && pnpm --dir apps/web test",
     "lint": "pnpm --dir apps/web lint && eslint packages/engine/src packages/schema/src"
   },
   "devDependencies": {
