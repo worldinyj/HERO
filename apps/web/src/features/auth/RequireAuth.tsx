@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { useEffect, useRef } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { useAuth, type AppRole } from "./AuthContext";
 
 export function RequireAuth({ children }: PropsWithChildren) {
@@ -21,7 +21,6 @@ export function RequireAuth({ children }: PropsWithChildren) {
 
 function UnprovisionedUser() {
   const { signOut } = useAuth();
-  const navigate = useNavigate();
   const started = useRef(false);
 
   useEffect(() => {
@@ -29,9 +28,12 @@ function UnprovisionedUser() {
     started.current = true;
 
     void signOut().finally(() => {
-      navigate("/login?reason=invite_required", { replace: true });
+      // A sign-out updates AuthContext immediately and can unmount this route
+      // before a router navigation runs. Use a document-level replace so the
+      // invitation-required reason survives that auth-state transition.
+      window.location.replace("/login?reason=invite_required");
     });
-  }, [navigate, signOut]);
+  }, [signOut]);
 
   return (
     <section className="panel">
