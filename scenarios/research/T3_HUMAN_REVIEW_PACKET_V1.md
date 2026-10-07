@@ -118,3 +118,47 @@
 6. 관리자에서 scenario version을 업로드하고 review → published 전환한다.
 
 CI는 사람승인 정보가 없는 경쟁 JSON이 `scenarios/data/`에 들어오면 실패한다.
+
+
+## 승인 후 안전한 승격 명령
+
+사람 검토가 끝나도 파일과 manifest를 직접 수정하지 않는다. 먼저 preflight를 실행한다.
+
+```bash
+pnpm promote:scenario -- --scenario=s03_procedure_reality_gap
+```
+
+preflight는 다음을 확인한다.
+
+- promotion manifest에 등록된 경쟁 시나리오인지
+- `sourceRightsComplete=true`인지
+- source 파일이 `scenarios/drafts/` 아래에 있는지
+- draft JSON이 ScenarioSchema를 통과하는지
+- manifest scenarioId와 JSON id가 같은지
+
+실제 승격은 **검토자가 HF·익명화/운전정보 과노출·incidentDebrief를 모두 확인한 뒤**에만 실행한다.
+
+```bash
+pnpm promote:scenario -- \
+  --scenario=s03_procedure_reality_gap \
+  --approved-by="검토자 성명 또는 공식 역할" \
+  --approved-at=YYYY-MM-DD \
+  --confirm-hf \
+  --confirm-anonymization \
+  --confirm-debrief \
+  --apply
+```
+
+`--apply` 실행 시 도구는 승인 기록을 manifest에 쓰고 draft JSON을 `scenarios/data/`로 이동한다. 그러나 이 명령 자체가 검토를 대신하지 않는다. 특히 `sourceRightsComplete=false`인 S01/S02는 사람 승인 플래그를 넣더라도 승격이 거부된다.
+
+승격 후 반드시 다음을 실행한다.
+
+```bash
+pnpm check:scenario-promotion
+pnpm validate:scenario
+pnpm simulate:scenario
+pnpm analyze:hp-balance
+pnpm check:mvp-readiness
+```
+
+최종 커밋/PR은 CI의 promotion/schema/path/balance/E2E/DB 정책 게이트를 모두 통과해야 한다.
