@@ -200,3 +200,17 @@ HERO는 텍스트도 그대로 복제하지 않고 사실관계를 일반화하�
 - 출처표시는 최종 앱/운영문서 어디에 둘 것인지 정했는가?
 
 > 사람 승인은 체크박스만 자동으로 채우지 않는다. 승인자·일자·검토의견을 기록한 뒤에만 `data/` 승격이 가능하다.
+
+
+## 8. 기계검증용 source evidence manifest
+
+사람이 읽는 본 문서와 별도로 `scenarios/research/source-evidence.json`에 경쟁 시나리오별 공식성·직접성·권리상태를 구조화한다.
+
+- `sourceVerdict=complete`: 사건별 공식 1차 근거가 확보됨
+- `rightsVerdict=complete`: 공개문안에 사용 가능한 텍스트 권리 근거가 명시됨
+- `rights.status=verified`: 라이선스/이용조건과 evidence URL이 모두 기록됨
+- locator나 언론 교차확인은 보조 근거일 뿐 단독으로 complete 판정을 만들지 않는다.
+
+CI의 `pnpm check:source-evidence`는 `promotion-status.json`과 이 manifest를 대조한다. `sourceRightsComplete=true` 또는 `status=approved`인 경쟁 시나리오는 source/rights verdict가 모두 complete가 아니면 실패한다.
+
+이 guard는 사람의 HF·익명화 검토를 대신하지 않으며, 근거 boolean의 실수·우회 변경을 방지하는 역할만 한다.

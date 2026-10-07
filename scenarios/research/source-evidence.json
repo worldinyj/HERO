@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-10-07",
+  "entries": [
+    {
+      "scenarioId": "s01_time_pressure",
+      "sourceVerdict": "partial",
+      "rightsVerdict": "partial",
+      "missing": [
+        "OPIS/NSIC event-specific direct record URL, identifier, or PDF",
+        "2012 KHNP notice/attachment item-specific rights marker"
+      ],
+      "sources": [
+        {
+          "id": "s01-iaea-event",
+          "authority": "IAEA",
+          "sourceClass": "official_primary",
+          "url": "https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9",
+          "eventSpecific": true,
+          "purpose": ["event_identity", "event_facts"],
+          "rights": {
+            "status": "not_used_for_reproduction",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s01-khnp-mission-notice",
+          "authority": "한국수력원자력",
+          "sourceClass": "official_primary",
+          "url": "https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297",
+          "eventSpecific": true,
+          "purpose": ["event_facts", "hf_context"],
+          "rights": {
+            "status": "unverified",
+            "license": null,
+            "evidenceUrl": "https://www.khnp.co.kr/main/contents.do?key=406"
+          }
+        },
+        {
+          "id": "s01-nssc-statistics",
+          "authority": "원자력안전위원회",
+          "sourceClass": "official_primary",
+          "url": "https://ourplan.nssc.go.kr/boardDownload.es?bid=0004&list_no=837&seq=1",
+          "eventSpecific": true,
+          "purpose": ["event_identity", "ines_classification"],
+          "rights": {
+            "status": "not_used_for_reproduction",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s01-nsic-accident-index",
+          "authority": "원자력안전위원회/원자력안전정보공개센터",
+          "sourceClass": "official_locator",
+          "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
+          "eventSpecific": false,
+          "purpose": ["direct_record_locator"],
+          "rights": {
+            "status": "not_applicable",
+            "license": null,
+            "evidenceUrl": null
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "s02_equipment_identity",
+      "sourceVerdict": "partial",
+      "rightsVerdict": "partial",
+      "missing": [
+        "NSSC direct-host or Policy Briefing event investigation/result page",
+        "OPIS/NSIC event-specific direct record URL, identifier, or PDF",
+        "item-specific text reuse marker for the direct official result"
+      ],
+      "sources": [
+        {
+          "id": "s02-khnp-chronology",
+          "authority": "한국수력원자력 한울원자력본부",
+          "sourceClass": "official_primary",
+          "url": "https://www.khnp.co.kr/hanul/selectBbsNttList.do?bbsNo=120&integrDeptCode=&key=1761&pageIndex=20&searchCnd=all&searchCtgry=&searchKrwd=",
+          "eventSpecific": true,
+          "purpose": ["event_date", "trip_shutdown_chronology"],
+          "rights": {
+            "status": "not_used_for_reproduction",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s02-nssc-government-relay",
+          "authority": "원자력안전위원회 보도자료 / 서울Pn 정부 보도자료 전재",
+          "sourceClass": "government_relay",
+          "url": "https://go.seoul.co.kr/news/prnewsView.php?id=337111&page=1306&section=b_sec_1",
+          "eventSpecific": true,
+          "purpose": ["investigation_result", "corrective_actions"],
+          "rights": {
+            "status": "unverified",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s02-nsic-accident-index",
+          "authority": "원자력안전위원회/원자력안전정보공개센터",
+          "sourceClass": "official_locator",
+          "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
+          "eventSpecific": false,
+          "purpose": ["direct_record_locator"],
+          "rights": {
+            "status": "not_applicable",
+            "license": null,
+            "evidenceUrl": null
+          }
+        }
+      ]
+    },
+    {
+      "scenarioId": "s03_procedure_reality_gap",
+      "sourceVerdict": "complete",
+      "rightsVerdict": "complete",
+      "missing": [],
+      "sources": [
+        {
+          "id": "s03-policy-briefing",
+          "authority": "원자력안전위원회 / 대한민국 정책브리핑",
+          "sourceClass": "official_primary",
+          "url": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156780201",
+          "eventSpecific": true,
+          "purpose": [
+            "investigation_result",
+            "corrective_actions",
+            "public_text_rights"
+          ],
+          "rights": {
+            "status": "verified",
+            "license": "공공누리 제1유형(출처표시) — 텍스트",
+            "evidenceUrl": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156780201"
+          }
+        }
+      ]
+    }
+  ]
+}

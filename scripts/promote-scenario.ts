@@ -37,6 +37,17 @@ interface PromotionManifest {
   entries: PromotionEntry[];
 }
 
+interface SourceEvidenceEntry {
+  scenarioId: string;
+  sourceVerdict: "partial" | "complete";
+  rightsVerdict: "partial" | "complete";
+}
+
+interface SourceEvidenceManifest {
+  schemaVersion: number;
+  entries: SourceEvidenceEntry[];
+}
+
 interface Options {
   scenarioId: string | null;
   approvedBy: string | null;
@@ -90,17 +101,35 @@ const manifestPath = resolve(
   process.cwd(),
   "scenarios/research/promotion-status.json",
 );
+const sourceEvidencePath = resolve(
+  process.cwd(),
+  "scenarios/research/source-evidence.json",
+);
 
 if (!existsSync(manifestPath)) {
   fail("promotion-status.json is missing");
 }
 
+if (!existsSync(sourceEvidencePath)) {
+  fail("source-evidence.json is missing");
+}
+
 const manifest = JSON.parse(
   readFileSync(manifestPath, "utf8"),
 ) as PromotionManifest;
+const sourceEvidence = JSON.parse(
+  readFileSync(sourceEvidencePath, "utf8"),
+) as SourceEvidenceManifest;
 
 if (manifest.schemaVersion !== 1 || !Array.isArray(manifest.entries)) {
   fail("unsupported promotion manifest");
+}
+
+if (
+  sourceEvidence.schemaVersion !== 1 ||
+  !Array.isArray(sourceEvidence.entries)
+) {
+  fail("unsupported source evidence manifest");
 }
 
 const entry = manifest.entries.find(
@@ -135,6 +164,23 @@ if (entry.status === "approved") {
 if (!entry.sourceRightsComplete) {
   fail(
     "sourceRightsComplete=false. Resolve and document source/rights evidence before human approval.",
+  );
+}
+
+const evidence = sourceEvidence.entries.find(
+  (candidate) => candidate.scenarioId === entry.scenarioId,
+);
+
+if (!evidence) {
+  fail("scenario has no source-evidence record");
+}
+
+if (
+  evidence.sourceVerdict !== "complete" ||
+  evidence.rightsVerdict !== "complete"
+) {
+  fail(
+    `source evidence is incomplete: source=${evidence.sourceVerdict}, rights=${evidence.rightsVerdict}`,
   );
 }
 
