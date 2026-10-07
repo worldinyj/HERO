@@ -39,8 +39,8 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | 접근성 | **READY (자동 게이트)** | WCAG 2.2 AA 자동 검사, reduced motion, 키보드/포커스 |
 | 모바일 핵심 E2E | **READY (자동 게이트)** | 360×800/390×844: 초대→가입→플레이→결과→리플레이→오프라인 제출 큐→재접속 자동제출→리더보드 자동 플로우 |
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
-| S01 | **SOURCE_HOLD** | 원안위 공식 사건명·INES 2 + NSIC/과거 OPIS + 안전모아 OPIS 연계 locator 확인. 사건별 direct URL/식별번호/PDF, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
-| S02 | **SOURCE_HOLD** | KHNP 2024-01-02 공식 사건 시계열 + 2024-04-17 원안위 보도자료 전문 + 안전모아 OPIS 연계 locator 확인. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
+| S01 | **SOURCE_HOLD (v2)** | IAEA 직접 사건기록 기준 Direct Cause/물리 인과사슬(시험 중 인적오류→LOOP, 비상전원 가용성 문제→SBO/정지냉각 상실)과 HF 근본·기여조건을 분리. OPIS/NSIC 사건별 direct URL/식별번호/PDF, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
+| S02 | **SOURCE_HOLD (v2)** | 확보된 원안위 보도자료 전재 기준 Direct Cause/물리 인과사슬(잘못된 회로상태 + 조작부 오인→터빈·발전기 정지→원자로 정지)과 HERO 방어막 분석을 분리하고, 원문이 명시한 회로정비·인적오류 방지 설비개선만 corrective action으로 반영. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY (v3)** | KINS 상세보고서 기반 Direct/Root/Contributing + 인과사슬·방어막·재발방지대책 추적성 및 공개정보 일반화 완료. HF·운전맥락·익명화·incidentDebrief 사람 승인 남음 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
 | 외부 배포 | **BLOCKED (자동 smoke 준비 완료)** | 실제 값 연결·체크리스트 완료·외부배포 승인 증거 + 동일 SHA Staging Smoke PASS 필요 |
