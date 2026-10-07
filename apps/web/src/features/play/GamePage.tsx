@@ -7,7 +7,12 @@ import {
 } from "@hero/engine";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
+import { CausalReflection } from "./result/CausalReflection";
+import { HpReview } from "./result/HpReview";
+import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
 import { useTutorialGameStore } from "./gameStore";
+
+type ReviewStage = "ending" | "reflection" | "timeline" | "review";
 
 function formatClock(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60) % 24;
@@ -19,11 +24,22 @@ export function GamePage() {
   const { scenarioId = "" } = useParams();
   const scenario = getScenarioById(scenarioId);
   const game = useTutorialGameStore((state) => state.game);
+  const previousBestMetricAvg = useTutorialGameStore(
+    (state) => state.previousBestMetricAvg,
+  );
   const start = useTutorialGameStore((state) => state.start);
   const dispatch = useTutorialGameStore((state) => state.dispatch);
+  const replayAt = useTutorialGameStore((state) => state.replayAt);
   const reset = useTutorialGameStore((state) => state.reset);
+
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [revealedInfo, setRevealedInfo] = useState<Record<string, string>>({});
+  const [reviewStage, setReviewStage] = useState<ReviewStage>("ending");
+  const [reflectionSelection, setReflectionSelection] = useState<string | null>(
+    null,
+  );
+  const [reflectionAnswered, setReflectionAnswered] = useState(false);
+  const [swissCheeseViewed, setSwissCheeseViewed] = useState(false);
 
   useEffect(() => {
     if (!scenario) return;
@@ -46,13 +62,38 @@ export function GamePage() {
     return getView(scenario, game);
   }, [game, scenario]);
 
+  function resetReviewState() {
+    setReviewStage("ending");
+    setReflectionSelection(null);
+    setReflectionAnswered(false);
+    setSwissCheeseViewed(false);
+    setRevealedInfo({});
+  }
+
+  function handleReplay(nodeId: string) {
+    if (!scenario) return;
+    replayAt(scenario, nodeId);
+    resetReviewState();
+  }
+
+  function handleRestart() {
+    if (!scenario) return;
+    reset();
+    start(scenario);
+    resetReviewState();
+  }
+
   if (!scenario) {
     return (
       <section className="panel">
         <p className="eyebrow">Scenario unavailable</p>
         <h2>시나리오를 찾을 수 없습니다</h2>
-        <p className="muted">현재 웹 플레이에는 0장 튜토리얼만 연결되어 있습니다.</p>
-        <Link className="text-link" to="/">캠페인으로 돌아가기</Link>
+        <p className="muted">
+          현재 웹 플레이에는 0장 튜토리얼만 연결되어 있습니다.
+        </p>
+        <Link className="text-link" to="/">
+          캠페인으로 돌아가기
+        </Link>
       </section>
     );
   }
@@ -69,52 +110,93 @@ export function GamePage() {
   const finished = isFinished(scenario, game);
 
   if (finished && node.type === "ending") {
-    const result = evaluate(scenario, game, {
-      reflectionAnswered: false,
-      swissCheeseViewed: false,
+    const evaluation = evaluate(scenario, game, {
+      reflectionAnswered,
+      swissCheeseViewed,
+      ...(previousBestMetricAvg === null
+        ? {}
+        : { previousBestMetricAvg }),
     });
 
     return (
-      <section className="game-page">
+      <section className="game-page" aria-live="polite">
         <div className="game-status">
           <span>0장 튜토리얼</span>
           <span>{formatClock(view.clockMin)}</span>
         </div>
 
-        <article className="ending-card">
-          <p className="eyebrow">Training Result</p>
-          <h2>{node.title}</h2>
-          <p>{node.summary}</p>
+        {reviewStage === "ending" ? (
+          <article className="ending-card">
+            <p className="eyebrow">Training Result</p>
+            <h2>{node.title}</h2>
+            <p>{node.summary}</p>
 
-          <div className="tutorial-score">
-            <div>
-              <span>학습행동 평균</span>
-              <strong>{Math.round(result.metricAverage)}</strong>
+            <div className="tutorial-score">
+              <div>
+                <span>학습행동 평균</span>
+                <strong>{Math.round(evaluation.metricAverage)}</strong>
+              </div>
+              <div>
+                <span>회고 전 HP</span>
+                <strong>{evaluation.hpPoint}</strong>
+              </div>
             </div>
-            <div>
-              <span>회고 전 임시 HP</span>
-              <strong>{result.hpPoint}</strong>
-            </div>
-          </div>
 
-          <p className="muted small-copy">
-            튜토리얼 점수는 리더보드에 반영되지 않습니다. 실제 시나리오는 서버가 발급한 동일 조건 seed로 검증 후 점수를 확정합니다.
-          </p>
+            <p className="review-note">
+              다음 화면부터는 결과의 책임을 한 사람에게 돌리지 않고, 어떤 조건과
+              방어막이 겹쳤는지 순서대로 돌아봅니다.
+            </p>
 
-          <div className="ending-actions">
             <button
               type="button"
-              className="secondary-button"
-              onClick={() => {
-                reset();
-                start(scenario);
-              }}
+              className="primary-button"
+              onClick={() => setReviewStage("reflection")}
             >
-              다시 해보기
+              결과 돌아보기
             </button>
-            <Link className="primary-link" to="/">캠페인으로</Link>
-          </div>
-        </article>
+          </article>
+        ) : null}
+
+        {reviewStage === "reflection" ? (
+          <CausalReflection
+            scenario={scenario}
+            game={game}
+            selected={reflectionSelection}
+            onSelect={setReflectionSelection}
+            onContinue={() => {
+              setReflectionAnswered(true);
+              setReviewStage("timeline");
+            }}
+          />
+        ) : null}
+
+        {reviewStage === "timeline" ? (
+          <SwissCheeseTimeline
+            scenario={scenario}
+            game={game}
+            onReplay={handleReplay}
+            onContinue={() => {
+              setSwissCheeseViewed(true);
+              setReviewStage("review");
+            }}
+          />
+        ) : null}
+
+        {reviewStage === "review" ? (
+          <HpReview
+            scenario={scenario}
+            game={game}
+            evaluation={evaluate(scenario, game, {
+              reflectionAnswered: true,
+              swissCheeseViewed: true,
+              ...(previousBestMetricAvg === null
+                ? {}
+                : { previousBestMetricAvg }),
+            })}
+            onReplay={handleReplay}
+            onRestart={handleRestart}
+          />
+        ) : null}
       </section>
     );
   }
@@ -129,8 +211,10 @@ export function GamePage() {
         </span>
       </div>
 
-      {(node.type === "scene" || node.type === "event") ? (
-        <article className={node.type === "event" ? "scene-box event-box" : "scene-box"}>
+      {node.type === "scene" || node.type === "event" ? (
+        <article
+          className={node.type === "event" ? "scene-box event-box" : "scene-box"}
+        >
           <p className="eyebrow">
             {node.type === "event" ? "상황 변화" : node.speaker ?? "상황"}
           </p>
@@ -165,7 +249,10 @@ export function GamePage() {
                       className="info-button"
                       disabled={used}
                       onClick={() => {
-                        dispatch(scenario, { type: "info", actionId: info.actionId });
+                        dispatch(scenario, {
+                          type: "info",
+                          actionId: info.actionId,
+                        });
                         setRevealedInfo((current) => ({
                           ...current,
                           [usageId]: info.revealText,
@@ -180,9 +267,13 @@ export function GamePage() {
               </div>
 
               {Object.entries(revealedInfo)
-                .filter(([usageId]) => usageId.startsWith(`${view.nodeId}:`))
+                .filter(([usageId]) =>
+                  usageId.startsWith(`${view.nodeId}:`),
+                )
                 .map(([usageId, text]) => (
-                  <p key={usageId} className="info-reveal">{text}</p>
+                  <p key={usageId} className="info-reveal">
+                    {text}
+                  </p>
                 ))}
             </div>
           ) : null}
@@ -192,7 +283,11 @@ export function GamePage() {
               <h3>방어막 카드</h3>
               <div className="card-tray">
                 {view.cardsAvailable
-                  .filter((cardId) => !node.allowedCards || node.allowedCards.includes(cardId))
+                  .filter(
+                    (cardId) =>
+                      !node.allowedCards ||
+                      node.allowedCards.includes(cardId),
+                  )
                   .map((cardId) => {
                     const card = BARRIER_CARDS[cardId];
                     if (!card) return null;
@@ -202,7 +297,9 @@ export function GamePage() {
                         key={cardId}
                         type="button"
                         className="card-button"
-                        onClick={() => dispatch(scenario, { type: "card", cardId })}
+                        onClick={() =>
+                          dispatch(scenario, { type: "card", cardId })
+                        }
                       >
                         <span>{card.label}</span>
                         <small>+{card.timeCostMin}분</small>
@@ -215,7 +312,11 @@ export function GamePage() {
 
           <div className="decision-section">
             <h3>행동 선택</h3>
-            <div className="choice-list" role="radiogroup" aria-label="행동 선택">
+            <div
+              className="choice-list"
+              role="radiogroup"
+              aria-label="행동 선택"
+            >
               {node.choices.map((choice, index) => {
                 const selected = selectedChoice === choice.actionId;
 
@@ -225,10 +326,16 @@ export function GamePage() {
                     type="button"
                     role="radio"
                     aria-checked={selected}
-                    className={selected ? "choice-button choice-button--selected" : "choice-button"}
+                    className={
+                      selected
+                        ? "choice-button choice-button--selected"
+                        : "choice-button"
+                    }
                     onClick={() => setSelectedChoice(choice.actionId)}
                   >
-                    <span className="choice-letter">{String.fromCharCode(65 + index)}</span>
+                    <span className="choice-letter">
+                      {String.fromCharCode(65 + index)}
+                    </span>
                     <span>{choice.label}</span>
                     <small>+{choice.timeCostMin}분</small>
                   </button>
@@ -242,7 +349,10 @@ export function GamePage() {
               disabled={!selectedChoice}
               onClick={() => {
                 if (!selectedChoice) return;
-                dispatch(scenario, { type: "choice", actionId: selectedChoice });
+                dispatch(scenario, {
+                  type: "choice",
+                  actionId: selectedChoice,
+                });
               }}
             >
               이 행동으로 진행
