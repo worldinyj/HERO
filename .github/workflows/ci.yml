@@ -32,6 +32,12 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Verify Kakao share SDK contract
+        run: |
+          grep -q 'KAKAO_SDK_VERSION = "2.8.2"' apps/web/src/lib/kakaoShare.ts
+          grep -q 'sha384-zt/G7/KfaRQ9dT/QIkS0ujMtzouJqzuSJcXVQu50x0rl/+mD1dc70AeOejVbMD9E' apps/web/src/lib/kakaoShare.ts
+          grep -q 'VITE_KAKAO_JS_KEY=' apps/web/.env.example
+
       - name: Check client secret leakage
         run: |
           node scripts/check-client-secrets.mjs

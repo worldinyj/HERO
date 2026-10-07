@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
@@ -20,6 +21,7 @@ interface BulkInput {
 interface BulkResult extends BulkInput {
   inviteUrl: string;
   expiresAt: string;
+  plantDisplayName: string;
 }
 
 const JOB_OPTIONS: Array<{ value: JobRole; label: string }> = [
@@ -245,23 +247,17 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   async function handleShare() {
     if (!singleResult) return;
 
-    const shareData = {
-      title: "HERO 초대장",
-      text: `${singleResult.plantDisplayName} HERO 교육 초대장입니다.`,
-      url: singleResult.inviteUrl,
-    };
-
     try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        return;
-      }
+      const method = await shareHeroInvite({
+        inviteUrl: singleResult.inviteUrl,
+        plantDisplayName: singleResult.plantDisplayName,
+      });
 
-      await navigator.clipboard.writeText(singleResult.inviteUrl);
-      setCopied(true);
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      setError("공유 또는 링크 복사에 실패했습니다.");
+      if (method === "clipboard") {
+        setCopied(true);
+      }
+    } catch {
+      setError("카카오톡 공유 또는 링크 복사에 실패했습니다.");
     }
   }
 
@@ -291,20 +287,17 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
 
   async function handleBulkShare(row: BulkResult) {
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "HERO 초대장",
-          text: `${row.name}님 HERO 교육 초대장입니다.`,
-          url: row.inviteUrl,
-        });
-        return;
-      }
+      const method = await shareHeroInvite({
+        inviteUrl: row.inviteUrl,
+        plantDisplayName: row.plantDisplayName,
+        inviteeName: row.name,
+      });
 
-      await navigator.clipboard.writeText(row.inviteUrl);
-      setCopiedBulkUrl(row.inviteUrl);
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      setError(`${row.name}님의 링크 공유/복사에 실패했습니다.`);
+      if (method === "clipboard") {
+        setCopiedBulkUrl(row.inviteUrl);
+      }
+    } catch {
+      setError(`${row.name}님의 카카오톡 공유/링크 복사에 실패했습니다.`);
     }
   }
 
@@ -334,6 +327,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           ...input,
           inviteUrl: result.inviteUrl,
           expiresAt: result.expiresAt,
+          plantDisplayName: result.plantDisplayName,
         });
       }
 

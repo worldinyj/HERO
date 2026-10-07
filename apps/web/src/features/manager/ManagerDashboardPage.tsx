@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
 
@@ -226,20 +227,16 @@ export function ManagerDashboardPage() {
     if (!reissueResult) return;
 
     try {
-      if (navigator.share) {
-        await navigator.share({
-          title: "HERO 초대장",
-          text: `${reissueResult.plantDisplayName} HERO 교육 초대장입니다.`,
-          url: reissueResult.inviteUrl,
-        });
-        return;
-      }
+      const method = await shareHeroInvite({
+        inviteUrl: reissueResult.inviteUrl,
+        plantDisplayName: reissueResult.plantDisplayName,
+      });
 
-      await navigator.clipboard.writeText(reissueResult.inviteUrl);
-      setCopiedReissue(true);
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      setError("공유 또는 링크 복사에 실패했습니다.");
+      if (method === "clipboard") {
+        setCopiedReissue(true);
+      }
+    } catch {
+      setError("카카오톡 공유 또는 링크 복사에 실패했습니다.");
     }
   }
 
