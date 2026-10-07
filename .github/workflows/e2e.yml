@@ -32,11 +32,11 @@ jobs:
           echo "HERO_E2E_PASSWORD_MANAGER=e2e-$(openssl rand -hex 18)" >> "$GITHUB_ENV"
 
       - name: Start local Supabase
+        shell: bash
         run: |
           supabase start --output-format json > /tmp/hero-supabase.json
-          echo "SUPABASE_URL=$(jq -r '.env.API_URL' /tmp/hero-supabase.json)" >> "$GITHUB_ENV"
-          echo "SUPABASE_ANON_KEY=$(jq -r '.env.ANON_KEY' /tmp/hero-supabase.json)" >> "$GITHUB_ENV"
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r '.env.SERVICE_ROLE_KEY' /tmp/hero-supabase.json)" >> "$GITHUB_ENV"
+          supabase status --env --output-format text > /tmp/hero-supabase.env
+          grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY)=' /tmp/hero-supabase.env >> "$GITHUB_ENV"
 
       - name: Configure E2E web environment
         run: |
@@ -51,8 +51,9 @@ jobs:
           supabase functions serve > /tmp/hero-functions.log 2>&1 &
           echo $! > /tmp/hero-functions.pid
           for i in {1..60}; do
-            code="$(curl -s -o /dev/null -w '%{http_code}' "$SUPABASE_URL/functions/v1/peek-invite" || true)"
+            code="$(curl -sS -o /dev/null -w '%{http_code}' -X POST               -H 'Content-Type: application/json'               --data '{"token":"health-check-not-a-real-invite"}'               "$SUPABASE_URL/functions/v1/peek-invite" || true)"
             if [ "$code" != "000" ]; then
+              echo "Edge Functions ready with HTTP $code"
               exit 0
             fi
             sleep 1
