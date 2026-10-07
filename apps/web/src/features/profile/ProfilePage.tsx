@@ -269,14 +269,15 @@ export function ProfilePage() {
         );
       }
 
-      if (response.nickname) {
+      const nextNickname = response.nickname;
+      if (nextNickname) {
         setData((current) =>
           current
             ? {
                 ...current,
                 profile: {
                   ...current.profile,
-                  nickname: response.nickname,
+                  nickname: nextNickname,
                 },
               }
             : current,
