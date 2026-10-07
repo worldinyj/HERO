@@ -1,18 +1,48 @@
 const CACHE_PREFIX = "hero-pwa-";
-const CACHE_NAME = CACHE_PREFIX + "v1";
+const CACHE_NAME = CACHE_PREFIX + "v2";
 const SHELL_URLS = [
-  "/",
   "/offline.html",
   "/manifest.webmanifest",
   "/pwa-icon.svg",
 ];
 
+async function addIfAvailable(cache, url) {
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    if (response.ok) {
+      await cache.put(url, response);
+    }
+  } catch {
+    // Optional shell asset: offline fallback still works without it.
+  }
+}
+
+function extractBuildAssets(html) {
+  const matches = html.matchAll(/(?:src|href)=["'](\/assets\/[^"'?#]+)["']/g);
+  return [...new Set(Array.from(matches, (match) => match[1]))];
+}
+
+async function precacheAppShell() {
+  const cache = await caches.open(CACHE_NAME);
+
+  const shellResponse = await fetch("/", { cache: "no-store" });
+  if (!shellResponse.ok) {
+    throw new Error("hero_shell_fetch_failed");
+  }
+
+  const html = await shellResponse.clone().text();
+  await cache.put("/", shellResponse);
+
+  const buildAssets = extractBuildAssets(html);
+  await Promise.all([
+    ...SHELL_URLS.map((url) => addIfAvailable(cache, url)),
+    ...buildAssets.map((url) => addIfAvailable(cache, url)),
+  ]);
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(SHELL_URLS))
-      .then(() => self.skipWaiting()),
+    precacheAppShell().then(() => self.skipWaiting()),
   );
 });
 
@@ -76,6 +106,8 @@ self.addEventListener("fetch", (event) => {
   }
 
   const url = new URL(request.url);
+
+  // Never cache Supabase/Kakao/other external API traffic.
   if (url.origin !== self.location.origin) {
     return;
   }
