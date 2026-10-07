@@ -1,6 +1,6 @@
 # S02 HF Brief V1 — 작업 대상·조작부 식별 오류
 
-> **상태: RECOMMENDED DRAFT / publish 금지**  
+> **상태: SOURCE VERIFIED DRAFT / publish 금지**  
 > 내부 저작용 문서. 실제 게임 공개 화면에는 발전소·호기·사건번호·고유 설비명·개인정보를 노출하지 않는다.
 
 ## 1. 교육 목표
@@ -120,13 +120,15 @@ Hidden Hazard Index에서만 판정하며 UI에 위험수치를 보여주지 않
 
 ## 7. 근거
 
+- 원자력안전위원회 보도자료 문안 정부 전재, 2024-04-17: https://go.seoul.co.kr/news/prnewsView.php?id=337111
 - 연합뉴스, 2024-04-17, 원안위 조사결과 인용: https://www.yna.co.kr/view/AKR20240417080200017
 - 경향신문, 2024-04-17, 원안위 조사결과 및 복합원인 설명: https://www.khan.co.kr/article/202404171408011
 - Kim & Park (2008), *Task Types and Error Types Involved in the Human-Related Unplanned Reactor Trip Events*, Nuclear Engineering and Technology 40(7), 615-624: https://www.kci.go.kr/kciportal/landing/article.kci?arti_id=ART001299669
 
 ## 8. 승격 조건
 
-- [ ] 원안위/OPIS 원문 확보 및 사건사실 대조
+- [x] 원안위 공식 보도자료 문안 확보 및 핵심 사건사실 대조
+- [ ] OPIS 원문/상세자료 추가 확보
 - [ ] 실제 재발방지대책과 게임 방어막 매핑 검토
 - [ ] HF 전문가의 잠재조건/기여요인 검토
 - [ ] 익명화·운전절차 과노출 검토
