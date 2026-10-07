@@ -1,3 +1,4 @@
+import { writeAuditLog } from "../_shared/audit.ts";
 import {
   ScenarioSchema,
   validateScenarioGraph,
@@ -110,11 +111,11 @@ async function saveScenario(
     throw versionError;
   }
 
-  await admin.from("audit_logs").insert({
-    actor_user_id: userId,
+  await writeAuditLog(admin, {
+    actorUserId: userId,
     action: "scenario.version_uploaded",
-    entity_type: "scenario_version",
-    entity_id: version.id,
+    entityType: "scenario_version",
+    entityId: version.id,
     metadata: {
       scenario_slug: scenario.id,
       version: scenario.version,
@@ -183,11 +184,11 @@ async function setStatus(
 
   if (updateError) throw updateError;
 
-  await admin.from("audit_logs").insert({
-    actor_user_id: userId,
+  await writeAuditLog(admin, {
+    actorUserId: userId,
     action: "scenario.status_changed",
-    entity_type: "scenario_version",
-    entity_id: current.id,
+    entityType: "scenario_version",
+    entityId: current.id,
     metadata: {
       from: currentStatus,
       to: targetStatus,

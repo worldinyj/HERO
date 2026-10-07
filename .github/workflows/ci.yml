@@ -46,3 +46,10 @@ jobs:
 
       - name: Check nickname policy Edge Function
         run: deno check --config supabase/functions/deno.json supabase/functions/nickname-action/index.ts
+
+      - name: Enforce shared audit writer
+        run: |
+          if grep -R -n --include='*.ts' 'from("audit_logs").insert' supabase/functions --exclude='audit.ts'; then
+            echo "Direct audit_logs insert found outside _shared/audit.ts"
+            exit 1
+          fi

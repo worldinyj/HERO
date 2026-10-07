@@ -1,3 +1,4 @@
+import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
@@ -83,12 +84,12 @@ Deno.serve(async (req) => {
       throw insertError;
     }
 
-    await admin.from("audit_logs").insert({
-      actor_user_id: user.id,
-      plant_id: plantId,
+    await writeAuditLog(admin, {
+      actorUserId: user.id,
+      plantId,
       action: "invitation.created",
-      entity_type: "invitation",
-      entity_id: invitation.id,
+      entityType: "invitation",
+      entityId: invitation.id,
       metadata: {
         target_role: targetRole,
         job_role: targetRole === "player" ? body.jobRole : null,
