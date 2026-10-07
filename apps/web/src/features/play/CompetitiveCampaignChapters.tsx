@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { preloadBriefingRoute } from "../../app/routeModules";
 import { getSupabase } from "../../lib/supabase";
 import { useAuth } from "../auth/AuthContext";
 
@@ -190,6 +191,9 @@ export function CompetitiveCampaignChapters() {
             key={chapter.slug}
             className="chapter-link"
             to={`/briefing/${chapter.slug}`}
+            onPointerEnter={preloadBriefingRoute}
+            onPointerDown={preloadBriefingRoute}
+            onFocus={preloadBriefingRoute}
           >
             <article className="chapter-card chapter-card--ready">
               <span className="chapter-index">
