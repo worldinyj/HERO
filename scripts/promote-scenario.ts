@@ -116,7 +116,20 @@ if (entry.status === "tutorial_exception") {
 }
 
 if (entry.status === "approved") {
-  fail("scenario is already approved");
+  if (options.apply) {
+    fail("scenario is already approved");
+  }
+
+  console.log(JSON.stringify({
+    scenarioId: entry.scenarioId,
+    currentStatus: entry.status,
+    sourceRightsComplete: entry.sourceRightsComplete,
+    file: entry.file,
+    humanReview: entry.humanReview,
+    apply: false,
+  }, null, 2));
+  console.log("PROMOTE_PREFLIGHT_ALREADY_APPROVED: no files changed.");
+  process.exit(0);
 }
 
 if (!entry.sourceRightsComplete) {
