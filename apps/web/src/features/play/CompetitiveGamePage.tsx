@@ -5,6 +5,7 @@ import {
   evaluate,
   getView,
   isFinished,
+  replayFrom,
   type Evaluation,
   type GameAction,
   type GameState,
@@ -24,6 +25,7 @@ import {
   gameLogToSubmissionActions,
   submitSessionWithQueue,
 } from "../../lib/submissionQueue";
+import { restoreReplayPrefix, type StoredDecisionRow } from "./competitiveReplay";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
 import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
@@ -48,6 +50,8 @@ interface StartSessionResponse {
   simulationSeed?: string;
   presentationSeed?: string;
   perspectiveRole?: string;
+  replayOf?: string | null;
+  replayFromNode?: string | null;
   startedAt?: string;
   error?: string;
 }
@@ -115,6 +119,8 @@ export function CompetitiveGamePage({
   const [submission, setSubmission] = useState<SubmissionState>({
     status: "idle",
   });
+  const [replayStarting, setReplayStarting] = useState(false);
+  const [replayError, setReplayError] = useState<string | null>(null);
 
   useEffect(() => {
     function handleOnline() {
