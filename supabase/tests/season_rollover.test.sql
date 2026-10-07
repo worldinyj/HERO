@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(16);
 
 update public.seasons
 set status = 'scheduled'
@@ -22,6 +22,18 @@ insert into public.seasons (
   '2026-09-30 15:00:00+00'::timestamptz,
   '2026-10-31 15:00:00+00'::timestamptz,
   'open'
+);
+
+select results_eq(
+  $select count(*) from cron.job where jobname = 'hero-season-rollover'$,
+  array[1::bigint],
+  'monthly rollover cron job exists exactly once'
+);
+
+select results_eq(
+  $select schedule from cron.job where jobname = 'hero-season-rollover'$,
+  array['0 15 * * *'::text],
+  'cron fires daily at 15:00 UTC so the wrapper sees KST midnight'
 );
 
 select is(
