@@ -47,6 +47,11 @@ jobs:
           pnpm check:release-evidence -- --self-test
           pnpm check:release-evidence
 
+      - name: Check shipped legal UI contract
+        run: |
+          pnpm check:legal-release -- --self-test
+          pnpm check:legal-release
+
       - name: Report MVP release readiness
         run: pnpm check:mvp-readiness
       - name: Simulate research drafts
