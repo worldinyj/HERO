@@ -12,6 +12,8 @@
   --muted: #8a96ad;
   --accent: #f2a541;
   --barrier: #6fa0ff;
+  --danger: #f2685c;
+  --safe: #4cc38a;
 }
 
 * { box-sizing: border-box; }
@@ -25,7 +27,14 @@ body {
     var(--bg);
 }
 
-button, a { -webkit-tap-highlight-color: transparent; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
 
 .app-shell {
   width: min(100%, 480px);
@@ -70,6 +79,106 @@ h1 {
   padding: 20px;
   background: rgba(22, 33, 58, 0.92);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2);
+}
+
+.auth-panel,
+.invite-panel,
+.invite-form {
+  display: grid;
+  gap: 14px;
+}
+
+.kakao-button,
+.primary-button {
+  min-height: 52px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.kakao-button {
+  background: #fee500;
+  color: #191919;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #111827;
+}
+
+.kakao-button:disabled,
+.primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.error-text {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.notice {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(76, 195, 138, 0.28);
+  border-radius: 12px;
+  color: #bcebd5;
+  background: rgba(76, 195, 138, 0.08);
+  font-size: 0.86rem;
+}
+
+.invite-summary {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.invite-summary div {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+}
+
+.invite-summary dt {
+  color: var(--muted);
+}
+
+.invite-summary dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.invite-form label:not(.check-row) {
+  display: grid;
+  gap: 8px;
+}
+
+.invite-form input[type="text"],
+.invite-form input:not([type]) {
+  min-height: 48px;
+  width: 100%;
+  border: 1px solid rgba(138, 150, 173, 0.35);
+  border-radius: 12px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: rgba(14, 22, 36, 0.72);
+  font: inherit;
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+}
+
+.check-row input {
+  width: 20px;
+  height: 20px;
 }
 
 .chapter-list {

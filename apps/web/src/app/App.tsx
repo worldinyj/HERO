@@ -1,6 +1,12 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema";
-import { NavLink, Route, Routes } from "react-router";
+import type { ReactNode } from "react";
+import { NavLink, Route, Routes, useLocation } from "react-router";
+import { LoginPage } from "../features/auth/LoginPage";
+import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
+import { InvitationPage } from "../features/invite/InvitationPage";
+
+const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
 
 function CampaignPage() {
   return (
@@ -8,7 +14,7 @@ function CampaignPage() {
       <p className="eyebrow">10월 시즌 · 개발 준비중</p>
       <h2 id="campaign-title">캠페인</h2>
       <p className="muted">
-        MVP 시나리오 S01~S03이 여기에 연결됩니다. 현재는 Phase 0 기반 구축 화면입니다.
+        MVP 시나리오 S01~S03이 여기에 연결됩니다. 현재는 인증·조직 기반을 구축 중입니다.
       </p>
 
       <div className="chapter-list">
@@ -35,14 +41,25 @@ function CampaignPage() {
 function PlaceholderPage({ title }: { title: string }) {
   return (
     <section className="panel">
-      <p className="eyebrow">Phase 0</p>
+      <p className="eyebrow">Phase 1</p>
       <h2>{title}</h2>
       <p className="muted">설계 계약에 따라 다음 단계에서 구현합니다.</p>
     </section>
   );
 }
 
+function ActiveUserGate({ children }: { children: ReactNode }) {
+  return (
+    <RequireAuth>
+      <RequireRole roles={[...ALL_ACTIVE_ROLES]}>{children}</RequireRole>
+    </RequireAuth>
+  );
+}
+
 export function App() {
+  const location = useLocation();
+  const publicRoute = location.pathname === "/login" || location.pathname.startsWith("/i/");
+
   return (
     <main className="app-shell">
       <header className="hero-header">
@@ -53,16 +70,23 @@ export function App() {
       </header>
 
       <Routes>
-        <Route path="/" element={<CampaignPage />} />
-        <Route path="/leaderboard" element={<PlaceholderPage title="리더보드" />} />
-        <Route path="/me" element={<PlaceholderPage title="내 기록" />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/i/:token" element={<InvitationPage />} />
+        <Route path="/" element={<ActiveUserGate><CampaignPage /></ActiveUserGate>} />
+        <Route
+          path="/leaderboard"
+          element={<ActiveUserGate><PlaceholderPage title="리더보드" /></ActiveUserGate>}
+        />
+        <Route path="/me" element={<ActiveUserGate><PlaceholderPage title="내 기록" /></ActiveUserGate>} />
       </Routes>
 
-      <nav className="bottom-nav" aria-label="주요 메뉴">
-        <NavLink to="/" end>캠페인</NavLink>
-        <NavLink to="/leaderboard">리더보드</NavLink>
-        <NavLink to="/me">내 기록</NavLink>
-      </nav>
+      {!publicRoute ? (
+        <nav className="bottom-nav" aria-label="주요 메뉴">
+          <NavLink to="/" end>캠페인</NavLink>
+          <NavLink to="/leaderboard">리더보드</NavLink>
+          <NavLink to="/me">내 기록</NavLink>
+        </nav>
+      ) : null}
     </main>
   );
 }
