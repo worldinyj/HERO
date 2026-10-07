@@ -43,6 +43,8 @@ export type ActiveProfile = {
   plant_id: string | null;
   role: "admin" | "plant_manager" | "player";
   job_role: "sro" | "ro" | "field_operator" | "supervisor" | "worker" | null;
+  nickname: string;
+  nickname_reset_required: boolean;
   is_active: boolean;
 };
 
@@ -57,7 +59,7 @@ export async function requireActiveProfile(
 
   const { data: profile, error } = await admin
     .from("profiles")
-    .select("id, plant_id, role, job_role, is_active")
+    .select("id, plant_id, role, job_role, nickname, nickname_reset_required, is_active")
     .eq("id", user.id)
     .maybeSingle();
 
