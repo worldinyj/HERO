@@ -77,6 +77,7 @@ export function AdminOrgPage() {
   const [creatingInvite, setCreatingInvite] = useState(false);
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [managerInviteActionPending, setManagerInviteActionPending] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -236,6 +237,55 @@ export function AdminOrgPage() {
       );
     } finally {
       setCreatingInvite(false);
+    }
+  }
+
+  async function handleManagerInviteAction(
+    invitationId: string,
+    action: "cancel-invite" | "reissue-invite",
+  ) {
+    try {
+      setManagerInviteActionPending(`${action}:${invitationId}`);
+      setError(null);
+      setCopied(false);
+
+      const supabase = getSupabase();
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "manager-user-action",
+        { body: { action, invitationId } },
+      );
+
+      if (invokeError) throw invokeError;
+
+      const result = data as Partial<InviteResult> & { error?: string };
+      if (result.error) throw new Error(result.error);
+
+      if (action === "reissue-invite") {
+        if (
+          !result.invitationId ||
+          !result.inviteUrl ||
+          !result.expiresAt ||
+          !result.plantDisplayName
+        ) {
+          throw new Error("담당자 초대 링크 재발급에 실패했습니다.");
+        }
+
+        setInviteResult(result as InviteResult);
+      } else {
+        setInviteResult(null);
+      }
+
+      await load();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : action === "reissue-invite"
+            ? "담당자 초대 링크 재발급에 실패했습니다."
+            : "담당자 초대를 취소하지 못했습니다.",
+      );
+    } finally {
+      setManagerInviteActionPending(null);
     }
   }
 
@@ -423,7 +473,29 @@ export function AdminOrgPage() {
                   <strong>{invite.invitee_name}</strong>
                   <span>{invitePlantLabel(invite)}</span>
                 </div>
-                <span className="status-pill">수락 대기</span>
+                <div className="admin-row-actions">
+                  <span className="status-pill">수락 대기</span>
+                  <button
+                    type="button"
+                    className="secondary-button compact-button"
+                    disabled={managerInviteActionPending !== null}
+                    onClick={() => void handleManagerInviteAction(invite.id, "reissue-invite")}
+                  >
+                    {managerInviteActionPending === `reissue-invite:${invite.id}`
+                      ? "재발급 중…"
+                      : "링크 재발급"}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-button"
+                    disabled={managerInviteActionPending !== null}
+                    onClick={() => void handleManagerInviteAction(invite.id, "cancel-invite")}
+                  >
+                    {managerInviteActionPending === `cancel-invite:${invite.id}`
+                      ? "취소 중…"
+                      : "초대 취소"}
+                  </button>
+                </div>
               </article>
             ))}
           </div>
