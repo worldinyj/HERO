@@ -30,6 +30,23 @@ interface InviteResult {
   plantDisplayName: string;
 }
 
+interface PendingManagerInviteRow {
+  id: string;
+  plant_id: string;
+  invitee_name: string;
+  expires_at: string;
+  created_at: string;
+  plants:
+    | { display_name: string; code: string }
+    | Array<{ display_name: string; code: string }>
+    | null;
+}
+
+function invitePlantLabel(row: PendingManagerInviteRow): string {
+  const plant = Array.isArray(row.plants) ? row.plants[0] : row.plants;
+  return plant ? `${plant.display_name} · ${plant.code}` : "발전소";
+}
+
 function normalizePlantCode(value: string): string {
   return value
     .trim()
@@ -46,6 +63,7 @@ function managerPlantLabel(row: ManagerRow): string {
 export function AdminOrgPage() {
   const [plants, setPlants] = useState<PlantRow[]>([]);
   const [managers, setManagers] = useState<ManagerRow[]>([]);
+  const [pendingManagerInvites, setPendingManagerInvites] = useState<PendingManagerInviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +85,8 @@ export function AdminOrgPage() {
     try {
       const supabase = getSupabase();
 
-      const [plantResult, managerResult] = await Promise.all([
+      const now = new Date().toISOString();
+      const [plantResult, managerResult, inviteResult] = await Promise.all([
         supabase
           .from("plants")
           .select("id, code, name, display_name, is_active, created_at")
@@ -77,13 +96,25 @@ export function AdminOrgPage() {
           .select("id, plant_id, real_name, nickname, is_active, plants(display_name, code)")
           .eq("role", "plant_manager")
           .order("real_name", { ascending: true }),
+        supabase
+          .from("invitations")
+          .select("id, plant_id, invitee_name, expires_at, created_at, plants(display_name, code)")
+          .eq("target_role", "plant_manager")
+          .is("accepted_at", null)
+          .is("canceled_at", null)
+          .gt("expires_at", now)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (plantResult.error) throw plantResult.error;
       if (managerResult.error) throw managerResult.error;
+      if (inviteResult.error) throw inviteResult.error;
 
       setPlants((plantResult.data ?? []) as PlantRow[]);
       setManagers((managerResult.data ?? []) as unknown as ManagerRow[]);
+      setPendingManagerInvites(
+        (inviteResult.data ?? []) as unknown as PendingManagerInviteRow[],
+      );
 
       if (!invitePlantId) {
         const firstActive = (plantResult.data ?? []).find((plant) => plant.is_active);
@@ -198,6 +229,7 @@ export function AdminOrgPage() {
 
       setInviteResult(result);
       setInviteeName("");
+      await load();
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
@@ -370,10 +402,30 @@ export function AdminOrgPage() {
         {inviteResult ? (
           <div className="invite-result-box">
             <strong>{inviteResult.plantDisplayName} 담당자 초대 링크</strong>
+            <p className="muted mini-copy">
+              보안을 위해 초대 토큰 원문은 서버에 저장하지 않습니다. 이 링크는 지금 복사해 전달해주세요.
+            </p>
             <code>{inviteResult.inviteUrl}</code>
             <button type="button" className="secondary-button" onClick={handleCopyInvite}>
               {copied ? "복사 완료" : "링크 복사"}
             </button>
+          </div>
+        ) : null}
+
+        {pendingManagerInvites.length > 0 ? (
+          <div className="admin-list" aria-label="수락 대기 중인 담당자 초대">
+            <p className="muted mini-copy">
+              수락 대기 {pendingManagerInvites.length}건 · 기존 링크 원문은 보안상 다시 표시할 수 없습니다.
+            </p>
+            {pendingManagerInvites.map((invite) => (
+              <article key={invite.id} className="admin-row">
+                <div>
+                  <strong>{invite.invitee_name}</strong>
+                  <span>{invitePlantLabel(invite)}</span>
+                </div>
+                <span className="status-pill">수락 대기</span>
+              </article>
+            ))}
           </div>
         ) : null}
 
