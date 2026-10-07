@@ -12,7 +12,7 @@
 
 2026-10 기준 과거 MusicFX 계열은 **Google Flow Music / Lyria** 흐름으로 발전해 있다. HERO는 다음 우선순위를 사용한다.
 
-1. **BGM / musical stinger**: Google Flow Music 또는 Gemini/AI Studio의 Lyria 3.5·Lyria 3 Clip
+1. **BGM / musical stinger**: Google Flow Music 또는 Gemini/AI Studio의 Lyria 3.5
 2. **SFX / ambience / foley**: Google Flow의 오디오/foley 생성 도구가 적합할 경우 사용하고, 기능이 부족하면 상업 이용이 허용된 별도 생성 도구 사용
 3. 생성 도구는 어디까지나 **제작 단계**에서만 사용한다. 게임 런타임에서 AI 오디오를 실시간 생성하지 않는다.
 
