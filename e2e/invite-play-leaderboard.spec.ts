@@ -71,6 +71,63 @@ const identities = {
   },
 } as const;
 
+const uninvitedIdentities = {
+  "mobile-390x844": {
+    email: "hero-e2e-uninvited-a@example.test",
+    passwordEnv: "HERO_E2E_PASSWORD_A",
+  },
+  "mobile-360x800": {
+    email: "hero-e2e-uninvited-b@example.test",
+    passwordEnv: "HERO_E2E_PASSWORD_B",
+  },
+} as const;
+
+test("plain login without invitation is rejected", async ({
+  page,
+}, testInfo) => {
+  const identity =
+    uninvitedIdentities[
+      testInfo.project.name as keyof typeof uninvitedIdentities
+    ];
+
+  if (!identity) {
+    throw new Error(`unknown_e2e_project:${testInfo.project.name}`);
+  }
+
+  const password = process.env[identity.passwordEnv];
+  if (!password) {
+    throw new Error(`missing_e2e_password:${identity.passwordEnv}`);
+  }
+
+  await page.addInitScript(
+    ({ email, password: runtimePassword }) => {
+      window.sessionStorage.setItem("hero:e2e-email", email);
+      window.sessionStorage.setItem("hero:e2e-password", runtimePassword);
+    },
+    { email: identity.email, password },
+  );
+
+  await page.goto("/login");
+
+  await expect(
+    page.getByText(/처음 이용하는 사용자는 HERO 담당자가 발급한 초대 링크/),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", { name: "카카오로 시작하기" })
+    .click();
+
+  await expect(page).toHaveURL(/\/login\?reason=invite_required$/, {
+    timeout: 15_000,
+  });
+  await expect(
+    page.getByText("HERO 이용을 시작하려면 유효한 초대 링크가 필요합니다."),
+  ).toBeVisible();
+
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/login\?next=%2F$/);
+});
+
 test("invitation → play → replay offline queue → leaderboard", async ({
   page,
 }, testInfo) => {
