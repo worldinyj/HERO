@@ -28,9 +28,10 @@ import {
 import { restoreReplayPrefix, type StoredDecisionRow } from "./competitiveReplay";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
+import { IncidentDebrief } from "./result/IncidentDebrief";
 import { SwissCheeseTimeline } from "./result/SwissCheeseTimeline";
 
-type ReviewStage = "ending" | "reflection" | "timeline" | "review";
+type ReviewStage = "ending" | "reflection" | "timeline" | "review" | "incident";
 type SubmissionState =
   | { status: "idle" }
   | { status: "submitting" }
@@ -670,9 +671,47 @@ export function CompetitiveGamePage({
               evaluation={confirmedEvaluation}
               mode="competitive"
               replayEnabled={
-                submission.status === "submitted" && online && !replayStarting
+                !scenario.incidentDebrief &&
+                submission.status === "submitted" &&
+                online &&
+                !replayStarting
               }
               restartEnabled={false}
+              onReplay={(nodeId) => {
+                void startReplay(nodeId);
+              }}
+              {...(scenario.incidentDebrief
+                ? {
+                    onContinue: () => setReviewStage("incident"),
+                    continueLabel: "실사건 학습 보기",
+                  }
+                : {})}
+            />
+          </>
+        ) : null}
+
+        {reviewStage === "incident" && scenario.incidentDebrief ? (
+          <>
+            {replayStarting ? (
+              <div className="notice" role="status">
+                선택한 결정 지점부터 새 서버 리플레이 세션을 준비하고 있습니다.
+              </div>
+            ) : null}
+
+            {replayError ? (
+              <div className="validation-box validation-box--error" role="alert">
+                리플레이를 시작하지 못했습니다: {replayError}
+              </div>
+            ) : null}
+
+            <IncidentDebrief
+              scenario={scenario}
+              game={game}
+              replayEnabled={
+                submission.status === "submitted" &&
+                online &&
+                !replayStarting
+              }
               onReplay={(nodeId) => {
                 void startReplay(nodeId);
               }}
