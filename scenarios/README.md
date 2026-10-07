@@ -70,3 +70,21 @@ pnpm simulate:scenario -- --strict
 
 공개용 `incidentDebrief`에는 **OPIS 사건번호, 발전소명, 호기, 고유 설비 Tag, 세부 운전값, 개인식별정보를 넣지 않습니다.**
 원문 보고서·근거 사건 ID와의 연결은 R2의 비공개 `opis_reports` / `scenario_sources` 메타데이터에서 관리합니다.
+
+
+## 조사·초안 디렉터리
+
+- `research/`: 사건 후보 선별, HF 분석, 익명화·Just Culture 검토 기록
+- `drafts/`: 아직 원문확인/사람승인이 끝나지 않은 시나리오 JSON
+- `data/`: 실제 앱·기본 CI가 사용하는 승인된 시나리오 JSON
+
+현재 S02 조사 초안은 `drafts/S02_equipment_identity_v1.json`에 있으며, **공식 원안위/OPIS 원문 대조와 HF 사람 승인 전에는 `data/`로 이동하거나 published 상태로 전환하지 않습니다.**
+
+Draft 검증:
+
+```bash
+pnpm validate:scenario scenarios/drafts
+pnpm simulate:scenario -- --scenario=scenarios/drafts/S02_equipment_identity_v1.json
+```
+
+CI는 draft의 스키마·그래프 오류와 시뮬레이터 error를 차단합니다. balance warning은 연구 단계에서 허용하지만 `T3_HF_REVIEW_CHECKLIST_V1.md`에 검토/예외 사유를 남겨야 합니다.
