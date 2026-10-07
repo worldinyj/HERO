@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(33);
+select plan(38);
 
 insert into auth.users (id, email) values
   ('20000000-0000-0000-0000-000000000001', 'admin@hero.test'),
@@ -201,6 +201,16 @@ select results_eq(
   array[1::bigint],
   'player sees only own decision log'
 );
+select is(
+  (select hp_point from public.my_current_rank()),
+  250,
+  'player self-rank RPC returns only own open-season HP'
+);
+select is(
+  (select overall_rank from public.my_current_rank()),
+  1,
+  'player self-rank RPC returns own overall rank'
+);
 select throws_ok(
   $$update public.profiles set nickname = 'HACKED' where id = '20000000-0000-0000-0000-000000000003'$$,
   '42501',
@@ -254,6 +264,12 @@ select throws_ok(
   null,
   'manager cannot create plants'
 );
+select throws_ok(
+  $$select * from public.my_current_rank()$$,
+  'P0001',
+  'player_required',
+  'manager cannot invoke player self-rank RPC'
+);
 
 reset role;
 set local role authenticated;
@@ -297,6 +313,12 @@ select lives_ok(
   $$insert into public.plants (code, name, display_name) values ('RLS-C', 'RLS Plant C', 'RLS C')$$,
   'admin can create a plant'
 );
+select throws_ok(
+  $$select * from public.my_current_rank()$$,
+  'P0001',
+  'player_required',
+  'admin cannot invoke player self-rank RPC'
+);
 
 reset role;
 set local role authenticated;
@@ -320,6 +342,12 @@ select results_eq(
   $$select count(*) from public.v_leaderboard_current_public$$,
   array[0::bigint],
   'inactive player cannot read the public leaderboard'
+);
+select throws_ok(
+  $$select * from public.my_current_rank()$$,
+  'P0001',
+  'player_required',
+  'inactive player cannot invoke player self-rank RPC'
 );
 
 reset role;
