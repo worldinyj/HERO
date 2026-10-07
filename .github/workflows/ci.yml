@@ -68,7 +68,7 @@ jobs:
           echo "Promotion correctly blocked by incomplete human-review evidence"
 
       - name: Check S03 human review packet freshness
-        run: pnpm build:review-packet -- --scenario=s03_procedure_reality_gap --check
+        run: pnpm build:review-packet -- --scenario=s03_procedure_reality_gap --stdout --check
 
       - name: Check release evidence validator contract
         run: |
