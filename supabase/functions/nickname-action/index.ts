@@ -6,7 +6,7 @@ import {
   requireUser,
 } from "../_shared/supabase.ts";
 
-type Action = "check" | "change-self" | "force-reset";
+type Action = "check" | "status" | "change-self" | "force-reset";
 
 interface RequestBody {
   action?: Action;
@@ -39,6 +39,55 @@ async function checkNickname(req: Request, rawNickname: string) {
     available: result.valid,
     nickname: result.nickname,
     error: result.error ?? null,
+  });
+}
+
+async function nicknameStatus(req: Request) {
+  const admin = adminClient();
+  const { user, profile } = await requireActiveProfile(req, admin);
+
+  if (profile.role !== "player") {
+    return json(req, {
+      canChange: false,
+      resetRequired: false,
+      changedThisSeason: false,
+      seasonKey: null,
+      reason: "player_role_required",
+    });
+  }
+
+  const season = await currentSeason(admin);
+  if (!season) {
+    return json(req, {
+      canChange: false,
+      resetRequired: Boolean(profile.nickname_reset_required),
+      changedThisSeason: false,
+      seasonKey: null,
+      reason: "no_open_season",
+    });
+  }
+
+  const { data: existingChange, error } = await admin
+    .from("nickname_change_events")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("season_id", season.id)
+    .eq("event_type", "self_change")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  const changedThisSeason = Boolean(existingChange);
+  const resetRequired = Boolean(profile.nickname_reset_required);
+
+  return json(req, {
+    canChange: resetRequired || !changedThisSeason,
+    resetRequired,
+    changedThisSeason,
+    seasonKey: season.season_key,
+    seasonTitle: season.title,
+    nickname: profile.nickname,
   });
 }
 
@@ -222,6 +271,10 @@ Deno.serve(async (req) => {
         return json(req, { error: "nickname_required" }, 400);
       }
       return await checkNickname(req, body.nickname);
+    }
+
+    if (body.action === "status") {
+      return await nicknameStatus(req);
     }
 
     if (body.action === "change-self") {
