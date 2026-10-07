@@ -23,7 +23,6 @@ import { getSupabase } from "../../lib/supabase";
 import {
   gameLogToSubmissionActions,
   submitSessionWithQueue,
-  type SubmissionResult,
 } from "../../lib/submissionQueue";
 import { CausalReflection } from "./result/CausalReflection";
 import { HpReview } from "./result/HpReview";
@@ -336,8 +335,6 @@ export function CompetitiveGamePage({
     if (online && submission.status === "queued") {
       void submitFinishedGame();
     }
-    // submitFinishedGame is intentionally triggered only by connectivity/status changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, submission.status]);
 
   if (profile?.role !== "player") {
