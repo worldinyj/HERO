@@ -122,7 +122,67 @@ order by created_at desc;
 - [ ] 이메일/프로필을 불필요하게 필수 동의항목으로 요청하지 않음
 - [ ] 담당자 화면에서 카카오톡 공유 실기기 확인
 
-## 5. 배포 전 최종 사용자 확인 필요
+## 5. 자동 배포 Preflight
+
+실제 외부 서비스 값을 Git에 커밋하지 않고 로컬 비추적 환경파일로 사전검사한다.
+
+예시:
+
+```bash
+cp apps/web/.env.example .env.staging
+# .env.staging에 실제 staging 값을 입력
+pnpm check:deployment-preflight -- \
+  --env-file=.env.staging \
+  --strict
+```
+
+`.env.staging` 예시 항목:
+
+```dotenv
+HERO_APP_URL=https://hero-staging.example.com
+VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<anon-or-publishable-key>
+VITE_KAKAO_JS_KEY=<javascript-key>
+```
+
+검사는 다음을 확인한다.
+
+- 서비스 URL과 Supabase URL이 HTTPS인지
+- 브라우저용 Supabase key가 비어 있지 않고 service-role/secret key가 아닌지
+- Kakao JavaScript key가 설정되었는지
+- 저장소의 `_headers`, PWA manifest, 환경변수 예제가 존재하는지
+- 등록해야 할 Kakao JavaScript SDK domain / Product Link Web domain 계산
+- Kakao REST API Redirect URI용 Supabase callback 계산
+- Supabase Site URL / Redirect allow-list 계산
+
+현재 Supabase Kakao OAuth callback 표준형식은 다음과 같다.
+
+```text
+https://<project-ref>.supabase.co/auth/v1/callback
+```
+
+네트워크까지 확인하려면:
+
+```bash
+pnpm check:deployment-preflight -- \
+  --env-file=.env.staging \
+  --strict \
+  --live
+```
+
+`--live`는 서비스 URL과 Supabase Auth health endpoint를 실제로 호출한다. 키 값 자체는 출력하지 않는다.
+
+JSON 결과가 필요한 경우:
+
+```bash
+pnpm check:deployment-preflight -- \
+  --env-file=.env.staging \
+  --json
+```
+
+CI에서는 실제 운영 키 없이 validator 자체의 good/bad fixture를 `--self-test`로 지속 검증한다.
+
+## 6. 배포 전 최종 사용자 확인 필요
 
 다음은 코드로 대신할 수 없는 운영 결정이다.
 
