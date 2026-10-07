@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "generatedPackageDir": "scenarios/review-packages",
+  "scenarios": [
+    {
+      "scenarioId": "s01_time_pressure",
+      "draftPath": "scenarios/drafts/S01_time_pressure_v1.json",
+      "hfBriefPath": "scenarios/research/S01_HF_BRIEF_V1.md",
+      "evidenceStatus": "OFFICIAL_SOURCE_VERIFIED_OPIS_MAPPING_HOLD",
+      "sourceIds": [
+        "S01-NSSC-20120316",
+        "S01-IAEA-KHNP-2012",
+        "COMMON-KAERI-KNS-2008"
+      ],
+      "blockers": [
+        "OPIS 사건번호/상세 원문 매핑",
+        "공개자료 이용조건 확인",
+        "HF 정확성 사람 검토",
+        "익명화·정보보안 사람 검토"
+      ]
+    },
+    {
+      "scenarioId": "s02_equipment_identity",
+      "draftPath": "scenarios/drafts/S02_equipment_identity_v1.json",
+      "hfBriefPath": "scenarios/research/S02_HF_BRIEF_V1.md",
+      "evidenceStatus": "OFFICIAL_RELEASE_VERIFIED_OPIS_DETAIL_HOLD",
+      "sourceIds": [
+        "S02-NSSC-20240417",
+        "S02-YONHAP-20240417",
+        "COMMON-KAERI-KNS-2008"
+      ],
+      "blockers": [
+        "OPIS 사건보고서 또는 상세 공식자료 추가 대조",
+        "공개자료 이용조건 확인",
+        "near_miss/event 약 2% 유지 여부 HF 검토",
+        "HF 정확성 사람 검토",
+        "익명화·정보보안 사람 검토"
+      ]
+    },
+    {
+      "scenarioId": "s03_procedure_reality_gap",
+      "draftPath": "scenarios/drafts/S03_procedure_reality_v1.json",
+      "hfBriefPath": "scenarios/research/S03_HF_BRIEF_V1.md",
+      "evidenceStatus": "OFFICIAL_INVESTIGATION_VERIFIED",
+      "sourceIds": [
+        "S03-NSSC-20260904",
+        "COMMON-KAERI-KNS-2008"
+      ],
+      "blockers": [
+        "공개자료 이용조건 확인",
+        "near_miss/event 약 2% 유지 여부 HF 검토",
+        "HF 정확성 사람 검토",
+        "운전절차 과노출·익명화 사람 검토"
+      ]
+    }
+  ]
+}
