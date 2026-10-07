@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { getSupabase, signInWithKakao } from "../../lib/supabase";
+import { currentNicknameCheck, type NicknameAvailability } from "./nicknameAvailability";
 
 interface InvitePreview {
   valid: boolean;
@@ -36,15 +37,13 @@ export function InvitationPage() {
   const { session, refreshProfile } = useAuth();
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [nickname, setNickname] = useState("");
-  const [nicknameCheck, setNicknameCheck] = useState<{
-    checking: boolean;
-    available: boolean;
-    error: string | null;
-  } | null>(null);
+  const [nicknameCheck, setNicknameCheck] = useState<NicknameAvailability | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A result for a previous nickname must not unlock acceptance of a new one.
+  const verifiedNickname = currentNicknameCheck(nickname, nicknameCheck);
 
   useEffect(() => {
     let active = true;
@@ -93,7 +92,7 @@ export function InvitationPage() {
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          setNicknameCheck({ checking: true, available: false, error: null });
+          setNicknameCheck({ value, checking: true, available: false, error: null });
           const supabase = getSupabase();
           const { data, error: invokeError } = await supabase.functions.invoke(
             "nickname-action",
@@ -109,6 +108,7 @@ export function InvitationPage() {
           };
 
           setNicknameCheck({
+            value,
             checking: false,
             available: result.available === true,
             error: result.error ?? null,
@@ -116,6 +116,7 @@ export function InvitationPage() {
         } catch {
           if (active) {
             setNicknameCheck({
+              value,
               checking: false,
               available: false,
               error: "nickname_check_failed",
@@ -141,7 +142,14 @@ export function InvitationPage() {
   }
 
   async function handleAccept() {
-    if (!session) return;
+    if (
+      !session ||
+      !verifiedNickname?.available ||
+      verifiedNickname.checking ||
+      pending ||
+      !termsAccepted ||
+      !privacyAccepted
+    ) return;
 
     try {
       setPending(true);
@@ -212,7 +220,10 @@ export function InvitationPage() {
             <span>리더보드 닉네임</span>
             <input
               value={nickname}
-              onChange={(event) => setNickname(event.target.value)}
+              onChange={(event) => {
+                setNickname(event.target.value);
+                setNicknameCheck(null);
+              }}
               minLength={2}
               maxLength={12}
               autoComplete="nickname"
@@ -222,16 +233,16 @@ export function InvitationPage() {
             <span
               id="nickname-check"
               className={
-                nicknameCheck?.available
+                verifiedNickname?.available
                   ? "nickname-check nickname-check--ok"
                   : "nickname-check"
               }
             >
-              {nicknameCheck?.checking
+              {verifiedNickname?.checking
                 ? "사용 가능 여부 확인 중…"
-                : nicknameCheck?.available
+                : verifiedNickname?.available
                   ? "사용 가능한 닉네임입니다."
-                  : nicknameCheck?.error
+                  : verifiedNickname?.error
                     ? NICKNAME_ERROR_LABEL[nicknameCheck.error] ??
                       "닉네임을 확인해주세요."
                     : "리더보드에는 닉네임만 표시됩니다."}
@@ -270,7 +281,7 @@ export function InvitationPage() {
             disabled={
               pending ||
               Array.from(nickname.trim()).length < 2 ||
-              nicknameCheck?.available !== true ||
+              verifiedNickname?.available !== true ||
               !termsAccepted ||
               !privacyAccepted
             }
