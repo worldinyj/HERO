@@ -35,7 +35,8 @@ jobs:
       - name: Check client secret leakage
         run: |
           node scripts/check-client-secrets.mjs
-          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v -E '\.env\.example
+          tracked_env="$(git ls-files | grep -E '(^|/)\.env([.]|$)' | grep -v -E '\.env\.example
+      - name: Verify route code splitting
         run: node scripts/check-route-splitting.mjs
 
       - name: Verify PWA shell
@@ -74,7 +75,9 @@ jobs:
             echo "Direct audit_logs insert found outside _shared/audit.ts"
             exit 1
           fi
-; then
+ || true)"
+          if [ -n "$tracked_env" ]; then
+            echo "$tracked_env"
             echo "Tracked runtime .env file detected"
             exit 1
           fi
