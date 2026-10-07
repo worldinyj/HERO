@@ -1,0 +1,123 @@
+name: Staging Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hero-staging-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    environment: staging
+    env:
+      HERO_STAGING_URL: ${{ secrets.HERO_STAGING_URL }}
+      HERO_STAGING_SUPABASE_URL: ${{ secrets.HERO_STAGING_SUPABASE_URL }}
+      HERO_STAGING_SUPABASE_ANON_KEY: ${{ secrets.HERO_STAGING_SUPABASE_ANON_KEY }}
+      HERO_STAGING_KAKAO_JS_KEY: ${{ secrets.HERO_STAGING_KAKAO_JS_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate staging secrets are present
+        shell: bash
+        run: |
+          missing=0
+          for name in \
+            HERO_STAGING_URL \
+            HERO_STAGING_SUPABASE_URL \
+            HERO_STAGING_SUPABASE_ANON_KEY \
+            HERO_STAGING_KAKAO_JS_KEY
+          do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not configured in the GitHub staging environment"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Build ephemeral preflight env file
+        shell: bash
+        run: |
+          set +x
+          env_file="$RUNNER_TEMP/hero-staging.env"
+          {
+            printf 'HERO_APP_URL=%s\n' "$HERO_STAGING_URL"
+            printf 'VITE_SUPABASE_URL=%s\n' "$HERO_STAGING_SUPABASE_URL"
+            printf 'VITE_SUPABASE_ANON_KEY=%s\n' "$HERO_STAGING_SUPABASE_ANON_KEY"
+            printf 'VITE_KAKAO_JS_KEY=%s\n' "$HERO_STAGING_KAKAO_JS_KEY"
+          } > "$env_file"
+          chmod 600 "$env_file"
+          echo "HERO_STAGING_ENV_FILE=$env_file" >> "$GITHUB_ENV"
+
+      - name: Run deployment preflight and live health checks
+        run: |
+          node scripts/check-deployment-preflight.mjs \
+            --env-file="$HERO_STAGING_ENV_FILE" \
+            --strict \
+            --live \
+            --json | tee "$RUNNER_TEMP/deployment-preflight.json"
+
+      - name: Verify deployed SPA, headers, and PWA shell
+        run: |
+          node scripts/check-staging-http.mjs \
+            --app-url="$HERO_STAGING_URL" \
+            --strict \
+            --json | tee "$RUNNER_TEMP/staging-http.json"
+
+      - name: Verify public invitation Edge Function is deployed
+        shell: bash
+        run: |
+          set +x
+          body="$RUNNER_TEMP/peek-invite.json"
+          code="$(
+            curl -sS \
+              -o "$body" \
+              -w '%{http_code}' \
+              -X POST \
+              -H "apikey: $HERO_STAGING_SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $HERO_STAGING_SUPABASE_ANON_KEY" \
+              -H 'Content-Type: application/json' \
+              --data '{"token":"hero-staging-smoke-invalid-token-0001"}' \
+              "$HERO_STAGING_SUPABASE_URL/functions/v1/peek-invite"
+          )"
+
+          if [ "$code" != "404" ]; then
+            echo "::error::peek-invite smoke expected HTTP 404 for a syntactically valid nonexistent token, got $code"
+            cat "$body"
+            exit 1
+          fi
+
+          node -e '
+            const fs = require("fs");
+            const body = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            if (body.error !== "invitation_not_found") {
+              console.error("Unexpected peek-invite response", body);
+              process.exit(1);
+            }
+          ' "$body"
+
+          echo "peek-invite Edge Function deployment verified"
+
+      - name: Upload smoke reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: hero-staging-smoke-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/deployment-preflight.json
+            ${{ runner.temp }}/staging-http.json
+          retention-days: 14
+
+      - name: Remove ephemeral env file
+        if: always()
+        shell: bash
+        run: rm -f "${HERO_STAGING_ENV_FILE:-}"
