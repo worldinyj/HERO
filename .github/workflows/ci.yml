@@ -30,6 +30,9 @@ jobs:
       - name: Check scenario promotion gate
         run: pnpm check:scenario-promotion
 
+      - name: Preflight scenario promotion helper
+        run: pnpm promote:scenario -- --scenario=s03_procedure_reality_gap
+
       - name: Report MVP release readiness
         run: pnpm check:mvp-readiness
       - name: Simulate research drafts
