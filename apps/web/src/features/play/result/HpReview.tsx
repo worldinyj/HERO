@@ -60,12 +60,18 @@ export function HpReview({
   evaluation,
   onReplay,
   onRestart,
+  mode = "tutorial",
+  replayEnabled = true,
+  restartEnabled = true,
 }: {
   scenario: Scenario;
   game: GameState;
   evaluation: Evaluation;
-  onReplay: (nodeId: string) => void;
-  onRestart: () => void;
+  onReplay?: (nodeId: string) => void;
+  onRestart?: () => void;
+  mode?: "tutorial" | "competitive";
+  replayEnabled?: boolean;
+  restartEnabled?: boolean;
 }) {
   const keyDecision = decisionLabel(
     scenario,
@@ -140,32 +146,45 @@ export function HpReview({
         </section>
       ) : null}
 
-      <section className="review-section">
-        <h3>다르게 해보기</h3>
-        <div className="replay-list">
-          {decisions.map((decision) => (
-            <button
-              key={decision.nodeId}
-              type="button"
-              className="secondary-button replay-button"
-              onClick={() => onReplay(decision.nodeId)}
-            >
-              <span>{decision.prompt}</span>
-              <small>이 지점부터</small>
-            </button>
-          ))}
-        </div>
-      </section>
+      {replayEnabled && onReplay && decisions.length > 0 ? (
+        <section className="review-section">
+          <h3>다르게 해보기</h3>
+          <div className="replay-list">
+            {decisions.map((decision) => (
+              <button
+                key={decision.nodeId}
+                type="button"
+                className="secondary-button replay-button"
+                onClick={() => onReplay(decision.nodeId)}
+              >
+                <span>{decision.prompt}</span>
+                <small>이 지점부터</small>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : mode === "competitive" ? (
+        <section className="review-section">
+          <h3>다르게 해보기</h3>
+          <p className="muted mini-copy">
+            경쟁 시나리오의 결정 지점 리플레이는 서버에 별도 세션으로 기록하는
+            기능과 함께 제공됩니다.
+          </p>
+        </section>
+      ) : null}
 
       <p className="muted small-copy">
-        0장 튜토리얼 기록은 리더보드에 반영되지 않습니다. 경쟁 시나리오는 서버가
-        동일 seed와 행동 로그를 재실행해 점수를 확정합니다.
+        {mode === "tutorial"
+          ? "0장 튜토리얼 기록은 리더보드에 반영되지 않습니다. 경쟁 시나리오는 서버가 동일 seed와 행동 로그를 재실행해 점수를 확정합니다."
+          : "표시된 결과는 서버가 동일 simulation seed와 행동 로그를 재실행해 검증한 뒤 시즌 최고 기록에 반영됩니다."}
       </p>
 
       <div className="ending-actions">
-        <button type="button" className="secondary-button" onClick={onRestart}>
-          처음부터 다시
-        </button>
+        {restartEnabled && onRestart ? (
+          <button type="button" className="secondary-button" onClick={onRestart}>
+            {mode === "tutorial" ? "처음부터 다시" : "새 플레이 시작"}
+          </button>
+        ) : null}
         <Link className="primary-link" to="/">캠페인으로</Link>
       </div>
     </article>
