@@ -67,3 +67,21 @@ GitHub Actions에서는 위 절차를 `.github/workflows/e2e.yml`이 자동 수�
 - 로컬 Supabase 상태 JSON
 
 실제 프로덕션 Kakao OAuth, 카카오톡 인앱 브라우저, iOS Safari, Samsung Internet 실기기 검증은 T7-02에서 별도로 수행한다.
+
+
+## Accessibility gate
+
+The mobile E2E flow also runs automated accessibility checks with
+`@axe-core/playwright` on invitation, onboarding, campaign, chapter briefing,
+decision, HP review, and leaderboard states.
+
+The gate covers WCAG 2.0/2.1/2.2 A and AA axe rules. It also verifies:
+
+- the skip link is keyboard reachable and has a 44px minimum target height;
+- SPA route changes move focus to the main content region;
+- the campaign has no horizontal overflow when the root text size is doubled;
+- audio is not required to understand the tested flow.
+
+Automated axe checks do not replace real-device screen-reader, browser zoom,
+or human usability review. T7-02/T7-03 still require final manual checks on the
+target mobile browsers.
