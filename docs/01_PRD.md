@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |---|---|
 | 제품명 | **HERO : Human Error Risk Operations** (부제: 사고는 마지막 행동에서 시작되지 않는다) |
-| 문서 버전 | **v1.3** (v1.2 + BGM/SFX 오디오 파이프라인·접근성·자산 거버넌스 반영) |
+| 문서 버전 | **v1.4** (v1.3 + 실사건 Direct/Root/Contributing 원인구조·방어막·재발방지대책 추적성 강화) |
 | 작성일 | 2026-10-07 |
 | 관련 문서 | [02_TRD](02_TRD.md) · [03_UXUI](03_UXUI.md) · [04_TASKLIST](04_TASKLIST.md) · [05_TRACEABILITY](05_TRACEABILITY.md) |
 
@@ -162,7 +162,7 @@
 | F-RES-01 | Human Performance Review: 5대 지표(Safety·Awareness·Communication·Procedure·Challenge) | P0 |
 | F-RES-02 | **Swiss Cheese 타임라인 + 인과 회고**: "어느 시점부터 방어막이 약해졌을까요?"를 통해 여러 조건의 누적을 성찰 | P0 |
 | F-RES-03 | 가장 중요한 결정(Key Decision)과 대안 HU Tool 해설 | P0 |
-| F-RES-04 | 실사건 공개: 유형·**Direct Cause·Root Cause·Contributing Cause/Factor** + 인과사슬·방어막 실패 (익명화) | P0 |
+| F-RES-04 | 실사건 공개: 유형·**Direct Cause·Root Cause·Contributing Cause/Factor** + 인과사슬·방어막 실패·관련 재발방지대책 (익명화) | P0 |
 | F-RES-05 | 개인용 누적 HP 프로필(5대 학습행동 지표·강점·주의점). 관리자에게 개인 지표는 노출하지 않음 | P0 |
 | F-RES-06 | 다른 플레이어 선택 분포(익명 통계, action_id/행동문구 기준) | P1 |
 
@@ -184,7 +184,7 @@
 |---|---|---|
 | F-CMS-01 | 시나리오 JSON 업로드·검증(스키마) | P0 |
 | F-CMS-02 | 상태 관리: 초안 → 검토 → 승인 → 배포 → 보관 | P0 |
-| F-CMS-03 | OPIS 보고서 PDF 업로드 → 텍스트 추출 → **AI 분석 초안**(Timeline·PSF·Decision Point) | P1 |
+| F-CMS-03 | OPIS/KINS 사건보고서 PDF 업로드 → 텍스트 추출 → **AI 분석 초안**(Timeline·Direct/Root/Contributing Cause·PSF·Decision Point·Barrier·Corrective Action) | P1 |
 | F-CMS-04 | AI 초안 → 시나리오 JSON 초안 자동 생성 | P1 |
 | F-CMS-05 | 그래프 시각 편집기(노드·분기) + 미리 플레이 | P2 |
 | F-CMS-06 | 검토자(Human Factor 전문가) 체크리스트 서명 | P1 |
