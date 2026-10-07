@@ -104,7 +104,7 @@ function reviewerChecklist(): string[] {
     checkbox("발전소/호기/설비 Tag/실제 설정값·시험조건·복구절차를 역추적할 수 있는 정보가 과도하게 노출되지 않는다."),
     checkbox("safe stop을 실패나 소극적 행동으로 묘사하지 않는다."),
     checkbox("게임용 PSF/Hazard Index가 규제기관 공식 원인분류·HEP·개인 능력지표처럼 읽히지 않는다."),
-    checkbox("incidentDebrief의 HERO 원인분류가 조사기관의 공식 원인분류와 명확히 구분되고, 인과사슬·실패방어막이 근거와 일치한다."),
+    checkbox("incidentDebrief의 HERO 원인분류가 조사기관의 공식 원인분류와 명확히 구분되고, 인과사슬·실패방어막·관련 재발방지대책이 근거와 일치한다."),
     checkbox("공식 출처의 기관·일자·링크·이용조건 표기가 실제 공개 화면과 일치한다."),
     checkbox("선택지에 도덕적 정답 단서가 과도하지 않고, 경로/엔딩 분포가 교육목적에 적절하다."),
     checkbox("이 SHA-256의 JSON을 직접 검토했으며, 승인 후 내용 변경 시 재검토가 필요함을 이해했다."),
@@ -188,6 +188,10 @@ const endings = [
   .join("\n");
 
 const checklist = reviewerChecklist().join("\n");
+const scenarioSpecificSupport =
+  entry.scenarioId === "s03_procedure_reality_gap"
+    ? "- S03 원인-근거-방어막-재발방지대책 추적표: `scenarios/research/S03_CAUSE_TRACEABILITY_MATRIX_V1.md`\\n"
+    : "";
 
 const promotionCommand = `pnpm promote:scenario -- \\\n  --scenario=${entry.scenarioId} \\\n  --approved-by="검토자 성명 또는 공식 역할" \\\n  --approved-at=YYYY-MM-DD \\\n  --confirm-hf \\\n  --confirm-anonymization \\\n  --confirm-debrief \\\n  --apply`;
 
@@ -288,7 +292,7 @@ ${checklist}
 - 사람 검토 증거 기록 가이드: \`scenarios/research/HUMAN_REVIEW_EVIDENCE_GUIDE.md\`
 - 공통 사람 검토 패킷: \`scenarios/research/T3_HUMAN_REVIEW_PACKET_V1.md\`
 - 시나리오별 AI 사전검토가 있는 경우: \`scenarios/research/S03_AI_PRE_REVIEW_V1.md\`
-- source evidence: \`scenarios/research/source-evidence.json\`
+${scenarioSpecificSupport}- source evidence: \`scenarios/research/source-evidence.json\`
 - promotion manifest: \`scenarios/research/promotion-status.json\`
 
 ## 7. 승인 후 안전한 승격
