@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { AudioSettings } from "../audio/AudioSettings";
 import { useAuth } from "../auth/AuthContext";
@@ -101,7 +102,8 @@ function formatDate(value: string): string {
 }
 
 export function ProfilePage() {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<MyRecordSummary | null>(null);
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus | null>(null);
   const [newNickname, setNewNickname] = useState("");
@@ -114,6 +116,7 @@ export function ProfilePage() {
   const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [signOutPending, setSignOutPending] = useState(false);
 
   const loadNicknameStatus = useCallback(async () => {
     if (profile?.role !== "player") {
@@ -239,6 +242,16 @@ export function ProfilePage() {
     );
   }, [data]);
 
+  async function handleSignOut() {
+    try {
+      setSignOutPending(true);
+      await signOut();
+      navigate("/login", { replace: true });
+    } finally {
+      setSignOutPending(false);
+    }
+  }
+
   async function handleNicknameChange() {
     if (!newNickname.trim() || nicknameCheck?.available !== true) return;
 
@@ -337,6 +350,14 @@ export function ProfilePage() {
           아래 수치는 학습 과정의 행동 경향을 돌아보기 위한 개인용 지표입니다.
           개인 능력·적성·인사평가 지표가 아닙니다.
         </p>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={signOutPending}
+          onClick={() => void handleSignOut()}
+        >
+          {signOutPending ? "로그아웃 중…" : "로그아웃"}
+        </button>
       </header>
 
       {data.profile.role === "player" ? (
