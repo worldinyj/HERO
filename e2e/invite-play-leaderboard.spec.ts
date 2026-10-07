@@ -1,4 +1,58 @@
-import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
+
+
+async function expectWcag22Aa(page: Page, label: string) {
+  const results = await new AxeBuilder({ page })
+    .withTags([
+      "wcag2a",
+      "wcag2aa",
+      "wcag21a",
+      "wcag21aa",
+      "wcag22a",
+      "wcag22aa",
+    ])
+    .analyze();
+
+  expect(
+    results.violations,
+    `${label}: WCAG 2.2 A/AA violations\n${JSON.stringify(
+      results.violations,
+      null,
+      2,
+    )}`,
+  ).toEqual([]);
+}
+
+async function expectNoHorizontalOverflowAt200Percent(
+  page: Page,
+  label: string,
+) {
+  const original = await page.evaluate(
+    () => document.documentElement.style.fontSize,
+  );
+
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = "200%";
+  });
+
+  const metrics = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    scroll: Math.max(
+      document.documentElement.scrollWidth,
+      document.body.scrollWidth,
+    ),
+  }));
+
+  expect(
+    metrics.scroll,
+    `${label}: horizontal overflow at 200% text size (${metrics.scroll}px > ${metrics.viewport}px)`,
+  ).toBeLessThanOrEqual(metrics.viewport + 1);
+
+  await page.evaluate((fontSize) => {
+    document.documentElement.style.fontSize = fontSize;
+  }, original);
+}
 
 const identities = {
   "mobile-390x844": {
@@ -48,6 +102,13 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
     }),
   ).toBeVisible();
 
+  await expect(page.locator("#hero-main-content")).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  const skipLink = page.getByRole("link", { name: "본문으로 건너뛰기" });
+  await expect(skipLink).toBeFocused();
+  await expect(skipLink).toHaveCSS("min-height", "44px");
+  await expectWcag22Aa(page, "invitation");
+
   await page
     .getByRole("button", { name: "카카오로 시작하기" })
     .click();
@@ -59,6 +120,7 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
   await expect(
     page.getByText("사용 가능한 닉네임입니다."),
   ).toBeVisible();
+  await expectWcag22Aa(page, "onboarding");
 
   const checkboxes = page.getByRole("checkbox");
   await checkboxes.nth(0).check();
@@ -72,6 +134,8 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
   await expect(
     page.getByText("E2E 안전 확인 시나리오", { exact: true }),
   ).toBeVisible();
+  await expectWcag22Aa(page, "campaign");
+  await expectNoHorizontalOverflowAt200Percent(page, "campaign");
 
   const chapterLink = page
     .locator("a.chapter-link")
@@ -82,6 +146,7 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
   await expect(
     page.getByRole("heading", { name: /E2E 안전 확인 시나리오/ }),
   ).toBeVisible();
+  await expectWcag22Aa(page, "chapter briefing");
 
   await page
     .getByRole("button", { name: /출발|이어하기/ })
@@ -101,6 +166,7 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
     name: /절차와 표식을 다시 대조한다/,
   });
   await expect(safeChoice).toBeVisible();
+  await expectWcag22Aa(page, "decision screen");
   await safeChoice.click();
   await expect(safeChoice).toHaveAttribute("aria-checked", "true");
   await safeChoice.click();
@@ -137,6 +203,7 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
   await expect(
     page.getByRole("heading", { name: /\d+ HP/ }),
   ).toBeVisible();
+  await expectWcag22Aa(page, "HP review");
 
   await page.getByRole("link", { name: "캠페인으로" }).click();
   await page.getByRole("link", { name: "리더보드" }).click();
@@ -144,6 +211,7 @@ test("invitation → mocked Kakao → play → result → leaderboard", async ({
   await expect(
     page.getByRole("heading", { name: "리더보드" }),
   ).toBeVisible();
+  await expectWcag22Aa(page, "leaderboard");
   await expect(page.getByText(identity.nickname, { exact: true })).toBeVisible();
   await expect(page.getByText(identity.inviteeName, { exact: true })).toHaveCount(
     0,
