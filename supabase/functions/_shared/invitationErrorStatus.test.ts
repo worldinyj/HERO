@@ -36,6 +36,8 @@ Deno.test("unknown or potentially committed requests remain 500", () => {
     new Error("duplicate key value violates unique constraint"),
     new Error("missing_site_url"),
     new Error("invitation_not_found: untrusted suffix"),
+    new Error("toString"),
+    new Error("__proto__"),
     null,
     undefined,
     "manager_scope_violation",

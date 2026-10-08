@@ -43,7 +43,10 @@ export function classifyInvitationError(
   // Unknown DB/transport/response errors stay 5xx and therefore trigger the
   // client's "outcome uncertain" retry lock for issuance/reissuance.
   if (Object.hasOwn(CLIENT_REJECTIONS, message)) {
-    return { error: message, status: CLIENT_REJECTIONS[message] };
+    const status = CLIENT_REJECTIONS[message];
+    if (typeof status === "number") {
+      return { error: message, status };
+    }
   }
   return { error: "internal_error", status: 500 };
 }
