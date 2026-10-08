@@ -19,7 +19,17 @@ export function readIssuedInviteLink(value: unknown): IssuedInviteLink | null {
 
   try {
     const url = new URL(data.inviteUrl);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    // Match the Edge buildInviteUrl contract: HTTPS except loopback dev,
+    // with an absolute /i/<one-time-token> path and no appended material.
+    const localHttp = url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]");
+    const tokenPart = url.pathname.startsWith("/i/") ? url.pathname.slice(3) : "";
+    if (
+      (url.protocol !== "https:" && !localHttp) ||
+      !url.hostname || url.username || url.password ||
+      !tokenPart || tokenPart.includes("/") ||
+      url.search || url.hash
+    ) return null;
     if (!Number.isFinite(Date.parse(data.expiresAt))) return null;
   } catch {
     return null;

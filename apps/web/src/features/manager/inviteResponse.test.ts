@@ -31,6 +31,12 @@ describe("one-time invite response integrity", () => {
     expect(readIssuedInviteLink({ ...good, inviteUrl: "/i/relative-token" })).toBeNull();
     expect(readIssuedInviteLink({ ...good, expiresAt: "not-a-date" })).toBeNull();
     expect(readIssuedInviteLink({ ...good, error: "internal_error" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, inviteUrl: "http://hero.example/i/token" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, inviteUrl: "https://u:p@hero.example/i/token" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/i/token?copy=yes" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/i/token#fragment" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/other/token" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/i/" })).toBeNull();
   });
 });
 
