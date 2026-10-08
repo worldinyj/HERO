@@ -212,11 +212,21 @@ export function InvitationPage() {
   }
 
   if (!preview.valid) {
+    const alreadyUsed = preview.reason === "already_used";
     return (
       <section className="panel">
         <h2>사용할 수 없는 초대입니다</h2>
-        <p className="muted">사유: {preview.reason ?? "유효하지 않은 링크"}</p>
-        <p className="muted">발전소담당자에게 새 초대 링크를 요청해주세요.</p>
+        <p className="muted">사유: {alreadyUsed ? "이미 사용된 링크" : preview.reason ?? "유효하지 않은 링크"}</p>
+        <p className="muted">
+          {alreadyUsed
+            ? "이전에 가입을 완료했다면 본인 계정으로 이동할 수 있습니다."
+            : "발전소담당자에게 새 초대 링크를 요청해주세요."}
+        </p>
+        {alreadyUsed ? (
+          <Link to={session ? "/" : "/login"} className="secondary-button">
+            내 계정으로 이동
+          </Link>
+        ) : null}
       </section>
     );
   }

@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useAuth, type AppRole } from "./AuthContext";
 
@@ -22,18 +22,28 @@ export function RequireAuth({ children }: PropsWithChildren) {
 function UnprovisionedUser() {
   const { signOut } = useAuth();
   const started = useRef(false);
+  const [signOutFailed, setSignOutFailed] = useState(false);
 
-  useEffect(() => {
+  const signOutAndRedirect = useCallback(() => {
     if (started.current) return;
     started.current = true;
+    setSignOutFailed(false);
 
-    void signOut().finally(() => {
-      // A sign-out updates AuthContext immediately and can unmount this route
-      // before a router navigation runs. Use a document-level replace so the
-      // invitation-required reason survives that auth-state transition.
-      window.location.replace("/login?reason=invite_required");
-    });
+    void signOut()
+      .then(() => {
+        // Preserve the invite-required reason even if sign-out unmounts us.
+        window.location.replace("/login?reason=invite_required");
+      })
+      .catch(() => {
+        // Do not claim a successful logout if it actually failed.
+        started.current = false;
+        setSignOutFailed(true);
+      });
   }, [signOut]);
+
+  useEffect(() => {
+    signOutAndRedirect();
+  }, [signOutAndRedirect]);
 
   return (
     <section className="panel">
@@ -41,6 +51,20 @@ function UnprovisionedUser() {
       <p className="muted">
         HERO는 초대받은 사용자만 가입할 수 있습니다. 로그인 정보를 정리하고 있습니다…
       </p>
+      {signOutFailed ? (
+        <>
+          <p className="error-text" role="alert">
+            로그인 정보를 정리하지 못했습니다. 다시 시도해주세요.
+          </p>
+          <button
+            type="button"
+            className="primary-button"
+            onClick={signOutAndRedirect}
+          >
+            로그아웃 재시도
+          </button>
+        </>
+      ) : null}
     </section>
   );
 }
