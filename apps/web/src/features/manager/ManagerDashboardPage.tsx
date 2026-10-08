@@ -470,7 +470,7 @@ export function ManagerDashboardPage() {
         </article>
       </div>
 
-      <ManagerInvitePanel onChanged={() => void loadDashboard(true)} />
+      <ManagerInvitePanel onChanged={() => loadDashboard(true)} />
 
       <section className="panel manager-section">
         <div className="section-heading">

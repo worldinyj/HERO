@@ -173,13 +173,15 @@ function downloadBulkCsv(rows: BulkResult[]) {
   URL.revokeObjectURL(url);
 }
 
-export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
+export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boolean> }) {
   const { profile } = useAuth();
   const [name, setName] = useState("");
   const [jobRole, setJobRole] = useState<JobRole>("worker");
   const [teamName, setTeamName] = useState("");
   const [singlePending, setSinglePending] = useState(false);
   const [singleRetryBlocked, setSingleRetryBlocked] = useState(false);
+  const [inviteRosterReady, setInviteRosterReady] = useState(false);
+  const [inviteRosterPending, setInviteRosterPending] = useState(false);
   const [singleResult, setSingleResult] = useState<InviteLinkResult | null>(null);
   const [bulkPending, setBulkPending] = useState(false);
   const [bulkRetryBlocked, setBulkRetryBlocked] = useState(false);
@@ -227,6 +229,31 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
     return result;
   }
 
+  async function reconcileInviteRoster() {
+    if (singlePending || bulkPending || inviteRosterPending) return;
+    setInviteRosterPending(true);
+    setInviteRosterReady(false);
+    try {
+      if (await onChanged()) {
+        setInviteRosterReady(true);
+        setError("갱신된 수락 대기 명단을 확인하고 필요 시 중복 초대를 정리한 뒤 해제를 선택해주세요.");
+      } else {
+        setError("초대 명단을 불러오지 못했습니다. 재시도 잠금을 유지합니다.");
+      }
+    } catch {
+      setError("초대 명단을 확인하지 못했습니다. 재시도 잠금을 유지합니다.");
+    } finally {
+      setInviteRosterPending(false);
+    }
+  }
+
+  function confirmInviteRoster() {
+    if (!inviteRosterReady || inviteRosterPending || singlePending || bulkPending) return;
+    setSingleRetryBlocked(false);
+    setInviteRosterReady(false);
+    setError(null);
+  }
+
   async function handleSingleCreate() {
     if (singlePending || singleRetryBlocked) return;
     // The one-time token cannot be retrieved from the server again.
@@ -251,9 +278,10 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       setSingleResult(result);
       setName("");
       setTeamName("");
-      onChanged();
+      void onChanged();
     } catch (cause) {
       if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setInviteRosterReady(false);
         setSingleRetryBlocked(true);
         setError("응답을 확인하지 못했습니다. 초대가 서버에 생성되었을 수도 있습니다. 담당자 초대 목록을 확인하기 전에는 같은 대상을 다시 초대하지 마세요.");
       } else {
@@ -380,6 +408,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       if (cause instanceof InviteCreationOutcomeUnknownError) {
         // The interrupted request may have committed on the server. Retrying
         // the same row automatically would create a second valid invitation.
+        setInviteRosterReady(false);
         setBulkRetryBlocked(true);
         setError(
           `${results.length}/${bulkInputs.length}명 확인 완료, 다음 요청의 성공 여부는 불확실합니다. 생성된 링크를 CSV로 저장하고 담당자 초대 목록에서 해당 대상의 미수락 초대를 확인·정리한 뒤에만 새로운 초대를 진행하세요. 자동 재개는 잠겼습니다.`,
@@ -390,7 +419,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
         );
       }
     } finally {
-      if (results.length > initialCount) onChanged();
+      if (results.length > initialCount) void onChanged();
       setBulkPending(false);
     }
   }
@@ -456,14 +485,24 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
             <div className="invite-result-box" role="alert">
               <strong>초대 생성 결과 확인 필요</strong>
               <p className="muted">서버에서 이미 생성했을 수 있으므로 같은 대상을 곧바로 재시도하지 마세요. 담당자 초대 목록의 미수락 항목을 확인하고 중복 초대를 취소한 뒤 새 요청을 시작해주세요.</p>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={singlePending}
-                onClick={() => setSingleRetryBlocked(false)}
-              >
-                초대 목록 확인 완료 · 새 요청 허용
-              </button>
+              <div className="inline-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={singlePending || bulkPending || inviteRosterPending}
+                  onClick={() => void reconcileInviteRoster()}
+                >
+                  1. 수락 대기 초대 다시 조회
+                </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={!inviteRosterReady || inviteRosterPending || singlePending || bulkPending}
+                  onClick={() => confirmInviteRoster()}
+                >
+                  2. 결과 확인 · 새 요청 허용
+                </button>
+              </div>
             </div>
           ) : null}
 
@@ -540,21 +579,37 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
             <div className="invite-result-box" role="alert">
               <strong>미확인 요청이 있어 자동 재개를 중지했습니다</strong>
               <p className="muted">확인된 링크를 우선 CSV로 저장해주세요. 담당자 초대 목록에서 실패 지점의 미수락 초대가 이미 만들어졌는지 확인하고, 필요하면 취소한 후 새 목록을 시작해야 합니다.</p>
-              {bulkResults.length === 0 ? (
+              <div className="inline-actions">
                 <button
                   type="button"
                   className="secondary-button"
-                  disabled={bulkPending}
+                  disabled={bulkPending || singlePending || inviteRosterPending}
+                  onClick={() => void reconcileInviteRoster()}
+                >
+                  1. 수락 대기 초대 다시 조회
+                </button>
+                <span className="muted">
+                  {inviteRosterReady
+                    ? "2. 목록을 대조하고 아래에서 새 목록을 시작하세요."
+                    : "명단이 정상 조회되기 전에는 새 목록을 시작할 수 없습니다."}
+                </span>
+              </div>
+              {bulkResults.length === 0 ? (
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={!inviteRosterReady || bulkPending || singlePending || inviteRosterPending}
                   onClick={() => {
                     setBulkInputs([]);
                     setBulkResults([]);
                     setBulkRetryBlocked(false);
+                    setInviteRosterReady(false);
                     setBulkFileName("");
                     setBulkInfo(null);
                     setError(null);
                   }}
                 >
-                  미수락 초대 확인 완료 · 새 CSV 선택
+                  2. 결과 확인 완료 · 새 CSV 선택
                 </button>
               ) : null}
             </div>
@@ -605,13 +660,15 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
               <button
                 type="button"
                 className="text-button"
-                disabled={bulkPending}
+                disabled={bulkPending || singlePending || (bulkRetryBlocked && !inviteRosterReady)}
                 onClick={() => {
+                  if (bulkRetryBlocked && !inviteRosterReady) return;
                   setBulkResults([]);
                   setBulkInputs([]);
                   setBulkFileName("");
                   setBulkInfo(null);
                   setBulkRetryBlocked(false);
+                  setInviteRosterReady(false);
                   setError(null);
                   setCopiedBulkUrl(null);
                 }}
