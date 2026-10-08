@@ -249,6 +249,28 @@ check(receiptEdge.includes("row.session_id !== requestedSessionId") &&
   submitEdge.includes("evaluation: committed.evaluation"),
   "session completion Edge returns authoritative persisted DB result");
 
+// Ensure malformed client action logs never reach the shared game engine,
+ // and that internal engine details are not leaked in HTTP responses.
+const submissionGuard=read("supabase/functions/_shared/submissionInput.ts");
+const submissionTests=read("supabase/functions/_shared/submissionInput.test.ts");
+check(submitEdge.includes("parseSessionSubmission(raw)") &&
+  submitEdge.includes('error: "invalid_submission"') &&
+  !submitEdge.includes("normalizeAction(submitted)") &&
+  !submitEdge.includes('detail: message'),
+  "submission: validate JSON before engine replay and hide graph internals");
+check(submissionGuard.includes("value.actions === undefined ? [] : value.actions") &&
+  submissionGuard.includes("value.length > 250") &&
+  submissionGuard.includes("actionIdentifier") &&
+  submissionTests.includes("actions: null") &&
+  ciPlaceholder(), "submission: null/malformed input and 250-action boundary regression");
+
+// The runner call is deliberately queued in CI but not executed in this branch.
+function ciPlaceholder() {
+  return read(".github/workflows/ci.yml").includes(
+    "supabase/functions/_shared/submissionInput.test.ts"
+  );
+}
+
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],
 ["create-invite","writeAuditLog("],

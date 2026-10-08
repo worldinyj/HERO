@@ -12,6 +12,13 @@
 - Migration 016~024는 staging 미적용, 신규 pgTAP **295개 선언 작성·DB 실행 NOT RUN**. 새 브랜치 전체 웹·Deno·GitHub Actions 미실행.
 - 오디오 생성물은 없다. 오디오 런타임은 코드 구현이나 `ops/release-evidence.json`의 `audioPolicy=deferred`는 출시 차단.
 
+## 1.1 이후 보안/실행계약 개발 추가 (기준 진도율 유지)
+
+- 2026-10-08 후속 개발: `supabase/functions/_shared/submissionInput.ts`, `submit-session/index.ts`에서 T5-03 세션 제출 JSON 행동 로그 4종·필수 ID 타입/길이·250건 제한·학습 소감 플래그를 사전 검증. 잘못된 JSON은 `400 invalid_submission`, 게임 엔진의 잘못된 경로는 `409 action_log_rejected`로 분리하고 내부 예외 메시지를 반환하지 않음.
+- `submissionInput.test.ts` Deno 회귀 테스트 4그룹 작성, 장래 CI 단계 등록. **같은 GitHub 소스의 로컬 복제본에서 strict `tsc` PASS 및 Node22 Deno shim 4/4 PASS**. 단 실제 Deno·전체 웹/Edge/DB 통합테스트는 미실행.
+- **T5-03은 기존 '부분' 상태 유지**, Phase 5 및 MVP 가중 진도 75.6% 역시 변경하지 않음. 최신 전체 DoD/실제 E2E를 검증하기 전 구현 산출물만으로 상태를 승격하지 않음.
+- `docs/31_SUBMISSION_INPUT_VALIDATION.md`는 실제 시나리오 응답·오프라인 제출 큐·비활성 발전소까지 포함한 잔여 검증 목록.
+
 ## 2. Phase별 진행
 
 | Phase | 작업 수 | 구현 | 부분 | 미착수 | 환산 진도 |
