@@ -6,6 +6,7 @@ const fixture = vi.hoisted(() => ({
   records: [] as PendingSessionSubmission[],
   failDelete: false,
   invokes: 0,
+  submittedBodies: [] as PendingSessionSubmission["body"][],
   nextHttpStatus: null as number | null,
   games: [] as Array<Record<string, unknown>>,
   failGameDelete: false,
@@ -24,8 +25,9 @@ vi.mock("./supabase", () => ({
       }),
     },
     functions: {
-      invoke: async (_name: string, opts: { body: { sessionId: string } }) => {
+      invoke: async (_name: string, opts: { body: PendingSessionSubmission["body"] }) => {
         fixture.invokes += 1;
+        fixture.submittedBodies.push(opts.body);
         if (fixture.nextHttpStatus !== null) {
           return {
             data: null,
@@ -153,9 +155,11 @@ function queued(): PendingSessionSubmission {
 }
 
 beforeEach(() => {
+  fixture.userId = "user-one";
   fixture.records = [];
   fixture.failDelete = false;
   fixture.invokes = 0;
+  fixture.submittedBodies = [];
   fixture.nextHttpStatus = null;
   fixture.games = [];
   fixture.failGameDelete = false;
@@ -576,6 +580,9 @@ describe("explicit manual retry of blocked submissions", () => {
       data: { sessionId, alreadyCompleted: false },
     });
     expect(fixture.invokes).toBe(1);
+    expect(fixture.submittedBodies).toHaveLength(1);
+    expect(fixture.submittedBodies[0].actions).toEqual(savedBody.actions);
+    expect(fixture.submittedBodies[0]).toEqual(savedBody);
     expect(fixture.records).toEqual([]);
   });
 
@@ -631,6 +638,45 @@ describe("explicit manual retry of blocked submissions", () => {
       httpStatus: 409,
     });
     expect(fixture.records[0]).toMatchObject({ state: "blocked", attempts: 1 });
+    expect(fixture.invokes).toBe(1);
+  });
+});
+
+
+describe("manual retry identity and receipt recovery", () => {
+  it("does not resend after a successful manual retry", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    const first = await retryBlockedSubmission(sessionId, "user-one", "scenario-one");
+    expect(first.status).toBe("submitted");
+    const second = await retryBlockedSubmission(sessionId, "user-one", "scenario-one");
+    expect(second).toMatchObject({
+      status: "rejected", reason: "blocked_submission_not_found",
+    });
+    expect(fixture.invokes).toBe(1);
+  });
+
+  it("refuses to unlock blocked choices after authentication changes", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    fixture.userId = "different-user";
+    try {
+      await expect(retryBlockedSubmission(sessionId, "user-one", "scenario-one"))
+        .rejects.toThrow("authenticated_session_changed");
+      expect(fixture.records[0]?.state).toBe("blocked");
+      expect(fixture.invokes).toBe(0);
+    } finally { fixture.userId = "user-one"; }
+  });
+
+  it("returns a valid server receipt while reporting failed local cleanup", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    fixture.failDelete = true;
+    const result = await retryBlockedSubmission(sessionId, "user-one", "scenario-one");
+    expect(result).toMatchObject({
+      status: "submitted", cleanupPending: true,
+      data: { sessionId, alreadyCompleted: false },
+    });
+    expect(fixture.records[0]).toMatchObject({
+      state: "committed", completionReceipt: { sessionId },
+    });
     expect(fixture.invokes).toBe(1);
   });
 });
