@@ -230,6 +230,101 @@ def probe(dsn: str) -> None:
         for proc in (first, second):
             if proc and proc.poll() is None:
                 proc.kill()
+                if proc.stdin and proc.stdin.closed:
+                    proc.stdin = None
+                proc.communicate(timeout=5)
+
+
+def probe_first_rollback(dsn: str) -> None:
+    """The waiting submitter must become the winner if the first rolls back."""
+    token = uuid4().hex[:12]
+    ids = {key: str(uuid4()) for key in (
+        "user", "plant", "season", "scenario", "version", "session")}
+    sql(dsn, fixture(ids, token), "rollback_fixture")
+    first = second = None
+    try:
+        first = subprocess.Popen(args(dsn), stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 text=True, bufsize=1,
+                                 env=postgres_environment("rollback_first_" + token))
+        assert first.stdin is not None and first.stdout is not None
+        first.stdin.write("begin;\nset local role service_role;\n" +
+                          call_sql(ids["session"], ids["user"], 245, 1) +
+                          "\n\\echo FIRST_WILL_ROLLBACK\n")
+        first.stdin.flush()
+        output: queue.Queue[str | None] = queue.Queue()
+
+        def reader() -> None:
+            assert first is not None and first.stdout is not None
+            for line in first.stdout:
+                output.put(line.strip())
+            output.put(None)
+
+        threading.Thread(target=reader, daemon=True).start()
+        lines: list[str] = []
+        deadline = time.monotonic() + 12
+        while time.monotonic() < deadline:
+            try:
+                line = output.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            if line is None:
+                break
+            lines.append(line)
+            if line == "FIRST_WILL_ROLLBACK":
+                break
+        if "FIRST_WILL_ROLLBACK" not in lines:
+            raise RuntimeError("rollback probe first connection never acquired lock")
+        if receipt("\n".join(lines)).get("already_completed") is not False:
+            raise AssertionError("uncommitted first completion must be a new result")
+
+        second = subprocess.Popen(args(dsn), stdin=subprocess.PIPE,
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  text=True,
+                                  env=postgres_environment("rollback_second_" + token))
+        assert second.stdin is not None
+        second.stdin.write("begin;\nset local role service_role;\n" +
+                           call_sql(ids["session"], ids["user"], 1, 9) +
+                           "\ncommit;\n")
+        second.stdin.flush()
+        waiting = False
+        for _ in range(60):
+            if second.poll() is not None:
+                raise AssertionError("competing rollback probe finished before first ROLLBACK")
+            count = sql(dsn, "select count(*) from pg_stat_activity where " +
+                        f"application_name='hero_race_rollback_second_{token}' " +
+                        "and wait_event_type='Lock';", "rollback_observer", timeout=5)
+            if count == "1":
+                waiting = True
+                break
+            time.sleep(0.1)
+        if not waiting:
+            raise AssertionError("rollback probe never observed waiting on row lock")
+
+        first.stdin.write("rollback;\n")
+        first.stdin.close()
+        first.wait(timeout=15)
+        if first.returncode:
+            raise RuntimeError("first connection failed to roll back")
+        output2, error2 = second.communicate(timeout=15)
+        if second.returncode:
+            raise RuntimeError(f"rollback winner failed: {error2[-500:]}")
+        winner = receipt(output2)
+        if winner.get("already_completed") is not False or winner.get("hp_point") != 1:
+            raise AssertionError("rollback winner must commit second caller's 1 HP")
+
+        state = json.loads(sql(dsn, totals_sql(ids["session"]), "rollback_totals"))
+        expected = {"status": "completed", "hp": 1, "decisions": 1,
+                    "audits": 1, "clock": 9}
+        if any(state.get(k) != value for k, value in expected.items()):
+            raise AssertionError(f"rollback winner state is inconsistent: {state!r}")
+        print("PASS aborted first completion leaves exactly one second-winner result", flush=True)
+    finally:
+        for proc in (first, second):
+            if proc and proc.poll() is None:
+                proc.kill()
+                if proc.stdin and proc.stdin.closed:
+                    proc.stdin = None
                 proc.communicate(timeout=5)
 
 
@@ -244,7 +339,8 @@ def main() -> int:
             raise RuntimeError("psql is required")
         ensure_local_supabase(dsn)
         probe(dsn)
-        print("PASS real two-connection idempotency. Reset your LOCAL Supabase DB.")
+        probe_first_rollback(dsn)
+        print("PASS commit and rollback two-connection probes. Reset LOCAL Supabase DB.")
         return 0
     except (ValueError, RuntimeError, AssertionError, subprocess.TimeoutExpired) as error:
         print(f"FAIL {error}", file=sys.stderr)

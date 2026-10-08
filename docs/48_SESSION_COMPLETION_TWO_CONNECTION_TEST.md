@@ -47,3 +47,11 @@
 - `PGHOSTADDR`, `PGSERVICE`, `PGOPTIONS` 등을 포함한 셸의 모든 `PG*` 환경변수를 외부 psql 프로세스에 물려주지 않고, 검증된 DSN과 고유 `PGAPPNAME`만 넘긴다.
 - 감시용 `pg_stat_activity`는 `hero_race_second_<고유 token>`인 연결만 검사하므로 다른 시험 프로세스의 잠금을 착각하지 않는다.
 - Python 3 문법 검사와 수정된 단위 테스트 **18/18 PASS**, 실제 PostgreSQL 두 연결 시험은 여전히 NOT RUN.
+
+## 첫 번째 트랜잭션 실패 복구 경로 (2026-10-08)
+
+- `probe_first_rollback()`을 추가했다. 첫 번째 PostgreSQL 연결이 245 HP로 완료 RPC를 실행하지만 커밋하지 않고 세션 행 잠금을 유지한다.
+- 두 번째 연결은 **동일 세션에 대해 1 HP** 완료를 시도해 잠금 대기가 확인된다. 첫 번째 연결에서 ROLLBACK을 실행하면 두 번째 연결의 반환은 `already_completed=false`, 1 HP여야 한다.
+- 마지막으로 결과 점수 1 HP, 결정 기록 1건(시계 9), 완료 감사 로그 1건을 확인해 **부분 반영이나 중복 INSERT가 없는지** 점검한다.
+- 두 경로의 별도 난수 fixture를 사용하며, 실패 시 연결 종료 과정에서 이미 닫힌 stdin을 다시 flush하지 않도록 보호했다.
+- Python 문법 검사와 표준 라이브러리 단위 테스트 **20/20 PASS**. 실제 로컬 PostgreSQL 2연결 시험은 아직 NOT RUN. 완료/롤백 fixture가 로컬 DB에 커밋되므로 종료 후 로컬 DB 초기화가 필요하다.

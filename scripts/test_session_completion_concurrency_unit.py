@@ -45,6 +45,16 @@ class LocalDbRaceGuards(unittest.TestCase):
             self.assertNotIn("PGOPTIONS",env)
             self.assertEqual(env["PGAPPNAME"],"hero_race_second_token")
             self.assertEqual(env["HOME"],"/tmp")
+    def test_abort_probe_uses_rollback_and_checks_second_winner(self):
+        source = path.read_text()
+        self.assertIn('def probe_first_rollback(dsn: str)',source)
+        self.assertIn('first.stdin.write("rollback;\\n")',source)
+        self.assertIn('"hp": 1, "decisions": 1',source)
+        self.assertIn('probe_first_rollback(dsn)',source)
+    def test_abort_probe_uses_unique_lock_observer(self):
+        source = path.read_text()
+        self.assertIn("hero_race_rollback_second_{token}",source)
+        self.assertIn("rollback probe never observed waiting on row lock",source)
     def test_receipt_first(self):
         self.assertFalse(race.receipt('{"already_completed":false,"hp_point":245}')['already_completed'])
     def test_receipt_second(self):
