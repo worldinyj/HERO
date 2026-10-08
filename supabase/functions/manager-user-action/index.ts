@@ -1,6 +1,7 @@
 import { writeAuditLog, writeAuditLogs } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { buildInviteUrl } from "../_shared/inviteUrl.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -133,6 +134,9 @@ async function reissueInvite(
     invitationId,
   );
   const token = randomToken();
+  // Validate SITE_URL before canceling the old invitation: misconfiguration
+  // must never invalidate the only usable invitation link.
+  const inviteUrl = buildInviteUrl(Deno.env.get("SITE_URL"), token);
   const tokenHash = await sha256Hex(token);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const canceledAt = new Date().toISOString();
@@ -202,16 +206,11 @@ async function reissueInvite(
     },
   ]);
 
-  const siteUrl = Deno.env.get("SITE_URL");
-  if (!siteUrl) {
-    throw new Error("missing_site_url");
-  }
-
   return {
     reissued: true,
     oldInvitationId: invitation.id,
     invitationId: replacement.id,
-    inviteUrl: new URL(`/i/${token}`, siteUrl).toString(),
+    inviteUrl,
     expiresAt,
     plantDisplayName: plant.display_name,
   };
