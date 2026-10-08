@@ -84,6 +84,52 @@ for(const [fn,index,edgeName] of rpcs) {
     /to\s+service_role\s*;/i.test(sql),fn+": locked-down RPC");
   check(edge.includes('"'+fn+'"'),edgeName+": "+fn+" wired");
 }
+
+// Keep 017-022 explicit database exceptions in the Edge public error allowlist.
+const errorSrc=read("supabase/functions/_shared/invitationErrorStatus.ts");
+const errorBody=errorSrc.match(/const CLIENT_REJECTIONS[^=]*=\s*\{([\s\S]*?)\};/)?.[1]??"";
+const known=new Map([...errorBody.matchAll(/^\s*([a-z][a-z0-9_]+):\s*(\d+)/gm)]
+  .map(m=>[m[1],Number(m[2])]));
+const raised=new Set();
+for(const path of migrations.slice(1)) {
+  for(const m of read(path).matchAll(/raise\s+exception\s+'([^']+)'/gi))raised.add(m[1]);
+}
+const unmatched=[...raised].filter(code=>!(known.get(code)>=400&&known.get(code)<500));
+unmatched.forEach(code=>console.error("UNMAPPED DB DOMAIN ERROR "+code));
+check(raised.size>=15&&unmatched.length===0,
+  raised.size+" explicit SQL domain exceptions map to deterministic 4xx");
+check(errorSrc.includes('code === "P0001"')&&
+  errorSrc.includes("Object.hasOwn(CLIENT_REJECTIONS, message)")&&
+  errorSrc.includes('error: "internal_error", status: 500'),
+  "unknown SQL and transport failures remain opaque 500");
+
+// SQL -> Edge DTO -> Admin/Manager response guards.
+const client=read("apps/web/src/features/manager/inviteResponse.ts");
+const managerUI=read("apps/web/src/features/manager/ManagerDashboardPage.tsx");
+const adminUI=read("apps/web/src/features/admin/AdminOrgPage.tsx");
+const panel=read("apps/web/src/features/manager/ManagerInvitePanel.tsx");
+const edgeManager=read("supabase/functions/manager-user-action/index.ts");
+const edgeCreate=read("supabase/functions/create-invite/index.ts");
+check(["invitationId","expiresAt"].every(k=>
+  read(migrations[3]).includes("'"+k+"'")&&edgeCreate.includes(k)&&client.includes(k)),
+  "invitation issue: DB and Edge fields match browser");
+check(["reissued","oldInvitationId","invitationId","expiresAt"].every(k=>
+  read(migrations[1]).includes("'"+k+"'")&&edgeManager.includes(k))&&
+  managerUI.includes("readReissuedInviteLink(result, invitationId)")&&
+  adminUI.includes("readReissuedInviteLink(data, invitationId)")&&
+  client.includes("result.oldInvitationId !== requestedInvitationId"),
+  "invitation reissue: old/new IDs verified across layers");
+check(["canceled","invitationId","canceledAt"].every(k=>
+  read(migrations[2]).includes("'"+k+"'")&&edgeManager.includes(k))&&
+  managerUI.includes("readCanceledInviteResult(result, invitationId)")&&
+  adminUI.includes("readCanceledInviteResult(data, invitationId)"),
+  "invitation cancel: target and cancellation timestamp verified");
+check(["confirmPlayerStatus","confirmNicknameReset","confirmInvitationReconciliation"].every(k=>
+  managerUI.includes("function "+k+"()"))&&
+  adminUI.includes("function confirmAdminInvites()")&&
+  panel.includes("function confirmInviteRoster()"),
+  "uncertain operator actions require explicit confirmation");
+
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],
 ["create-invite","writeAuditLog("],
