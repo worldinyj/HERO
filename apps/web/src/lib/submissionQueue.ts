@@ -1,6 +1,7 @@
 import type { GameLogEntry } from "@hero/engine";
 import { openHeroOfflineDb, SUBMISSION_QUEUE_STORE } from "./offlineDb";
 import { getSupabase } from "./supabase";
+import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./submissionReceipt";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -72,7 +73,9 @@ export function submissionHttpStatus(error: unknown): number | null {
 
 export function isRetryableSubmissionStatus(
   status: number | null,
+  errorCode: string | null = null,
 ): boolean {
+  if (status === 403 && errorCode === "plant_inactive") return true;
   return (
     status === null ||
     status === 401 ||
@@ -136,29 +139,18 @@ async function invokeSubmission(
     if (error) {
       return {
         ok: false,
-        message: errorMessage(error),
+        message: submissionHttpStatus(error) === 403 &&
+          (await submissionServerErrorCode(error)) === "plant_inactive"
+          ? "plant_inactive" : errorMessage(error),
         httpStatus: submissionHttpStatus(error),
       };
     }
 
-    if (
-      data &&
-      typeof data === "object" &&
-      "error" in data &&
-      typeof (data as { error?: unknown }).error === "string"
-    ) {
-      return {
-        ok: false,
-        message: String((data as { error: string }).error),
-        httpStatus: 400,
-      };
+    if (!isConfirmedSubmissionResponse(data, body.sessionId)) {
+      // A malformed 2xx might follow COMMIT. Never discard cached choices.
+      return { ok: false, message: "submission_result_unknown", httpStatus: null };
     }
-
-    return {
-      ok: true,
-      data,
-      httpStatus: 200,
-    };
+    return { ok: true, data, httpStatus: 200 };
   } catch (error) {
     return {
       ok: false,
@@ -172,7 +164,7 @@ async function writeQueueRecord(
   record: PendingSessionSubmission,
 ): Promise<void> {
   const db = await openHeroOfflineDb();
-  if (!db) return;
+  if (!db) throw new Error("submission_queue_unavailable");
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -305,7 +297,7 @@ export async function submitSessionWithQueue(
 
   const reason = attempt.message ?? "submit_session_failed";
 
-  if (isRetryableSubmissionStatus(attempt.httpStatus)) {
+  if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
     await enqueueForUser(userId, input, reason);
     return { status: "queued", reason };
   }
@@ -343,7 +335,7 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
       continue;
     }
 
-    if (isRetryableSubmissionStatus(attempt.httpStatus)) {
+    if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
       await updateAttempt(item, attempt, "pending");
       break;
     }
