@@ -17,7 +17,7 @@
 
 | 계층 | 구현 및 검증 대상 | 현재 상태 |
 |---|---|---|
-| PostgreSQL | 원자적 초대 생성/재발급/취소 및 감사, 016~022 migration | 코드 작성, 실제 pgTAP NOT RUN |
+| PostgreSQL | 원자적 초대 생성/재발급/취소 및 감사, 016~023 migration | 코드 작성, 실제 pgTAP NOT RUN |
 | Edge | create-invite, manager-user-action, nickname-action의 DTO/오류 상태 | 소스 연결 검토, Deno 전체 NOT RUN |
 | Browser | `inviteResponse.ts` 공통 생성/재발급/취소 검증기 | 브랜치 구현 |
 | Admin | `AdminOrgPage.tsx` 목록 재조회, 2단계 해제 및 링크 보존 | 브랜치 구현 |
@@ -43,9 +43,11 @@
 ## 안전한 검증·배포 순서
 
 1. 배치 브랜치 복제본에서 `pnpm check:batch-db-contracts`, `pnpm --dir apps/web typecheck`, `pnpm --dir apps/web test`, `deno test`를 실행하고 결과를 기록한다.
-2. 격리 PostgreSQL에서 migration 001~022, pgTAP 신규 218 assertion 포함 전체 정책 테스트와 동일 초대에 대한 accept/cancel/reissue 동시성을 점검한다.
-3. 운영 DB 적용 승인 전에는 Supabase migration 016→017→018→019→020→021→022 적용 금지.
+2. 격리 PostgreSQL에서 migration 001~023, pgTAP 신규 252 assertion 포함 전체 정책 테스트와 동일 초대에 대한 accept/cancel/reissue 동시성을 점검한다.
+3. 운영 DB 적용 승인 전에는 Supabase migration 016→017→018→019→020→021→022→023 적용 금지.
 4. 승인·검증 후에만 staging DB → RPC grants → Edge → 웹 배포 순으로 진행한다.
 5. Kakao 실계정 Admin→Manager→Player E2E 및 S03 시나리오의 사람 검토는 별도 출시 게이트로 유지한다.
+
+후속 Admin 발전소 감사·권한 게이트는 `docs/27_ATOMIC_ADMIN_PLANT_VALIDATION.md` 참고.
 
 이번 세션에서는 `main`, PR #79, 원격 Supabase, Cloudflare 배포, GitHub Actions에 변경을 가하지 않았다.

@@ -157,6 +157,23 @@
 
 현재 staging DB에서는 신규 공개 projection 테이블 2개가 아직 없습니다. 위 항목은 모두 사람 또는 격리된 DB 검증 후에만 PASS로 표시합니다.
 
+## 4.2 Admin 발전소 관리 감사·권한 검증 (Migration 023)
+
+| ID | 수행 | 기대결과 | 상태 |
+|---|---|---|---|
+| PLANT-01 | Admin이 신규 발전소 코드·이름을 등록 | 등록 1건과 `plant.created` 감사 1건을 단일 커밋으로 저장 | NOT RUN |
+| PLANT-02 | 발전소 코드 중복/비정상 값으로 재등록 | 409/400 확정 거절, 원본 보존 및 감사 중복 없음 | NOT RUN |
+| PLANT-03 | Manager/Player가 Admin Edge에 생성/변경 요청 | 403, 서버 DB 역할 재검증으로도 차단 | NOT RUN |
+| PLANT-04 | 로그인 사용자가 PostgREST에서 plants INSERT/UPDATE/DELETE 직접 호출 | 테이블 쓰기 권한 없음 | NOT RUN |
+| PLANT-05 | Admin이 발전소 활성/비활성 변경 | DB 행 잠금, `updated_at`과 `plant.active_changed` 감사 일치 | NOT RUN |
+| PLANT-06 | 동일 활성 상태를 다시 지정 | `changed=false`, 감사 중복 기록 없음 | NOT RUN |
+| PLANT-07 | 감사 INSERT 실패를 강제한 뒤 발전소 생성/상태 변경 | 전체 변경 롤백, 미감사 발전소/상태 생성 불가 | NOT RUN |
+| PLANT-08 | DB 커밋 후 HTTP 응답 단절·2xx 불완전 결과 | 변경 재시도 잠금, 자동 요청 반복 금지 | NOT RUN |
+| PLANT-09 | 발전소 목록 재조회 실패 또는 운영자 확인 전 | 잠금 유지, 목록 재조회+명시 확인 후만 잠금 해제 | NOT RUN |
+| PLANT-10 | 배포 전 Migration 023 미적용 상태 | 신규 `admin-plant-action`·Admin UI 배포 차단 | NOT RUN |
+
+권한·원자성·실기기 확인은 `docs/27_ATOMIC_ADMIN_PLANT_VALIDATION.md`를 참조한다.
+
 ## 5. 증거 양식
 
 ```text
@@ -177,7 +194,7 @@
 ## 6. 최종 출시 게이트
 
 - 모든 필수 시험 기록 및 보안 권한 경계 PASS
-- Migration 016 및 리더보드 RLS/pgTAP/CI/E2E 검증 PASS
+- Migration 016~023 및 리더보드·Admin 발전소 RLS/pgTAP/CI/E2E 검증 PASS
 - S03 사람 HF·운전·익명화·Just Culture·debrief 검토 별도 PASS
 - 개인정보/약관, 실기기·사내망, 파일럿 승인, 동일 SHA Staging Smoke/RC 게이트
 
