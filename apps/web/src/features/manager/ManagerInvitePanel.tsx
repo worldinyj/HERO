@@ -4,6 +4,7 @@ import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { nextInviteBatchRange, MAX_INVITES_PER_RUN } from "./bulkInviteBatch";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
+import { csvEscape } from "./bulkInviteCsv";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -142,10 +143,6 @@ function parseInviteCsv(text: string): BulkInput[] {
   }
 
   return rows;
-}
-
-function csvEscape(value: string): string {
-  return `"${value.replaceAll('"', '""')}"`;
 }
 
 function downloadBulkCsv(rows: BulkResult[]) {
