@@ -381,6 +381,37 @@ begin
 end;
 $$;
 
+
+-- Return actionable pending invitations only. Revoked epochs are preserved
+-- in the audit database but must never appear in Manager action lists.
+create or replace function public.manager_pending_invites()
+returns table (
+  invitation_id uuid, invitee_name text, job_role public.job_role,
+  team_name text, expires_at timestamptz, created_at timestamptz
+)
+language plpgsql stable security definer set search_path = ''
+as $$
+declare
+  v_plant uuid;
+begin
+  if (select private.auth_role()) <> 'plant_manager' then
+    raise exception 'plant_manager_required';
+  end if;
+  v_plant := (select private.auth_plant());
+  return query
+  select i.id,i.invitee_name,i.job_role,i.team_name,i.expires_at,i.created_at
+  from public.invitations i
+  join public.plants pl on pl.id=i.plant_id
+  where i.plant_id=v_plant
+    and pl.is_active=true
+    and i.plant_invitation_epoch=pl.invitation_epoch
+    and i.target_role='player'
+    and i.accepted_at is null and i.canceled_at is null
+    and i.expires_at>now()
+  order by i.created_at desc;
+end;
+$$;
+
 revoke all on function private.guard_active_plant_invitation() from public,anon,authenticated;
 revoke all on function private.guard_active_plant_profile() from public,anon,authenticated;
 revoke all on function private.guard_active_plant_session() from public,anon,authenticated;

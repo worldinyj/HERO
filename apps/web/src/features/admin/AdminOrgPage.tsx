@@ -4,7 +4,7 @@ import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
-import { isValidAdminOrgLists } from "./adminOrgResponse";
+import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
 
@@ -14,6 +14,7 @@ interface PlantRow {
   name: string;
   display_name: string;
   is_active: boolean;
+  invitation_epoch: number;
   created_at: string;
 }
 
@@ -40,6 +41,7 @@ interface PendingManagerInviteRow {
   id: string;
   plant_id: string;
   invitee_name: string;
+  plant_invitation_epoch: number;
   expires_at: string;
   created_at: string;
   plants:
@@ -110,7 +112,7 @@ export function AdminOrgPage() {
       const [plantResult, managerResult, inviteResult] = await Promise.all([
         supabase
           .from("plants")
-          .select("id, code, name, display_name, is_active, created_at")
+          .select("id, code, name, display_name, is_active, invitation_epoch, created_at")
           .order("display_name", { ascending: true }),
         supabase
           .from("profiles")
@@ -119,7 +121,7 @@ export function AdminOrgPage() {
           .order("real_name", { ascending: true }),
         supabase
           .from("invitations")
-          .select("id, plant_id, invitee_name, expires_at, created_at, plants(display_name, code)")
+          .select("id, plant_id, invitee_name, plant_invitation_epoch, expires_at, created_at, plants(display_name, code)")
           .eq("target_role", "plant_manager")
           .is("accepted_at", null)
           .is("canceled_at", null)
@@ -138,7 +140,10 @@ export function AdminOrgPage() {
 
       setPlants(plantResult.data as PlantRow[]);
       setManagers(managerResult.data as unknown as ManagerRow[]);
-      setPendingManagerInvites(inviteResult.data as unknown as PendingManagerInviteRow[]);
+      setPendingManagerInvites(currentPendingInvitations(
+        plantResult.data as PlantRow[],
+        inviteResult.data as unknown as PendingManagerInviteRow[],
+      ));
 
       if (!invitePlantId) {
         const firstActive = (plantResult.data ?? []).find((plant) => plant.is_active);

@@ -11,7 +11,8 @@ export function isValidAdminOrgLists(
   return Array.isArray(plants) && plants.every((row: unknown) =>
     objectRow(row) && typeof row.id === "string" &&
     typeof row.code === "string" && typeof row.display_name === "string" &&
-    typeof row.is_active === "boolean"
+    typeof row.is_active === "boolean" &&
+    Number.isSafeInteger(row.invitation_epoch) && row.invitation_epoch >= 0
   ) &&
     Array.isArray(managers) && managers.every((row: unknown) =>
       objectRow(row) && typeof row.id === "string" &&
@@ -21,6 +22,16 @@ export function isValidAdminOrgLists(
     ) &&
     Array.isArray(pendingInvitations) && pendingInvitations.every((row: unknown) =>
       objectRow(row) && typeof row.id === "string" &&
-      typeof row.plant_id === "string" && typeof row.invitee_name === "string"
+      typeof row.plant_id === "string" && typeof row.invitee_name === "string" &&
+      Number.isSafeInteger(row.plant_invitation_epoch) && row.plant_invitation_epoch >= 0
     );
+}
+
+/** Hide retained historical invites that were invalidated by suspension. */
+export function currentPendingInvitations<
+  T extends { plant_id: string; plant_invitation_epoch: number },
+  P extends { id: string; is_active: boolean; invitation_epoch: number },
+>(plants: readonly P[], invitations: readonly T[]): T[] {
+  const current = new Map(plants.filter(p => p.is_active).map(p => [p.id, p.invitation_epoch]));
+  return invitations.filter(i => current.get(i.plant_id) === i.plant_invitation_epoch);
 }
