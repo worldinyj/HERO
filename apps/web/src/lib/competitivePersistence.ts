@@ -5,6 +5,7 @@ import {
   openHeroOfflineDb,
 } from "./offlineDb";
 import { matchesCompletedCompetitiveSession } from "./competitiveCleanupPolicy";
+import { shouldPersistCompetitiveProgress } from "./competitiveProgressPolicy";
 
 export interface CompetitiveServerSession {
   sessionId: string;
@@ -66,6 +67,52 @@ export async function saveCompetitiveSession(
           transaction.error ??
             new Error("competitive_session_write_aborted"),
         );
+    });
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Update an existing play only. A fire-and-forget action save may finish
+ * after successful submission (or after another tab starts a replay).
+ * Read and conditionally write in one IndexedDB readwrite transaction.
+ */
+export async function updateCompetitiveSessionProgress(
+  record: Omit<StoredCompetitiveSession, "formatVersion" | "key" | "savedAt">,
+): Promise<boolean> {
+  const db = await openHeroOfflineDb();
+  if (!db) return false;
+  try {
+    return await new Promise<boolean>((resolve, reject) => {
+      const transaction = db.transaction(
+        COMPETITIVE_SESSION_STORE, "readwrite",
+      );
+      const store = transaction.objectStore(COMPETITIVE_SESSION_STORE);
+      let updated = false;
+      const request = store.get(sessionKey(record.userId, record.scenarioId));
+      request.onsuccess = () => {
+        if (!shouldPersistCompetitiveProgress(request.result, record)) return;
+        try {
+          store.put({
+            ...record,
+            formatVersion: 1,
+            key: sessionKey(record.userId, record.scenarioId),
+            savedAt: new Date().toISOString(),
+          } satisfies StoredCompetitiveSession);
+          updated = true;
+        } catch (error) {
+          reject(error);
+          try { transaction.abort(); } catch { /* transaction is inactive */ }
+        }
+      };
+      request.onerror = () =>
+        reject(request.error ?? new Error("competitive_progress_read_failed"));
+      transaction.oncomplete = () => resolve(updated);
+      transaction.onerror = () =>
+        reject(transaction.error ?? new Error("competitive_progress_write_failed"));
+      transaction.onabort = () =>
+        reject(transaction.error ?? new Error("competitive_progress_write_aborted"));
     });
   } finally {
     db.close();

@@ -17,6 +17,7 @@ import {
   clearCompetitiveSession,
   loadCompetitiveSession,
   saveCompetitiveSession,
+  updateCompetitiveSessionProgress,
   type CompetitiveServerSession,
 } from "../../lib/competitivePersistence";
 import { getSupabase } from "../../lib/supabase";
@@ -314,7 +315,7 @@ export function CompetitiveGamePage({
   async function persist(nextGame: GameState) {
     if (!scenario || !server || !userId) return;
 
-    await saveCompetitiveSession({
+    await updateCompetitiveSessionProgress({
       userId,
       scenarioId,
       scenarioVersion: scenario.version,
