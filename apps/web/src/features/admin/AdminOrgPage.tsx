@@ -6,6 +6,7 @@ import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "..
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
 import { isValidAdminOrgLists } from "./adminOrgResponse";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
+import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
 
 interface PlantRow {
   id: string;
@@ -81,6 +82,9 @@ export function AdminOrgPage() {
   const [plantOutcomeUnknown, setPlantOutcomeUnknown] = useState(false);
   const [plantRosterReady, setPlantRosterReady] = useState(false);
   const [plantRosterPending, setPlantRosterPending] = useState(false);
+  const [pendingPlantChange, setPendingPlantChange] = useState<PlantRow | null>(null);
+  const [plantCodeConfirmation, setPlantCodeConfirmation] = useState("");
+  const [plantImpactAcknowledged, setPlantImpactAcknowledged] = useState(false);
 
   const [invitePlantId, setInvitePlantId] = useState("");
   const [inviteeName, setInviteeName] = useState("");
@@ -239,6 +243,18 @@ export function AdminOrgPage() {
 
   async function handleTogglePlant(plant: PlantRow) {
     if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown) return;
+    if (!canConfirmPlantTransition(pendingPlantChange, plantCodeConfirmation, plantImpactAcknowledged) ||
+        pendingPlantChange?.id !== plant.id ||
+        pendingPlantChange.is_active !== plant.is_active) return;
+    const current = plants.find((p) => p.id === plant.id);
+    if (!current || current.is_active !== plant.is_active) {
+      setPendingPlantChange(null);
+      setError("발전소 상태가 변경되었습니다. 명단을 새로 조회한 후 다시 선택해주세요.");
+      return;
+    }
+    setPendingPlantChange(null);
+    setPlantCodeConfirmation("");
+    setPlantImpactAcknowledged(false);
     const requestedActive = !plant.is_active;
     try {
       setPlantActionPending(true);
@@ -558,6 +574,59 @@ export function AdminOrgPage() {
           </div>
         ) : null}
 
+        {pendingPlantChange ? (
+          <div className="invite-result-box" role="alert" aria-label="발전소 운영 상태 변경 확인">
+            <strong>
+              {pendingPlantChange.display_name} · {pendingPlantChange.code} —
+              {pendingPlantChange.is_active ? " 운영 중지 확인" : " 재활성화 확인"}
+            </strong>
+            <p className="muted">
+              {pendingPlantChange.is_active
+                ? "운영을 중지하면 담당자 및 Player의 이용이 차단되고, 진행 중 교육도 일시 중지됩니다. 아직 수락하지 않은 초대 링크는 무효화되며 재활성화해도 되살아나지 않습니다. 교육 기록은 보존됩니다."
+                : "운영을 다시 시작하면 담당자·Player 접근과 기존 교육 재개가 가능해집니다. 이전에 무효화된 초대 링크는 복원되지 않으므로 새 링크를 발급해야 합니다."}
+            </p>
+            <p className="muted">
+              현재 이 발전소의 활성 담당자 {managerCountByPlant.get(pendingPlantChange.id) ?? 0}명 ·
+              수락 대기 담당자 초대 {pendingManagerInvites.filter((invite) =>
+                invite.plant_id === pendingPlantChange.id
+              ).length}건. Player 초대 및 교육 세션도 영향을 받을 수 있습니다.
+            </p>
+            <label>
+              <span>확인을 위해 발전소 코드 {pendingPlantChange.code} 입력</span>
+              <input
+                value={plantCodeConfirmation}
+                onChange={(event) => setPlantCodeConfirmation(event.target.value)}
+                autoComplete="off"
+                placeholder={pendingPlantChange.code}
+                aria-label="발전소 상태 변경 확인 코드"
+              />
+            </label>
+            <label>
+              <input type="checkbox" checked={plantImpactAcknowledged}
+                onChange={(event) => setPlantImpactAcknowledged(event.target.checked)} />
+              <span>접근 제한·교육 중단과 기존 초대 링크 무효화 영향을 확인했습니다.</span>
+            </label>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button"
+                disabled={creatingPlant || plantActionPending || plantRosterPending}
+                onClick={() => {
+                  setPendingPlantChange(null);
+                  setPlantCodeConfirmation("");
+                  setPlantImpactAcknowledged(false);
+                }}>
+                취소
+              </button>
+              <button type="button" className="text-button"
+                disabled={!canConfirmPlantTransition(
+                  pendingPlantChange, plantCodeConfirmation, plantImpactAcknowledged
+                ) || creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
+                onClick={() => void handleTogglePlant(pendingPlantChange)}>
+                {pendingPlantChange.is_active ? "운영 중지 확정" : "재활성화 확정"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <div className="admin-list">
           {plants.map((plant) => (
             <article key={plant.id} className="admin-row">
@@ -576,7 +645,12 @@ export function AdminOrgPage() {
                   type="button"
                   className="text-button"
                   disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
-                  onClick={() => void handleTogglePlant(plant)}
+                  onClick={() => {
+                    setPendingPlantChange(plant);
+                    setPlantCodeConfirmation("");
+                    setPlantImpactAcknowledged(false);
+                    setError(null);
+                  }}
                 >
                   {plant.is_active ? "운영 중지" : "다시 활성화"}
                 </button>

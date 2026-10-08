@@ -10,6 +10,16 @@ alter table public.invitations
   add column if not exists plant_invitation_epoch bigint not null default 0
   check (plant_invitation_epoch >= 0);
 
+-- Existing inactive plants may have pending invitations issued before this
+-- epoch column existed. Those rows are assigned epoch 0 by ADD COLUMN.
+-- Backfill the inactive plant epoch to 1 before any reactivation; otherwise
+-- an old link could become usable again without a new invitation being issued.
+-- Active plants retain epoch 0 so their legitimate invitations keep working.
+-- No user-entered status or audit event is rewritten by this backfill.
+update public.plants
+set invitation_epoch = 1
+where is_active = false and invitation_epoch = 0;
+
 create or replace function public.set_plant_active_atomic(
   p_actor_user_id uuid, p_plant_id uuid, p_is_active boolean
 ) returns jsonb language plpgsql security definer set search_path = ''
