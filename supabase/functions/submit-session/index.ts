@@ -4,7 +4,6 @@ import {
   evaluate,
   isFinished,
   metricAverage,
-  type GameAction,
 } from "@hero/engine";
 import { ScenarioSchema } from "@hero/schema";
 import { handleOptions, json } from "../_shared/http.ts";
@@ -12,44 +11,14 @@ import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { readCommittedCompletion } from "../_shared/completionReceipt.ts";
 import { readJsonObject } from "../_shared/jsonObject.ts";
 import { isUuid } from "../_shared/uuid.ts";
+import { parseSessionSubmission } from "../_shared/submissionInput.ts";
 import { singleLookupOutcome } from "../_shared/lookupOutcome.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
-interface SubmittedAction {
-  type?: "continue" | "choice" | "info" | "card";
-  actionId?: string;
-  cardId?: string;
-}
-
 interface StoredDecision {
   action_type: "continue" | "choice" | "info" | "card";
   action_id: string | null;
-}
-
-interface SubmitSessionBody {
-  sessionId?: string;
-  actions?: SubmittedAction[];
-  reflectionAnswered?: boolean;
-  swissCheeseViewed?: boolean;
-}
-
-function normalizeAction(input: SubmittedAction): GameAction {
-  switch (input.type) {
-    case "continue":
-      return { type: "continue" };
-    case "choice":
-      if (!input.actionId) throw new Error("choice_action_id_required");
-      return { type: "choice", actionId: input.actionId };
-    case "info":
-      if (!input.actionId) throw new Error("info_action_id_required");
-      return { type: "info", actionId: input.actionId };
-    case "card":
-      if (!input.cardId) throw new Error("card_id_required");
-      return { type: "card", cardId: input.cardId };
-    default:
-      throw new Error("invalid_action_type");
-  }
 }
 
 function storedDecisionToAction(decision: StoredDecision): GameAction {
@@ -89,19 +58,15 @@ Deno.serve(async (req) => {
 
     const raw = await readJsonObject(req);
     if (!raw) return json(req, { error: "invalid_request" }, 400);
-    const body = raw as SubmitSessionBody;
-    const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : null;
-    const submittedActions = body.actions ?? [];
-    if (!isUuid(sessionId) || !Array.isArray(submittedActions)) {
+    const body = parseSessionSubmission(raw);
+    if (!body || !isUuid(body.sessionId)) {
       return json(req, { error: "invalid_submission" }, 400);
     }
+    const sessionId = body.sessionId;
+    const submittedActions = body.actions;
 
     if (profile.role !== "player") {
       return json(req, { error: "player_role_required" }, 403);
-    }
-
-    if (!sessionId || submittedActions.length > 250) {
-      return json(req, { error: "invalid_submission" }, 400);
     }
 
     const { data: session, error: sessionError } = await admin
@@ -187,11 +152,12 @@ Deno.serve(async (req) => {
       }
 
       for (const submitted of submittedActions) {
-        state = act(parsed.data, state, normalizeAction(submitted));
+        state = act(parsed.data, state, submitted);
       }
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : "invalid_action_log";
-      return json(req, { error: "action_log_rejected", detail: message }, 409);
+    } catch {
+      // Engine exceptions can contain internal graph identifiers or stored
+      // scenario details; clients get a stable rejection without that data.
+      return json(req, { error: "action_log_rejected" }, 409);
     }
 
     if (!isFinished(parsed.data, state)) {
