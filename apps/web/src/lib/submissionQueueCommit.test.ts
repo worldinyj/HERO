@@ -680,3 +680,17 @@ describe("manual retry identity and receipt recovery", () => {
     expect(fixture.invokes).toBe(1);
   });
 });
+
+describe("concurrent manual retries cannot submit twice", () => {
+  it("serializes two direct retry clicks for the same blocked session", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    const [first, second] = await Promise.all([
+      retryBlockedSubmission(sessionId, "user-one", "scenario-one"),
+      retryBlockedSubmission(sessionId, "user-one", "scenario-one"),
+    ]);
+    expect([first.status, second.status].sort())
+      .toEqual(["rejected", "submitted"]);
+    expect(fixture.invokes).toBe(1);
+    expect(fixture.records).toEqual([]);
+  });
+});
