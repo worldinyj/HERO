@@ -1,4 +1,3 @@
-import { writeAuditLog } from "../_shared/audit.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
@@ -221,69 +220,30 @@ async function forceReset(req: Request, profileId: string) {
     return json(req, { error: "plant_manager_required" }, 403);
   }
 
-  const { data: target, error: targetError } = await admin
-    .from("profiles")
-    .select("id, plant_id, role, nickname")
-    .eq("id", profileId)
-    .eq("plant_id", profile.plant_id)
-    .eq("role", "player")
-    .maybeSingle();
+  // PostgreSQL re-authorizes the actor/plant and serializes resets on
+  // the target profile. The event and audit either commit together or roll back.
+  const { data, error } = await admin.rpc("force_reset_nickname_atomic", {
+    p_actor_user_id: user.id,
+    p_profile_id: profileId,
+  });
+  if (error) throw new Error(error.message);
 
-  if (targetError || !target) {
-    return json(req, { error: "player_not_found" }, 404);
+  const result = data as {
+    reset?: boolean;
+    profileId?: string;
+    nickname?: string;
+    resetRequired?: boolean;
+  } | null;
+  if (
+    result?.reset !== true ||
+    result.profileId !== profileId ||
+    typeof result.nickname !== "string" ||
+    result.resetRequired !== true
+  ) {
+    throw new Error("nickname_reset_outcome_unknown");
   }
 
-  const season = await currentSeason(admin);
-  const oldNickname = target.nickname;
-  let resetNickname = "";
-
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    resetNickname = `PLAYER${crypto.randomUUID().replaceAll("-", "").slice(0, 6).toUpperCase()}`;
-
-    const { error: updateError } = await admin
-      .from("profiles")
-      .update({
-        nickname: resetNickname,
-        nickname_reset_required: true,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", target.id);
-
-    if (!updateError) break;
-
-    if (updateError.code !== "23505" || attempt === 4) {
-      throw updateError;
-    }
-  }
-
-  await admin.from("nickname_change_events").insert({
-    user_id: target.id,
-    season_id: season?.id ?? null,
-    actor_user_id: user.id,
-    event_type: "manager_reset",
-    old_nickname: oldNickname,
-    new_nickname: resetNickname,
-  });
-
-  await writeAuditLog(admin, {
-    actorUserId: user.id,
-    plantId: profile.plant_id,
-    action: "nickname.force_reset",
-    entityType: "profile",
-    entityId: target.id,
-    metadata: {
-      old_nickname: oldNickname,
-      reset_nickname: resetNickname,
-      season_id: season?.id ?? null,
-    },
-  });
-
-  return json(req, {
-    reset: true,
-    profileId: target.id,
-    nickname: resetNickname,
-    resetRequired: true,
-  });
+  return json(req, result);
 }
 
 Deno.serve(async (req) => {
