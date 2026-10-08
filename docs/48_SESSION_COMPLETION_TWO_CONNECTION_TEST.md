@@ -40,3 +40,10 @@
 ## 정적 DB 시험 전체 범위
 
 `check-batch-db-contracts.mjs`의 328건은 선별된 12개 스위트 합계이다. 전체 pgTAP SQL은 **17개 파일, 417개 선언**이며 모든 `plan()` 수와 전 파일의 고정 UUID·테스트 이메일 충돌을 검사한다. 실제 PostgreSQL 실행 결과는 미확인.
+
+## 연결 경로 안전성 보강 (2026-10-08)
+
+- `postgresql://127.0.0.1:54322/postgres?host=remote.example.com`처럼 **libpq 쿼리 옵션으로 실제 접속 대상을 덮어쓰는 URL을 거부**한다. fragment 및 postgres가 아닌 DB 사용자도 거부한다.
+- `PGHOSTADDR`, `PGSERVICE`, `PGOPTIONS` 등을 포함한 셸의 모든 `PG*` 환경변수를 외부 psql 프로세스에 물려주지 않고, 검증된 DSN과 고유 `PGAPPNAME`만 넘긴다.
+- 감시용 `pg_stat_activity`는 `hero_race_second_<고유 token>`인 연결만 검사하므로 다른 시험 프로세스의 잠금을 착각하지 않는다.
+- Python 3 문법 검사와 수정된 단위 테스트 **18/18 PASS**, 실제 PostgreSQL 두 연결 시험은 여전히 NOT RUN.

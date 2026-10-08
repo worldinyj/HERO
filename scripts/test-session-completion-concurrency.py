@@ -32,8 +32,18 @@ def validate_connection(dsn: str, ack: str | None) -> None:
         raise ValueError("Only a loopback PostgreSQL URL is allowed")
     if parsed.port != 54322 or parsed.path != "/postgres":
         raise ValueError("Only the local Supabase DB at port 54322/postgres is allowed")
+    # libpq URI query options can override host and redirect local-looking URLs.
+    if parsed.query or parsed.fragment or parsed.username != "postgres":
+        raise ValueError("Only an unmodified local Supabase postgres URL is allowed")
     if ack != ACK:
         raise ValueError("Explicit --ack-local-disposable is required")
+
+ 
+def postgres_environment(label: str) -> dict[str, str]:
+    """Strip libpq environment overrides before every psql invocation."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("PG")}
+    env["PGAPPNAME"] = "hero_race_" + label
+    return env
 
 
 def ensure_local_supabase(dsn: str) -> None:
@@ -74,7 +84,7 @@ def args(dsn: str) -> list[str]:
 
 def sql(dsn: str, command: str, label: str, timeout: int = 25) -> str:
     result = subprocess.run(args(dsn) + ["--command", command],
-                            env=dict(os.environ, PGAPPNAME="hero_race_" + label),
+                            env=postgres_environment(label),
                             capture_output=True, text=True, timeout=timeout)
     if result.returncode:
         raise RuntimeError(f"{label} psql error: {result.stderr[-500:]}")
@@ -139,7 +149,7 @@ def probe(dsn: str) -> None:
         first = subprocess.Popen(args(dsn), stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                  text=True, bufsize=1,
-                                 env=dict(os.environ, PGAPPNAME="hero_race_first"))
+                                 env=postgres_environment("first_" + token))
         assert first.stdin and first.stdout
         first.stdin.write("begin;\nset local role service_role;\n" +
                           call_sql(ids["session"], ids["user"], 245, 1) +
@@ -177,8 +187,7 @@ def probe(dsn: str) -> None:
         second = subprocess.Popen(args(dsn),
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  text=True, env=dict(os.environ,
-                                  PGAPPNAME="hero_race_second"))
+                                  text=True, env=postgres_environment("second_" + token))
         assert second.stdin is not None
         second.stdin.write(query)
         second.stdin.flush()
@@ -187,7 +196,7 @@ def probe(dsn: str) -> None:
             if second.poll() is not None:
                 raise AssertionError("second caller finished before first COMMIT")
             count = sql(dsn, "select count(*) from pg_stat_activity where "
-                        "application_name='hero_race_second' and wait_event_type='Lock';",
+                        f"application_name='hero_race_second_{token}' and wait_event_type='Lock';",
                         "observer", timeout=5)
             if count == "1":
                 waiting = True
