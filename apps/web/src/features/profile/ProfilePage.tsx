@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
+import { canReconcileNickname, isValidMyRecordSummary, isValidNicknameStatus, matchesCheckedNickname } from "./nicknameReconciliation";
 import { AudioSettings } from "../audio/AudioSettings";
 import { useAuth } from "../auth/AuthContext";
 
@@ -109,6 +110,7 @@ export function ProfilePage() {
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus | null>(null);
   const [newNickname, setNewNickname] = useState("");
   const [nicknameCheck, setNicknameCheck] = useState<{
+    value: string;
     checking: boolean;
     available: boolean;
     error: string | null;
@@ -133,6 +135,7 @@ export function ProfilePage() {
     );
 
     if (invokeError) throw invokeError;
+    if (!isValidNicknameStatus(result)) throw new Error("nickname_status_result_invalid");
     setNicknameStatus(result as NicknameStatus);
   }, [profile?.role]);
 
@@ -149,6 +152,7 @@ export function ProfilePage() {
         );
 
         if (rpcError) throw rpcError;
+        if (!isValidMyRecordSummary(result)) throw new Error("profile_summary_result_invalid");
         if (active) setData(result as MyRecordSummary);
       } catch (cause) {
         if (active) {
@@ -196,7 +200,8 @@ export function ProfilePage() {
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          setNicknameCheck({ checking: true, available: false, error: null });
+          if (!active) return;
+          setNicknameCheck({ value, checking: true, available: false, error: null });
           const supabase = getSupabase();
           const { data: result, error: invokeError } = await supabase.functions.invoke(
             "nickname-action",
@@ -212,13 +217,15 @@ export function ProfilePage() {
           };
 
           setNicknameCheck({
+            value,
             checking: false,
-            available: response.available === true,
-            error: response.error ?? null,
+            available: response?.available === true,
+            error: typeof response?.error === "string" ? response.error : null,
           });
         } catch {
           if (active) {
             setNicknameCheck({
+              value,
               checking: false,
               available: false,
               error: "nickname_check_failed",
@@ -259,16 +266,17 @@ export function ProfilePage() {
       nicknamePending ||
       nicknameOutcomeUnknown ||
       !newNickname.trim() ||
-      nicknameCheck?.available !== true
+      !matchesCheckedNickname(nicknameCheck, newNickname)
     ) return;
 
     try {
       setNicknamePending(true);
       setNicknameMessage(null);
+      const requestedNickname = newNickname.trim();
       const supabase = getSupabase();
       const { data: result, error: invokeError } = await supabase.functions.invoke(
         "nickname-action",
-        { body: { action: "change-self", nickname: newNickname.trim() } },
+        { body: { action: "change-self", nickname: requestedNickname } },
       );
       if (invokeError) throw invokeError;
 
@@ -284,6 +292,7 @@ export function ProfilePage() {
         !response ||
         typeof response.changed !== "boolean" ||
         typeof response.nickname !== "string" ||
+        response.nickname !== requestedNickname ||
         typeof response.resetRequired !== "boolean" ||
         typeof response.seasonKey !== "string" ||
         response.error
@@ -331,9 +340,15 @@ export function ProfilePage() {
       const { data: refreshed, error: refreshError } = await supabase.rpc(
         "my_record_summary",
       );
-      if (refreshError || !refreshed) throw refreshError ?? new Error("profile_not_found");
+      if (refreshError) throw refreshError;
+      if (!isValidMyRecordSummary(refreshed)) throw new Error("profile_summary_result_invalid");
+      const { data: policy, error: policyError } = await supabase.functions.invoke(
+        "nickname-action", { body: { action: "status" } },
+      );
+      if (policyError) throw policyError;
+      if (!canReconcileNickname(refreshed, policy)) throw new Error("nickname_reconciliation_mismatch");
       await refreshProfile();
-      await loadNicknameStatus();
+      setNicknameStatus(policy as NicknameStatus);
       setData(refreshed as MyRecordSummary);
       setNicknameOutcomeUnknown(false);
       setNewNickname("");
@@ -467,7 +482,7 @@ export function ProfilePage() {
                 nicknamePending ||
                 nicknameOutcomeUnknown ||
                 nicknameStatus?.canChange !== true ||
-                nicknameCheck?.available !== true
+                !matchesCheckedNickname(nicknameCheck, newNickname)
               }
               onClick={() => void handleNicknameChange()}
             >
