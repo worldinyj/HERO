@@ -204,7 +204,8 @@ check(
   "public invitation lookup distinguishes DB outage from invalid token"
 );
 check(
-  !epochTests.includes("select results_eq($select"),
+  !epochTests.includes("select results_eq($select") &&
+  !epochTests.includes("select throws_ok($select"),
   "suspension pgTAP assertions use valid dollar quoted SQL"
 );
 

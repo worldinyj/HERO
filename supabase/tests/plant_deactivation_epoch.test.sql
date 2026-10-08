@@ -101,9 +101,9 @@ where id='f1000000-0000-0000-0000-000000000003';
 reset role;
 set local role authenticated;
 set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000003';
-select results_eq($select count(*) from public.play_sessions$,array[0::bigint],
+select results_eq($$select count(*) from public.play_sessions$$,array[0::bigint],
   'inactive Player account cannot read historic sessions even when plant is active');
-select throws_ok($select public.my_record_summary()$,'P0001',
+select throws_ok($$select public.my_record_summary()$$,'P0001',
   'authenticated_profile_required','inactive account cannot use personal summary RPC');
 reset role;
 select * from finish();
