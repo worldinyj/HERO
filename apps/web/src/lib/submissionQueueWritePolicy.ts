@@ -36,17 +36,20 @@ export interface QueueWriteOptions {
   allowBlockedRetry?: boolean;
 }
 
-function sameSubmissionBody(a: QueueWriteBody, b: QueueWriteBody): boolean {
-  if (a.sessionId !== b.sessionId ||
+/** Compare the immutable offline evidence, never the live React game state. */
+export function sameSubmissionBody(a: QueueWriteBody, b: QueueWriteBody): boolean {
+  if (!a || !b || a.sessionId !== b.sessionId ||
       a.reflectionAnswered !== b.reflectionAnswered ||
       a.swissCheeseViewed !== b.swissCheeseViewed ||
       !Array.isArray(a.actions) || !Array.isArray(b.actions) ||
       a.actions.length !== b.actions.length) return false;
-  return a.actions.every((entry, i) =>
-    entry.type === b.actions[i].type &&
-    entry.actionId === b.actions[i].actionId &&
-    entry.cardId === b.actions[i].cardId
-  );
+  return a.actions.every((entry, i) => {
+    const other = b.actions[i];
+    return !!entry && !!other &&
+      entry.type === other.type &&
+      entry.actionId === other.actionId &&
+      entry.cardId === other.cardId;
+  });
 }
 
 /** One readwrite IDB transaction must guard queued actions and receipt status. */

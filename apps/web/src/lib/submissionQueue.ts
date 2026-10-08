@@ -6,7 +6,7 @@ import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
-import { decideQueueWrite, type QueueWriteOptions } from "./submissionQueueWritePolicy";
+import { decideQueueWrite, sameSubmissionBody, type QueueWriteOptions } from "./submissionQueueWritePolicy";
 import { decideConfirmedQueueDeletion } from "./submissionQueueDeletePolicy";
 
 export type SessionSubmissionAction =
@@ -450,12 +450,30 @@ export async function submitSessionWithQueue(
       };
     }
 
+    // The queued copy is the authoritative, immutable evidence. An online
+    // foreground click must not send a different log before the IDB write
+    // policy gets a chance to reject that change.
+    if (existing?.state === "pending" &&
+        (existing.scenarioId !== input.scenarioId ||
+         existing.body.sessionId !== input.body.sessionId ||
+         !sameSubmissionBody(existing.body, input.body))) {
+      return {
+        status: "rejected",
+        reason: "submission_queue_payload_conflict",
+        httpStatus: null,
+      };
+    }
+
     if (!online()) {
       await enqueueForUser(userId, input, "offline");
       return { status: "queued", reason: "offline" };
     }
 
-    const attempt = await invokeSubmission(input.body);
+    // If an offline submission is already pending, replay exactly those
+    // persisted choices rather than reconstructing current in-memory actions.
+    const authoritativeBody = existing?.state === "pending"
+      ? existing.body : input.body;
+    const attempt = await invokeSubmission(authoritativeBody);
 
     if (attempt.ok) {
       // The server's completion receipt is authoritative. A broken IDB

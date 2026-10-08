@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideQueueWrite, type QueueWriteRecord } from "./submissionQueueWritePolicy";
+import { decideQueueWrite, sameSubmissionBody, type QueueWriteRecord } from "./submissionQueueWritePolicy";
 const pending: QueueWriteRecord = {
   userId: "user-one", sessionId: "session-one", state: "pending",
 };
@@ -99,5 +99,39 @@ describe("immutable queued submission payload and monotonic retries", () => {
         evaluation: { ending: "safe_complete", hpPoint: 80 },
       },
     })).toBe("write");
+  });
+});
+
+
+describe("immutable offline payload comparison before foreground network", () => {
+  const savedBody = {
+    sessionId: "session-one",
+    actions: [{ type: "continue" }, { type: "choice", actionId: "safe" }],
+    reflectionAnswered: true,
+    swissCheeseViewed: true,
+  };
+  it("accepts an equivalent action log reconstructed with different object identity", () => {
+    expect(sameSubmissionBody(savedBody, structuredClone(savedBody))).toBe(true);
+  });
+  it("detects a changed decision", () => {
+    expect(sameSubmissionBody(savedBody, {
+      ...savedBody, actions: [{ type: "continue" }, { type: "choice", actionId: "unsafe" }],
+    })).toBe(false);
+  });
+  it("detects a changed session and missing actions", () => {
+    expect(sameSubmissionBody(savedBody, { ...savedBody, sessionId: "other" })).toBe(false);
+    expect(sameSubmissionBody(savedBody, { ...savedBody, actions: [] })).toBe(false);
+  });
+  it("detects a changed reflection or safety-timeline acknowledgement", () => {
+    expect(sameSubmissionBody(savedBody, {
+      ...savedBody, reflectionAnswered: false,
+    })).toBe(false);
+    expect(sameSubmissionBody(savedBody, {
+      ...savedBody, swissCheeseViewed: false,
+    })).toBe(false);
+  });
+  it("fails closed on malformed IndexedDB action entries", () => {
+    const invalid = { ...savedBody, actions: [null] };
+    expect(sameSubmissionBody(invalid as never, savedBody)).toBe(false);
   });
 });

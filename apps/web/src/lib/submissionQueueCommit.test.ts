@@ -694,3 +694,62 @@ describe("concurrent manual retries cannot submit twice", () => {
     expect(fixture.records).toEqual([]);
   });
 });
+
+
+describe("foreground online submission respects already queued immutable evidence", () => {
+  it("does not invoke the server when the live decisions differ from pending choices", async () => {
+    const saved = queued();
+    fixture.records = [saved];
+    const result = await submitSessionWithQueue({
+      scenarioId: "scenario-one",
+      body: { ...body, actions: [
+        { type: "continue" }, { type: "choice", actionId: "late-stale-choice" },
+      ] },
+    });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_queue_payload_conflict",
+    });
+    expect(fixture.records).toEqual([saved]);
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("rejects a different scenario before any foreground network request", async () => {
+    const saved = queued();
+    fixture.records = [saved];
+    const result = await submitSessionWithQueue({
+      scenarioId: "different-scenario", body,
+    });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_queue_payload_conflict",
+    });
+    expect(fixture.records).toEqual([saved]);
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("reuses the persisted pending request instead of a newly assembled body", async () => {
+    const saved = queued();
+    fixture.records = [saved];
+    const nextBody = structuredClone(body);
+    const result = await submitSessionWithQueue({
+      scenarioId: "scenario-one", body: nextBody,
+    });
+    expect(result.status).toBe("submitted");
+    expect(fixture.submittedBodies).toHaveLength(1);
+    expect(fixture.submittedBodies[0]).toBe(saved.body);
+    expect(fixture.records).toEqual([]);
+  });
+
+  it("refuses different reflection metadata without overwriting pending evidence", async () => {
+    const saved = queued();
+    fixture.records = [saved];
+    const result = await submitSessionWithQueue({
+      scenarioId: "scenario-one",
+      body: { ...body, reflectionAnswered: false },
+    });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_queue_payload_conflict",
+    });
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records).toEqual([saved]);
+  });
+});

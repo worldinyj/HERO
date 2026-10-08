@@ -722,7 +722,9 @@ export function CompetitiveGamePage({
                   ? "기기의 제출 대기 저장소를 사용할 수 없습니다. 제출을 보관했다고 볼 수 없으므로 이 화면을 유지하고 다시 시도해주세요."
                   : submission.reason === "submission_blocked_requires_manual_retry"
                     ? "이 세션은 서버에서 제출이 거절되어 자동 재시도가 중단됐습니다. 제출 기록은 보존됩니다. 담당자 확인 후 수동 재시도해주세요."
-                    : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
+                    : submission.reason === "submission_queue_payload_conflict"
+                      ? "이 기기에 이미 보관한 제출 기록과 현재 화면의 행동 로그가 다릅니다. 기존 기록을 보호하기 위해 다시 보내지 않았습니다. 새로고침 후 보관된 세션을 확인해주세요."
+                      : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
                 <button type="button" className="secondary-button compact-button"
                   disabled={!online}
                   onClick={() => {
