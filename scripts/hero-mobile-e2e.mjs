@@ -32,7 +32,7 @@ export function edgeProbeVerdict(status, json, origin, { localLoopback = false }
     return { ok: false, reason: "edge_handler_not_verified" };
   }
   if (origin === E2E_WEB_ORIGIN) {
-    return { ok: true, reason: "local_edge_exact_origin_verified" };
+    return { ok: true, reason: "local_edge_invalid_token_guard_verified" };
   }
   if (origin === "*" && localLoopback) {
     return { ok: true, reason: "local_edge_gateway_wildcard_observed" };
