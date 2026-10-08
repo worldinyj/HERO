@@ -33,14 +33,20 @@ Migration 024를 처음 적용할 때, 이미 중지된 발전소의 기존 초�
 - 기존 `invitations` 행은 감사·조사 목적을 위해 유지한다. 세대 불일치가 발생한 링크는 실제 초대 수락도 불가능하고, 새로 복귀한 발전소의 운영 명단에도 노출되어서는 안 된다.
 - Migration024에서 `manager_pending_invites()`에 발전소 현재 세대 일치 조건을 추가했다.
 - Admin 조직관리 목록은 `invitation_epoch`과 `plant_invitation_epoch`을 함께 조회해 `currentPendingInvitations()`로 현재 세대 초대만 노출한다. 목록 형식이 누락되면 확인 완료로 판정하지 않는다.
-- pgTAP 2개 추가: 재활성화 후 구세대 초대 0건, 신규 세대 초대 1건. 누적 신규 선언 **291개**, 실제 DB 테스트는 **NOT RUN**.
+- pgTAP 2개 추가: 재활성화 후 구세대 초대 0건, 신규 세대 초대 1건. 누적 신규 선언 **295개**, 실제 DB 테스트는 **NOT RUN**.
 - Migration024의 `my_record_summary()`는 발전소가 중지된 동안에도 활성 Player가 자기 교육 이력만 조회하도록 보존한다. PL/pgSQL 본문 구분자 검사를 정적 게이트에 포함했다.
 - 기존에 중지된 발전소의 초대 세대 초기 보정은 Migration024 적용 이전 상태의 격리 DB에서 검증해야 하며, 적용 후 pgTAP만으로 증명할 수 없다.
+
+## 중단 상태에서 동일값 재요청(no-op) 차단
+
+- `set_player_active_atomic`(Migration 020)은 발전소 상태를 `FOR SHARE`로 확인한 후 활성 상태가 같으면 `changed=false`를 반환한다. 중단된 발전소에서 Manager의 Player 활성 상태 조회처럼 보이는 no-op 경로도 거절한다.
+- `change_nickname_self_atomic`(Migration 022)은 Player 프로필 행 잠금에 이어 발전소 상태를 확인한 후 동일 닉네임 여부를 비교한다. 따라서 중단 중에는 기존 닉네임을 그대로 제출하더라도 데이터 수정 권한을 인정하지 않는다.
+- `player_status_atomic.test.sql` 2개, `nickname_self_change_atomic.test.sql` 2개 DB 검증을 추가했다. **SQL 실제 실행은 NOT RUN**.
 
 ## 재현 단계 (전부 NOT RUN)
 
 1. 격리 PostgreSQL에 Migration001~023 순서 적용. 중지된 발전소, 당시 발급된 미수락 초대 링크를 사전 fixture로 구성한 뒤 Migration024 적용. 이전 링크 무효화 확인.
-2. 같은 DB에서 신규 pgTAP **291개 선언**과 기존 정책 테스트 전체 실행. 중지/재활성화와 초대 발급/수락, session start/submit 동시성은 **두 연결 세션**에서 재현.
+2. 같은 DB에서 신규 pgTAP **295개 선언**과 기존 정책 테스트 전체 실행. 중지/재활성화와 초대 발급/수락, session start/submit 동시성은 **두 연결 세션**에서 재현.
 3. Admin UI: 중지 버튼 한 번으로 Edge 호출이 발생하지 않는지, 발전소 코드를 잘못 입력하거나 확인란을 선택하지 않으면 확정 버튼이 비활성인지 검증.
 4. 중지된 담당자는 Dashboard RPC 및 초대·닉네임 Edge가 403인지 확인. 활성 Player 본인은 `play_sessions`, `session_decisions`, `my_record_summary`를 읽되 다른 Player 기록은 0건인지 확인.
 5. `peek-invite`: DB 장애와 원래부터 없는 토큰, 이미 취소·수락·만료·세대 폐기된 토큰의 오류 상태를 구분하는지 점검.
@@ -50,6 +56,6 @@ Migration 024를 처음 적용할 때, 이미 중지된 발전소의 기존 초�
 
 `node scripts/check-batch-db-contracts.mjs`는 DB/네트워크 접근 없이 Migration024의 초기 세대 보정·owner RLS·초대 조회 오류 구분의 소스 계약을 추가 점검한다. **실제 PostgreSQL 원자성/SQL 런타임 테스트와 같지 않다.**
 
-기존 총 신규 pgTAP 252개 + Migration024 39개 = **291개 선언**. SQL 파일 총 16개, 원자적 서비스 역할 RPC 8종.
+기존 총 신규 pgTAP 252개 + Migration024 39개 + 정지 상태 no-op 회귀검사 4개 = **295개 선언**. SQL 파일 총 16개, 원자적 서비스 역할 RPC 8종.
 
 **Actions 절약 정책을 유지한다. main·PR #79·Supabase 원격 DB·Edge·Cloudflare 배포를 변경하지 않는다.**
