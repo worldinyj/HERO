@@ -214,8 +214,14 @@ describe("committed queue recovery", () => {
     expect(fixture.invokes).toBe(oldCount);
   });
 
-  it("cleans a committed row while offline without network access", async () => {
-    fixture.records = [{ ...queued(), state: "committed" }];
+  it("cleans a receipt-verified committed row while offline without network access", async () => {
+    fixture.records = [{
+      ...queued(), state: "committed",
+      completionReceipt: {
+        sessionId, alreadyCompleted: false,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    }];
     vi.stubGlobal("navigator", { onLine: false });
     try {
       await expect(flushQueuedSubmissions("user-one"))
@@ -365,5 +371,21 @@ describe("durable completion markers and legacy retention", () => {
     await flushQueuedSubmissions("user-one");
     expect(fixture.records).toHaveLength(1);
     expect(fixture.invokes).toBe(0);
+  });
+});
+
+describe("committed evidence is never silently deleted", () => {
+  it("does not touch a receipt-less legacy marker during offline background cleanup", async () => {
+    fixture.records = [{ ...queued(), state: "committed" }];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      const result = await flushQueuedSubmissions("user-one");
+      expect(result).toEqual({ submitted: 0, blocked: 0, remaining: 0 });
+      expect(fixture.records).toHaveLength(1);
+      expect(fixture.records[0].state).toBe("committed");
+      expect(fixture.invokes).toBe(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
