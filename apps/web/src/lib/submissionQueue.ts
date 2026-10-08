@@ -5,7 +5,7 @@ import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./subm
 import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
-import { markQueueCommitted, queueStateNeedsNetwork } from "./submissionQueueState";
+import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -251,6 +251,7 @@ async function cleanupConfirmedLocalSession(
   sessionId: string,
   knownItem?: PendingSessionSubmission,
   receipt?: unknown,
+  submission?: QueueableSessionSubmission,
 ): Promise<{ cleanupPending: boolean }> {
   // Persist a server-confirmed marker BEFORE any local deletion. If deletion
   // aborts, it is never safe to send this completed row over the network.
@@ -259,8 +260,32 @@ async function cleanupConfirmedLocalSession(
       (candidate) => candidate.sessionId === sessionId &&
         candidate.userId === userId,
     );
-    if (item && item.state !== "committed") {
-      await writeQueueRecord(markQueueCommitted(item, new Date().toISOString(), receipt));
+    const now = new Date().toISOString();
+    if (item) {
+      // An existing marker may come from a pre-receipt client. Upgrade it
+      // only with a real matching receipt, never invented local scores.
+      if (item.state !== "committed" ||
+          (isConfirmedSubmissionResponse(receipt, sessionId) &&
+           !hasVerifiedCommittedReceipt(item))) {
+        await writeQueueRecord(markQueueCommitted(item, now, receipt));
+      }
+    } else if (submission && isConfirmedSubmissionResponse(receipt, sessionId)) {
+      // Foreground first-time completion may have no queue row. Create a
+      // durable receipt marker before touching either local cache.
+      await writeQueueRecord({
+        formatVersion: 1,
+        sessionId,
+        userId,
+        scenarioId,
+        body: submission.body,
+        state: "committed",
+        completionReceipt: receipt,
+        queuedAt: now,
+        updatedAt: now,
+        attempts: 0,
+        lastAttemptAt: null,
+        lastError: null,
+      });
     }
   });
 
@@ -362,7 +387,8 @@ export async function submitSessionWithQueue(
       // The server's completion receipt is authoritative. A broken IDB
       // delete must not report the committed session as rejected.
       const { cleanupPending } = await cleanupConfirmedLocalSession(
-        userId, input.scenarioId, input.body.sessionId, undefined, attempt.data,
+        userId, input.scenarioId, input.body.sessionId,
+        undefined, attempt.data, input,
       );
       return { status: "submitted", data: attempt.data, cleanupPending };
     }
@@ -424,6 +450,11 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
         if (!item || item.state === "blocked") return "skipped";
 
         if (item.state === "committed") {
+          if (!hasVerifiedCommittedReceipt(item)) {
+            // Legacy/unverified marker: retain evidence for manual review.
+            // It is not eligible for API re-submission or local deletion.
+            return "unverified_committed";
+          }
           await cleanupConfirmedLocalSession(
             userId, item.scenarioId, item.sessionId, item,
           );

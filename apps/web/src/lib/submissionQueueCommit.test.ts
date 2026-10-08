@@ -325,3 +325,45 @@ describe("legacy committed receipt safety", () => {
     expect(fixture.invokes).toBe(1);
   });
 });
+
+
+describe("durable completion markers and legacy retention", () => {
+  it("preserves a first-time foreground receipt if IndexedDB deletion aborts", async () => {
+    fixture.failDelete = true;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
+    expect(fixture.records).toHaveLength(1);
+    expect(fixture.records[0]).toMatchObject({
+      state: "committed",
+      sessionId,
+      completionReceipt: { sessionId, alreadyCompleted: false },
+    });
+    expect(fixture.invokes).toBe(1);
+    fixture.failDelete = false;
+    await flushQueuedSubmissions("user-one");
+    expect(fixture.records).toEqual([]);
+    expect(fixture.invokes).toBe(1);
+  });
+
+  it("never deletes a legacy committed marker lacking a verified receipt", async () => {
+    fixture.records = [{ ...queued(), state: "committed" }];
+    await expect(flushQueuedSubmissions("user-one"))
+      .resolves.toEqual({ submitted: 0, blocked: 0, remaining: 0 });
+    expect(fixture.records[0]?.state).toBe("committed");
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("retains a marker when its stored receipt belongs to another session", async () => {
+    fixture.records = [{
+      ...queued(), state: "committed",
+      completionReceipt: {
+        sessionId: "different-session",
+        alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    }];
+    await flushQueuedSubmissions("user-one");
+    expect(fixture.records).toHaveLength(1);
+    expect(fixture.invokes).toBe(0);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { markQueueCommitted, queueStateNeedsNetwork } from "./submissionQueueState";
+import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
 import type { PendingSessionSubmission } from "./submissionQueue";
 
 const sample: PendingSessionSubmission = {
@@ -36,5 +36,37 @@ describe("confirmed queue state", () => {
     expect(queueStateNeedsNetwork("pending")).toBe(true);
     expect(queueStateNeedsNetwork("blocked")).toBe(false);
     expect(queueStateNeedsNetwork("committed")).toBe(false);
+  });
+});
+
+describe("committed marker verification", () => {
+  it("only accepts a matching server completion receipt", () => {
+    const receipt = {
+      sessionId: sample.sessionId,
+      alreadyCompleted: true,
+      evaluation: { ending: "safe_complete", hpPoint: 80 },
+    };
+    expect(hasVerifiedCommittedReceipt({
+      ...sample, state: "committed", completionReceipt: receipt,
+    })).toBe(true);
+  });
+  it("rejects receipt-less legacy and mismatched session markers", () => {
+    expect(hasVerifiedCommittedReceipt({ ...sample, state: "committed" })).toBe(false);
+    expect(hasVerifiedCommittedReceipt({
+      ...sample, state: "committed",
+      completionReceipt: {
+        sessionId: "other", alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    })).toBe(false);
+  });
+  it("never treats a pending submission as a committed record", () => {
+    expect(hasVerifiedCommittedReceipt({
+      ...sample,
+      completionReceipt: {
+        sessionId: sample.sessionId, alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    })).toBe(false);
   });
 });
