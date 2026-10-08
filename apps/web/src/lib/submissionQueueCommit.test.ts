@@ -6,6 +6,7 @@ const fixture = vi.hoisted(() => ({
   records: [] as PendingSessionSubmission[],
   failDelete: false,
   invokes: 0,
+  nextHttpStatus: null as number | null,
   games: [] as Array<Record<string, unknown>>,
   failGameDelete: false,
   failQueuePut: false,
@@ -25,6 +26,19 @@ vi.mock("./supabase", () => ({
     functions: {
       invoke: async (_name: string, opts: { body: { sessionId: string } }) => {
         fixture.invokes += 1;
+        if (fixture.nextHttpStatus !== null) {
+          return {
+            data: null,
+            error: {
+              message: "test_server_failure",
+              context: new Response(
+                JSON.stringify({ error: "action_log_rejected" }),
+                { status: fixture.nextHttpStatus,
+                  headers: { "content-type": "application/json" } },
+              ),
+            },
+          };
+        }
         return {
           data: {
             sessionId: opts.body.sessionId,
@@ -142,6 +156,7 @@ beforeEach(() => {
   fixture.records = [];
   fixture.failDelete = false;
   fixture.invokes = 0;
+  fixture.nextHttpStatus = null;
   fixture.games = [];
   fixture.failGameDelete = false;
   fixture.failQueuePut = false;
@@ -545,5 +560,77 @@ describe("read-before-write catches stale list snapshots", () => {
       expect(fixture.records).toEqual([original]);
       expect(fixture.invokes).toBe(0);
     } finally { vi.unstubAllGlobals(); }
+  });
+});
+
+
+describe("explicit manual retry of blocked submissions", () => {
+  it("sends immutable stored actions and returns the verified receipt", async () => {
+    const savedBody = { ...body, actions: [
+      { type: "choice" as const, actionId: "saved-choice" },
+    ] };
+    fixture.records = [{ ...queued(), state: "blocked", body: savedBody }];
+    const result = await retryBlockedSubmission(sessionId, "user-one", "scenario-one");
+    expect(result).toMatchObject({
+      status: "submitted", cleanupPending: false,
+      data: { sessionId, alreadyCompleted: false },
+    });
+    expect(fixture.invokes).toBe(1);
+    expect(fixture.records).toEqual([]);
+  });
+
+  it("rejects another owner's queue record without any API call", async () => {
+    fixture.records = [{ ...queued(), userId: "someone-else", state: "blocked" }];
+    await expect(retryBlockedSubmission(sessionId, "user-one", "scenario-one"))
+      .resolves.toMatchObject({
+        status: "rejected", reason: "blocked_submission_not_found",
+      });
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records).toHaveLength(1);
+  });
+
+  it("rejects a mismatch between the stored and current scenario", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    await expect(retryBlockedSubmission(sessionId, "user-one", "other-scenario"))
+      .resolves.toMatchObject({
+        status: "rejected", reason: "blocked_submission_scenario_mismatch",
+      });
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records[0]?.state).toBe("blocked");
+  });
+
+  it("keeps blocked state while offline", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      await expect(retryBlockedSubmission(sessionId, "user-one", "scenario-one"))
+        .resolves.toMatchObject({
+          status: "queued", reason: "offline_manual_retry_unavailable",
+        });
+      expect(fixture.records[0]?.state).toBe("blocked");
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("preserves a pending retry and reports retryable server failures", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    fixture.nextHttpStatus = 503;
+    const result = await retryBlockedSubmission(sessionId, "user-one", "scenario-one");
+    expect(result.status).toBe("queued");
+    expect(fixture.records[0]).toMatchObject({ state: "pending", attempts: 1 });
+    expect(fixture.invokes).toBe(1);
+  });
+
+  it("returns terminal manual retry errors to blocked state", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    fixture.nextHttpStatus = 409;
+    const result = await retryBlockedSubmission(sessionId, "user-one", "scenario-one");
+    expect(result).toMatchObject({
+      status: "rejected",
+      reason: "submission_blocked_requires_manual_retry",
+      httpStatus: 409,
+    });
+    expect(fixture.records[0]).toMatchObject({ state: "blocked", attempts: 1 });
+    expect(fixture.invokes).toBe(1);
   });
 });

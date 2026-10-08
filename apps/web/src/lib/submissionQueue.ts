@@ -485,7 +485,8 @@ export async function submitSessionWithQueue(
 
     return {
       status: "rejected",
-      reason,
+      reason: rejectedQueuedRow
+        ? "submission_blocked_requires_manual_retry" : reason,
       httpStatus: attempt.httpStatus,
     };
   });
@@ -579,33 +580,95 @@ export function flushQueuedSubmissions(
   return promise;
 }
 
+/**
+ * Explicit player-initiated retry of a permanently blocked submission.
+ * Always send the immutable choices already stored in IndexedDB, rather
+ * than reconstructing a possibly stale game log from the React component.
+ * Hold the session lock through the receipt and cleanup.
+ */
 export async function retryBlockedSubmission(
   sessionId: string,
   userId: string,
-): Promise<void> {
-  // A manual retry must not resurrect a row removed by a successful submit.
-  const requeued = await serializeSubmissionForSession(userId, sessionId, async () => {
+  scenarioId?: string,
+): Promise<SubmissionResult> {
+  return serializeSubmissionForSession(userId, sessionId, async () => {
     if ((await currentUserId()) !== userId) {
       throw new Error("authenticated_session_changed");
     }
     const item = (await listQueuedSubmissions(userId)).find(
-      (candidate) => candidate.sessionId === sessionId,
+      (candidate) => candidate.sessionId === sessionId &&
+        candidate.userId === userId,
     );
-    if (!item || item.state !== "blocked") return false;
+    if (!item || item.state !== "blocked") {
+      return {
+        status: "rejected", reason: "blocked_submission_not_found",
+        httpStatus: null,
+      };
+    }
+    if (scenarioId && item.scenarioId !== scenarioId) {
+      return {
+        status: "rejected", reason: "blocked_submission_scenario_mismatch",
+        httpStatus: null,
+      };
+    }
+    if (!online()) {
+      return { status: "queued", reason: "offline_manual_retry_unavailable" };
+    }
 
+    // The only allowed blocked -> pending transition.
     await writeQueueRecord({
       ...item,
       state: "pending",
       updatedAt: new Date().toISOString(),
       lastError: null,
     }, { allowBlockedRetry: true });
-    return true;
-  });
 
-  // Acquire the flush lock only AFTER releasing the manual retry lock.
-  if (requeued && online()) {
-    await flushQueuedSubmissions(userId);
-  }
+    // A concurrent tab could have committed while we awaited the IDB
+    // transaction. Never retransmit a verified completed session.
+    const current = (await listQueuedSubmissions(userId)).find(
+      (candidate) => candidate.sessionId === sessionId &&
+        candidate.userId === userId,
+    );
+    if (current?.state === "committed") {
+      if (!hasVerifiedCommittedReceipt(current)) {
+        return { status: "queued", reason: "confirmed_cleanup_pending" };
+      }
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, current.scenarioId, sessionId, current,
+      );
+      return {
+        status: "submitted", data: current.completionReceipt, cleanupPending,
+      };
+    }
+    if (!current || current.state !== "pending") {
+      return {
+        status: "rejected", reason: "blocked_submission_not_found",
+        httpStatus: null,
+      };
+    }
+
+    const attempt = await invokeSubmission(current.body);
+    if (attempt.ok) {
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, current.scenarioId, sessionId, current, attempt.data,
+      );
+      return { status: "submitted", data: attempt.data, cleanupPending };
+    }
+
+    const reason = attempt.message ?? "submit_session_failed";
+    if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
+      await updateAttempt(current, attempt, "pending");
+      return { status: "queued", reason };
+    }
+
+    // Permanent rejections require another explicit manual decision.
+    await updateAttempt(current, attempt, "blocked");
+    return {
+      status: "rejected",
+      reason: "submission_blocked_requires_manual_retry",
+      httpStatus: attempt.httpStatus,
+    };
+  });
 }
 
 export function startSubmissionQueueProcessor(

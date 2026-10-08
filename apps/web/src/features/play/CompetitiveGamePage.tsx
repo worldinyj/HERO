@@ -25,6 +25,7 @@ import { shouldRetryQueuedOnReconnect } from "../../lib/submissionReceipt";
 import { isRestorableCompetitiveSession } from "../../lib/competitiveCacheValidation";
 import {
   gameLogToSubmissionActions,
+  retryBlockedSubmission,
   submitSessionWithQueue,
 } from "../../lib/submissionQueue";
 import { GameClock } from "./GameClock";
@@ -391,6 +392,42 @@ export function CompetitiveGamePage({
     }
   }
 
+  async function retryBlockedFinishedGame() {
+    if (!server || !userId || !online ||
+        submission.status !== "rejected" ||
+        submission.reason !== "submission_blocked_requires_manual_retry" ||
+        submissionInFlightRef.current === server.sessionId) return;
+    const sessionId = server.sessionId;
+    submissionInFlightRef.current = sessionId;
+    setSubmission({ status: "submitting" });
+    try {
+      // The queue holds the authoritative, immutable submitted choices.
+      const result = await retryBlockedSubmission(sessionId, userId, scenarioId);
+      if (result.status === "submitted") {
+        setSubmission({
+          status: "submitted",
+          evaluation: serverEvaluation(result.data),
+          cleanupPending: result.cleanupPending,
+        });
+      } else if (result.status === "queued") {
+        // An offline transition after clicking should preserve manual intent.
+        setSubmission({ status: "queued", reason: result.reason });
+      } else {
+        setSubmission({ status: "rejected", reason: result.reason });
+      }
+    } catch (cause) {
+      setSubmission({
+        status: "rejected",
+        reason: cause instanceof Error
+          ? cause.message : "manual_submission_retry_failed",
+      });
+    } finally {
+      if (submissionInFlightRef.current === sessionId) {
+        submissionInFlightRef.current = null;
+      }
+    }
+  }
+
   async function startReplay(nodeId: string) {
     if (
       !scenario ||
@@ -673,7 +710,9 @@ export function CompetitiveGamePage({
                   ? "발전소 운영 중지로 제출이 보류됐습니다. 행동 기록은 이 기기의 대기 저장소에 보관됐으며, 운영이 재개되면 다시 제출할 수 있습니다."
                   : submission.reason === "confirmed_cleanup_pending"
                     ? "서버 완료 기록은 있으나 저장된 결과 영수증을 복원할 수 없습니다. 중복 전송을 방지하기 위해 자동 재제출하지 않습니다. 관리자 확인이 필요합니다."
-                    : "제출 대기 중 · 인터넷 연결이 복구되면 재전송을 시도합니다."}
+                    : submission.reason === "offline_manual_retry_unavailable"
+                      ? "현재 오프라인 상태여서 수동 재시도를 시작하지 않았습니다. 기존 거절 기록을 유지하고 연결 복구 후 확인해주세요."
+                      : "제출 대기 중 · 인터넷 연결이 복구되면 재전송을 시도합니다."}
               </div>
             ) : null}
 
@@ -685,10 +724,16 @@ export function CompetitiveGamePage({
                     ? "이 세션은 서버에서 제출이 거절되어 자동 재시도가 중단됐습니다. 제출 기록은 보존됩니다. 담당자 확인 후 수동 재시도해주세요."
                     : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
                 <button type="button" className="secondary-button compact-button"
-                  disabled={!online || submission.reason === "submission_blocked_requires_manual_retry"}
-                  onClick={() => void submitFinishedGame()}>
+                  disabled={!online}
+                  onClick={() => {
+                    if (submission.reason === "submission_blocked_requires_manual_retry") {
+                      void retryBlockedFinishedGame();
+                    } else {
+                      void submitFinishedGame();
+                    }
+                  }}>
                   {submission.reason === "submission_blocked_requires_manual_retry"
-                    ? "수동 재시도 필요" : "서버 제출 다시 시도"}
+                    ? "보관된 기록 수동 재시도" : "서버 제출 다시 시도"}
                 </button>
               </div>
             ) : null}
