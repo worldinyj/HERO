@@ -12,6 +12,7 @@ import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { readCommittedCompletion } from "../_shared/completionReceipt.ts";
 import { readJsonObject } from "../_shared/jsonObject.ts";
 import { isUuid } from "../_shared/uuid.ts";
+import { singleLookupOutcome } from "../_shared/lookupOutcome.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -109,7 +110,9 @@ Deno.serve(async (req) => {
       .eq("id", sessionId)
       .maybeSingle();
 
-    if (sessionError || !session) {
+    const sessionOutcome = singleLookupOutcome(session, sessionError);
+    if (sessionOutcome === "failed") throw new Error("session_lookup_unavailable");
+    if (sessionOutcome === "missing") {
       return json(req, { error: "session_not_found" }, 404);
     }
 
@@ -138,7 +141,9 @@ Deno.serve(async (req) => {
       .eq("id", session.scenario_version_id)
       .maybeSingle();
 
-    if (versionError || !version) {
+    const versionOutcome = singleLookupOutcome(version, versionError);
+    if (versionOutcome === "failed") throw new Error("scenario_version_lookup_unavailable");
+    if (versionOutcome === "missing") {
       return json(req, { error: "scenario_version_not_found" }, 404);
     }
 
