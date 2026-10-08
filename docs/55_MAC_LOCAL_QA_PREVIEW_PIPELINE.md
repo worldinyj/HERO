@@ -71,13 +71,16 @@ node scripts/hero-local.mjs qa --with-db
 QA PASS 기록은 Git 비추적 `.hero-local/qa-pass.json`에 SHA, 테스트 시각, 로컬 DB 여부, 빌드 해시, **환경파일 내용의 해시만** 저장한다. 비밀키 본문은 넣지 않는다.
 
 ## 4. Cloudflare Pages 미리보기 배포 — 명시적 승인 필요
-먼저 **무시되는 로컬 설정 파일** `apps/web/.env.production.local`을 준비한다 (환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_KAKAO_JS_KEY`). **서비스 역할 키 / `sb_secret_`를 브라우저 환경변수로 넣으면 안 된다.** 반드시 파일을 QA/빌드 *이전*에 준비해야 한다.
+먼저 **무시되는 로컬 설정 파일** `apps/web/.env.production.local`을 준비한다 (환경변수: `HERO_APP_URL`, `HERO_STAGING_SUPABASE_REF`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_KAKAO_JS_KEY`). **서비스 역할 키 / `sb_secret_`를 브라우저 환경변수로 넣으면 안 된다.** 반드시 파일을 QA/빌드 *이전*에 준비해야 한다.
+
+미리보기 배포는 `HERO_STAGING_SUPABASE_REF`와 실제 브라우저 Supabase URL이 정확히 일치해야 한다. 기존 HERO 외부 인증·테스트 프로젝트 `alhpooapiokyuxysdzzp`와 소유자의 다른 활성 프로젝트 `puqfyyzhxeaumtzfbdwb`은 미리보기 대상에서 **명시적으로 차단**한다. 스테이징 전용 새 프로젝트가 아직 없으므로 현재 업로드는 보류다.
 
 `npm install -g wrangler` 후 Cloudflare 계정 로그인:
 ```bash
 wrangler login
 node scripts/hero-local.mjs qa --with-db
-# 사전 구성 검증 후, 사람이 외부 업로드를 명시적으로 승인한 경우에만:
+node scripts/hero-local.mjs preview-check --project=hero --preview-branch=qa-local
+# PREVIEW_CHECK_PASS 이후 사람이 외부 업로드를 명시적으로 승인한 경우에만:
 node scripts/hero-local.mjs preview --project=hero --preview-branch=qa-local --confirm-preview
 node scripts/hero-local.mjs smoke --url=https://qa-local.hero-dnr.pages.dev
 ```

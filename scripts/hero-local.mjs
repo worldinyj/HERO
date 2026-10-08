@@ -5,6 +5,7 @@
  * sync              Fetch and fast-forward the protected batch branch.
  * doctor            Print the local prerequisites without changing anything.
  * qa [--with-db]    Run local CI gates and save same-SHA evidence.
+ * preview-check     Validate preview guards without any upload.
  * preview           Deploy a verified build to a NON-production Pages branch.
  * smoke             Smoke-check an explicitly supplied preview URL.
  *
@@ -53,6 +54,60 @@ export function safePreviewOrigin(value) {
     return false;
   }
 }
+
+/**
+ * A preview deployment must never point at the existing HERO external DB or
+ * the owner's unrelated second project. An explicitly chosen NEW staging ref
+ * must match the browser's Supabase URL exactly.
+ *
+ * The policy intentionally returns error codes only, not environment values.
+ */
+export const RESERVED_SUPABASE_REFS = Object.freeze([
+  "alhpooapiokyuxysdzzp", // existing HERO external test/auth instance
+  "puqfyyzhxeaumtzfbdwb", // another existing instance, not a staging grant
+]);
+export function checkPreviewBackendEnv(content, expectedAppUrl) {
+  const values = new Map();
+  const protectedNames = new Set([
+    "HERO_STAGING_SUPABASE_REF", "VITE_SUPABASE_URL", "HERO_APP_URL",
+  ]);
+  for (const raw of content.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const i = line.indexOf("=");
+    if (i < 1) continue;
+    const key = line.slice(0, i).trim();
+    let value = line.slice(i + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+    if (protectedNames.has(key) && values.has(key)) {
+      return { ok: false, reason: "duplicate_" + key.toLowerCase() };
+    }
+    values.set(key, value);
+  }
+  const stagingRef = values.get("HERO_STAGING_SUPABASE_REF") ?? "";
+  if (!/^[a-z0-9]{20}$/.test(stagingRef)) {
+    return { ok: false, reason: "missing_staging_supabase_ref" };
+  }
+  if (RESERVED_SUPABASE_REFS.includes(stagingRef)) {
+    return { ok: false, reason: "existing_supabase_project_forbidden" };
+  }
+  if (values.get("HERO_APP_URL") !== expectedAppUrl) {
+    return { ok: false, reason: "preview_app_url_mismatch" };
+  }
+  const rawUrl = values.get("VITE_SUPABASE_URL") ?? "";
+  let url;
+  try { url = new URL(rawUrl); }
+  catch { return { ok: false, reason: "invalid_supabase_url" }; }
+  if (url.protocol !== "https:" ||
+      url.hostname !== stagingRef + ".supabase.co" ||
+      url.pathname !== "/" || url.port || url.username || url.password ||
+      url.search || url.hash) {
+    return { ok: false, reason: "staging_supabase_url_mismatch" };
+  }
+  return { ok: true, reason: "staging_target_isolated" };
+}
+
 export function isValidEvidence(record, expected, now = Date.now()) {
   return Boolean(record && record.version === 1 &&
     record.branch === BRANCH && record.sha === expected.sha &&
@@ -214,11 +269,10 @@ function qa() {
     " db=" + (withDb ? "tested" : "NOT_RUN"));
   if (!withDb) console.log("Preview deployment requires a new qa --with-db run.");
 }
-function preview() {
+function verifyPreviewReadiness() {
   checkRepo();
   checkClean();
   checkSynced();
-  if (!hasFlag("confirm-preview")) throw Error("Missing --confirm-preview");
   const project = option("project");
   const branch = option("preview-branch");
   if (project !== PAGES_PROJECT || !safePreviewBranch(branch ?? "")) {
@@ -237,12 +291,25 @@ function preview() {
   if (!isValidEvidence(record, expected)) {
     throw Error("QA is stale, not DB-tested, or build/env differs. Rerun qa --with-db.");
   }
-  // Check the actual preview URL's public frontend config and legal origins.
+  // Distinguish preview target from the existing production-backed HERO app.
   const appUrl = previewAppUrl(branch);
+  const backend = checkPreviewBackendEnv(readFileSync(PREVIEW_ENV, "utf8"), appUrl);
+  if (!backend.ok) {
+    throw Error("Preview staging backend check failed: " + backend.reason);
+  }
   describe("node", ["scripts/check-deployment-preflight.mjs",
     "--env-file=apps/web/.env.production.local",
     "--app-url=" + appUrl, "--strict"]);
   prerequisite("wrangler");
+  return { appUrl, project, branch };
+}
+function previewCheck() {
+  const { appUrl } = verifyPreviewReadiness();
+  console.log("PREVIEW_CHECK_PASS " + appUrl + " (NO UPLOAD)");
+}
+function preview() {
+  if (!hasFlag("confirm-preview")) throw Error("Missing --confirm-preview");
+  const { appUrl, project, branch } = verifyPreviewReadiness();
   console.log("Deploying PREVIEW ONLY to " + appUrl + " at " + sha());
   describe("wrangler", ["pages", "deploy", "apps/web/dist",
     "--project-name=" + project, "--branch=" + branch]);
@@ -268,8 +335,9 @@ function main() {
     case "sync": sync(); break;
     case "qa": qa(); break;
     case "preview": preview(); break;
+    case "preview-check": previewCheck(); break;
     case "smoke": smoke(); break;
-    default: throw Error("Usage: node scripts/hero-local.mjs doctor|sync|qa|preview|smoke");
+    default: throw Error("Usage: node scripts/hero-local.mjs doctor|sync|qa|preview-check|preview|smoke");
   }
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
