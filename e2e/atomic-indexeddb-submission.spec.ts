@@ -188,6 +188,37 @@ test.describe("real IndexedDB two-tab atomic submission staging", () => {
     });
   });
 
+  test("staged request is immutable relative to the input after commit", async ({ context }) => {
+    const [page] = await twoTabs(context);
+    const id = "stage-snapshot-" + crypto.randomUUID();
+    const answer = await page.evaluate(async (sessionId) => {
+      const moduleUrl = "/src/lib/submissionForegroundStore.ts";
+      const { stageForegroundSubmission } = await import(/* @vite-ignore */ moduleUrl);
+      const request = {
+        scenarioId: "scenario-atomic",
+        body: {
+          sessionId,
+          actions: [
+            { type: "continue" as const },
+            { type: "choice" as const, actionId: "verify" },
+          ],
+          reflectionAnswered: true,
+          swissCheeseViewed: true,
+        },
+      };
+      const staged = await stageForegroundSubmission("user-one", request);
+      if (staged.kind !== "ready") throw Error("stage did not create pending");
+      request.body.actions[1].actionId = "changed-after-save";
+      return { stagedBody: staged.record.body };
+    }, id);
+    expect(answer.stagedBody.actions[1]).toMatchObject({
+      type: "choice", actionId: "verify",
+    });
+    expect(await inspect(page, id)).toMatchObject({
+      state: "pending", body: { actions: input(id, "verify").body.actions },
+    });
+  });
+
   test("a session ID cannot be staged for a different signed-in user", async ({ context }) => {
     const [a, b] = await twoTabs(context);
     const id = "stage-owner-" + crypto.randomUUID();

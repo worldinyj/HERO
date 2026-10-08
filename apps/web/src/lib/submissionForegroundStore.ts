@@ -65,8 +65,12 @@ export async function stageForegroundSubmission(
           return;
         }
         try {
-          store.put(newRecord);
-          result = { kind: "ready", record: newRecord };
+          // IndexedDB put snapshots newRecord. Send an equally independent
+          // snapshot so later mutations to input.body cannot change the
+          // outbound payload after its durable queued copy has been saved.
+          const stagedCopy = structuredClone(newRecord);
+          store.put(stagedCopy);
+          result = { kind: "ready", record: stagedCopy };
         } catch (error) {
           policyError = error instanceof Error
             ? error : new Error("submission_queue_write_failed");
