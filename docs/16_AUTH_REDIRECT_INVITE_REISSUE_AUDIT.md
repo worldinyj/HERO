@@ -37,6 +37,14 @@
 - 발전소담당자 대시보드에서 재발급 링크 보존 및 서버 응답 단절 후 자동 중복 발급 잠금을 적용.
 - 실제 동시 요청 `cancel` vs `accept/reissue`는 별도 DB 세션과 E2E에서 검증해야 함. SQL 테스트에 포함된 연속 호출은 진짜 병렬 테스트가 아님.
 
+## 3.2 신규 초대 원자적 발급 — 코드 구현, 실제 검증 보류
+
+- `202610080019_atomic_invitation_creation.sql`: `create_invitation_atomic`으로 초대 INSERT와 `invitation.created` 감사 기록을 단일 DB 트랜잭션으로 결합. 활성 사용자·역할·발전소 검증은 DB가 다시 수행.
+- `create-invite/index.ts`가 새 service-role-only RPC를 사용하며 기존 별도 INSERT/감사 호출을 제거. `SITE_URL` 검증과 토큰 생성·해시는 RPC 전에 진행.
+- `invitation_atomic_creation.test.sql`에 **27 assertions** (권한, 스코프, 해시 충돌, 감사 기록 INSERT 실패 시 초대 생성 롤백) 작성.
+- 발전소담당자 단건 Player 초대가 기존 일회용 링크를 덮어쓰지 못하도록 UI를 수정함.
+- **테스트 미실행/원격 RPC 미적용**. 016→017→018→019 모두 로컬 DB에서 검증 완료 전 서비스 배포 금지.
+
 ## 4. 일괄 CI 재개 시
 
 - `pnpm --dir apps/web test`로 리다이렉트 21개 사례 포함 전체 단위 테스트
@@ -45,4 +53,4 @@
 - `deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts`
 - Kakao 실계정 로그인 / 새 사용자 차단 / 관리자·담당자 초대 성공·실패 시험
 - `supabase test db`에서 Migration 017과 21 pgTAP 사례(특히 23505 rollback)를 확인하고, 동시 재발급·이미 수락된 초대/실패주입 E2E를 수행
-- PR/main merge, migration016·017·018 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행
+- PR/main merge, migration016·017·018·019 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행

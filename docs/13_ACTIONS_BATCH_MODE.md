@@ -38,7 +38,8 @@
 - Migration 017 코드 추가: `reissue_invitation_atomic`(service_role-only)으로 기존 초대 잠금·취소, 새 초대 발급, 감사 로그 두 건을 하나의 DB 트랜잭션에 통합. pgTAP 21개 작성. **실제 DB 실행·동시성 확인 전이며 원격 미적용**.
 - Migration 018 코드 추가: `cancel_invitation_atomic`으로 초대 행을 잠그고 취소와 감사 1건을 동일 트랜잭션에 반영. pgTAP 27개 작성. **미실행·원격 미적용**.
 - 발전소담당자 Dashboard의 재발급 응답 불확실성·일회용 링크 자동 소실도 보완 (UI 실제 E2E NOT RUN).
-- 검증 문서: `docs/17_ATOMIC_INVITATION_REISSUE_VALIDATION.md`, `docs/18_ATOMIC_INVITATION_CANCEL_VALIDATION.md`. Migration 016 43 + 017 21 + 018 27 = **91개 pgTAP assertion 코드 작성, NOT RUN**.
+- Migration 019 코드 추가: `create_invitation_atomic`으로 초대 INSERT 및 감사 로그를 단일 DB 트랜잭션에 묶음. pgTAP 27개 작성; 감사 INSERT 실패주입 포함. 단건 Player 일회용 링크 덮어쓰기 UI도 방지.
+- 검증 문서: `docs/17_ATOMIC_INVITATION_REISSUE_VALIDATION.md`, `docs/18_ATOMIC_INVITATION_CANCEL_VALIDATION.md`, `docs/19_ATOMIC_INVITATION_CREATION_VALIDATION.md`. Migration 016 43 + 017 21 + 018 27 + 019 27 = **118개 pgTAP assertion 코드 작성, NOT RUN**.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
@@ -81,7 +82,7 @@ supabase stop --no-backup
 3. Actions가 정상 실행될 수 있을 때 **최종 PR SHA**에서 CI, Database Policy Tests, E2E를 실행한다. 중간 커밋마다 실행·재시도하지 않는다.
 4. 테스트 실패 시 로그를 확보해 같은 배치 브랜치에서 수정한다. 코드 성공과 Runner 실행 실패를 구분한다.
 5. 모두 PASS한 뒤 승인에 따라 `main`에 병합하고 병합 SHA에서 검증한다.
-6. 로컬 pgTAP 전체 성공 및 승인 후, staging에 migration 016 → 017 → 018 순서대로 적용하고 Edge Function `manager-user-action`과 관련 웹 버전을 호환되게 배포 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
+6. 로컬 pgTAP 전체 성공 및 승인 후, staging에 migration 016 → 017 → 018 → 019 순서대로 적용하고 Edge Function `manager-user-action`과 관련 웹 버전을 호환되게 배포 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
 7. S01/S02 SOURCE_HOLD, S03 HUMAN_REVIEW_PENDING, 약관/개인정보/실기기/파일럿 등 출시 차단 게이트는 각각 별도 증거로만 해제한다.
 
 ## 6. 참조
