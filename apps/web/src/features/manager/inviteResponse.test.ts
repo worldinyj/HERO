@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readIssuedInviteLink } from "./inviteResponse";
+import { readIssuedInviteLink, readReissuedInviteLink } from "./inviteResponse";
 
 const good = {
   invitationId: "abc-123",
@@ -31,5 +31,20 @@ describe("one-time invite response integrity", () => {
     expect(readIssuedInviteLink({ ...good, inviteUrl: "/i/relative-token" })).toBeNull();
     expect(readIssuedInviteLink({ ...good, expiresAt: "not-a-date" })).toBeNull();
     expect(readIssuedInviteLink({ ...good, error: "internal_error" })).toBeNull();
+  });
+});
+
+describe("reissued invitation must be tied to its requested original", () => {
+  const reissued = { ...good, reissued: true, oldInvitationId: "original-1" };
+  it("accepts only the matching original ID and a distinct replacement", () => {
+    expect(readReissuedInviteLink(reissued, "original-1")).toEqual(good);
+    expect(readReissuedInviteLink(reissued, "different-original")).toBeNull();
+    expect(readReissuedInviteLink({ ...reissued, invitationId: "original-1" }, "original-1")).toBeNull();
+  });
+  it("rejects incomplete rotation and malformed one-time link", () => {
+    expect(readReissuedInviteLink({ ...good }, "original-1")).toBeNull();
+    expect(readReissuedInviteLink({ ...reissued, reissued: false }, "original-1")).toBeNull();
+    expect(readReissuedInviteLink({ ...reissued, inviteUrl: "javascript:alert(1)" }, "original-1")).toBeNull();
+    expect(readReissuedInviteLink(null, "original-1")).toBeNull();
   });
 });

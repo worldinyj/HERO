@@ -32,3 +32,23 @@ export function readIssuedInviteLink(value: unknown): IssuedInviteLink | null {
     plantDisplayName: data.plantDisplayName,
   };
 }
+
+/** Reissue is a token rotation, not a new unrelated invite response. */
+export function readReissuedInviteLink(
+  value: unknown,
+  requestedInvitationId: string,
+): IssuedInviteLink | null {
+  const link = readIssuedInviteLink(value);
+  if (!link || value === null || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const result = value as Record<string, unknown>;
+  if (
+    result.reissued !== true ||
+    result.oldInvitationId !== requestedInvitationId ||
+    link.invitationId === requestedInvitationId
+  ) {
+    return null;
+  }
+  return link;
+}

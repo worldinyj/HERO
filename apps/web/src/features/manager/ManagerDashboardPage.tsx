@@ -4,6 +4,7 @@ import { getSupabase } from "../../lib/supabase";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 import { isValidManagerDashboardLists } from "./managerDashboardResponse";
+import { readReissuedInviteLink } from "./inviteResponse";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -240,21 +241,14 @@ export function ManagerDashboardPage() {
       setActionPending(`invite:${invitationId}`);
       setError(null);
       const result = await invokeManagerAction({ action: "reissue-invite", invitationId });
-      if (
-        typeof result.invitationId !== "string" ||
-        typeof result.inviteUrl !== "string" ||
-        typeof result.expiresAt !== "string" ||
-        typeof result.plantDisplayName !== "string"
-      ) {
+      const replacement = readReissuedInviteLink(result, invitationId);
+      if (!replacement) {
+        // A response with the wrong original invitation can never prove a
+        // token rotation succeeded for the requested target.
         throw new InviteCreationOutcomeUnknownError();
       }
       setCopiedReissue(false);
-      setReissueResult({
-        invitationId: result.invitationId,
-        inviteUrl: result.inviteUrl,
-        expiresAt: result.expiresAt,
-        plantDisplayName: result.plantDisplayName,
-      });
+      setReissueResult(replacement);
       await loadDashboard(true);
     } catch (cause) {
       if (cause instanceof InviteCreationOutcomeUnknownError) {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
-import { readIssuedInviteLink } from "../manager/inviteResponse";
+import { readIssuedInviteLink, readReissuedInviteLink } from "../manager/inviteResponse";
 import { isValidAdminOrgLists } from "./adminOrgResponse";
 
 interface PlantRow {
@@ -338,7 +338,7 @@ export function AdminOrgPage() {
       }
 
       if (action === "reissue-invite") {
-        const result = readIssuedInviteLink(data);
+        const result = readReissuedInviteLink(data, invitationId);
         if (!result) throw new InviteCreationOutcomeUnknownError();
         setCopied(false);
         setInviteResult(result);
