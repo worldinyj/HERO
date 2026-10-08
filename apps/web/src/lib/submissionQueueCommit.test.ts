@@ -7,10 +7,15 @@ const fixture = vi.hoisted(() => ({
   failDelete: false,
   invokes: 0,
   submittedBodies: [] as PendingSessionSubmission["body"][],
+  pendingAtInvoke: [] as boolean[],
+  authChecks: 0,
+  switchAuthOnCheck: 0,
   nextHttpStatus: null as number | null,
   games: [] as Array<Record<string, unknown>>,
   failGameDelete: false,
   failQueuePut: false,
+  failQueuePutAt: 0,
+  queuePutCount: 0,
   queueReadOverride: null as PendingSessionSubmission | null,
   queueListOverride: null as PendingSessionSubmission[] | null,
   hideCommittedInQueueListing: false,
@@ -19,15 +24,23 @@ const fixture = vi.hoisted(() => ({
 vi.mock("./supabase", () => ({
   getSupabase: () => ({
     auth: {
-      getSession: async () => ({
-        data: { session: { user: { id: fixture.userId } } },
-        error: null,
-      }),
+      getSession: async () => {
+        fixture.authChecks += 1;
+        return {
+          data: { session: { user: {
+            id: fixture.switchAuthOnCheck === fixture.authChecks
+              ? "other-user-after-staging" : fixture.userId,
+          } } },
+          error: null,
+        };
+      },
     },
     functions: {
       invoke: async (_name: string, opts: { body: PendingSessionSubmission["body"] }) => {
         fixture.invokes += 1;
         fixture.submittedBodies.push(opts.body);
+        fixture.pendingAtInvoke.push(fixture.records.some((r) =>
+          r.sessionId === opts.body.sessionId && r.state === "pending"));
         if (fixture.nextHttpStatus !== null) {
           return {
             data: null,
@@ -99,7 +112,10 @@ vi.mock("./offlineDb", () => ({
             queueMicrotask(() => transaction.oncomplete?.());
           },
           put: (row: PendingSessionSubmission) => {
-            if (fixture.failQueuePut) throw new Error("simulated_put_abort");
+            fixture.queuePutCount += 1;
+            if (fixture.failQueuePut ||
+                fixture.queuePutCount === fixture.failQueuePutAt)
+              throw new Error("simulated_put_abort");
             fixture.records = [
               ...fixture.records.filter((item) => item.sessionId !== row.sessionId),
               row,
@@ -160,10 +176,15 @@ beforeEach(() => {
   fixture.failDelete = false;
   fixture.invokes = 0;
   fixture.submittedBodies = [];
+  fixture.pendingAtInvoke = [];
+  fixture.authChecks = 0;
+  fixture.switchAuthOnCheck = 0;
   fixture.nextHttpStatus = null;
   fixture.games = [];
   fixture.failGameDelete = false;
   fixture.failQueuePut = false;
+  fixture.failQueuePutAt = 0;
+  fixture.queuePutCount = 0;
   fixture.queueReadOverride = null;
   fixture.queueListOverride = null;
   fixture.hideCommittedInQueueListing = false;
@@ -359,7 +380,7 @@ describe("legacy committed receipt safety", () => {
 
   it("does not claim the local cleanup succeeded when marking the receipt fails", async () => {
     fixture.records = [queued()];
-    fixture.failQueuePut = true;
+    fixture.failQueuePutAt = 2;
     fixture.failDelete = true;
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
@@ -463,7 +484,7 @@ describe("atomic IndexedDB queue write fallback", () => {
 describe("verified-only IndexedDB queue removal", () => {
   it("keeps pending choices if the receipt marker write aborts", async () => {
     fixture.records = [queued()];
-    fixture.failQueuePut = true;
+    fixture.failQueuePutAt = 2;
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
     expect(fixture.records).toEqual([queued()]);
@@ -751,5 +772,89 @@ describe("foreground online submission respects already queued immutable evidenc
     });
     expect(fixture.invokes).toBe(0);
     expect(fixture.records).toEqual([saved]);
+  });
+});
+
+
+describe("durable first-online submission before the network request", () => {
+  it("stages pending evidence before a successful first send", async () => {
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result.status).toBe("submitted");
+    expect(fixture.pendingAtInvoke).toEqual([true]);
+    expect(fixture.submittedBodies[0]).toBe(body);
+    expect(fixture.records).toEqual([]);
+  });
+  it("does not call the server when the first IndexedDB put fails", async () => {
+    fixture.failQueuePutAt = 1;
+    await expect(submitSessionWithQueue({ scenarioId: "scenario-one", body }))
+      .rejects.toThrow("simulated_put_abort");
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records).toEqual([]);
+  });
+  it("keeps the first pending submission on transient HTTP 503", async () => {
+    fixture.nextHttpStatus = 503;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result.status).toBe("queued");
+    expect(fixture.pendingAtInvoke).toEqual([true]);
+    expect(fixture.records[0]).toMatchObject({ state: "pending", attempts: 1, body });
+  });
+  it("blocks automatic resend after a first-time permanent refusal", async () => {
+    fixture.nextHttpStatus = 409;
+    const first = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(first).toMatchObject({
+      status: "rejected", reason: "submission_blocked_requires_manual_retry",
+    });
+    expect(fixture.pendingAtInvoke).toEqual([true]);
+    expect(fixture.records[0]).toMatchObject({ state: "blocked", attempts: 1, body });
+    await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(fixture.invokes).toBe(1);
+  });
+  it("observes a committed row missed by a stale list inside the staging transaction", async () => {
+    fixture.records = [{
+      ...queued(), state: "committed",
+      completionReceipt: {
+        sessionId, alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    }];
+    fixture.queueListOverride = [];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "submitted", data: { sessionId, alreadyCompleted: true },
+    });
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records).toEqual([]);
+  });
+  it("does not send when a hidden blocked row is found in the current transaction", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    fixture.queueListOverride = [];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_blocked_requires_manual_retry",
+    });
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records[0].state).toBe("blocked");
+  });
+  it("protects existing actions when a stale queue listing missed them", async () => {
+    const saved = { ...queued(), body: {
+      ...body, actions: [{ type: "choice" as const, actionId: "first-choice" }],
+    } };
+    fixture.records = [saved];
+    fixture.queueListOverride = [];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_queue_payload_conflict",
+    });
+    expect(fixture.records).toEqual([saved]);
+    expect(fixture.invokes).toBe(0);
+  });
+  it("preserves newly staged evidence but never sends it after user changes", async () => {
+    fixture.switchAuthOnCheck = 3;
+    await expect(submitSessionWithQueue({ scenarioId: "scenario-one", body }))
+      .rejects.toThrow("authenticated_session_changed");
+    expect(fixture.records[0]).toMatchObject({
+      userId: "user-one", state: "pending", body,
+    });
+    expect(fixture.invokes).toBe(0);
   });
 });
