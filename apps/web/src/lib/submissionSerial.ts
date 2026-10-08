@@ -8,7 +8,7 @@ export interface SessionCrossTabLock {
 }
 
 const browserLock: SessionCrossTabLock = {
-  run<T>(name: string, operation: () => Promise<T>): Promise<T> {
+  async run<T>(name: string, operation: () => Promise<T>): Promise<T> {
     // Await the browser lock callback result, not Promise<Promise<T>>.
     return await navigator.locks.request(name, { mode: "exclusive" }, operation);
   },
