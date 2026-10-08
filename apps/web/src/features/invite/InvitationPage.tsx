@@ -41,6 +41,7 @@ export function InvitationPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [pending, setPending] = useState(false);
+  const [accepted, setAccepted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A result for a previous nickname must not unlock acceptance of a new one.
   const verifiedNickname = currentNicknameCheck(nickname, nicknameCheck);
@@ -141,9 +142,23 @@ export function InvitationPage() {
     }
   }
 
+  async function finishAcceptedInvite() {
+    try {
+      setPending(true);
+      setError(null);
+      await refreshProfile();
+      navigate("/", { replace: true });
+    } catch {
+      setError("초대 수락은 완료되었지만 사용자 정보를 확인하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function handleAccept() {
     if (
       !session ||
+      accepted ||
       !verifiedNickname?.available ||
       verifiedNickname.checking ||
       pending ||
@@ -172,11 +187,19 @@ export function InvitationPage() {
         throw new Error(result.error ?? "초대 수락에 실패했습니다.");
       }
 
-      await refreshProfile();
-      navigate("/", { replace: true });
+      // The invitation is already consumed. Never retry the atomic accept
+      // merely because the profile lookup failed afterwards.
+      setAccepted(true);
+      try {
+        await refreshProfile();
+        navigate("/", { replace: true });
+      } catch {
+        setError("초대 수락은 완료되었지만 사용자 정보를 확인하지 못했습니다. 다시 시도해주세요.");
+      }
     } catch (cause) {
-      setPending(false);
       setError(cause instanceof Error ? cause.message : "초대 수락에 실패했습니다.");
+    } finally {
+      setPending(false);
     }
   }
 
@@ -207,7 +230,19 @@ export function InvitationPage() {
         <div><dt>역할</dt><dd>{roleLabel}</dd></div>
       </dl>
 
-      {!session ? (
+      {accepted ? (
+        <div className="invite-form">
+          <p className="notice" role="status">초대 수락은 완료되었습니다. 사용자 정보 확인 후 시작할 수 있습니다.</p>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={pending}
+            onClick={() => { void finishAcceptedInvite(); }}
+          >
+            {pending ? "사용자 정보 확인 중…" : "사용자 정보 다시 확인하고 시작하기"}
+          </button>
+        </div>
+      ) : !session ? (
         <>
           <p className="muted">카카오 로그인 후 닉네임과 동의를 확인하면 가입이 완료됩니다.</p>
           <button className="kakao-button" type="button" onClick={handleKakaoLogin}>
@@ -243,7 +278,7 @@ export function InvitationPage() {
                 : verifiedNickname?.available
                   ? "사용 가능한 닉네임입니다."
                   : verifiedNickname?.error
-                    ? NICKNAME_ERROR_LABEL[nicknameCheck.error] ??
+                    ? NICKNAME_ERROR_LABEL[verifiedNickname.error] ??
                       "닉네임을 확인해주세요."
                     : "리더보드에는 닉네임만 표시됩니다."}
             </span>

@@ -6,9 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { getSupabase } from "../../lib/supabase";
+import { AuthLoadGate } from "./authLoadGate";
 
 export type AppRole = "admin" | "plant_manager" | "player";
 
@@ -27,6 +29,7 @@ interface AuthState {
   session: Session | null;
   profile: HeroProfile | null;
   loading: boolean;
+  profileLoadError: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -53,58 +56,90 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [profile, setProfile] = useState<HeroProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [profileLoadError, setProfileLoadError] = useState(false);
+  const currentUserId = useRef<string | null>(null);
+  const requestGate = useRef(new AuthLoadGate());
+
+  const resolveProfile = useCallback(
+    async (userId: string, revision: number): Promise<void> => {
+      try {
+        const nextProfile = await loadProfile(userId);
+        if (requestGate.current.isCurrent(revision, userId)) {
+          setProfile(nextProfile);
+          setProfileLoadError(false);
+        }
+      } catch (cause) {
+        if (requestGate.current.isCurrent(revision, userId)) {
+          // An unavailable profile service is not an uninvited user.
+          setProfile(null);
+          setProfileLoadError(true);
+        }
+        throw cause;
+      } finally {
+        if (requestGate.current.isCurrent(revision, userId)) {
+          setLoading(false);
+        }
+      }
+    },
+    [],
+  );
+
   const refreshProfile = useCallback(async () => {
-    if (!session?.user.id) {
+    const userId = currentUserId.current;
+    if (!userId) {
       setProfile(null);
       return;
     }
 
-    setProfile(await loadProfile(session.user.id));
-  }, [session?.user.id]);
+    const revision = requestGate.current.begin(userId);
+    setProfile(null);
+    setProfileLoadError(false);
+    setLoading(true);
+    await resolveProfile(userId, revision);
+  }, [resolveProfile]);
 
   useEffect(() => {
     let active = true;
     const supabase = getSupabase();
 
-    void supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-
-      if (data.session?.user.id) {
-        try {
-          setProfile(await loadProfile(data.session.user.id));
-        } catch {
-          setProfile(null);
-        }
-      }
-
-      if (active) setLoading(false);
-    });
-
+    // INITIAL_SESSION arrives through the subscription: a separate
+    // getSession() call would race subsequent auth events.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+      if (!active) return;
 
-      if (!nextSession?.user.id) {
-        setProfile(null);
+      const userId = nextSession?.user.id ?? null;
+      const revision = requestGate.current.begin(userId);
+      currentUserId.current = userId;
+      setSession(nextSession);
+      setProfile(null);
+      setProfileLoadError(false);
+
+      if (!userId) {
         setLoading(false);
         return;
       }
 
+      setLoading(true);
+      // Do not await Supabase requests within the auth callback.
       queueMicrotask(() => {
-        void loadProfile(nextSession.user.id)
-          .then((nextProfile) => setProfile(nextProfile))
-          .catch(() => setProfile(null))
-          .finally(() => setLoading(false));
+        if (!active || !requestGate.current.isCurrent(revision, userId)) {
+          return;
+        }
+        void resolveProfile(userId, revision).catch(() => {
+          // Only the current request sets profileLoadError for retry.
+        });
       });
     });
 
     return () => {
       active = false;
+      currentUserId.current = null;
+      requestGate.current.invalidate();
       subscription.unsubscribe();
     };
-  }, []);
+  }, [resolveProfile]);
 
   const signOut = useCallback(async () => {
     const supabase = getSupabase();
@@ -112,8 +147,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ session, profile, loading, refreshProfile, signOut }),
-    [session, profile, loading, refreshProfile, signOut],
+    () => ({ session, profile, loading, profileLoadError, refreshProfile, signOut }),
+    [session, profile, loading, profileLoadError, refreshProfile, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -49,12 +49,29 @@ export function RequireRole({
   roles,
   children,
 }: PropsWithChildren<{ roles: AppRole[] }>) {
-  const { profile, loading } = useAuth();
+  const { profile, loading, profileLoadError, refreshProfile } = useAuth();
 
   if (loading) {
     return <section className="panel"><p className="muted">권한을 확인하고 있습니다…</p></section>;
   }
 
+  if (profileLoadError) {
+    return (
+      <section className="panel" role="alert">
+        <h2>사용자 정보를 불러오지 못했습니다</h2>
+        <p className="muted">일시적인 통신 문제일 수 있습니다. 다시 시도해주세요.</p>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={() => { void refreshProfile().catch(() => {}); }}
+        >
+          사용자 정보 다시 불러오기
+        </button>
+      </section>
+    );
+  }
+
+  // Only a completed and successful lookup returning null is unprovisioned.
   if (!profile) {
     return <UnprovisionedUser />;
   }
