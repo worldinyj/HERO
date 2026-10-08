@@ -38,8 +38,8 @@ Edge `manager-user-action`의 `reissue-invite`는 SITE_URL·발전소 표시명 
 
 1. 사용자가 승인한 Actions 사용 재개 시점에 PR 최종 SHA 기준으로 CI 및 Database Policy Tests를 1회 실행.
 2. 로컬 DB 검증에서 permission, 23505 rollback, 감사 기록 개수, 동시성을 확인.
-3. 별도 배포 승인과 스키마 백업/롤백 계획을 세운 다음 **Migration016 → Migration017 → Migration018** 순서로 staging 적용.
-4. 새 `reissue_invitation_atomic`과 `cancel_invitation_atomic`이 모두 존재하고 execute grant/service key 설정이 맞는지 확인 후, Edge `manager-user-action` 배포.
+3. 별도 배포 승인과 스키마 백업/롤백 계획을 세운 다음 **Migration016 → Migration017 → Migration018 → Migration019 → Migration020** 순서로 staging 적용.
+4. 신규 `reissue_invitation_atomic`, `cancel_invitation_atomic`, `create_invitation_atomic`, `set_player_active_atomic` RPC 4종과 execute grant/service key를 확인한 후 Edge `manager-user-action` 및 `create-invite` 배포.
 5. 신구 함수 버전이 섞이는 구간을 피하고 Kakao 재발급 E2E를 수행.
 6. 모든 체크가 PASS일 때만 prod/main 승인을 검토. S03 scenario의 사람 검토는 별개 게이트.
 

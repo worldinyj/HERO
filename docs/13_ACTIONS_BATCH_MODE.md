@@ -42,6 +42,8 @@
 - 검증 문서: `docs/17_ATOMIC_INVITATION_REISSUE_VALIDATION.md`, `docs/18_ATOMIC_INVITATION_CANCEL_VALIDATION.md`, `docs/19_ATOMIC_INVITATION_CREATION_VALIDATION.md`. Migration 016 43 + 017 21 + 018 27 + 019 27 = **118개 pgTAP assertion 코드 작성, NOT RUN**.
 - 신규 초대 생성/취소/재발급 Edge HTTP 오류계약 정비: 명시적 DB 사전 거절만 400/401/403/404/409로 분류; 서버·DB·네트워크 결과가 불확실한 경우는 500으로 유지하며 SQL 내부 오류 문구를 외부에 전달하지 않음. `invitationErrorStatus.ts` 및 Deno 회귀 테스트 2개 추가. CI에도 테스트 명령만 등록(현 시점 **Actions 실행하지 않음**).
 - 2026-10-08 격리형 실행검사: 변경된 `invitationErrorStatus.ts` 및 `invitationErrorStatus.test.ts` 2그룹을 Node22 TypeScript stripping + Deno.test shim 환경에서 실행 **2/2 PASS**; TypeScript standalone `tsc --noEmit --strict --noUncheckedIndexedAccess` **PASS**. Deno 자체, 전체 웹/Edge 통합테스트 및 pgTAP은 **NOT RUN**.
+- Migration 020 코드 추가: `set_player_active_atomic`은 동일 발전소 Player의 활성/비활성 상태 변경과 감사 기록을 하나의 트랜잭션에 반영. 중복 요청의 감사 이벤트 생성을 방지하고 `FOR UPDATE`로 상충 요청 직렬화. pgTAP 30개 작성, Manager UI에 결과 불확실 시 명단 대조·재시도 잠금 추가. 실제 pgTAP/E2E는 **NOT RUN**.
+- 신규 추가 DB 검사 집계: Migration 016 43 + 017 21 + 018 27 + 019 27 + 020 30 = **148개 assertion 소스 작성, NOT RUN**. `docs/20_ATOMIC_PLAYER_STATUS_VALIDATION.md` 참조.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
@@ -84,7 +86,7 @@ supabase stop --no-backup
 3. Actions가 정상 실행될 수 있을 때 **최종 PR SHA**에서 CI, Database Policy Tests, E2E를 실행한다. 중간 커밋마다 실행·재시도하지 않는다.
 4. 테스트 실패 시 로그를 확보해 같은 배치 브랜치에서 수정한다. 코드 성공과 Runner 실행 실패를 구분한다.
 5. 모두 PASS한 뒤 승인에 따라 `main`에 병합하고 병합 SHA에서 검증한다.
-6. 로컬 pgTAP 전체 성공 및 승인 후, staging에 migration 016 → 017 → 018 → 019 순서대로 적용하고 Edge Function `manager-user-action`과 관련 웹 버전을 호환되게 배포 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
+6. 로컬 pgTAP 전체 성공 및 승인 후, staging에 migration 016 → 017 → 018 → 019 → 020 순서대로 적용하고 Edge Function `manager-user-action`과 관련 웹 버전을 호환되게 배포 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
 7. S01/S02 SOURCE_HOLD, S03 HUMAN_REVIEW_PENDING, 약관/개인정보/실기기/파일럿 등 출시 차단 게이트는 각각 별도 증거로만 해제한다.
 
 ## 6. 참조

@@ -45,6 +45,14 @@
 - 발전소담당자 단건 Player 초대가 기존 일회용 링크를 덮어쓰지 못하도록 UI를 수정함.
 - **테스트 미실행/원격 RPC 미적용**. 016→017→018→019 모두 로컬 DB에서 검증 완료 전 서비스 배포 금지.
 
+## 3.3 Player 활성 상태 변경의 원자성 — 코드 구현, 실제 검증 보류
+
+- `supabase/migrations/202610080020_atomic_player_status.sql` : `set_player_active_atomic` 서비스 역할 전용 RPC, 담당자/발전소/Player 권한 재검증, 행 잠금, 상태 변경과 감사 단일 트랜잭션.
+- 이미 원하는 상태인 경우 `changed=false`를 반환하고 추가 감사기록을 남기지 않음. 감사 INSERT 실패 시 프로필 변경과 관련 트리거 효과를 롤백하도록 구성.
+- `manager-user-action`의 별도 프로필 UPDATE+감사 INSERT 제거. `player_status_atomic.test.sql` 30개 회귀 항목 작성.
+- 담당자 화면은 서버 응답/명단 조회가 불확실한 상태에서 재변경을 잠그고 수동 명단 대조 후 해제하도록 구성.
+- Migration 020 미배포, 실제 로컬 DB/동시성/사용자 E2E 미검증. 출시 차단 유지.
+
 ## 4. 일괄 CI 재개 시
 
 - `pnpm --dir apps/web test`로 리다이렉트 21개 사례 포함 전체 단위 테스트
@@ -53,4 +61,4 @@
 - `deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts`
 - Kakao 실계정 로그인 / 새 사용자 차단 / 관리자·담당자 초대 성공·실패 시험
 - `supabase test db`에서 Migration 017과 21 pgTAP 사례(특히 23505 rollback)를 확인하고, 동시 재발급·이미 수락된 초대/실패주입 E2E를 수행
-- PR/main merge, migration016·017·018·019 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행
+- PR/main merge, migration016·017·018·019·020 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행

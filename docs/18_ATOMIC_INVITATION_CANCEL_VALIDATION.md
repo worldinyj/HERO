@@ -36,11 +36,11 @@ Migration 018의 `public.cancel_invitation_atomic(uuid, uuid)`는 한 DB 트랜�
 
 ## 적용 순서 (배포 전 별도 승인 필요)
 
-1. 로컬 테스트 DB에서 기존 001~015 + 준비된 016→017→018→019 마이그레이션을 순서대로 적용하고 전체 `supabase test db` 실행.
+1. 로컬 테스트 DB에서 기존 001~015 + 준비된 016→017→018→019→020 마이그레이션을 순서대로 적용하고 전체 `supabase test db` 실행.
 2. `deno check --config supabase/functions/deno.json supabase/functions/manager-user-action/index.ts`와 `pnpm --dir apps/web typecheck`, UI 테스트 실행.
 3. 동시 트랜잭션 두 세션, HTTP 5xx/통신 단절, 감사 실패를 격리 DB에서 테스트하고 결과 증거를 기록.
 4. 검증 및 배포 승인 후 원격 staging DB에 016→017→018→019를 먼저 적용.
-5. 신규 RPC 3종(재발급·취소·발급) 존재와 grants 확인 후 Edge Function/웹앱 배포. **Edge를 DB보다 먼저 올리지 말 것**.
+5. 신규 RPC 4종(재발급·취소·발급·Player 상태) 존재와 grants 확인 후 Edge Function/웹앱 배포. **Edge를 DB보다 먼저 올리지 말 것**.
 6. 허가된 3개 카카오 계정으로 초대/재발급/취소 E2E. 시나리오 S03 사람 승인은 별도 게이트.
 
 ### 2026-10-08 staging DB 읽기 전용 확인
