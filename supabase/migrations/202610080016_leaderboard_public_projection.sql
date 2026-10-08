@@ -113,6 +113,8 @@ from ranked r;
 create table if not exists public.leaderboard_current_public_rows (
   season_id uuid not null references public.seasons(id) on delete cascade,
   nickname text not null,
+  -- Display names are not unique and may change; filter by stable plant UUID.
+  plant_id uuid not null references public.plants(id),
   plant_display_name text not null,
   job_role public.job_role not null,
   hp_point integer not null check (hp_point >= 0),
@@ -131,11 +133,15 @@ create table if not exists public.leaderboard_current_public_rows (
 
 create index if not exists leaderboard_current_public_rows_overall_idx
   on public.leaderboard_current_public_rows (season_id, overall_rank, hp_point desc, nickname);
+create index if not exists leaderboard_current_public_rows_plant_idx
+  on public.leaderboard_current_public_rows (season_id, plant_id, plant_rank, hp_point desc);
 
 create table if not exists public.leaderboard_snapshot_public_rows (
   season_id uuid not null references public.seasons(id) on delete cascade,
   scope_type text not null check (scope_type in ('overall', 'plant', 'job', 'plant_job')),
   nickname text not null,
+  -- Scoped only for 'plant'/'plant_job'; null for 'overall'/'job'.
+  plant_id uuid references public.plants(id),
   plant_display_name text not null,
   job_role public.job_role not null,
   hp_point integer not null check (hp_point >= 0),
@@ -149,6 +155,9 @@ create table if not exists public.leaderboard_snapshot_public_rows (
 create index if not exists leaderboard_snapshot_public_rows_rank_idx
   on public.leaderboard_snapshot_public_rows
     (season_id, scope_type, rank_position, hp_point desc, nickname);
+create index if not exists leaderboard_snapshot_public_rows_plant_idx
+  on public.leaderboard_snapshot_public_rows
+    (season_id, scope_type, plant_id, rank_position, hp_point desc);
 
 alter table public.leaderboard_current_public_rows enable row level security;
 alter table public.leaderboard_snapshot_public_rows enable row level security;
@@ -213,6 +222,7 @@ begin
   insert into public.leaderboard_current_public_rows (
     season_id,
     nickname,
+    plant_id,
     plant_display_name,
     job_role,
     hp_point,
@@ -230,6 +240,7 @@ begin
   select
     i.season_id,
     i.nickname,
+    i.plant_id,
     i.plant_display_name,
     i.player_job_role,
     i.season_hp,
@@ -280,6 +291,7 @@ begin
     season_id,
     scope_type,
     nickname,
+    plant_id,
     plant_display_name,
     job_role,
     hp_point,
@@ -292,6 +304,7 @@ begin
     ls.season_id,
     ls.scope_type,
     ls.nickname,
+    ls.scope_plant_id,
     ls.plant_display_name,
     ls.player_job_role,
     ls.hp_point,
@@ -427,6 +440,44 @@ after update of status
 on public.seasons
 for each row
 execute function private.refresh_snapshot_leaderboard_on_close();
+
+-- Keep current public labels synchronized when a plant display name
+-- changes. Historical snapshots retain their original labels and stable IDs.
+create or replace function private.refresh_current_leaderboard_from_plant()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_season record;
+begin
+  if old.display_name is distinct from new.display_name then
+    for v_season in
+      select distinct ps.season_id
+      from public.play_sessions ps
+      join public.seasons s on s.id = ps.season_id
+      where ps.plant_id = new.id
+        and ps.status = 'completed'
+        and s.status = 'open'
+    loop
+      perform private.refresh_current_leaderboard_public(v_season.season_id);
+    end loop;
+  end if;
+  return new;
+end;
+$;
+
+revoke all on function private.refresh_current_leaderboard_from_plant()
+  from public, anon, authenticated;
+
+drop trigger if exists refresh_current_leaderboard_from_plant
+  on public.plants;
+create trigger refresh_current_leaderboard_from_plant
+after update of display_name
+on public.plants
+for each row
+execute function private.refresh_current_leaderboard_from_plant();
 
 -- Backfill currently-open and already-closed seasons.
 do $$
