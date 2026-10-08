@@ -526,6 +526,23 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
             <div className="invite-result-box" role="alert">
               <strong>미확인 요청이 있어 자동 재개를 중지했습니다</strong>
               <p className="muted">확인된 링크를 우선 CSV로 저장해주세요. 담당자 초대 목록에서 실패 지점의 미수락 초대가 이미 만들어졌는지 확인하고, 필요하면 취소한 후 새 목록을 시작해야 합니다.</p>
+              {bulkResults.length === 0 ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={bulkPending}
+                  onClick={() => {
+                    setBulkInputs([]);
+                    setBulkResults([]);
+                    setBulkRetryBlocked(false);
+                    setBulkFileName("");
+                    setBulkInfo(null);
+                    setError(null);
+                  }}
+                >
+                  미수락 초대 확인 완료 · 새 CSV 선택
+                </button>
+              ) : null}
             </div>
           ) : null}
 
