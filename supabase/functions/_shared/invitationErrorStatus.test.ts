@@ -18,6 +18,13 @@ Deno.test("pre-mutation validation failures expose actionable 4xx responses", ()
     ["invitation_not_found", 404],
     ["invitation_already_accepted", 409],
     ["invitation_already_canceled", 409],
+    ["player_role_required", 403],
+    ["nickname_length", 409],
+    ["nickname_characters", 409],
+    ["nickname_forbidden", 409],
+    ["nickname_taken", 409],
+    ["nickname_change_limit_reached", 409],
+    ["no_open_season", 409],
   ];
   for (const [code, status] of cases) {
     const actual = classifyInvitationError(new Error(code));
@@ -32,6 +39,8 @@ Deno.test("unknown or potentially committed requests remain 500", () => {
     new Error("reissue_result_unknown"),
     new Error("cancel_result_unknown"),
     new Error("invite_creation_outcome_unknown"),
+    new Error("nickname_reset_outcome_unknown"),
+    new Error("nickname_change_outcome_unknown"),
     new Error("audit_log_write_failed: database connection lost"),
     new Error("duplicate key value violates unique constraint"),
     new Error("missing_site_url"),
