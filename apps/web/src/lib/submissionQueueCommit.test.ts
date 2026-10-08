@@ -10,6 +10,7 @@ const fixture = vi.hoisted(() => ({
   failGameDelete: false,
   failQueuePut: false,
   queueReadOverride: null as PendingSessionSubmission | null,
+  queueListOverride: null as PendingSessionSubmission[] | null,
   hideCommittedInQueueListing: false,
 }));
 
@@ -92,7 +93,7 @@ vi.mock("./offlineDb", () => ({
           index: (_name: string) => ({
             getAll: (userId: string) => {
               const request = {
-                result: fixture.records.filter((row) =>
+                result: (fixture.queueListOverride ?? fixture.records).filter((row) =>
                   row.userId === userId &&
                   (!fixture.hideCommittedInQueueListing || row.state !== "committed")
                 ),
@@ -145,6 +146,7 @@ beforeEach(() => {
   fixture.failGameDelete = false;
   fixture.failQueuePut = false;
   fixture.queueReadOverride = null;
+  fixture.queueListOverride = null;
   fixture.hideCommittedInQueueListing = false;
 });
 
@@ -515,11 +517,33 @@ describe("cross-tab stale queue body and blocked submission protection", () => {
     try {
       // The list read is stale; the store.get inside the write transaction
       // must retain the newer retry state.
-      fixture.queueReadOverride = current;
-      await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      fixture.queueListOverride = [{ ...current, attempts: 2 }];
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({ status: "queued", reason: "offline" });
       expect(fixture.records[0]?.attempts).toBe(5);
+      expect(fixture.records[0]?.updatedAt).toBe(current.updatedAt);
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+
+describe("read-before-write catches stale list snapshots", () => {
+  it("rejects a changed payload when a stale queue listing omitted the real record", async () => {
+    const original = queued();
+    fixture.records = [original];
+    fixture.queueListOverride = [];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      await expect(submitSessionWithQueue({
+        scenarioId: "scenario-one",
+        body: { ...body, actions: [
+          { type: "continue" }, { type: "choice", actionId: "wrong-choice" },
+        ] },
+      })).rejects.toThrow("submission_queue_payload_conflict");
+      expect(fixture.records).toEqual([original]);
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
   });
 });
