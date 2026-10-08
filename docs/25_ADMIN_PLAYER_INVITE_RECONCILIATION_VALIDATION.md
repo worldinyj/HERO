@@ -33,6 +33,14 @@
 - [ ] 초대 링크 보관 전 해당 링크 취소 클릭 시 원문 URL이 지워지지 않는지 확인
 - [ ] 정상 DB migration/Edge 배포 이후 초대 이력·감사 일관성과 권한 경계 확인
 
+## 공통 서버 응답 검증 및 Player 상태 확인
+
+- 초대 생성은 초대 ID의 UUID 형식 및 일회용 URL의 HTTPS/loopback, `/i/{token}` 형태, 만료시각·필수 문자열 존재 여부를 확인한다.
+- 재발급은 `reissued=true`, `oldInvitationId`와 요청한 ID의 일치 및 새로운 다른 초대 ID를 확인한다.
+- 취소는 `canceled=true`, `invitationId` 일치, `canceledAt`의 날짜 형식까지 확인한다.
+- Admin·Manager가 같은 브라우저 공통 검증기를 사용한다. Player 상태와 닉네임 초기화 역시 명단 재조회만으로 잠금을 풀지 않고 사용자가 확인해야 한다.
+- 상세 내용과 미실행 회귀 테스트: `docs/26_INVITATION_RESPONSE_CONTRACT_VALIDATION.md`.
+
 ## 배포 순서
 
 CI 사용 허가와 로컬 검증 통과 후에만 **migration 016→017→018→019→020→021→022 적용 → RPC grants 점검 → Edge Functions/웹 동시 배포 → 실제 Admin/Manager/Player E2E** 순서를 따른다. `main`, Draft PR #79, 원격 DB/Edge, Cloudflare staging은 미변경.

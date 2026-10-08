@@ -21,6 +21,13 @@
 5. 상태가 다르면 `UPDATE profiles.is_active` 및 `INSERT audit_logs`를 동일 트랜잭션에 실행. 감사 INSERT가 실패하면 프로필 UPDATE도 롤백.
 6. 경쟁 요청은 동일 Player 행 잠금으로 순서가 결정됨. 실제 두 세션 병렬 시험은 아직 수행하지 않음.
 
+## 운영자 명단 대조의 두 단계
+
+- 응답이 끊긴 Player 활성/비활성 또는 닉네임 강제 초기화는 명단 재조회가 성공해도 바로 잠금을 해제하지 않는다.
+- **1) 최신 참여자 명단 조회 → 2) 운영자가 실제 상태/닉네임 확인을 명시적으로 선택**한 뒤에만 재시도할 수 있다.
+- 각 미확정 상태별 `playerReconciliationReady` / `nicknameReconciliationReady`를 보유하며, 재조회 실패/새로운 결과 불명 시 ready 플래그를 다시 false로 설정한다.
+- 실제 React/browser 자동화 검증은 아직 **NOT RUN**.
+
 ## 검증 게이트
 
 | 검사 | 기대값 | 상태 |

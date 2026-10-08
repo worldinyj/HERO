@@ -92,12 +92,19 @@
 | ADM-33 | Admin 초대 취소 응답 유실 | 동일 초대 취소/재발급 둘 다 잠금 및 목록 대조 | NOT RUN |
 | ADM-34 | Admin 초대 목록이 null 또는 필수 컬럼 누락으로 반환 | 잘못된 결과로 잠금 해제되지 않음 | NOT RUN |
 | ADM-35 | Admin 화면에 보관 전 재발급 URL이 표시된 상태에서 해당 링크 취소 | 링크를 잃지 않도록 취소 작업 차단 | NOT RUN |
+| ADM-36 | 기존 초대 A의 재발급 요청에 `oldInvitationId=B`가 반환됨 | 정상 발급으로 표시하지 않고 미확정 처리 | NOT RUN |
+| ADM-37 | 재발급 응답에 `reissued`가 false 또는 새 ID가 기존과 같음 | 응답을 거절하고 자동 재시도 차단 | NOT RUN |
+| ADM-38 | 취소 요청의 ID와 `invitationId` 불일치 또는 취소일 손상 | 성공 확정 금지·명단 재조회 필요 | NOT RUN |
+| ADM-39 | 생성·재발급 응답에 비표준 UUID/HTTP 외부 링크/query/fragment/credentials 포함 | 초대 링크로 수락하지 않음 | NOT RUN |
+| ADM-40 | 합법적 HTTPS `/i/token` 및 로컬 loopback HTTP URL | 초대 결과 표시 가능 | NOT RUN |
 | PLY-01 | 담당자가 자기 발전소 Player 비활성화 후 재활성화 | 상태 변경과 각각의 감사 기록이 같은 트랜잭션에 저장 | NOT RUN |
 | PLY-02 | 동일한 활성 상태로 두 번 변경 요청 | 두 번째는 `changed=false`, 감사 기록 추가 없음 | NOT RUN |
 | PLY-03 | 다른 발전소 Player 또는 Manager/Admin 계정의 상태 변경 시도 | DB RPC에서 권한 또는 대상 범위 위반을 거부 | NOT RUN |
 | PLY-04 | 상태 변경 감사 INSERT 실패주입 | 프로필 상태 변경도 롤백, 기존 활성 상태 유지 | NOT RUN |
 | PLY-05 | 응답 유실/서버 5xx 후 상태 변경 버튼 재클릭 시도 | 명단 재조회 및 명시적인 잠금 해제 전에는 중복 변경 차단 | NOT RUN |
 | PLY-06 | 동시에 비활성/재활성 변경 요청 | 최종 직렬화 순서대로 상태 저장·이벤트 1회씩 감사, 손실 업데이트 없음 | NOT RUN |
+| PLY-07 | Player 상태 변경 후 HTTP 응답 유실 및 명단 재조회 성공 | 사용자가 실제 활성 상태를 확인하기 전에는 잠금 해제되지 않음 | NOT RUN |
+| PLY-08 | 닉네임 강제 초기화 응답 유실 및 명단 재조회 실패 | 다시 조회가 성공하고 운영자가 확인할 때까지 잠금 유지 | NOT RUN |
 | NICK-01 | 담당자의 동일 발전소 Player 닉네임 강제 초기화 | 12자 PLAYER* 임시 닉네임, resetRequired true, 이력 1건·감사 1건 일치 | NOT RUN |
 | NICK-02 | 다른 발전소 Player/담당자/관리자 대상 강제 초기화 | DB가 서비스 권한·소속을 재검증하여 차단 | NOT RUN |
 | NICK-03 | 초기화 이력/감사 저장을 실패주입 | Player 닉네임/플래그와 이력/감사 모두 롤백 | NOT RUN |

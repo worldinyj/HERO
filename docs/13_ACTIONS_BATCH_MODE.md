@@ -52,6 +52,7 @@
 - Player 닉네임 입력·재조회 보호: 입력값과 같은 이름을 검사한 응답만 사용, 닉네임 정책·내 기록 RPC의 구조를 검증하고 서로 다른 닉네임이면 잠금 유지. `nicknameReconciliation.ts`/Vitest 테스트 추가. 실제 GitHub 소스와 같은 격리 파일에서 **tsc strict PASS / 36조건 PASS**; 전체 웹 테스트 **NOT RUN**.
 - 담당자 단건·일괄 초대 및 Admin 담당자 초대는 미확정 결과 발생 시 **서버 명단 정상 재조회 → 사용자 대조 확인** 후에만 새 요청 허용. 정상 HTTP 응답의 손상된 일회용 초대 링크는 미확정으로 분류하고 자동 재시도 잠금. `inviteResponse.ts`, `adminOrgResponse.ts`와 웹 단위 테스트 추가. 동일 소스 격리 실행 **tsc strict PASS / 42조건 PASS**, 전체 React/Vitest **NOT RUN**.
 - Admin 조직관리의 초대 취소·재발급은 응답 유실과 명단 재조회 실패를 별도로 추적하며, 분실된 일회용 링크는 복원 가능하다고 표시하지 않음. `docs/25_ADMIN_PLAYER_INVITE_RECONCILIATION_VALIDATION.md` 참조.
+- UI 최종 계약 정리: 초대 생성·재발급·취소의 `inviteResponse.ts`는 HTTP 본문 UUID/만료시각/URL을 검증, 재발급의 기존→새 초대 ID, 취소의 요청 ID/취소시각 정합성 검증을 Admin·Manager 화면에 공통 적용. Player 상태/닉네임 초기화도 서버 명단 재조회와 사용자 확인을 분리한 2단계 잠금 해제 도입. `docs/26_INVITATION_RESPONSE_CONTRACT_VALIDATION.md` 참조. 전체 React Vitest/E2E **NOT RUN**.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 3.1 오프라인 배치 DB 계약 사전검사
