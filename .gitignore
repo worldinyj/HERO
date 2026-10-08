@@ -11,4 +11,6 @@ coverage/
 playwright-report/
 test-results/
 .hero-local/
+# Supabase CLI local worktree metadata; preserve on Mac, never commit.
 supabase/.temp/
+supabase/.branches/

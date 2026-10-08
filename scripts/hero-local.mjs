@@ -118,6 +118,13 @@ function option(name) {
 function hasFlag(name) { return process.argv.slice(3).includes("--" + name); }
 function describe(command, args) {
   console.log("\n==> " + [command, ...args].join(" "));
+  // supabase status --output json contains local JWT secrets and service keys.
+  // Verify the command succeeds but never print its credentials to QA logs.
+  if (command === "supabase" && args[0] === "status") {
+    exec(command, args, true);
+    console.log("SUPABASE_LOCAL_STATUS_PASS (credentials hidden)");
+    return;
+  }
   exec(command, args);
 }
 function doctor() {

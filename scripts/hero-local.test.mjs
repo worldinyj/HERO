@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, safeOrigin, safePreviewBranch, safeProject,
@@ -37,4 +38,14 @@ test("preview evidence requires DB, exact SHA/env/dist, and recent success", () 
   assert.equal(isValidEvidence(record, expected, now + 25 * 60 * 60 * 1000), false);
   assert.equal(isValidEvidence(record, expected, now - 1), false);
   assert.equal(isValidEvidence(null, expected, now), false);
+});
+
+// Supabase CLI creates this metadata after a local stack starts. It must
+// never cause checkClean() to reject an otherwise clean QA run.
+test("Supabase local CLI branch metadata is excluded by Git", () => {
+  const actual = spawnSync("git", [
+    "check-ignore", "--no-index", "--quiet", "--",
+    "supabase/.branches/_current_branch",
+  ], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+  assert.equal(actual.status, 0, actual.stderr || "Git must ignore Supabase CLI state");
 });
