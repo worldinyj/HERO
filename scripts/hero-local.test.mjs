@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { HERO_E2E_LOCAL_API, localE2eSeedGate } from "../e2e/localTargetGuard.mjs";
 import { assertFreshLocalE2eNamespace } from "../e2e/fixtureNamespace.mjs";
+import { E2E_API, inspectE2eStatus, inspectE2eWebEnv, buildE2eWebEnv } from "./check-local-e2e-preflight.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
@@ -302,4 +303,41 @@ test("E2E setup has safe fixture guard and never reuses monthly season", () => {
     source.indexOf("await createUser({"));
   assert.ok(source.includes("season_key: HERO_E2E_SEASON_KEY"));
   assert.ok(!source.includes('from("seasons")\n  .select("id")\n  .eq("status", "open")'));
+});
+
+test("HERO E2E local preflight validates API/DB and browser public config only", () => {
+  const st = {
+    API_URL: E2E_API,
+    DB_URL: "postgresql://postgres:local@127.0.0.1:55322/postgres",
+    ANON_KEY: "test-local-anon-key",
+    SERVICE_ROLE_KEY: "test-only-server-key",
+  };
+  assert.equal(inspectE2eStatus(st).ok, true);
+  assert.equal(inspectE2eStatus({ ...st,
+    API_URL: "https://alhpooapiokyuxysdzzp.supabase.co" }).ok, false);
+  assert.equal(inspectE2eStatus({ ...st,
+    API_URL: "http://127.0.0.1:54321" }).ok, false);
+  assert.equal(inspectE2eStatus({ ...st,
+    DB_URL: "postgresql://postgres:x@127.0.0.1:54322/postgres" }).ok, false);
+  assert.equal(inspectE2eStatus({ ...st, SERVICE_ROLE_KEY: "" }).ok, false);
+  const web = buildE2eWebEnv(st);
+  assert.equal(web.includes(st.SERVICE_ROLE_KEY), false);
+  assert.equal(inspectE2eWebEnv(web, st).ok, true);
+  assert.equal(inspectE2eWebEnv(web.replace("true", "false"), st).ok, false);
+  assert.equal(inspectE2eWebEnv(web.replace(E2E_API,
+    "http://127.0.0.1:54321"), st).ok, false);
+  assert.equal(inspectE2eWebEnv(web + "VITE_SERVICE_ROLE_KEY=bad\n", st).ok, false);
+  assert.equal(inspectE2eWebEnv(web + "VITE_E2E_MODE=true\n", st).ok, false);
+  assert.equal(inspectE2eWebEnv(null, st).ok, false);
+});
+
+test("HERO E2E env generator is create-only with no fixture or deploy side effects", () => {
+  const s = readFileSync(new URL("./check-local-e2e-preflight.mjs",
+    import.meta.url), "utf8");
+  assert.ok(s.includes('flag: "wx"'));
+  assert.ok(s.includes("hero_local_supabase_unavailable"));
+  for (const forbidden of [
+    "supabase db reset", "supabase db push", "wrangler pages deploy",
+    "pnpm e2e:setup", "console.log(cli.stdout)",
+  ]) assert.equal(s.includes(forbidden), false, forbidden);
 });
