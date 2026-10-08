@@ -127,7 +127,7 @@ export function AdminOrgPage() {
       setPendingManagerInvites(inviteResult.data as unknown as PendingManagerInviteRow[]);
 
       if (!invitePlantId) {
-        const firstActive = plantResult.data.find((plant) => plant.is_active);
+        const firstActive = (plantResult.data ?? []).find((plant) => plant.is_active);
         if (firstActive) setInvitePlantId(firstActive.id);
       }
       return true;
