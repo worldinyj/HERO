@@ -410,20 +410,27 @@ export async function retryBlockedSubmission(
   sessionId: string,
   userId: string,
 ): Promise<void> {
-  const item = (await listQueuedSubmissions(userId)).find(
-    (candidate) => candidate.sessionId === sessionId,
-  );
+  // A manual retry must not resurrect a row removed by a successful submit.
+  const requeued = await serializeSubmissionForSession(userId, sessionId, async () => {
+    if ((await currentUserId()) !== userId) {
+      throw new Error("authenticated_session_changed");
+    }
+    const item = (await listQueuedSubmissions(userId)).find(
+      (candidate) => candidate.sessionId === sessionId,
+    );
+    if (!item || item.state !== "blocked") return false;
 
-  if (!item || item.state !== "blocked") return;
-
-  await writeQueueRecord({
-    ...item,
-    state: "pending",
-    updatedAt: new Date().toISOString(),
-    lastError: null,
+    await writeQueueRecord({
+      ...item,
+      state: "pending",
+      updatedAt: new Date().toISOString(),
+      lastError: null,
+    });
+    return true;
   });
 
-  if (online()) {
+  // Acquire the flush lock only AFTER releasing the manual retry lock.
+  if (requeued && online()) {
     await flushQueuedSubmissions(userId);
   }
 }

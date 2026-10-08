@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { serializeSubmissionForSession } from "./submissionSerial";
+import { describe, expect, it, vi } from "vitest";
+import { createSubmissionSerializer, serializeSubmissionForSession, type SessionCrossTabLock } from "./submissionSerial";
 
 function deferred() {
   let resolve!: () => void;
@@ -58,5 +58,83 @@ describe("per-session submission serial queue", () => {
     expect(observed).toEqual(["other-user", "other-session"]);
     gate.resolve();
     await slow;
+  });
+});
+
+function fakeOriginLocks(): SessionCrossTabLock & { calls: string[] } {
+  const tails = new Map<string, Promise<void>>();
+  const calls: string[] = [];
+  return {
+    calls,
+    async run<T>(name: string, operation: () => Promise<T>): Promise<T> {
+      calls.push(name);
+      const previous = tails.get(name);
+      let release!: () => void;
+      const tail = new Promise<void>((resolve) => { release = resolve; });
+      tails.set(name, tail);
+      try {
+        if (previous) await previous;
+        return await operation();
+      } finally {
+        if (tails.get(name) === tail) tails.delete(name);
+        release();
+      }
+    },
+  };
+}
+
+describe("cross-tab session submission serialization", () => {
+  it("holds a second tab on the same session until the first finishes", async () => {
+    const locks = fakeOriginLocks();
+    const aTab = createSubmissionSerializer(() => locks);
+    const bTab = createSubmissionSerializer(() => locks);
+    const gate = deferred();
+    const seen: string[] = [];
+    const a = aTab("user", "session", async () => {
+      seen.push("a-start");
+      await gate.promise;
+      seen.push("a-done");
+    });
+    const b = bTab("user", "session", async () => { seen.push("b-start"); });
+    expect(seen).toEqual(["a-start"]);
+    gate.resolve();
+    await Promise.all([a, b]);
+    expect(seen).toEqual(["a-start", "a-done", "b-start"]);
+    expect(locks.calls[0]).toBe(locks.calls[1]);
+  });
+
+  it("does not block another session across tabs", async () => {
+    const locks = fakeOriginLocks();
+    const aTab = createSubmissionSerializer(() => locks);
+    const bTab = createSubmissionSerializer(() => locks);
+    const gate = deferred();
+    const slow = aTab("user", "session-one", async () => gate.promise);
+    await expect(bTab("user", "session-two", async () => 42)).resolves.toBe(42);
+    gate.resolve();
+    await slow;
+  });
+
+  it("fails closed when a browser Web Lock acquisition rejects", async () => {
+    const serial = createSubmissionSerializer(() => ({
+      run: async () => { throw new Error("web_lock_failed"); },
+    }));
+    const action = vi.fn(async () => "sent");
+    await expect(serial("user", "session", action)).rejects.toThrow("web_lock_failed");
+    expect(action).not.toHaveBeenCalled();
+  });
+
+  it("uses in-tab serialization when the Web Locks API is unavailable", async () => {
+    const serial = createSubmissionSerializer(() => null);
+    const gate = deferred();
+    const seen: string[] = [];
+    const a = serial("user", "session", async () => {
+      seen.push("a");
+      await gate.promise;
+    });
+    const b = serial("user", "session", async () => { seen.push("b"); });
+    expect(seen).toEqual(["a"]);
+    gate.resolve();
+    await Promise.all([a, b]);
+    expect(seen).toEqual(["a", "b"]);
   });
 });
