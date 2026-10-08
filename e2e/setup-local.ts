@@ -2,6 +2,13 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { localE2eSeedGate } from "./localTargetGuard.mjs";
+
+// Fail closed BEFORE createClient() or any auth/database mutation.
+const localGate = localE2eSeedGate(process.env);
+if (!localGate.ok) {
+  throw new Error("E2E_LOCAL_FIXTURE_BLOCKED: " + localGate.reason);
+}
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.API_URL;
 const SERVICE_ROLE_KEY =

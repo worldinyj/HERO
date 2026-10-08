@@ -27,6 +27,13 @@
 - 따라서 T1-03, T5-03, T5-04, T7-01 등 구현 상태·환산 진도는 자동 승격하지 않으며, 증거가 확인된 항목의 "미실행" 표기만 정정한다.
 - 2026-10-08 이후 추가한 `qa --deep`는 시나리오·원인 추적성·릴리스 증거·법무·오디오·정적 보안 검사를 로컬에서 실행한다. `qa --with-deno`는 실제 Deno를 요구한다. **새 모드에 대한 Mac 성공 근거는 아직 없다.**
 
+## 1.3 로컬 모바일 E2E fixture 안전장치 (인증 E2E는 미실행)
+
+- `e2e/setup-local.ts`가 환경변수로 전달된 URL에 `auth.users`, `plants`, `profiles`, `invitations`, `scenarios` 등을 생성하므로 오지정시 원격 DB 변경 위험이 있었다.
+- 새 `localTargetGuard.mjs`는 HERO 전용 `http://127.0.0.1:55321`과 명시적 `HERO_E2E_ALLOW_FIXTURE_SEED=1` 없이는 **데이터 생성 전에 중단**한다. Johnny Fiction 로컬 API(54321)도 거부한다.
+- GitHub Actions E2E는 미래 수동/정책 활성화 시에만 이 플래그를 지정하고, failure artifact에 Supabase 상태 JSON을 저장하지 않는다.
+- **전체 모바일 E2E 및 실제 Edge 서비스는 아직 실행되지 않았으며**, T7-01 상태는 부분 구현 유지한다.
+
 ## 2. Phase별 진행
 
 | Phase | 작업 수 | 구현 | 부분 | 미착수 | 환산 진도 |

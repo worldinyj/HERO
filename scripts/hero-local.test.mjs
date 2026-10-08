@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { HERO_E2E_LOCAL_API, localE2eSeedGate } from "../e2e/localTargetGuard.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
@@ -155,4 +157,53 @@ test("Deno and database test stages require their explicit options", () => {
   assert.ok(denoCommands.some(([, args]) => args.includes(
     "supabase/functions/submit-session/index.ts")));
   assert.equal(names.includes("wrangler"), false);
+});
+
+test("E2E fixture seeding is explicitly local-only and requires opt-in", () => {
+  const good = {
+    HERO_E2E_ALLOW_FIXTURE_SEED: "1",
+    API_URL: HERO_E2E_LOCAL_API,
+    SERVICE_ROLE_KEY: "test-local-secret-never-published",
+    HERO_E2E_PASSWORD_A: "e2e-password-aaaaaaaa",
+    HERO_E2E_PASSWORD_B: "e2e-password-bbbbbbbb",
+    HERO_E2E_PASSWORD_MANAGER: "e2e-password-manager",
+  };
+  assert.deepEqual(localE2eSeedGate(good),
+    { ok: true, reason: "hero_local_seed_permitted" });
+  for (const [field, value, errorCode] of [
+    ["HERO_E2E_ALLOW_FIXTURE_SEED", undefined,
+      "explicit_fixture_seed_confirmation_required"],
+    ["API_URL", "https://alhpooapiokyuxysdzzp.supabase.co",
+      "non_hero_local_supabase_target"],
+    ["API_URL", "http://localhost:55321",
+      "non_hero_local_supabase_target"],
+    ["API_URL", "http://127.0.0.1:54321",
+      "non_hero_local_supabase_target"],
+    ["API_URL", "http://127.0.0.1:55321/rest/v1",
+      "non_hero_local_supabase_target"],
+    ["API_URL", "http://127.0.0.1:55321?override=1",
+      "non_hero_local_supabase_target"],
+    ["SERVICE_ROLE_KEY", undefined, "missing_local_service_role_key"],
+    ["HERO_E2E_PASSWORD_A", "tiny", "missing_or_short_e2e_password"],
+  ]) {
+    const changed = { ...good, [field]: value };
+    assert.equal(localE2eSeedGate(changed).reason, errorCode,
+      field + "=" + String(value));
+  }
+  assert.equal(localE2eSeedGate({ ...good, SUPABASE_URL:
+    "https://alhpooapiokyuxysdzzp.supabase.co" }).reason,
+    "missing_or_conflicting_supabase_url");
+  assert.equal(localE2eSeedGate({ ...good, SUPABASE_SERVICE_ROLE_KEY:
+    "other-key" }).reason, "conflicting_service_role_keys");
+  assert.equal(localE2eSeedGate({ ...good, HERO_E2E_PASSWORD_B:
+    good.HERO_E2E_PASSWORD_A }).reason, "non_unique_e2e_passwords");
+});
+
+test("E2E CI artifact collection must never archive Supabase credential dumps", () => {
+  const content = readFileSync(new URL("../.github/workflows/e2e.yml",
+    import.meta.url), "utf8");
+  assert.ok(content.includes('HERO_E2E_ALLOW_FIXTURE_SEED: "1"'));
+  assert.ok(!content.includes("cat /tmp/hero-supabase.env"));
+  assert.ok(!content.includes("cp /tmp/hero-supabase.json "));
+  assert.ok(!content.includes("hero-supabase-status.json"));
 });
