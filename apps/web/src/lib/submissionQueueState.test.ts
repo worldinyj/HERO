@@ -22,6 +22,16 @@ describe("confirmed queue state", () => {
     expect(result.lastError).toBeNull();
     expect(sample.state).toBe("pending");
   });
+  it("persists the authoritative receipt with the committed marker", () => {
+    const receipt = {
+      sessionId: sample.sessionId,
+      alreadyCompleted: false,
+      evaluation: { ending: "safe_complete", hpPoint: 80 },
+    };
+    const result = markQueueCommitted(sample, "2026-10-08T00:00:00Z", receipt);
+    expect(result.completionReceipt).toBe(receipt);
+    expect(sample.completionReceipt).toBeUndefined();
+  });
   it("sends only pending rows over the network", () => {
     expect(queueStateNeedsNetwork("pending")).toBe(true);
     expect(queueStateNeedsNetwork("blocked")).toBe(false);

@@ -16,3 +16,9 @@
 - Node22 격리 상태 정책 테스트 10/10 PASS. 독립 TypeScript strict 검사 PASS (동등 타입 스텁).
 - 전체 Vitest, TypeScript 앱 전체, 실제 IndexedDB abort, Playwright, Deno, pgTAP, 원격 DB 미실행. 완료 판정 T5-03 PARTIAL 유지, 진도율 75.6%.
 - main, PR #79, GitHub Actions, Supabase, Cloudflare 변경 없음.
+
+## 후속 보강 (동일일자)
+- committed 레코드에 서버의 검증된 완료 영수증을 보존하며, 오프라인 상태에서 화면 재진입 시 해당 영수증으로 제출 완료 상태를 복원한다.
+- committed 행을 pending으로 덮어쓰지 않도록 enqueuing 방어를 추가했다.
+- 이전 committed 레코드에 영수증이 없는 경우 완료 평가값을 임의로 생성하지 않고 정리 대기 상태로 표시한다.
+- 회귀 테스트 3건 추가(미실행). DB atomic/idempotency는 별도 실검증 필요.

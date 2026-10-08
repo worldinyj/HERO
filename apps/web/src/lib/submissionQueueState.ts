@@ -4,10 +4,12 @@ import type { PendingSessionSubmission } from "./submissionQueue";
 export function markQueueCommitted(
   item: PendingSessionSubmission,
   at: string,
+  receipt?: unknown,
 ): PendingSessionSubmission {
   return {
     ...item,
     state: "committed",
+    completionReceipt: receipt ?? item.completionReceipt,
     updatedAt: at,
     lastError: null,
   };

@@ -30,6 +30,7 @@ export interface PendingSessionSubmission extends QueueableSessionSubmission {
   sessionId: string;
   userId: string;
   state: "pending" | "blocked" | "committed";
+  completionReceipt?: unknown;
   queuedAt: string;
   updatedAt: string;
   attempts: number;
@@ -249,6 +250,7 @@ async function cleanupConfirmedLocalSession(
   scenarioId: string,
   sessionId: string,
   knownItem?: PendingSessionSubmission,
+  receipt?: unknown,
 ): Promise<{ cleanupPending: boolean }> {
   // Persist a server-confirmed marker BEFORE any local deletion. If deletion
   // aborts, it is never safe to send this completed row over the network.
@@ -258,7 +260,7 @@ async function cleanupConfirmedLocalSession(
         candidate.userId === userId,
     );
     if (item && item.state !== "committed") {
-      await writeQueueRecord(markQueueCommitted(item, new Date().toISOString()));
+      await writeQueueRecord(markQueueCommitted(item, new Date().toISOString(), receipt));
     }
   });
 
@@ -280,6 +282,8 @@ async function enqueueForUser(
   const existing = (await listQueuedSubmissions(userId)).find(
     (item) => item.sessionId === input.body.sessionId,
   );
+  // Never replace a server-confirmed tombstone with a pending submission.
+  if (existing?.state === "committed") return;
   const now = new Date().toISOString();
 
   await writeQueueRecord({
@@ -326,6 +330,25 @@ export async function submitSessionWithQueue(
       throw new Error("authenticated_session_changed");
     }
 
+    const existing = (await listQueuedSubmissions(userId)).find(
+      (item) => item.sessionId === input.body.sessionId &&
+        item.userId === userId,
+    );
+    if (existing?.state === "committed") {
+      // A verified cached receipt is enough to restore the confirmed UI
+      // without network access or overwriting the committed marker.
+      const receipt = existing.completionReceipt;
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, existing.scenarioId, existing.sessionId, existing,
+      );
+      if (isConfirmedSubmissionResponse(receipt, input.body.sessionId)) {
+        return { status: "submitted", data: receipt, cleanupPending };
+      }
+      // Older committed rows might not store the original receipt. Never
+      // pretend their response can be reconstructed from local scores.
+      return { status: "queued", reason: "confirmed_cleanup_pending" };
+    }
+
     if (!online()) {
       await enqueueForUser(userId, input, "offline");
       return { status: "queued", reason: "offline" };
@@ -337,7 +360,7 @@ export async function submitSessionWithQueue(
       // The server's completion receipt is authoritative. A broken IDB
       // delete must not report the committed session as rejected.
       const { cleanupPending } = await cleanupConfirmedLocalSession(
-        userId, input.scenarioId, input.body.sessionId,
+        userId, input.scenarioId, input.body.sessionId, undefined, attempt.data,
       );
       return { status: "submitted", data: attempt.data, cleanupPending };
     }
@@ -407,7 +430,7 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
         const attempt = await invokeSubmission(item.body);
         if (attempt.ok) {
           await cleanupConfirmedLocalSession(
-            userId, item.scenarioId, item.sessionId, item,
+            userId, item.scenarioId, item.sessionId, item, attempt.data,
           );
           return "submitted";
         }

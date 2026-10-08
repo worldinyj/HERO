@@ -155,6 +155,7 @@ describe("server-confirmed submissions with failed local deletion", () => {
       .resolves.toEqual({ submitted: 1, blocked: 0, remaining: 0 });
     expect(fixture.records).toHaveLength(1);
     expect(fixture.records[0].state).toBe("committed");
+    expect(fixture.records[0].completionReceipt).toMatchObject({ sessionId, alreadyCompleted: false });
     expect(fixture.invokes).toBe(1);
   });
 });
@@ -251,5 +252,34 @@ describe("committed queue recovery", () => {
       expect(fixture.records[0]?.state).toBe("pending");
       expect(fixture.invokes).toBe(0);
     } finally { fixture.userId = "user-one"; }
+  });
+});
+
+describe("foreground recovery of confirmed tombstones", () => {
+  it("returns the saved verified receipt without any offline API call", async () => {
+    fixture.records = [queued()];
+    fixture.failDelete = true;
+    await flushQueuedSubmissions("user-one");
+    expect(fixture.records[0]?.state).toBe("committed");
+    const oldCount = fixture.invokes;
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
+      expect(fixture.records[0]?.state).toBe("committed");
+      expect(fixture.invokes).toBe(oldCount);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("never overwrites an older committed marker with pending while offline", async () => {
+    fixture.records = [{ ...queued(), state: "committed" }];
+    vi.stubGlobal("navigator", { onLine: false });
+    fixture.failDelete = true;
+    try {
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({ status: "queued", reason: "confirmed_cleanup_pending" });
+      expect(fixture.records[0]?.state).toBe("committed");
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
   });
 });
