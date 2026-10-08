@@ -28,6 +28,13 @@
 | 기타 SQLSTATE, accessor/getter 오류 | 500 internal_error, SQL 세부정보 미노출 | NOT RUN |
 | Web Vitest, Deno test, 브라우저 Kakao E2E | 관련 regression 모두 PASS 필요 | NOT RUN |
 
+## 확장된 초대·닉네임 잠금 보호
+
+- Admin 조직관리도 생성/취소/재발급 HTTP 결과 불확실성을 개별 추적하고 **정상 목록 재조회 → 사용자의 명시적 확인**을 거쳐 해제하도록 확장.
+- 발전소담당자 단건·CSV 초대 또한 무조건적인 잠금 해제를 없애고 목록 재조회가 실제 성공해야 해제 버튼/새 CSV 시작 동작 활성화.
+- Player 닉네임 변경은 정확히 현재 입력값으로 성공한 사전확인만 인정하며, 실 프로필/닉네임 정책 RPC가 서로 모순되면 미확정 상태를 유지.
+- 상세 회귀검증: `docs/25_ADMIN_PLAYER_INVITE_RECONCILIATION_VALIDATION.md`. **이 단계의 전체 React/Vitest/E2E는 NOT RUN**.
+
 ## 배포 게이트
 
 Migration 016~022 실제 DB 검증 및 적용을 마친 후에야 `manager-user-action`, `create-invite`, `nickname-action` Edge/웹을 호환 버전으로 배포한다. `main`, PR #79, 원격 Supabase DB, 현재 Cloudflare staging, GitHub Actions를 이번 작업에서 변경하지 않는다.

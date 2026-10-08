@@ -85,6 +85,13 @@
 | ADM-26 | 명단을 대조하고 명시적으로 두 번째 버튼 클릭 | 잠금 해제; 일회용 링크는 별도 저장 요구 유지 | NOT RUN |
 | ADM-27 | PostgreSQL `P0001` 객체에 정확한 도메인 거절 코드 포함 | 안전한 4xx와 정확한 도메인 코드만 노출 | NOT RUN |
 | ADM-28 | DB 비정상 SQLSTATE·메시지 상세·prototype/getter 위조 | HTTP 500 `internal_error`로 정규화·비정상 재시도 잠금 | NOT RUN |
+| ADM-29 | 담당자 단건/CSV 초대 응답을 잃은 뒤 조회 없이 해제 시도 | 재발급 잠금 유지, 명단 재조회 및 사용자 대조 확인 필요 | NOT RUN |
+| ADM-30 | 성공 HTTP 응답이지만 일회용 URL/만료일/초대 ID가 null 또는 누락 | 결과를 미확정으로 분류, 중복 생성 자동 재시도 금지 | NOT RUN |
+| ADM-31 | Admin 담당자 초대 생성 결과 미확정 뒤 해제 시도 | 정상 Admin 목록 재조회 및 명시적 사용자 확인 전 재발급 금지 | NOT RUN |
+| ADM-32 | Admin 재발급 결과 미확정 후 명단에서 이전 링크가 사라짐 | 재발급 잠금 유지, 명단 확인 후 수동 해제 및 토큰 재조회 불가 안내 | NOT RUN |
+| ADM-33 | Admin 초대 취소 응답 유실 | 동일 초대 취소/재발급 둘 다 잠금 및 목록 대조 | NOT RUN |
+| ADM-34 | Admin 초대 목록이 null 또는 필수 컬럼 누락으로 반환 | 잘못된 결과로 잠금 해제되지 않음 | NOT RUN |
+| ADM-35 | Admin 화면에 보관 전 재발급 URL이 표시된 상태에서 해당 링크 취소 | 링크를 잃지 않도록 취소 작업 차단 | NOT RUN |
 | PLY-01 | 담당자가 자기 발전소 Player 비활성화 후 재활성화 | 상태 변경과 각각의 감사 기록이 같은 트랜잭션에 저장 | NOT RUN |
 | PLY-02 | 동일한 활성 상태로 두 번 변경 요청 | 두 번째는 `changed=false`, 감사 기록 추가 없음 | NOT RUN |
 | PLY-03 | 다른 발전소 Player 또는 Manager/Admin 계정의 상태 변경 시도 | DB RPC에서 권한 또는 대상 범위 위반을 거부 | NOT RUN |
@@ -101,6 +108,10 @@
 | NICK-08 | Player 닉네임 변경 후 HTTP 응답 유실 | 내 프로필·닉네임 정책 재조회 성공 전 변경 잠금 | NOT RUN |
 | NICK-09 | Player 동시 닉네임 변경 2개 요청 | 프로필 행 잠금으로 시즌당 정상 변경 1건만 통과 | NOT RUN |
 | NICK-10 | 신규 닉네임 RPC 021/022 배포 순서 점검 | DB migration 적용/EXECUTE 권한 확인 전에 nickname-action Edge 배포 금지 | NOT RUN |
+| NICK-11 | 중복확인 후 닉네임 입력값을 변경해 이전 사용 가능 응답 재사용 시도 | 입력값 불일치로 변경 버튼 비활성 | NOT RUN |
+| NICK-12 | HTTP 200과 null/필수 속성 없는 닉네임 status 응답 | 닉네임 정책 미확정·변경 버튼 비활성 | NOT RUN |
+| NICK-13 | 프로필 summary와 status의 닉네임이 일치하지 않을 때 잠금 해제 시도 | 불일치로 수동 재조회 필요·잠금 유지 | NOT RUN |
+| NICK-14 | 열린 시즌이 없는 상태에 status가 `canChange=true` 반환 | 모순된 정책 거절·변경 버튼 비활성 | NOT RUN |
 
 ## 3.1 AuthProvider / 초대 수락 회귀 확인
 

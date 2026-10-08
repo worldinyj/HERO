@@ -49,6 +49,9 @@
 - 추가 정적 보안 점검: `admin_bootstrap.test.sql`/ `season_rollover.test.sql`의 타 테스트와 공유된 고정 UUID를 분리하고, 모든 14개 pgTAP 파일의 UUID·auth.email 중복 탐지를 `check:batch-db-contracts`에 추가. 127 UUID/59 이메일에서 중복 0건 확인. 초대·상태·닉네임 Edge에 JSON 객체/UUID/문자열/enum 입력검증을 보강해 사전 오류 400 처리. `uuid.test.ts`, `jsonObject.test.ts` 4그룹 격리 Node 검사 PASS; Deno/전체 CI **NOT RUN**. `docs/23_BATCH_PRE_DEPLOYMENT_SECURITY_VALIDATION.md` 참조.
 - 초대 취소 및 재발급의 서버 응답 유실 시 중복 실행을 막고, **서버 명단 재조회 → 사용자 명시적 대조 확인** 두 단계 후에만 재시도 잠금 해제. null/비정상 명단 RPC 응답을 거절하는 순수 UI 검증기 및 Vitest 회귀 테스트 4개 작성.
 - PostgREST `P0001` 오류 객체도 알려진 코드만 안전하게 HTTP 4xx로 분류하고, 알 수 없는 SQLSTATE/SQL 상세/위조된 getter는 500 내부 오류로 유지. `invitationErrorStatus.test.ts`에 추가 Deno 테스트 2그룹 작성. **실제 Deno 및 전체 Vitest/E2E 미실행**. `docs/24_INVITATION_OUTCOME_RECONCILIATION_VALIDATION.md` 참조.
+- Player 닉네임 입력·재조회 보호: 입력값과 같은 이름을 검사한 응답만 사용, 닉네임 정책·내 기록 RPC의 구조를 검증하고 서로 다른 닉네임이면 잠금 유지. `nicknameReconciliation.ts`/Vitest 테스트 추가. 실제 GitHub 소스와 같은 격리 파일에서 **tsc strict PASS / 36조건 PASS**; 전체 웹 테스트 **NOT RUN**.
+- 담당자 단건·일괄 초대 및 Admin 담당자 초대는 미확정 결과 발생 시 **서버 명단 정상 재조회 → 사용자 대조 확인** 후에만 새 요청 허용. 정상 HTTP 응답의 손상된 일회용 초대 링크는 미확정으로 분류하고 자동 재시도 잠금. `inviteResponse.ts`, `adminOrgResponse.ts`와 웹 단위 테스트 추가. 동일 소스 격리 실행 **tsc strict PASS / 42조건 PASS**, 전체 React/Vitest **NOT RUN**.
+- Admin 조직관리의 초대 취소·재발급은 응답 유실과 명단 재조회 실패를 별도로 추적하며, 분실된 일회용 링크는 복원 가능하다고 표시하지 않음. `docs/25_ADMIN_PLAYER_INVITE_RECONCILIATION_VALIDATION.md` 참조.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 3.1 오프라인 배치 DB 계약 사전검사
