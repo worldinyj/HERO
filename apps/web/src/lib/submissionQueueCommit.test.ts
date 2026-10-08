@@ -9,6 +9,7 @@ const fixture = vi.hoisted(() => ({
   games: [] as Array<Record<string, unknown>>,
   failGameDelete: false,
   failQueuePut: false,
+  hideCommittedInQueueListing: false,
 }));
 
 vi.mock("./supabase", () => ({
@@ -50,7 +51,9 @@ vi.mock("./offlineDb", () => ({
         objectStore: () => ({
           get: (key: string) => {
             const request = {
-              result: fixture.games.find((row) => row.key === key),
+              result: name === "submission-queue"
+                ? fixture.records.find((row) => row.sessionId === key)
+                : fixture.games.find((row) => row.key === key),
               onsuccess: null as (() => void) | null,
               onerror: null as (() => void) | null,
               error: null,
@@ -82,7 +85,10 @@ vi.mock("./offlineDb", () => ({
           index: (_name: string) => ({
             getAll: (userId: string) => {
               const request = {
-                result: fixture.records.filter((row) => row.userId === userId),
+                result: fixture.records.filter((row) =>
+                  row.userId === userId &&
+                  (!fixture.hideCommittedInQueueListing || row.state !== "committed")
+                ),
                 onsuccess: null as (() => void) | null,
                 onerror: null as (() => void) | null,
                 error: null,
@@ -131,6 +137,7 @@ beforeEach(() => {
   fixture.games = [];
   fixture.failGameDelete = false;
   fixture.failQueuePut = false;
+  fixture.hideCommittedInQueueListing = false;
 });
 
 describe("server-confirmed submissions with failed local deletion", () => {
@@ -387,5 +394,38 @@ describe("committed evidence is never silently deleted", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe("atomic IndexedDB queue write fallback", () => {
+  it("preserves a committed row even when a stale list read missed it", async () => {
+    fixture.records = [{
+      ...queued(), state: "committed",
+      completionReceipt: {
+        sessionId, alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    }];
+    fixture.hideCommittedInQueueListing = true;
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({ status: "queued", reason: "offline" });
+      expect(fixture.records[0]?.state).toBe("committed");
+      expect(fixture.records[0]?.completionReceipt).toMatchObject({ sessionId });
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("rejects writing over another owner's submission queue key", async () => {
+    fixture.records = [{ ...queued(), userId: "another-user" }];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      await expect(submitSessionWithQueue({ scenarioId: "scenario-one", body }))
+        .rejects.toThrow("submission_queue_owner_conflict");
+      expect(fixture.records).toHaveLength(1);
+      expect(fixture.records[0]?.userId).toBe("another-user");
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
   });
 });

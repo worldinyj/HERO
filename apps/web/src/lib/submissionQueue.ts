@@ -6,6 +6,7 @@ import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
+import { decideQueueWrite } from "./submissionQueueWritePolicy";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -174,13 +175,38 @@ async function writeQueueRecord(
   try {
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(SUBMISSION_QUEUE_STORE, "readwrite");
-      transaction.objectStore(SUBMISSION_QUEUE_STORE).put(record);
-
+      const store = transaction.objectStore(SUBMISSION_QUEUE_STORE);
+      let policyError: Error | null = null;
+      // Check and put inside the SAME readwrite transaction. Even without
+      // Web Locks, a stale tab cannot downgrade a committed completion.
+      const request = store.get(record.sessionId);
+      request.onsuccess = () => {
+        const existing = request.result as PendingSessionSubmission | undefined;
+        const decision = decideQueueWrite(existing, record);
+        if (decision === "preserve_committed") return;
+        if (decision !== "write") {
+          policyError = new Error("submission_queue_" + decision);
+          transaction.abort();
+          return;
+        }
+        try {
+          store.put(record);
+        } catch (error) {
+          policyError = error instanceof Error
+            ? error : new Error("submission_queue_write_failed");
+          transaction.abort();
+        }
+      };
+      request.onerror = () => {
+        policyError = request.error ?? new Error("submission_queue_read_failed");
+      };
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
-        reject(transaction.error ?? new Error("submission_queue_write_failed"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_write_failed"));
       transaction.onabort = () =>
-        reject(transaction.error ?? new Error("submission_queue_write_aborted"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_write_aborted"));
     });
   } finally {
     db.close();
