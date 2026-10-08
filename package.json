@@ -32,7 +32,8 @@
     "update:release-evidence": "node scripts/update-release-evidence.mjs",
     "check:human-review-evidence": "tsx scripts/check-human-review-evidence.ts",
     "record:scenario-review": "tsx scripts/record-human-review.ts",
-    "check:cause-traceability": "tsx scripts/check-cause-traceability.ts"
+    "check:cause-traceability": "tsx scripts/check-cause-traceability.ts",
+    "check:batch-db-contracts": "node scripts/check-batch-db-contracts.mjs"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
