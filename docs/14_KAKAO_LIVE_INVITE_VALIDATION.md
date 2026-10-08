@@ -42,6 +42,17 @@
 | INV-11 | 닉네임 중복/금칙어/검증중 값 변경 | 수락 버튼 비활성화, 서버의 원자적 최종 검증 유지 | NOT RUN |
 | INV-12 | 발급·수락·취소 등 주요 행동의 감사 기록 확인 | 민감 토큰 없이 actor·role·plant·결과 추적 | NOT RUN |
 
+## 2.1 OAuth 복귀 주소 안전성
+
+| ID | 수행 | 기대결과 | 상태 |
+|---|---|---|---|
+| AUTH-08 | `/login?next=/\\attacker.example`, `next=//attacker.example` 테스트 | 외부 주소로 복귀하지 않고 HERO `/`로 안전하게 복귀 | NOT RUN |
+| AUTH-09 | 인코딩된 `%2f`, `%5c`, 제어문자 및 절대 URL 테스트 | 잘못된 복귀 경로는 모두 `/`로 정규화 | NOT RUN |
+| AUTH-10 | 정상 `/i/<token>`, `/manager`, `/briefing/...`로 로그인 | 쿼리/해시 포함 유효한 앱 경로를 보존 | NOT RUN |
+| AUTH-11 | Supabase OAuth와 로컬 E2E 로그인 경로 각각 검사 | 동일 `safeAppReturnPath` 검증 경유, 외부 이동 금지 | NOT RUN |
+
+관련 격리 Node 검사: 21사례 통과 (전체 브라우저/E2E 미실행).
+
 ## 3.0 관리자 초대 발급 및 재발급의 응답 불확실성
 
 | ID | 수행 | 기대결과 | 상태 |

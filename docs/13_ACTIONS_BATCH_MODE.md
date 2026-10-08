@@ -33,6 +33,9 @@
 - CSV 대량 초대: 성공 링크 부분 저장/중단 후 이어하기/1회 25건 제한, `SITE_URL` 입력 오류 사전 차단. 네트워크 중단·5xx·응답 불확실 시 **자동 재개 금지 및 미수락 초대 확인 후 새 목록 시작**
 - 초대 가입: 닉네임 중복확인 응답의 입력값 변경 레이스 방지
 - 실제 Kakao 계정 검증 계획: `docs/14_KAKAO_LIVE_INVITE_VALIDATION.md` (시험 전 상태 `NOT RUN`)
+- 카카오 OAuth/로컬 E2E `next=` 복귀 주소를 단일 `safeAppReturnPath` 함수로 검증: 외부 URL, `//`, 역슬래시, 제어문자 및 위험한 percent-encoded 경로를 차단. 격리된 Node 테스트 21사례 및 TypeScript 단독 검사 통과 (**전체 Vitest/CI 미실행**).
+- Admin→발전소 담당자 발급·재발급: 응답 불확실 시 재요청 차단, 기존 일회용 URL 표시 유지, 다른 초대 취소 시 현재 URL 보호. `manager-user-action`은 `SITE_URL` 검사 후에만 기존 초대 취소.
+- 미해결 주의: `manager-user-action`의 재발급은 아직 기존 초대 취소와 새 초대 insert가 별도 DB 요청(비원자적)으로 이루어진다. 릴리스 전 트랜잭션 일원화 및 실패주입 E2E 필요.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
