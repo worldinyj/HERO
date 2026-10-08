@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { HERO_E2E_LOCAL_API, localE2eSeedGate } from "../e2e/localTargetGuard.mjs";
 import { assertFreshLocalE2eNamespace } from "../e2e/fixtureNamespace.mjs";
+import { requireFixtureAuthUuidV4 } from "../e2e/authFixtureUuid.mjs";
 import { E2E_API, inspectE2eStatus, inspectE2eWebEnv, buildE2eWebEnv } from "./check-local-e2e-preflight.mjs";
 import { E2E_WEB_ORIGIN, edgeProbeVerdict, e2eArgsVerdict,
   browserTestEnv } from "./hero-mobile-e2e.mjs";
@@ -389,4 +390,21 @@ test("HERO full mobile E2E never injects server-role keys into Vite", () => {
   assert.equal(result.SAFE_FLAG, "preserved");
   const pw = readFileSync(new URL("../playwright.config.ts",import.meta.url),"utf8");
   assert.ok(pw.includes('process.env.HERO_LOCAL_FULL_E2E !== "1"'));
+});
+
+test("E2E Auth IDs use UUID v4 and admin returns the exact requested identity", () => {
+  const source = readFileSync(new URL("../e2e/setup-local.ts", import.meta.url), "utf8");
+  const ids = [...source.matchAll(/70000000-[0-9a-f-]{27}/g)].map(x => x[0]);
+  assert.equal(ids.length, 11);
+  assert.equal(new Set(ids).size, 11);
+  for (const id of ids) assert.equal(requireFixtureAuthUuidV4(id), id);
+  for (const bad of [
+    "70000000-0000-0000-0000-000000000001",
+    "70000000-0000-1000-8000-000000000001",
+    "70000000-0000-4000-0000-000000000001", null,
+  ]) assert.throws(() => requireFixtureAuthUuidV4(bad),
+    /invalid_auth_user_uuid_v4/);
+  assert.ok(source.includes("if (data?.user?.id !== input.id)"));
+  assert.ok(source.indexOf("for (const id of [") <
+    source.indexOf("await assertFreshLocalE2eNamespace"));
 });

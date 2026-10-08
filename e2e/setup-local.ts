@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { localE2eSeedGate } from "./localTargetGuard.mjs";
 import { assertFreshLocalE2eNamespace, HERO_E2E_SEASON_KEY } from "./fixtureNamespace.mjs";
+import { requireFixtureAuthUuidV4 } from "./authFixtureUuid.mjs";
 
 // Fail closed BEFORE createClient() or any auth/database mutation.
 const localGate = localE2eSeedGate(process.env);
@@ -38,17 +39,17 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 const IDS = {
   plant: "71000000-0000-0000-0000-000000000001",
-  manager: "70000000-0000-0000-0000-000000000001",
-  adminA: "70000000-0000-0000-0000-000000000011",
-  adminB: "70000000-0000-0000-0000-000000000012",
-  managerCandidateA: "70000000-0000-0000-0000-000000000021",
-  managerCandidateB: "70000000-0000-0000-0000-000000000022",
-  playerCandidateA: "70000000-0000-0000-0000-000000000031",
-  playerCandidateB: "70000000-0000-0000-0000-000000000032",
-  playerA: "70000000-0000-0000-0000-000000000101",
-  playerB: "70000000-0000-0000-0000-000000000102",
-  uninvitedA: "70000000-0000-0000-0000-000000000201",
-  uninvitedB: "70000000-0000-0000-0000-000000000202",
+  manager: "70000000-0000-4000-8000-000000000001",
+  adminA: "70000000-0000-4000-8000-000000000011",
+  adminB: "70000000-0000-4000-8000-000000000012",
+  managerCandidateA: "70000000-0000-4000-8000-000000000021",
+  managerCandidateB: "70000000-0000-4000-8000-000000000022",
+  playerCandidateA: "70000000-0000-4000-8000-000000000031",
+  playerCandidateB: "70000000-0000-4000-8000-000000000032",
+  playerA: "70000000-0000-4000-8000-000000000101",
+  playerB: "70000000-0000-4000-8000-000000000102",
+  uninvitedA: "70000000-0000-4000-8000-000000000201",
+  uninvitedB: "70000000-0000-4000-8000-000000000202",
   inviteA: "72000000-0000-0000-0000-000000000101",
   inviteB: "72000000-0000-0000-0000-000000000102",
   scenario: "73000000-0000-0000-0000-000000000001",
@@ -130,6 +131,16 @@ const uninvitedIdentities = [
   },
 ] as const;
 
+// Validate all fixed Auth IDs before ANY local network write.
+for (const id of [
+  IDS.manager,
+  ...adminIdentities.map(x => x.id),
+  ...managerCandidates.map(x => x.id),
+  ...playerCandidates.map(x => x.id),
+  ...identities.map(x => x.id),
+  ...uninvitedIdentities.map(x => x.id),
+]) requireFixtureAuthUuidV4(id);
+
 // Run all reads before the FIRST Auth or database write. Existing fixtures
 // cause a safe stop, not an automatic reset or upsert.
 await assertFreshLocalE2eNamespace(admin, {
@@ -159,14 +170,17 @@ async function createUser(input: {
   email: string;
   password: string;
 }) {
-  const { error } = await admin.auth.admin.createUser({
-    id: input.id,
+  const { data, error } = await admin.auth.admin.createUser({
+    id: requireFixtureAuthUuidV4(input.id),
     email: input.email,
     password: input.password,
     email_confirm: true,
   });
 
   if (error) throw error;
+  if (data?.user?.id !== input.id) {
+    throw Error("E2E_AUTH_USER_ID_MISMATCH: stop_without_cleanup");
+  }
 }
 
 await createUser({
