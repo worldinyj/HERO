@@ -2,6 +2,7 @@ import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { isUuid } from "../_shared/uuid.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -252,14 +253,14 @@ Deno.serve(async (req) => {
 
     switch (body.action) {
       case "cancel-invite": {
-        if (!body.invitationId) {
+        if (!isUuid(body.invitationId)) {
           return json(req, { error: "invitation_id_required" }, 400);
         }
         return json(req, await cancelInvite(operator, body.invitationId));
       }
 
       case "reissue-invite": {
-        if (!body.invitationId) {
+        if (!isUuid(body.invitationId)) {
           return json(req, { error: "invitation_id_required" }, 400);
         }
         return json(
@@ -270,7 +271,7 @@ Deno.serve(async (req) => {
       }
 
       case "set-player-active": {
-        if (!body.profileId || typeof body.isActive !== "boolean") {
+        if (!isUuid(body.profileId) || typeof body.isActive !== "boolean") {
           return json(req, { error: "profile_id_and_active_required" }, 400);
         }
         return json(

@@ -1,5 +1,6 @@
 import { handleOptions, json } from "../_shared/http.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { isUuid } from "../_shared/uuid.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import {
@@ -214,7 +215,7 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as RequestBody;
 
     if (body.action === "check") {
-      if (!body.nickname) {
+      if (typeof body.nickname !== "string" || body.nickname.trim() === "") {
         return json(req, { error: "nickname_required" }, 400);
       }
       return await checkNickname(req, body.nickname);
@@ -225,14 +226,14 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "change-self") {
-      if (!body.nickname) {
+      if (typeof body.nickname !== "string" || body.nickname.trim() === "") {
         return json(req, { error: "nickname_required" }, 400);
       }
       return await changeSelf(req, body.nickname);
     }
 
     if (body.action === "force-reset") {
-      if (!body.profileId) {
+      if (!isUuid(body.profileId)) {
         return json(req, { error: "profile_id_required" }, 400);
       }
       return await forceReset(req, body.profileId);

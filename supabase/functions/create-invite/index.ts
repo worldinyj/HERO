@@ -2,6 +2,7 @@ import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { isUuid } from "../_shared/uuid.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -37,11 +38,19 @@ Deno.serve(async (req) => {
 
     const body = (await req.json()) as CreateInviteBody;
 
-    const plantId = body.plantId?.trim();
-    const inviteeName = body.inviteeName?.trim();
+    // RequestBody is a compile-time type only: enforce JSON types at runtime
+    // before .trim(), enum casts or database/RPC calls.
+    const plantId = typeof body.plantId === "string" ? body.plantId.trim() : null;
+    const inviteeName = typeof body.inviteeName === "string" ? body.inviteeName.trim() : null;
     const targetRole = body.targetRole;
+    const jobRoles: readonly string[] = ["sro", "ro", "field_operator", "supervisor", "worker"];
 
-    if (!plantId || !inviteeName || !targetRole) {
+    if (
+      !isUuid(plantId) || !inviteeName ||
+      (targetRole !== "plant_manager" && targetRole !== "player") ||
+      (body.teamName != null && typeof body.teamName !== "string") ||
+      (targetRole === "player" && body.jobRole != null && !jobRoles.includes(body.jobRole))
+    ) {
       return json(req, { error: "invalid_request" }, 400);
     }
 
