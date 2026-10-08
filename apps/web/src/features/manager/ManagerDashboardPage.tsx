@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
+import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -66,6 +67,7 @@ export function ManagerDashboardPage() {
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [reissueResult, setReissueResult] = useState<ReissueResult | null>(null);
   const [copiedReissue, setCopiedReissue] = useState(false);
+  const [uncertainReissues, setUncertainReissues] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async (background = false) => {
@@ -122,51 +124,79 @@ export function ManagerDashboardPage() {
 
   async function invokeManagerAction(body: Record<string, unknown>) {
     const supabase = getSupabase();
+    const reissue = body.action === "reissue-invite";
     const { data, error: invokeError } = await supabase.functions.invoke(
-      "manager-user-action",
-      { body },
+      "manager-user-action", { body },
     );
-
-    if (invokeError) throw invokeError;
-
-    const result = data as Record<string, unknown> & { error?: string };
-    if (result.error) throw new Error(result.error);
+    if (invokeError) {
+      if (reissue && !isDefiniteInviteRejection(invokeError)) {
+        throw new InviteCreationOutcomeUnknownError();
+      }
+      throw invokeError;
+    }
+    const result = data as (Record<string, unknown> & { error?: string }) | null;
+    if (!result || typeof result !== "object" || result.error) {
+      if (reissue) throw new InviteCreationOutcomeUnknownError();
+      throw new Error(result?.error ?? "초대 처리 응답이 불확실합니다. 목록을 확인해주세요.");
+    }
     return result;
   }
 
   async function handleCancelInvite(invitationId: string) {
+    if (actionPending) return;
+    if (reissueResult?.invitationId === invitationId) {
+      setError("표시된 일회용 링크를 보관한 후 취소해주세요.");
+      return;
+    }
     try {
       setActionPending(`invite:${invitationId}`);
       setError(null);
-      setReissueResult(null);
-      await invokeManagerAction({
-        action: "cancel-invite",
-        invitationId,
-      });
+      // Other cancellations must not destroy the only copy of a reissued URL.
+      const result = await invokeManagerAction({ action: "cancel-invite", invitationId });
+      if (result.canceled !== true || result.invitationId !== invitationId) {
+        throw new Error("취소 응답이 불확실합니다. 목록에서 다시 확인해주세요.");
+      }
       await loadDashboard(true);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "초대 취소에 실패했습니다.");
+      setError(cause instanceof Error ? cause.message : "취소 결과를 확인하지 못했습니다.");
     } finally {
       setActionPending(null);
     }
   }
 
   async function handleReissueInvite(invitationId: string) {
+    if (actionPending) return;
+    if (reissueResult || uncertainReissues.includes(invitationId)) {
+      setError("이전 재발급 결과와 일회용 링크를 먼저 확인해주세요.");
+      return;
+    }
     try {
       setActionPending(`invite:${invitationId}`);
       setError(null);
+      const result = await invokeManagerAction({ action: "reissue-invite", invitationId });
+      if (
+        typeof result.invitationId !== "string" ||
+        typeof result.inviteUrl !== "string" ||
+        typeof result.expiresAt !== "string" ||
+        typeof result.plantDisplayName !== "string"
+      ) {
+        throw new InviteCreationOutcomeUnknownError();
+      }
       setCopiedReissue(false);
-      const result = await invokeManagerAction({
-        action: "reissue-invite",
-        invitationId,
+      setReissueResult({
+        invitationId: result.invitationId,
+        inviteUrl: result.inviteUrl,
+        expiresAt: result.expiresAt,
+        plantDisplayName: result.plantDisplayName,
       });
-
-      setReissueResult(result as unknown as ReissueResult);
       await loadDashboard(true);
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "새 초대 링크 생성에 실패했습니다.",
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setUncertainReissues((old) => old.includes(invitationId) ? old : [...old, invitationId]);
+        setError("재발급 결과가 불확실합니다. 서버에서 생성됐을 수 있으므로 초대 목록을 대조하기 전에는 재시도하지 마세요.");
+      } else {
+        setError(cause instanceof Error ? cause.message : "새 초대 링크 발급에 실패했습니다.");
+      }
     } finally {
       setActionPending(null);
     }
@@ -395,7 +425,21 @@ export function ManagerDashboardPage() {
               >
                 {copiedReissue ? "복사 완료" : "링크 복사"}
               </button>
+              <button type="button" className="text-button" onClick={() => {
+                setReissueResult(null);
+                setCopiedReissue(false);
+                setError(null);
+              }}>링크 보관 완료 · 다음 발급 허용</button>
             </div>
+          </div>
+        ) : null}
+
+        {uncertainReissues.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>재발급 결과 확인 필요</strong>
+            <p className="muted">이미 초대가 생성되었을 수 있습니다. 수락 대기 목록을 대조하고 중복 초대를 정리한 뒤 새 요청을 진행하세요.</p>
+            <button type="button" className="secondary-button compact-button" disabled={actionPending !== null}
+              onClick={() => setUncertainReissues([])}>목록 대조 완료 · 재발급 잠금 해제</button>
           </div>
         ) : null}
 
@@ -418,7 +462,7 @@ export function ManagerDashboardPage() {
                     <button
                       type="button"
                       className="text-button"
-                      disabled={actionPending === `invite:${invite.invitation_id}`}
+                      disabled={actionPending !== null || Boolean(reissueResult) || uncertainReissues.includes(invite.invitation_id)}
                       onClick={() => void handleReissueInvite(invite.invitation_id)}
                     >
                       새 링크
@@ -426,7 +470,7 @@ export function ManagerDashboardPage() {
                     <button
                       type="button"
                       className="text-button danger-text-button"
-                      disabled={actionPending === `invite:${invite.invitation_id}`}
+                      disabled={actionPending !== null || reissueResult?.invitationId === invite.invitation_id}
                       onClick={() => void handleCancelInvite(invite.invitation_id)}
                     >
                       취소
