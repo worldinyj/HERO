@@ -79,6 +79,12 @@
 | ADM-20 | DB가 이미 취소/수락된 초대, 타 발전소 등의 명시적인 요청 거절 | Edge가 409/403/404로 전달하고 화면이 응답 불확실성으로 잘못 판단하지 않음 | NOT RUN |
 | ADM-21 | DB 연결 장애·RPC 결과 훼손·알 수 없는 DB 오류 | Edge 500 및 `internal_error`; 프런트는 미확정 요청에 자동 재시도하지 않음 | NOT RUN |
 | ADM-22 | 개발자 로그에 SQL 상세 오류를 발생시킨 격리 시험 | 초대 토큰·SQL 내부 상세가 최종 사용자 HTTP 메시지에 노출되지 않음 | NOT RUN |
+| ADM-23 | 초대 취소 DB commit 후 HTTP 응답 유실 | 동일 초대의 취소·재발급 재요청 모두 잠금, 자동 재시도 없음 | NOT RUN |
+| ADM-24 | 초대 취소·재발급 후 명단 재조회 실패/null/손상 | 결과 확인 버튼 비활성·잠금 유지 | NOT RUN |
+| ADM-25 | 명단 재조회 정상 결과만 받은 상태 | 결과 확인 버튼 활성화되나 잠금 유지, 사용자가 두 번째 단계 확인 필요 | NOT RUN |
+| ADM-26 | 명단을 대조하고 명시적으로 두 번째 버튼 클릭 | 잠금 해제; 일회용 링크는 별도 저장 요구 유지 | NOT RUN |
+| ADM-27 | PostgreSQL `P0001` 객체에 정확한 도메인 거절 코드 포함 | 안전한 4xx와 정확한 도메인 코드만 노출 | NOT RUN |
+| ADM-28 | DB 비정상 SQLSTATE·메시지 상세·prototype/getter 위조 | HTTP 500 `internal_error`로 정규화·비정상 재시도 잠금 | NOT RUN |
 | PLY-01 | 담당자가 자기 발전소 Player 비활성화 후 재활성화 | 상태 변경과 각각의 감사 기록이 같은 트랜잭션에 저장 | NOT RUN |
 | PLY-02 | 동일한 활성 상태로 두 번 변경 요청 | 두 번째는 `changed=false`, 감사 기록 추가 없음 | NOT RUN |
 | PLY-03 | 다른 발전소 Player 또는 Manager/Admin 계정의 상태 변경 시도 | DB RPC에서 권한 또는 대상 범위 위반을 거부 | NOT RUN |

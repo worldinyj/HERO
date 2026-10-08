@@ -15,6 +15,13 @@
 - `create-invite`의 `plantId`, `inviteeName`, `teamName`, 역할, Player 직무 enum을 사전 검증. `nickname-action`의 nickname 문자열과 강제 초기화 UUID도 타입 검증.
 - CI에는 `uuid.test.ts`, `jsonObject.test.ts`의 Deno 테스트 명령을 등록하되, **현재 Actions 실행은 0건**.
 
+## 취소·재발급 결과의 2단계 대조 확인 및 오류 분류
+
+- `ManagerDashboardPage.tsx`: 취소 또는 재발급 응답이 사라지면 관련 초대 취소/재발급을 모두 잠금. 서버 목록 재조회가 성공해야 두 번째 단계 버튼이 활성화되며, 사용자가 실제 수락 대기 명단을 대조하고 확인을 눌렀을 때만 잠금 해제.
+- `managerDashboardResponse.ts`: 참여자/초대/집계 RPC 목록이 모두 배열이며 필수 필드의 타입이 올바른지 확인. 손상된 결과로 잠금이 잘못 풀리는 경로 차단. `managerDashboardResponse.test.ts` Vitest 4개 작성.
+- `invitationErrorStatus.ts`: plain PostgREST `{code:"P0001",message:"..."}` 객체도 정확한 allowlist 메시지만 4xx로 분류하고, 상세 DB 오류/상속된 property/임의 accessor는 노출하지 않음. Deno.test 2그룹 추가.
+- **실제 전체 Deno, Vitest, 브라우저 E2E는 NOT RUN**. 이 변경은 현재 GitHub 배치 브랜치에만 적용됐고 원격 DB/Edge/웹은 변경되지 않았다. `docs/24_INVITATION_OUTCOME_RECONCILIATION_VALIDATION.md`에서 개별 게이트 관리.
+
 ## 수행 증거 및 미수행 게이트
 
 | 검사 | 상태 |

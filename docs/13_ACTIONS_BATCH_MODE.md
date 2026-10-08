@@ -47,6 +47,8 @@
 - Migration 022: Player 자율 변경에서 시즌당 1회 정책·금칙어/중복 검사·프로필 갱신·이력·감사를 행 잠금으로 원자화. `nickname_self_change_atomic.test.sql` 37 assertions 작성. Profile UI의 응답 불명 재시도 잠금/상태 재조회 추가.
 - 신규 추가 DB 검사 집계: Migration 016 43 + 017 21 + 018 27 + 019 27 + 020 30 + 021 33 + 022 37 = **218개 assertion 소스 작성, NOT RUN**. `docs/21_ATOMIC_NICKNAME_FORCE_RESET_VALIDATION.md`, `docs/22_ATOMIC_NICKNAME_SELF_CHANGE_VALIDATION.md` 참조.
 - 추가 정적 보안 점검: `admin_bootstrap.test.sql`/ `season_rollover.test.sql`의 타 테스트와 공유된 고정 UUID를 분리하고, 모든 14개 pgTAP 파일의 UUID·auth.email 중복 탐지를 `check:batch-db-contracts`에 추가. 127 UUID/59 이메일에서 중복 0건 확인. 초대·상태·닉네임 Edge에 JSON 객체/UUID/문자열/enum 입력검증을 보강해 사전 오류 400 처리. `uuid.test.ts`, `jsonObject.test.ts` 4그룹 격리 Node 검사 PASS; Deno/전체 CI **NOT RUN**. `docs/23_BATCH_PRE_DEPLOYMENT_SECURITY_VALIDATION.md` 참조.
+- 초대 취소 및 재발급의 서버 응답 유실 시 중복 실행을 막고, **서버 명단 재조회 → 사용자 명시적 대조 확인** 두 단계 후에만 재시도 잠금 해제. null/비정상 명단 RPC 응답을 거절하는 순수 UI 검증기 및 Vitest 회귀 테스트 4개 작성.
+- PostgREST `P0001` 오류 객체도 알려진 코드만 안전하게 HTTP 4xx로 분류하고, 알 수 없는 SQLSTATE/SQL 상세/위조된 getter는 500 내부 오류로 유지. `invitationErrorStatus.test.ts`에 추가 Deno 테스트 2그룹 작성. **실제 Deno 및 전체 Vitest/E2E 미실행**. `docs/24_INVITATION_OUTCOME_RECONCILIATION_VALIDATION.md` 참조.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 3.1 오프라인 배치 DB 계약 사전검사
