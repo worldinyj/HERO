@@ -3,6 +3,7 @@ import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
+import { isValidManagerDashboardLists } from "./managerDashboardResponse";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -89,9 +90,15 @@ export function ManagerDashboardPage() {
       const firstError = participation.error ?? pending.error ?? aggregate.error;
       if (firstError) throw firstError;
 
-      setParticipants((participation.data ?? []) as ParticipationRow[]);
-      setPendingInvites((pending.data ?? []) as PendingInviteRow[]);
-      setAggregates((aggregate.data ?? []) as AggregateRow[]);
+      // A null/malformed RPC response cannot prove invitation, status or
+      // nickname outcomes. Keep the reconciliation lock in that case.
+      if (!isValidManagerDashboardLists(participation.data, pending.data, aggregate.data)) {
+        throw new Error("manager_dashboard_result_invalid");
+      }
+
+      setParticipants(participation.data as ParticipationRow[]);
+      setPendingInvites(pending.data as PendingInviteRow[]);
+      setAggregates(aggregate.data as AggregateRow[]);
       return true;
     } catch (cause) {
       setError(
