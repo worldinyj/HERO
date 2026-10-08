@@ -19,6 +19,7 @@ const fixture = vi.hoisted(() => ({
   queueReadOverride: null as PendingSessionSubmission | null,
   queueListOverride: null as PendingSessionSubmission[] | null,
   hideCommittedInQueueListing: false,
+  failQueueListRead: false,
 }));
 
 vi.mock("./supabase", () => ({
@@ -124,6 +125,9 @@ vi.mock("./offlineDb", () => ({
           },
           index: (_name: string) => ({
             getAll: (userId: string) => {
+              if (fixture.failQueueListRead) {
+                throw new Error("simulated_queue_list_unavailable");
+              }
               const request = {
                 result: (fixture.queueListOverride ?? fixture.records).filter((row) =>
                   row.userId === userId &&
@@ -188,6 +192,7 @@ beforeEach(() => {
   fixture.queueReadOverride = null;
   fixture.queueListOverride = null;
   fixture.hideCommittedInQueueListing = false;
+  fixture.failQueueListRead = false;
 });
 
 describe("server-confirmed submissions with failed local deletion", () => {
@@ -923,5 +928,76 @@ describe("offline staging reports authoritative IndexedDB state", () => {
       expect(fixture.records).toEqual([saved]);
       expect(fixture.invokes).toBe(0);
     } finally { vi.unstubAllGlobals(); }
+  });
+});
+
+
+describe("foreground submission relies only on current transactional state", () => {
+  it("does not read the user-index listing before the initial server submit", async () => {
+    fixture.failQueueListRead = true;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result.status).toBe("submitted");
+    expect(fixture.invokes).toBe(1);
+    expect(fixture.records).toEqual([]);
+  });
+
+  it("rejects an unrelated scenario when a confirmed receipt already exists", async () => {
+    const saved = {
+      ...queued(), state: "committed" as const,
+      completionReceipt: {
+        sessionId, alreadyCompleted: false,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    };
+    fixture.records = [saved];
+    const result = await submitSessionWithQueue({
+      scenarioId: "different-scenario", body,
+    });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_queue_payload_conflict",
+    });
+    expect(fixture.records).toEqual([saved]);
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("does not present another scenario's terminal block as this session's", async () => {
+    const saved = { ...queued(), scenarioId: "different-scenario",
+      state: "blocked" as const };
+    fixture.records = [saved];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_queue_payload_conflict",
+    });
+    expect(fixture.records).toEqual([saved]);
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("returns the existing confirmed receipt without a user-index listing", async () => {
+    fixture.failQueueListRead = true;
+    fixture.records = [{
+      ...queued(), state: "committed",
+      completionReceipt: {
+        sessionId, alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    }];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "submitted", data: { sessionId, alreadyCompleted: true },
+    });
+    expect(fixture.invokes).toBe(0);
+    expect(fixture.records).toEqual([]);
+  });
+
+  it("preserves blocked action evidence without a user-index listing", async () => {
+    fixture.failQueueListRead = true;
+    const blocked = { ...queued(), state: "blocked" as const };
+    fixture.records = [blocked];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_blocked_requires_manual_retry",
+    });
+    expect(fixture.records).toEqual([blocked]);
+    expect(fixture.invokes).toBe(0);
   });
 });

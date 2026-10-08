@@ -6,7 +6,7 @@ import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
-import { decideQueueWrite, sameSubmissionBody, type QueueWriteOptions } from "./submissionQueueWritePolicy";
+import { decideQueueWrite, type QueueWriteOptions } from "./submissionQueueWritePolicy";
 import { decideConfirmedQueueDeletion } from "./submissionQueueDeletePolicy";
 import { stageForegroundSubmission } from "./submissionForegroundStore";
 
@@ -395,53 +395,9 @@ export async function submitSessionWithQueue(
       throw new Error("authenticated_session_changed");
     }
 
-    const existing = (await listQueuedSubmissions(userId)).find(
-      (item) => item.sessionId === input.body.sessionId &&
-        item.userId === userId,
-    );
-    if (existing?.state === "committed") {
-      // Old committed markers may lack a cached response. Keep that evidence
-      // until a genuine server receipt can be retrieved; never fabricate a
-      // result or delete the only locally recoverable completion marker.
-      const receipt = existing.completionReceipt;
-      if (!isConfirmedSubmissionResponse(receipt, input.body.sessionId)) {
-        return { status: "queued", reason: "confirmed_cleanup_pending" };
-      }
-      const { cleanupPending } = await cleanupConfirmedLocalSession(
-        userId, existing.scenarioId, existing.sessionId, existing,
-      );
-      return { status: "submitted", data: receipt, cleanupPending };
-    }
-
-    // A permanently blocked submission must not be silently reactivated by
-    // a reconnect or by a stale tab. Explicit manual retry uses a dedicated
-    // queue transition with allowBlockedRetry=true.
-    if (existing?.state === "blocked") {
-      return {
-        status: "rejected",
-        reason: "submission_blocked_requires_manual_retry",
-        httpStatus: null,
-      };
-    }
-
-    // The queued copy is the authoritative, immutable evidence. An online
-    // foreground click must not send a different log before the IDB write
-    // policy gets a chance to reject that change.
-    if (existing?.state === "pending" &&
-        (existing.scenarioId !== input.scenarioId ||
-         existing.body.sessionId !== input.body.sessionId ||
-         !sameSubmissionBody(existing.body, input.body))) {
-      return {
-        status: "rejected",
-        reason: "submission_queue_payload_conflict",
-        httpStatus: null,
-      };
-    }
-
-    // Both offline and online paths must honor the SAME current IDB row.
-    // A stale getAll listing may omit a committed, blocked or conflicting
-    // entry; report that state rather than incorrectly claiming "queued".
-    // The transaction durably stages any new pending submission before send.
+    // A previous getAll snapshot is unnecessary and may be stale. The single
+    // readwrite preflight below verifies the CURRENT owner, scenario, body
+    // and terminal state before any network call or local cleanup.
     const preparation = await stageForegroundSubmission(userId, input);
     if (preparation.kind === "conflict") {
       return {
