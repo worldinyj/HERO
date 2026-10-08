@@ -89,9 +89,14 @@ declare
   v_active boolean;
   v_epoch bigint;
 begin
-  if tg_op='INSERT' or
-     (new.accepted_at is distinct from old.accepted_at and new.accepted_at is not null)
-  then
+  if tg_op='INSERT' then
+    -- No OLD row exists in an INSERT trigger.
+    null;
+  elsif new.accepted_at is not distinct from old.accepted_at
+      or new.accepted_at is null then
+    return new;
+  end if;
+  if tg_op='INSERT' or new.accepted_at is not null then
     select is_active,invitation_epoch into v_active,v_epoch
     from public.plants where id=new.plant_id for share;
     if not found or v_active is distinct from true then
@@ -142,9 +147,12 @@ as $$
 declare
   v_active boolean;
 begin
-  if tg_op='INSERT' or
-     (new.status='completed' and old.status is distinct from new.status)
-  then
+  if tg_op='UPDATE' then
+    if new.status <> 'completed' or new.status is not distinct from old.status then
+      return new;
+    end if;
+  end if;
+  if tg_op='INSERT' or new.status='completed' then
     select is_active into v_active from public.plants
       where id=new.plant_id for share;
     if not found or v_active is distinct from true then

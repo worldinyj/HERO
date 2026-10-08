@@ -1,5 +1,7 @@
 import { sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireUser } from "../_shared/supabase.ts";
@@ -30,10 +32,11 @@ Deno.serve(async (req) => {
     });
     if (limited) return limited;
 
-    const body = (await req.json()) as AcceptBody;
-
-    const token = body.token?.trim();
-    const nickname = body.nickname?.trim();
+    const raw = await readJsonObject(req);
+    if (!raw) return json(req, { error: "invalid_request" }, 400);
+    const body = raw as AcceptBody;
+    const token = typeof body.token === "string" ? body.token.trim() : null;
+    const nickname = typeof body.nickname === "string" ? body.nickname.trim() : null;
 
     if (!token || !nickname) {
       return json(req, { error: "invalid_request" }, 400);
@@ -60,14 +63,16 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      const detail = error.message || "accept_failed";
-      return json(req, { error: detail }, 409);
+      const classified = classifyInvitationError(error);
+      return json(req, { error: classified.error }, classified.status);
+    }
+    if (!data || typeof data !== "object" || data.profile_id !== user.id) {
+      throw new Error("invitation_accept_result_unknown");
     }
 
     return json(req, { accepted: true, profile: data });
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status = message === "unauthorized" ? 401 : 500;
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });

@@ -63,8 +63,20 @@ export async function requireActiveProfile(
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error || !profile || !profile.is_active) {
+  if (error) throw new Error("profile_status_unavailable");
+  if (!profile || !profile.is_active) {
     throw new Error("inactive_or_missing_profile");
+  }
+
+  // The service key bypasses RLS: explicitly enforce plant suspension
+  // for every player/manager Edge endpoint, without disabling Admin access.
+  if (profile.role !== "admin") {
+    if (!profile.plant_id) throw new Error("plant_inactive");
+    const { data: plant, error: plantError } = await admin
+      .from("plants").select("is_active")
+      .eq("id", profile.plant_id).maybeSingle();
+    if (plantError) throw new Error("plant_status_unavailable");
+    if (!plant || !plant.is_active) throw new Error("plant_inactive");
   }
 
   return {

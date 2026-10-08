@@ -1,4 +1,7 @@
 import { handleOptions, json } from "../_shared/http.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
+import { isUuid } from "../_shared/uuid.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -27,9 +30,14 @@ Deno.serve(async (req) => {
     });
     if (limited) return limited;
 
-    const body = (await req.json()) as StartSessionBody;
-    const scenarioSlug = body.scenarioId?.trim();
-    const replayFromNode = body.replayFromNode?.trim();
+    const raw = await readJsonObject(req);
+    if (!raw) return json(req, { error: "invalid_request" }, 400);
+    const body = raw as StartSessionBody;
+    const scenarioSlug = typeof body.scenarioId === "string" ? body.scenarioId.trim() : null;
+    const replayFromNode = typeof body.replayFromNode === "string" ? body.replayFromNode.trim() : null;
+    if (body.replayOf != null && !isUuid(body.replayOf)) {
+      return json(req, { error: "invalid_request" }, 400);
+    }
 
     if (profile.role !== "player") {
       return json(req, { error: "player_role_required" }, 403);
@@ -239,8 +247,7 @@ Deno.serve(async (req) => {
       startedAt: created.started_at,
     }, 201);
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status = message === "unauthorized" ? 401 : 500;
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });

@@ -8,6 +8,9 @@ import {
 } from "@hero/engine";
 import { ScenarioSchema } from "@hero/schema";
 import { handleOptions, json } from "../_shared/http.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
+import { isUuid } from "../_shared/uuid.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -82,9 +85,14 @@ Deno.serve(async (req) => {
     });
     if (limited) return limited;
 
-    const body = (await req.json()) as SubmitSessionBody;
-    const sessionId = body.sessionId?.trim();
+    const raw = await readJsonObject(req);
+    if (!raw) return json(req, { error: "invalid_request" }, 400);
+    const body = raw as SubmitSessionBody;
+    const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : null;
     const submittedActions = body.actions ?? [];
+    if (!isUuid(sessionId) || !Array.isArray(submittedActions)) {
+      return json(req, { error: "invalid_submission" }, 400);
+    }
 
     if (profile.role !== "player") {
       return json(req, { error: "player_role_required" }, 403);
@@ -259,8 +267,7 @@ Deno.serve(async (req) => {
       serverMetricAverage: metricAverage(state),
     });
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status = message === "unauthorized" ? 401 : 500;
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });
