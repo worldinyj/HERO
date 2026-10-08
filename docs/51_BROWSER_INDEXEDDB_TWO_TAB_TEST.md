@@ -27,3 +27,9 @@ pnpm exec playwright test e2e/atomic-indexeddb-submission.spec.ts --project=mobi
 - 실제 Playwright + 브라우저에서 검증하는 경로의 코드를 **작성했다**. 이 대화 실행 환경에서는 pnpm/Vitest 의존성 미설치로 아직 Playwright 결과는 NOT RUN.
 - 새 E2E는 트랜잭션 간 충돌만 검사하며 기기 전원 종료·브라우저 crash durability, Safari WebKit, 서버 점수 확정 동시 요청은 별도 검증 대상이다.
 - 서버 및 배포 환경, main, PR #79, GitHub Actions는 변경하지 않았다. 전체 Tasklist 코드 환산 진도율 75.6%, T5-04 PARTIAL 유지.
+
+## 인증·외부 API 의존성 차단 (2026-10-08)
+
+기존 E2E의 `page.goto('/')`는 HERO 전체 SPA를 부팅하므로 테스트 사용자 인증·Supabase 초기화에 영향받을 수 있었다. 이번에는 Playwright `page.route`로 **루트 문서 내비게이션만 최소 HTML로 fulfill**하고, 앱 실제 `/src/lib/submissionForegroundStore.ts` 및 의존 모듈 요청은 Vite 서버를 그대로 사용하도록 보완했다. IndexedDB 원자성만 검증하므로 로그인이나 원격 Edge Function 호출이 필요 없다.
+
+추가 Playwright 사례 1건: **최초 오프라인 pending 저장 → 탭 새로고침 → 원본 유지 → 다른 탭의 불일치 행동 제출 차단**. E2E 시나리오는 총 6건 작성. 실제 Chromium 실행은 관리자 정책의 loopback 접속 차단으로 아직 NOT RUN.

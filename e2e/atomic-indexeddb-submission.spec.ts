@@ -32,10 +32,32 @@ function input(sessionId: string, actionId: string): StagingInput {
   };
 }
 
+/**
+ * The test needs a SAME-ORIGIN secure context and Vite's TS module server,
+ * not the authenticated app. Intercept only document navigation to "/";
+ * actual /src/lib/*.ts module requests continue to Vite unchanged.
+ */
+async function isolatedPage(page: Page): Promise<void> {
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.isNavigationRequest() && url.pathname === "/") {
+      await route.fulfill({
+        status: 200,
+        contentType: "text/html; charset=utf-8",
+        body: "<!doctype html><html lang='ko'><head><meta charset='utf-8'></head><body>HERO IndexedDB transaction probe</body></html>",
+      });
+    } else {
+      await route.continue();
+    }
+  });
+  await page.goto("/");
+}
+
 async function twoTabs(context: BrowserContext): Promise<[Page, Page]> {
   const first = await context.newPage();
   const second = await context.newPage();
-  await Promise.all([first.goto("/"), second.goto("/")]);
+  await Promise.all([isolatedPage(first), isolatedPage(second)]);
   return [first, second];
 }
 
@@ -141,6 +163,29 @@ test.describe("real IndexedDB two-tab atomic submission staging", () => {
     expect(first.record.queuedAt).toBe(second.record.queuedAt);
     const stored = await inspect(b, id) as { queuedAt: string };
     expect(stored.queuedAt).toBe(first.record.queuedAt);
+  });
+
+  test("a new tab reload preserves the original offline actions", async ({ context }) => {
+    const [a, b] = await twoTabs(context);
+    const id = "stage-reload-" + crypto.randomUUID();
+    const original = await stage(a, "user-one", input(id, "verify"));
+    expect(original.kind).toBe("ready");
+    await a.reload();
+    const reloaded = await inspect(a, id) as {
+      state: string;
+      userId: string;
+      body: StagingInput["body"];
+    };
+    expect(reloaded).toMatchObject({
+      state: "pending",
+      userId: "user-one",
+      body: { actions: input(id, "verify").body.actions },
+    });
+    const another = await stage(b, "user-one", input(id, "skip"));
+    expect(another.kind).toBe("conflict");
+    expect(await inspect(b, id)).toMatchObject({
+      body: { actions: input(id, "verify").body.actions },
+    });
   });
 
   test("a session ID cannot be staged for a different signed-in user", async ({ context }) => {
