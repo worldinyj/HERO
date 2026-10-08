@@ -3,6 +3,7 @@ import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { isUuid } from "../_shared/uuid.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -242,7 +243,9 @@ Deno.serve(async (req) => {
 
   try {
     const operator = await requireOperator(req);
-    const body = (await req.json()) as RequestBody;
+    const parsed = await readJsonObject(req);
+    if (!parsed) return json(req, { error: "invalid_request" }, 400);
+    const body = parsed as RequestBody;
     const limited = await guardRateLimit(req, operator.admin, {
       scope: `manager-user-action:${body.action ?? "unknown"}`,
       subject: operator.userId,

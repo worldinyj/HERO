@@ -3,6 +3,7 @@ import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { isUuid } from "../_shared/uuid.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -36,7 +37,9 @@ Deno.serve(async (req) => {
     });
     if (limited) return limited;
 
-    const body = (await req.json()) as CreateInviteBody;
+    const parsed = await readJsonObject(req);
+    if (!parsed) return json(req, { error: "invalid_request" }, 400);
+    const body = parsed as CreateInviteBody;
 
     // RequestBody is a compile-time type only: enforce JSON types at runtime
     // before .trim(), enum casts or database/RPC calls.

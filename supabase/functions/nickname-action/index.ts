@@ -1,6 +1,7 @@
 import { handleOptions, json } from "../_shared/http.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { isUuid } from "../_shared/uuid.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import {
@@ -212,7 +213,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = (await req.json()) as RequestBody;
+    const parsed = await readJsonObject(req);
+    if (!parsed) return json(req, { error: "invalid_request" }, 400);
+    const body = parsed as RequestBody;
 
     if (body.action === "check") {
       if (typeof body.nickname !== "string" || body.nickname.trim() === "") {
