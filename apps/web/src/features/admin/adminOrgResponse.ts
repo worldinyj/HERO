@@ -12,6 +12,7 @@ export function isValidAdminOrgLists(
     objectRow(row) && typeof row.id === "string" &&
     typeof row.code === "string" && typeof row.display_name === "string" &&
     typeof row.is_active === "boolean" &&
+    typeof row.invitation_epoch === "number" &&
     Number.isSafeInteger(row.invitation_epoch) && row.invitation_epoch >= 0
   ) &&
     Array.isArray(managers) && managers.every((row: unknown) =>
@@ -23,6 +24,7 @@ export function isValidAdminOrgLists(
     Array.isArray(pendingInvitations) && pendingInvitations.every((row: unknown) =>
       objectRow(row) && typeof row.id === "string" &&
       typeof row.plant_id === "string" && typeof row.invitee_name === "string" &&
+      typeof row.plant_invitation_epoch === "number" &&
       Number.isSafeInteger(row.plant_invitation_epoch) && row.plant_invitation_epoch >= 0
     );
 }
@@ -32,6 +34,8 @@ export function currentPendingInvitations<
   T extends { plant_id: string; plant_invitation_epoch: number },
   P extends { id: string; is_active: boolean; invitation_epoch: number },
 >(plants: readonly P[], invitations: readonly T[]): T[] {
-  const current = new Map(plants.filter(p => p.is_active).map(p => [p.id, p.invitation_epoch]));
+  const current = new Map<string, number>(
+    plants.filter(p => p.is_active).map((p): [string, number] => [p.id, p.invitation_epoch]),
+  );
   return invitations.filter(i => current.get(i.plant_id) === i.plant_invitation_epoch);
 }
