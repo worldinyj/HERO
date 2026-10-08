@@ -226,6 +226,29 @@ check(epochSQL.includes("i.plant_invitation_epoch=pl.invitation_epoch") &&
   epochFilter.includes("current.get(i.plant_id) === i.plant_invitation_epoch"),
   "suspension: hide old-epoch links from Admin and Manager rosters");
 
+
+// The submission queue must preserve an authoritative DB receipt and keep
+// deferred suspended-plant actions durable until future reconnection.
+const receiptClient=read("apps/web/src/lib/submissionReceipt.ts");
+const queueClient=read("apps/web/src/lib/submissionQueue.ts");
+const gameClient=read("apps/web/src/features/play/CompetitiveGamePage.tsx");
+const receiptEdge=read("supabase/functions/_shared/completionReceipt.ts");
+const submitEdge=read("supabase/functions/submit-session/index.ts");
+check(queueClient.includes("isConfirmedSubmissionResponse(data, body.sessionId)") &&
+  queueClient.includes('status === 403 && errorCode === "plant_inactive"') &&
+  queueClient.includes('throw new Error("submission_queue_unavailable")') &&
+  queueClient.includes("submissionServerErrorCode(error)"),
+  "submission queue retains decisions on uncertain 2xx and plant suspension");
+check(gameClient.includes("shouldRetryQueuedOnReconnect(") &&
+  gameClient.includes('submission.reason === "plant_inactive"') &&
+  gameClient.includes("서버 제출 다시 시도") &&
+  receiptClient.includes("row.sessionId === sessionId"),
+  "game UI avoids repeated paused submissions and shows durable status");
+check(receiptEdge.includes("row.session_id !== requestedSessionId") &&
+  submitEdge.includes("readCommittedCompletion(completed, session.id)") &&
+  submitEdge.includes("evaluation: committed.evaluation"),
+  "session completion Edge returns authoritative persisted DB result");
+
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],
 ["create-invite","writeAuditLog("],

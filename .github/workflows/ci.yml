@@ -163,6 +163,9 @@ jobs:
       - name: Test invitation failure classification (offline)
         run: deno test --config supabase/functions/deno.json supabase/functions/_shared/invitationErrorStatus.test.ts
 
+      - name: Test stored session completion receipt (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/completionReceipt.test.ts
+
       - name: Check submit-session shared engine graph
         run: deno check --config supabase/functions/submit-session/deno.json supabase/functions/submit-session/index.ts
 
@@ -174,6 +177,9 @@ jobs:
 
       - name: Check nickname policy Edge Function
         run: deno check --config supabase/functions/deno.json supabase/functions/nickname-action/index.ts
+
+      - name: Check audited Admin plant action Edge Function
+        run: deno check --config supabase/functions/deno.json supabase/functions/admin-plant-action/index.ts
 
       - name: Enforce shared audit writer
         run: |
