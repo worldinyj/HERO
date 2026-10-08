@@ -68,6 +68,7 @@ export function ManagerDashboardPage() {
   const [reissueResult, setReissueResult] = useState<ReissueResult | null>(null);
   const [copiedReissue, setCopiedReissue] = useState(false);
   const [uncertainReissues, setUncertainReissues] = useState<string[]>([]);
+  const [uncertainCancellations, setUncertainCancellations] = useState<string[]>([]);
   const [uncertainPlayerIds, setUncertainPlayerIds] = useState<string[]>([]);
   const [uncertainNicknameIds, setUncertainNicknameIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +148,14 @@ export function ManagerDashboardPage() {
   }
 
   async function handleCancelInvite(invitationId: string) {
-    if (actionPending) return;
+    if (
+      actionPending ||
+      uncertainCancellations.includes(invitationId) ||
+      uncertainReissues.includes(invitationId)
+    ) {
+      setError("취소·재발급 결과를 명단과 대조한 후 다시 요청해주세요.");
+      return;
+    }
     if (reissueResult?.invitationId === invitationId) {
       setError("표시된 일회용 링크를 보관한 후 취소해주세요.");
       return;
@@ -155,14 +163,44 @@ export function ManagerDashboardPage() {
     try {
       setActionPending(`invite:${invitationId}`);
       setError(null);
-      // Other cancellations must not destroy the only copy of a reissued URL.
       const result = await invokeManagerAction({ action: "cancel-invite", invitationId });
       if (result.canceled !== true || result.invitationId !== invitationId) {
-        throw new Error("취소 응답이 불확실합니다. 목록에서 다시 확인해주세요.");
+        throw new Error("cancel_result_unknown");
       }
-      await loadDashboard(true);
+      if (!(await loadDashboard(true))) {
+        setUncertainCancellations((old) =>
+          old.includes(invitationId) ? old : [...old, invitationId]
+        );
+        setError("초대 취소는 완료되었지만 명단을 다시 읽지 못했습니다. 재조회 후 상태를 확인해주세요.");
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "취소 결과를 확인하지 못했습니다.");
+      if (isDefiniteInviteRejection(cause)) {
+        setError("초대 취소 요청이 거절되었습니다. 새로고침 후 초대 상태를 확인해주세요.");
+      } else {
+        // A timeout/5xx can occur after the transaction commits. A second
+        // cancel must be blocked until the server-side roster is reloaded.
+        setUncertainCancellations((old) =>
+          old.includes(invitationId) ? old : [...old, invitationId]
+        );
+        await loadDashboard(true);
+        setError("초대 취소 결과가 불확실합니다. 명단을 다시 확인한 뒤 재시도 잠금을 해제해주세요.");
+      }
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  async function reconcileInvitationOutcomes() {
+    if (actionPending) return;
+    setActionPending("invite-reconcile");
+    try {
+      if (await loadDashboard(true)) {
+        setUncertainCancellations([]);
+        setUncertainReissues([]);
+        setError(null);
+      } else {
+        setError("초대 명단 재조회에 실패했습니다. 결과 확인 전에는 잠금을 유지합니다.");
+      }
     } finally {
       setActionPending(null);
     }
@@ -551,12 +589,22 @@ export function ManagerDashboardPage() {
           </div>
         ) : null}
 
-        {uncertainReissues.length > 0 ? (
+        {uncertainReissues.length > 0 || uncertainCancellations.length > 0 ? (
           <div className="invite-result-box" role="alert">
-            <strong>재발급 결과 확인 필요</strong>
-            <p className="muted">이미 초대가 생성되었을 수 있습니다. 수락 대기 목록을 대조하고 중복 초대를 정리한 뒤 새 요청을 진행하세요.</p>
-            <button type="button" className="secondary-button compact-button" disabled={actionPending !== null}
-              onClick={() => setUncertainReissues([])}>목록 대조 완료 · 재발급 잠금 해제</button>
+            <strong>초대 취소·재발급 결과 확인 필요</strong>
+            <p className="muted">
+              처리된 초대가 이미 취소되거나 새로 발급되었을 수 있습니다.
+              서버의 수락 대기 명단을 다시 조회하고 실제 결과를 대조한 뒤
+              재시도 잠금을 해제해주세요. 발급한 일회용 링크는 서버에서 다시 조회할 수 없습니다.
+            </p>
+            <button
+              type="button"
+              className="secondary-button compact-button"
+              disabled={actionPending !== null}
+              onClick={() => void reconcileInvitationOutcomes()}
+            >
+              초대 명단 다시 조회 · 확인 후 잠금 해제
+            </button>
           </div>
         ) : null}
 
@@ -579,7 +627,12 @@ export function ManagerDashboardPage() {
                     <button
                       type="button"
                       className="text-button"
-                      disabled={actionPending !== null || Boolean(reissueResult) || uncertainReissues.includes(invite.invitation_id)}
+                      disabled={
+                        actionPending !== null ||
+                        Boolean(reissueResult) ||
+                        uncertainReissues.includes(invite.invitation_id) ||
+                        uncertainCancellations.includes(invite.invitation_id)
+                      }
                       onClick={() => void handleReissueInvite(invite.invitation_id)}
                     >
                       새 링크
@@ -587,7 +640,12 @@ export function ManagerDashboardPage() {
                     <button
                       type="button"
                       className="text-button danger-text-button"
-                      disabled={actionPending !== null || reissueResult?.invitationId === invite.invitation_id}
+                      disabled={
+                        actionPending !== null ||
+                        reissueResult?.invitationId === invite.invitation_id ||
+                        uncertainReissues.includes(invite.invitation_id) ||
+                        uncertainCancellations.includes(invite.invitation_id)
+                      }
                       onClick={() => void handleCancelInvite(invite.invitation_id)}
                     >
                       취소
