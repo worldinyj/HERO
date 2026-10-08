@@ -216,8 +216,8 @@ describe("server-confirmed submissions with failed local deletion", () => {
     await expect(flushQueuedSubmissions("user-one"))
       .resolves.toEqual({ submitted: 1, blocked: 0, remaining: 0 });
     expect(fixture.records).toHaveLength(1);
-    expect(fixture.records[0].state).toBe("committed");
-    expect(fixture.records[0].completionReceipt).toMatchObject({ sessionId, alreadyCompleted: false });
+    expect(fixture.records[0]?.state).toBe("committed");
+    expect(fixture.records[0]?.completionReceipt).toMatchObject({ sessionId, alreadyCompleted: false });
     expect(fixture.invokes).toBe(1);
   });
 });
@@ -359,7 +359,7 @@ describe("legacy committed receipt safety", () => {
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result).toEqual({ status: "queued", reason: "confirmed_cleanup_pending" });
     expect(fixture.records).toHaveLength(1);
-    expect(fixture.records[0].state).toBe("committed");
+    expect(fixture.records[0]?.state).toBe("committed");
     expect(fixture.invokes).toBe(0);
   });
 
@@ -444,7 +444,7 @@ describe("committed evidence is never silently deleted", () => {
       const result = await flushQueuedSubmissions("user-one");
       expect(result).toEqual({ submitted: 0, blocked: 0, remaining: 0 });
       expect(fixture.records).toHaveLength(1);
-      expect(fixture.records[0].state).toBe("committed");
+      expect(fixture.records[0]?.state).toBe("committed");
       expect(fixture.invokes).toBe(0);
     } finally {
       vi.unstubAllGlobals();
@@ -610,7 +610,7 @@ describe("explicit manual retry of blocked submissions", () => {
     });
     expect(fixture.invokes).toBe(1);
     expect(fixture.submittedBodies).toHaveLength(1);
-    expect(fixture.submittedBodies[0].actions).toEqual(savedBody.actions);
+    expect(fixture.submittedBodies[0]?.actions).toEqual(savedBody.actions);
     expect(fixture.submittedBodies[0]).toEqual(savedBody);
     expect(fixture.records).toEqual([]);
   });
@@ -841,7 +841,7 @@ describe("durable first-online submission before the network request", () => {
       status: "rejected", reason: "submission_blocked_requires_manual_retry",
     });
     expect(fixture.invokes).toBe(0);
-    expect(fixture.records[0].state).toBe("blocked");
+    expect(fixture.records[0]?.state).toBe("blocked");
   });
   it("protects existing actions when a stale queue listing missed them", async () => {
     const saved = { ...queued(), body: {

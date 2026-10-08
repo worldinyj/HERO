@@ -301,9 +301,11 @@ export function ProfilePage() {
         throw new Error("nickname_change_outcome_unknown");
       }
 
+      // Preserve the narrowed, server-verified string beyond the setState closure.
+      const confirmedNickname = response.nickname;
       setData((current) =>
         current
-          ? { ...current, profile: { ...current.profile, nickname: response.nickname } }
+          ? { ...current, profile: { ...current.profile, nickname: confirmedNickname } }
           : current,
       );
       setNewNickname("");

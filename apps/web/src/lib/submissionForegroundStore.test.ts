@@ -90,7 +90,7 @@ describe("first submission staging is independent of caller mutations", () => {
     const result = await stageForegroundSubmission("u1", request);
     expect(result.kind).toBe("ready");
     if (result.kind !== "ready") return;
-    request.body.actions[1].actionId = "changed-after-commit";
+    request.body.actions[1]!.actionId = "changed-after-commit";
     expect(result.record.body.actions).toEqual(submission().body.actions);
     expect(fixture.rows.get("session-one")?.body.actions)
       .toEqual(submission().body.actions);
