@@ -36,3 +36,7 @@
 
 - 복수 SQL을 하나의 `psql --command`로 실행하면 반환된 SELECT 영수증 대신 마지막 `COMMIT` 결과만 표시될 수 있다. 두 번째 psql 세션도 명령을 stdin으로 순서대로 전달하고 종료 시 `communicate()`로 수신하도록 수정했다.
 - 회귀 테스트에 SELECT 영수증 전달 방법과 `supabase status` 안전장치 확인 2건을 추가했다. Python strict 문법 검사 및 표준 라이브러리 단위 시험 **14/14 PASS**. 실제 Postgres 2연결 시험은 여전히 NOT RUN.
+
+## 정적 DB 시험 전체 범위
+
+`check-batch-db-contracts.mjs`의 328건은 선별된 12개 스위트 합계이다. 전체 pgTAP SQL은 **17개 파일, 417개 선언**이며 모든 `plan()` 수와 전 파일의 고정 UUID·테스트 이메일 충돌을 검사한다. 실제 PostgreSQL 실행 결과는 미확인.

@@ -73,6 +73,22 @@ for(const name of testNames) {
 for(const collision of duplicateEmails)console.error("DUPLICATE FIXTURE EMAIL "+collision);
 check(duplicateEmails.length===0, emailOwners.size+" fixed auth fixture emails globally unique");
 
+// The above hand-selected contract suites are only a subset. Require every
+// pgTAP SQL file to have an aligned plan, and track the whole inventory.
+let allAssertions=0;
+const mismatchedPlans=[];
+for (const name of testNames) {
+  const content=read("supabase/tests/"+name);
+  const plan=Number(content.match(/\bselect\s+plan\((\d+)\)/i)?.[1]??-1);
+  const count=(content.match(/^\s*select\s+(?:ok|is|lives_ok|throws_ok|results_eq)\s*\(/gim)||[]).length;
+  allAssertions+=count;
+  if(plan!==count) mismatchedPlans.push(name+": plan "+plan+" != "+count);
+}
+mismatchedPlans.forEach(m=>console.error("INVALID pgTAP DECLARATION "+m));
+check(testNames.length===17 && allAssertions===417 && mismatchedPlans.length===0,
+  testNames.length+" pgTAP suites: "+allAssertions+" total planned declarations (NOT executed)");
+
+
 
 for(const path of migrations) {
   const sql=read(path);

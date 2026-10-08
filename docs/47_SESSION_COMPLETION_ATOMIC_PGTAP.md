@@ -25,3 +25,9 @@
 - 현재 실행 환경에서는 psql/Postgres 서버·Supabase CLI/pgTAP이 제공되지 않아 **테스트를 실행하지 않았다**. SQL 구조/33개 계획-어설션 개수 검증만 수행한다.
 - 실제 DB 테스트가 PASS 하기 전 T5-03은 **PARTIAL**. 기존 코드 환산 진척 75.6% 유지.
 - GitHub Actions, main, PR #79, 원격 Supabase, Cloudflare 미변경.
+
+## 전체 pgTAP 선언 점검 수정 (2026-10-08)
+
+신규 `session_completion_atomic.test.sql`과 닉네임 재설정 테스트 사이에 고정 UUID **4건 충돌**이 확인됐다. 세션 완료 전용 식별자 전체(b1~b6)를 고유한 e1a~e6a 접두어로 분리했다.
+
+DB 테스트 전체는 **17개 파일, pgTAP 선언 417건**이다. 기존 **328건**은 선별된 12개 계약 테스트 소계이며, 전체 선언 수가 아니다. 정적 스크립트에 전체 17개 테스트의 `plan()` 일치 여부와 총 417건을 확인하는 검사를 추가했다. PostgreSQL에서 실행한 통과 수가 아니다.
