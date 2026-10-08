@@ -76,6 +76,11 @@ check(duplicateEmails.length===0, emailOwners.size+" fixed auth fixture emails g
 
 for(const path of migrations) {
   const sql=read(path);
+  // A single '$' after AS is not a valid PostgreSQL dollar-quoted body.
+  // Count each paired "$$" opening/closing delimiter before any deployment.
+  const dollarQuoteCount=(sql.match(/\$\$/g)||[]).length;
+  check(dollarQuoteCount%2===0 && !/\bas\s+\$(?!\$)/i.test(sql),
+    path+": balanced function-body dollar quotes");
   check(/^\s*begin\s*;/im.test(sql)&&/^\s*commit\s*;/im.test(sql),path+": transaction boundary");
 }
 for(const [fn,index,edgeName] of rpcs) {

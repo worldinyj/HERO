@@ -224,7 +224,7 @@ language plpgsql
 stable
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_user uuid := (select auth.uid());
   v_profile jsonb;
@@ -379,7 +379,7 @@ begin
     'current_season', v_current
   );
 end;
-$;
+$$;
 
 revoke all on function private.guard_active_plant_invitation() from public,anon,authenticated;
 revoke all on function private.guard_active_plant_profile() from public,anon,authenticated;
