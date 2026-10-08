@@ -448,7 +448,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_season record;
 begin
@@ -466,7 +466,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 revoke all on function private.refresh_current_leaderboard_from_plant()
   from public, anon, authenticated;

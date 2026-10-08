@@ -110,19 +110,43 @@ for(const [fn,index,edgeName] of rpcs) {
   check(edge.includes('"'+fn+'"'),edgeName+": "+fn+" wired");
 }
 
-// Keep 017-022 explicit database exceptions in the Edge public error allowlist.
+// Match database exceptions to their actual caller: Edge operator RPCs vs
+// read-only RPCs invoked directly by the browser.
 const errorSrc=read("supabase/functions/_shared/invitationErrorStatus.ts");
 const errorBody=errorSrc.match(/const CLIENT_REJECTIONS[^=]*=\s*\{([\s\S]*?)\};/)?.[1]??"";
 const known=new Map([...errorBody.matchAll(/^\s*([a-z][a-z0-9_]+):\s*(\d+)/gm)]
   .map(m=>[m[1],Number(m[2])]));
-const raised=new Set();
+// my_record_summary() is a direct PostgREST RPC, not an operator Edge
+// action. Scope its authentication guard to the function's own definition:
+// a similarly named error raised by an Edge RPC must still be mapped.
+const summarySql=read(migrations[8]);
+const summaryStart=summarySql.indexOf("create or replace function public.my_record_summary()");
+const summaryStop=summarySql.indexOf(
+  "create or replace function ", summaryStart+"create or replace function ".length
+);
+check(summaryStart>=0&&summaryStop>summaryStart&&
+  summarySql.slice(summaryStart,summaryStop).includes(
+    "raise exception 'authenticated_profile_required'"
+  ),"my_record_summary direct-RPC authentication guard");
+
+const raised=new Set(), directRpcErrors=new Set();
 for(const path of migrations.slice(1)) {
-  for(const m of read(path).matchAll(/raise\s+exception\s+'([^']+)'/gi))raised.add(m[1]);
+  const sql=read(path);
+  for(const m of sql.matchAll(/raise\s+exception\s+'([^']+)'/gi)) {
+    if(path===migrations[8]&&m[1]==="authenticated_profile_required"&&
+      summaryStart>=0&&summaryStop>summaryStart&&
+      m.index>=summaryStart&&m.index<summaryStop) {
+      directRpcErrors.add(m[1]);
+    } else {
+      raised.add(m[1]);
+    }
+  }
 }
 const unmatched=[...raised].filter(code=>!(known.get(code)>=400&&known.get(code)<500));
-unmatched.forEach(code=>console.error("UNMAPPED DB DOMAIN ERROR "+code));
-check(raised.size>=15&&unmatched.length===0,
-  raised.size+" explicit SQL domain exceptions map to deterministic 4xx");
+unmatched.forEach(code=>console.error("UNMAPPED EDGE DB DOMAIN ERROR "+code));
+check(directRpcErrors.size===1&&raised.size>=15&&unmatched.length===0,
+  raised.size+" operator SQL domain errors map to deterministic Edge 4xx; "+
+  directRpcErrors.size+" direct PostgREST RPC guard is separately scoped");
 check(errorSrc.includes('code === "P0001"')&&
   errorSrc.includes("Object.hasOwn(CLIENT_REJECTIONS, message)")&&
   errorSrc.includes('error: "internal_error", status: 500'),
