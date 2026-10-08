@@ -169,6 +169,9 @@ jobs:
       - name: Test invitation failure classification (offline)
         run: deno test --config supabase/functions/deno.json supabase/functions/_shared/invitationErrorStatus.test.ts
 
+      - name: Test untrusted session submission input (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/submissionInput.test.ts
+
       - name: Test stored session completion receipt (offline)
         run: deno test --config supabase/functions/deno.json supabase/functions/_shared/completionReceipt.test.ts
 

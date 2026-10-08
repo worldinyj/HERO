@@ -54,6 +54,7 @@ Deno.test("rejects invalid flags and wrong body shape", () => {
     { sessionId: validId, actions: good, reflectionAnswered: "true" },
     { sessionId: validId, actions: good, swissCheeseViewed: 1 },
     { sessionId: validId, actions: { 0: good[0] } },
+    { sessionId: validId, actions: null },
     { sessionId: validId, actions: [null] },
   ]) {
     if (parseSessionSubmission(value) !== null) {

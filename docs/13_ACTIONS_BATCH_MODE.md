@@ -56,6 +56,7 @@
 - Migration 023: Admin의 발전소 생성·활성 상태 변경을 `create_plant_atomic`/`set_plant_active_atomic` 및 `admin-plant-action` Edge로 통일. 이전 브라우저 직접 INSERT/UPDATE/DELETE 권한을 철회하고 Admin 역할 재검증, 상태 행 잠금, 감사 기록 실패 시 전체 롤백을 계약으로 명시. `admin_plant_atomic.test.sql` **34개 pgTAP 선언 작성, NOT RUN**. 누적 신규 **252개** 선언, 서비스 역할 RPC **8종**. `docs/27_ATOMIC_ADMIN_PLANT_VALIDATION.md` 참고.
 - Migration 024 비활성 발전소 경계 강화: 기존 비활성 발전소의 초대 세대값 초기 보정(구 링크 재활성화 방지), 신규 링크 발급/수락 및 교육 시작/완료 차단, 담당자 발전소 전체 범위 철회. Player 자신의 과거 교육 기록은 읽기 전용 유지하도록 RLS와 `my_record_summary` 조건 정합성 보완. Admin 화면 운영 중지/재활성화의 발전소 코드+영향 확인 의무 추가. `peek-invite` DB 조회 장애를 토큰 없음(404)과 분리하고 내부 오류 미노출. `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md` 참고. **pgTAP 총 291개 선언, DB 실행 NOT RUN**.
 - 중단 발전소의 service-role RPC no-op 우회 방지: Migration 020 `set_player_active_atomic`와 Migration 022 `change_nickname_self_atomic`에서, 값이 같아 변경하지 않는 요청이라도 **발전소 활성 상태를 FOR SHARE로 DB 재검증**한 후 결과 반환. 테스트 4개 추가(020: 30→32, 022: 37→39). 024 적용 이후 방어 경계와 함께 전체 신규 pgTAP **295개 선언, NOT RUN**. `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md` 참조.
+- T5-03 제출 경계 추가 보강: `submit-session`이 untrusted JSON 행동 목록을 엔진 재실행 전에 `submissionInput.ts`로 검증(4개 유형·최대 250개·ID 길이/타입·선택 플래그). null/배열/숫자/불완전한 게임 행동은 `400 invalid_submission`으로 거절하고, 엔진/시나리오의 내부 예외 메시지는 공개 HTTP detail에서 제거. Deno 회귀 테스트 4그룹 작성, **실제 Deno/전체 Edge/E2E NOT RUN**. `docs/31_SUBMISSION_INPUT_VALIDATION.md` 참조.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 3.1 오프라인 배치 DB 계약 사전검사

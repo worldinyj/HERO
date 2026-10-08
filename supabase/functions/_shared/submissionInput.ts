@@ -54,7 +54,7 @@ export function parseSessionSubmission(value: unknown): ValidSessionSubmission |
   if (value.swissCheeseViewed !== undefined &&
       typeof value.swissCheeseViewed !== "boolean") return null;
   // Backwards compatible with clients that omit the optional action list.
-  const actions = parseSubmissionActions(value.actions ?? []);
+  const actions = parseSubmissionActions(value.actions === undefined ? [] : value.actions);
   if (actions === null) return null;
 
   return {
