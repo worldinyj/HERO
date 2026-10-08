@@ -21,6 +21,8 @@ git pull --ff-only origin work/actions-paused-batch-20261008
 ```
 로컬 수정이 표시된다면 먼저 별도 커밋/백업한다. 무조건 초기화 명령은 사용하지 않는다.
 
+`supabase/.temp/`는 Supabase CLI가 만드는 로컬 임시 상태 파일이다. `.gitignore`에서 제외하도록 설정했으므로 `git pull --ff-only` 후 `git status --short`에 표시되지 않아야 한다. 로컬 Supabase 연결 상태가 있을 수 있으므로 해당 폴더를 무단 삭제하거나 커밋하지 않는다.
+
 ## 3. 매번 GitHub 동기화와 Mac QA
 ```bash
 node scripts/hero-local.mjs doctor
