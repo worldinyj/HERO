@@ -170,12 +170,18 @@ def probe(dsn: str) -> None:
             raise AssertionError("first call should complete new session")
         print("PASS first connection completed row but still holds COMMIT", flush=True)
 
-        query = ("begin; set local role service_role; " +
-                 call_sql(ids["session"], ids["user"], 1, 9) + " commit;")
-        second = subprocess.Popen(args(dsn) + ["--command", query],
+        # A multi-statement `psql --command` often exposes only the final
+        # COMMIT result; send commands over stdin to retain the SELECT receipt.
+        query = ("begin;\nset local role service_role;\n" +
+                 call_sql(ids["session"], ids["user"], 1, 9) + "\ncommit;\n")
+        second = subprocess.Popen(args(dsn),
+                                  stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   text=True, env=dict(os.environ,
                                   PGAPPNAME="hero_race_second"))
+        assert second.stdin is not None
+        second.stdin.write(query)
+        second.stdin.flush()
         waiting = False
         for _ in range(60):
             if second.poll() is not None:

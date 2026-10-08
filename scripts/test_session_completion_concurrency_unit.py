@@ -43,6 +43,14 @@ class LocalDbRaceGuards(unittest.TestCase):
         for name in ('auth.users','public.plants','public.profiles','public.seasons',
                      'public.scenarios','public.scenario_versions','public.play_sessions'):
             self.assertEqual(s.count('insert into '+name),1)
+    def test_competing_psql_uses_stdin_for_select_receipt(self):
+        source = path.read_text()
+        self.assertIn('second.stdin.write(query)', source)
+        self.assertNotIn('args(dsn) + ["--command", query]', source)
+    def test_supabase_status_is_required(self):
+        source = path.read_text()
+        self.assertIn('ensure_local_supabase(dsn)', source)
+        self.assertIn('[cli, "status", "--output", "json"]', source)
     def test_final_state_queries(self):
         s=race.totals_sql(str(uuid4()))
         for name in ('hp_point','session_decisions','audit_logs','status'):

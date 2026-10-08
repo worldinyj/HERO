@@ -31,3 +31,8 @@
 - **psql/실제 PostgreSQL 2연결 시험 및 pgTAP 33건 실행은 이 세션에서 NOT RUN** (DB 실행 환경 없음).
 - 로컬 환경에서 동시 호출 PASS 후에도 별도 네트워크 Edge API E2E와 브라우저 IndexedDB 2탭 시험이 남는다.
 - GitHub Actions 중지, main/PR #79/원격 Supabase·Cloudflare 미변경. Tasklist 75.6%, T5-03 PARTIAL 유지.
+
+## 검토 후 수정 (2026-10-08)
+
+- 복수 SQL을 하나의 `psql --command`로 실행하면 반환된 SELECT 영수증 대신 마지막 `COMMIT` 결과만 표시될 수 있다. 두 번째 psql 세션도 명령을 stdin으로 순서대로 전달하고 종료 시 `communicate()`로 수신하도록 수정했다.
+- 회귀 테스트에 SELECT 영수증 전달 방법과 `supabase status` 안전장치 확인 2건을 추가했다. Python strict 문법 검사 및 표준 라이브러리 단위 시험 **14/14 PASS**. 실제 Postgres 2연결 시험은 여전히 NOT RUN.
