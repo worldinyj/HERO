@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { nextInviteBatchRange, MAX_INVITES_PER_RUN } from "./bulkInviteBatch";
+import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -181,8 +182,10 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   const [jobRole, setJobRole] = useState<JobRole>("worker");
   const [teamName, setTeamName] = useState("");
   const [singlePending, setSinglePending] = useState(false);
+  const [singleRetryBlocked, setSingleRetryBlocked] = useState(false);
   const [singleResult, setSingleResult] = useState<InviteLinkResult | null>(null);
   const [bulkPending, setBulkPending] = useState(false);
+  const [bulkRetryBlocked, setBulkRetryBlocked] = useState(false);
   const [bulkFileName, setBulkFileName] = useState("");
   const [bulkInputs, setBulkInputs] = useState<BulkInput[]>([]);
   const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
@@ -210,17 +213,25 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       },
     );
 
-    if (invokeError) throw invokeError;
+    if (invokeError) {
+      if (!isDefiniteInviteRejection(invokeError)) {
+        throw new InviteCreationOutcomeUnknownError();
+      }
+      throw invokeError;
+    }
 
     const result = data as InviteLinkResult & { error?: string };
     if (!result.inviteUrl) {
-      throw new Error(result.error ?? "초대 링크 생성에 실패했습니다.");
+      // An unexpected success response could still mean the DB insert was
+      // committed. Prevent blind reissue of a one-time token.
+      throw new InviteCreationOutcomeUnknownError();
     }
 
     return result;
   }
 
   async function handleSingleCreate() {
+    if (singlePending || singleRetryBlocked) return;
     if (!name.trim()) {
       setError("초대할 사용자 이름을 입력해주세요.");
       return;
@@ -240,7 +251,12 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       setTeamName("");
       onChanged();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "초대 링크 생성에 실패했습니다.");
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setSingleRetryBlocked(true);
+        setError("응답을 확인하지 못했습니다. 초대가 서버에 생성되었을 수도 있습니다. 담당자 초대 목록을 확인하기 전에는 같은 대상을 다시 초대하지 마세요.");
+      } else {
+        setError(cause instanceof Error ? cause.message : "초대 링크 생성에 실패했습니다.");
+      }
     } finally {
       setSinglePending(false);
     }
@@ -322,7 +338,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   }
 
   async function handleBulkCreate() {
-    if (bulkPending || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length) {
+    if (bulkPending || bulkRetryBlocked || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length) {
       return;
     }
 
@@ -359,9 +375,18 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       );
     } catch (cause) {
       setBulkResults([...results]);
-      setError(
-        `${results.length}/${bulkInputs.length}명 생성 후 중단되었습니다. 이미 생성된 링크를 CSV로 저장하고, 서버 요청 한도가 회복되면 남은 항목만 재개하세요. 상세: ${cause instanceof Error ? cause.message : "초대 생성 실패"}`,
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        // The interrupted request may have committed on the server. Retrying
+        // the same row automatically would create a second valid invitation.
+        setBulkRetryBlocked(true);
+        setError(
+          `${results.length}/${bulkInputs.length}명 확인 완료, 다음 요청의 성공 여부는 불확실합니다. 생성된 링크를 CSV로 저장하고 담당자 초대 목록에서 해당 대상의 미수락 초대를 확인·정리한 뒤에만 새로운 초대를 진행하세요. 자동 재개는 잠겼습니다.`,
+        );
+      } else {
+        setError(
+          `${results.length}/${bulkInputs.length}명 생성 후 중단되었습니다. 이미 생성된 링크를 CSV로 저장하고 요청 제한이 해제되면 남은 항목부터 재개하세요. 상세: ${cause instanceof Error ? cause.message : "초대 생성 실패"}`,
+        );
+      }
     } finally {
       if (results.length > initialCount) onChanged();
       setBulkPending(false);
@@ -419,11 +444,26 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           <button
             type="button"
             className="primary-button"
-            disabled={singlePending}
+            disabled={singlePending || singleRetryBlocked}
             onClick={() => void handleSingleCreate()}
           >
             {singlePending ? "생성 중…" : "초대 링크 생성"}
           </button>
+
+          {singleRetryBlocked ? (
+            <div className="invite-result-box" role="alert">
+              <strong>초대 생성 결과 확인 필요</strong>
+              <p className="muted">서버에서 이미 생성했을 수 있으므로 같은 대상을 곧바로 재시도하지 마세요. 담당자 초대 목록의 미수락 항목을 확인하고 중복 초대를 취소한 뒤 새 요청을 시작해주세요.</p>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={singlePending}
+                onClick={() => setSingleRetryBlocked(false)}
+              >
+                초대 목록 확인 완료 · 새 요청 허용
+              </button>
+            </div>
+          ) : null}
 
           {singleResult ? (
             <div className="invite-result-box">
@@ -469,7 +509,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           <button
             type="button"
             className="primary-button"
-            disabled={bulkPending || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length}
+            disabled={bulkPending || bulkRetryBlocked || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length}
             onClick={() => void handleBulkCreate()}
           >
             {bulkPending
@@ -482,6 +522,12 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           </button>
 
           {bulkInfo ? <p className="notice" role="status">{bulkInfo}</p> : null}
+          {bulkRetryBlocked ? (
+            <div className="invite-result-box" role="alert">
+              <strong>미확인 요청이 있어 자동 재개를 중지했습니다</strong>
+              <p className="muted">확인된 링크를 우선 CSV로 저장해주세요. 담당자 초대 목록에서 실패 지점의 미수락 초대가 이미 만들어졌는지 확인하고, 필요하면 취소한 후 새 목록을 시작해야 합니다.</p>
+            </div>
+          ) : null}
 
           {bulkResults.length > 0 ? (
             <div className="invite-result-box">
@@ -534,6 +580,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
                   setBulkInputs([]);
                   setBulkFileName("");
                   setBulkInfo(null);
+                  setBulkRetryBlocked(false);
                   setError(null);
                   setCopiedBulkUrl(null);
                 }}
