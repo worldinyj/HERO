@@ -23,6 +23,13 @@ insert into public.profiles
 ('c1000000-0000-0000-0000-000000000005','c2000000-0000-0000-0000-000000000001','player','worker','Event Fault','SELFHIS',true,false),
 ('c1000000-0000-0000-0000-000000000006','c2000000-0000-0000-0000-000000000001','player','worker','Audit Fault','SELFAUD',true,false);
 
+-- Migrations seed an open real-month season. Remove its open status *inside
+-- this test transaction only* so the RPC always selects our fixed fixture,
+-- including on month rollover dates. The outer ROLLBACK restores everything.
+update public.seasons
+set status = 'scheduled'
+where status = 'open';
+
 insert into public.seasons(id,season_key,title,starts_at,ends_at,status)
 values ('c3000000-0000-0000-0000-000000000001','2099-self-atomic','Nickname test season',
 now()-interval '1 day',now()+interval '7 days','open');
