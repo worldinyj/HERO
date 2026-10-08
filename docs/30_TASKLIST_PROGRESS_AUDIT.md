@@ -9,7 +9,7 @@
 - 코드 진도(임의 작업관리 가중치): `(구현×1 + 부분×0.5 + 미착수×0) / 86` = **75.6%**. 작업 난이도/실제 공수 가중치가 아닌 단순 추정 지표.
 - **Tasklist DoD**는 코드 리뷰·테스트 통과·360px 모바일 확인·관련 문서 갱신을 모두 요구한다. 아래의 “구현”은 **DoD 최종 완료**를 뜻하지 않는다.
 - 실제 Production 출시, 파일럿, 실기기·사내망 승인, 법무·개인정보 승인, 경쟁 시나리오 3종 사람 승인: **완료 아님**.
-- Migration 016~024는 staging 미적용, 신규 pgTAP **295개 선언 작성·DB 실행 NOT RUN**. 새 브랜치 전체 웹·Deno·GitHub Actions 미실행.
+- Migration 016~024는 **원격 staging 미적용**. 이 최초 감사 당시에는 pgTAP이 실행되지 않았지만, 2026-10-08 Mac 로컬 PostgreSQL에서 **17개 파일/417건 전부 PASS**를 이후 확인했다. 별도 Deno·전체 초대~플레이 모바일 E2E·GitHub Actions는 여전히 미실행.
 - 오디오 생성물은 없다. 오디오 런타임은 코드 구현이나 `ops/release-evidence.json`의 `audioPolicy=deferred`는 출시 차단.
 
 ## 1.1 이후 보안/실행계약 개발 추가 (기준 진도율 유지)
@@ -18,6 +18,14 @@
 - `submissionInput.test.ts` Deno 회귀 테스트 4그룹 작성, 장래 CI 단계 등록. **같은 GitHub 소스의 로컬 복제본에서 strict `tsc` PASS 및 Node22 Deno shim 4/4 PASS**. 단 실제 Deno·전체 웹/Edge/DB 통합테스트는 미실행.
 - **T5-03은 기존 '부분' 상태 유지**, Phase 5 및 MVP 가중 진도 75.6% 역시 변경하지 않음. 최신 전체 DoD/실제 E2E를 검증하기 전 구현 산출물만으로 상태를 승격하지 않음.
 - `docs/31_SUBMISSION_INPUT_VALIDATION.md`는 실제 시나리오 응답·오프라인 제출 큐·비활성 발전소까지 포함한 잔여 검증 목록.
+
+## 1.2 2026-10-08 Mac 실행 확인 기록 (기준 진도율 유지)
+
+- 사용자 제공 터미널 기록: `LOCAL_QA_PASS sha=eb5e6e1b01869d1d1c67ad261eb89f8c3cdce6e4 db=tested`, 로컬 `supabase test db --local`은 **Files=17, Tests=417, Result: PASS**. 같은 QA의 Playwright IndexedDB 동시 탭 시나리오 **7/7 PASS**.
+- 사용자 제공 터미널 기록: `c97753742f96006333ff0efe7cdc4eb425018d4c` 기준 `node --test scripts/hero-local.test.mjs` **6/6 PASS**. 이 SHA에서 **전체 QA 재실행은 아직 미확인**.
+- **범위 제한**: 실제 PostgreSQL 로컬 테스트와 2탭 원자성 Playwright 통과이지, Deno CLI 체크·시나리오 출처 및 사람 승인·전체 초대→플레이 E2E·실기기 테스트나 원격 staging PASS는 아니다.
+- 따라서 T1-03, T5-03, T5-04, T7-01 등 구현 상태·환산 진도는 자동 승격하지 않으며, 증거가 확인된 항목의 "미실행" 표기만 정정한다.
+- 2026-10-08 이후 추가한 `qa --deep`는 시나리오·원인 추적성·릴리스 증거·법무·오디오·정적 보안 검사를 로컬에서 실행한다. `qa --with-deno`는 실제 Deno를 요구한다. **새 모드에 대한 Mac 성공 근거는 아직 없다.**
 
 ## 2. Phase별 진행
 
@@ -51,7 +59,7 @@
 | T0-10 | 최초 admin 부트스트랩 절차(seed/수동 승격) + 공개 관리자 가입 차단 | 구현 | `supabase/migrations/202610070013_initial_admin_bootstrap.sql` | 코드·구성 산출물 확인; 최신 배치 전체 회귀검증 전 |
 | T1-01 | 마이그레이션: enum, plants, profiles(닉네임), invitatio | 구현 | `supabase/migrations/202610070001_phase1_org_auth.sql` | 코드·구성 산출물 확인; 최신 배치 전체 회귀검증 전 |
 | T1-02 | RLS 정책 + `auth_role()/auth_plant()` | 구현 | `supabase/migrations/202610070001_phase1_org_auth.sql` | 코드·구성 산출물 확인; 최신 배치 전체 회귀검증 전 |
-| T1-03 | RLS 통합 테스트 (admin/manager/player × 테이블) | 부분 | `supabase/tests/rls_role_matrix.test.sql` | RLS 정책 테스트 코드 존재; pgTAP 최신 배치 미실행 |
+| T1-03 | RLS 통합 테스트 (admin/manager/player × 테이블) | 부분 | `supabase/tests/rls_role_matrix.test.sql` | RLS 역할 매트릭스 포함 로컬 pgTAP 417/417 PASS; 외부 staging·실기기와 최종 DoD 미확인 |
 | T1-04 | Edge `create-invite` (권한 검증·1회용 토큰·감사로그·rate l | 구현 | `supabase/functions/create-invite/index.ts` | 코드·구성 산출물 확인; 최신 배치 전체 회귀검증 전 |
 | T1-05 | Edge `accept-invite` (토큰 1회 소비·profiles 생성/동일  | 구현 | `supabase/functions/accept-invite/index.ts` | 코드·구성 산출물 확인; 최신 배치 전체 회귀검증 전 |
 | T1-06 | 로그인 화면 (카카오 로그인) | 구현 | `apps/web/src/features/auth/LoginPage.tsx` | 코드·구성 산출물 확인; 최신 배치 전체 회귀검증 전 |

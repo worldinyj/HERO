@@ -114,7 +114,7 @@
       "title": "RLS 통합 테스트 (admin/manager/player × 테이블)",
       "status": "partial",
       "evidence": "supabase/tests/rls_role_matrix.test.sql",
-      "note": "RLS 정책 테스트 코드 존재; pgTAP 최신 배치 미실행"
+      "note": "RLS 역할 매트릭스 포함 로컬 pgTAP 417/417 PASS; 외부 staging·최종 DoD 검증 대기"
     },
     {
       "id": "T1-04",

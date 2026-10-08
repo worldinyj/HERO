@@ -96,3 +96,25 @@ Cloudflare Git 통합을 유지하는 경우, **Workers & Pages → 프로젝트
 - 사용자 MacBook에서 Wrangler 4.148.0 설치·로그인·Pages 목록 조회는 성공했다. 전체 로컬 `qa --with-db`도 `eb5e6e1b`에서 PASS했다. 다만 이 변경으로 커밋 SHA가 달라지므로 다음 Mac QA가 필요하다. **외부 Cloudflare 업로드, 원격 Supabase DB 스키마 변경, 실제 운영 롤아웃은 이 대화에서 실행하지 않았다**.
 - 기존 릴리스 문서의 법무·실기기·시나리오·파일럿 승인 게이트는 별도로 유지한다. 미리보기 배포 PASS는 production 출시 승인이 아니다.
 - `main`, PR #79, GitHub Actions, Supabase 원격 DB, Cloudflare 현재 서비스 배포를 변경하지 않았다.
+
+## 6. GitHub Actions 없이 수행하는 로컬 확장 품질 게이트
+
+기본 `qa --with-db`는 브라우저 IndexedDB 동시 탭 E2E와 pgTAP을 포함하지만, CI의 콘텐츠/릴리스 관련 read-only 검사를 모두 실행하지 않는다. 더 깊이 검사하려면:
+
+```bash
+node scripts/hero-local.mjs qa --deep --with-db
+```
+
+`--deep`는 출처·원인 추적성·시나리오 승격 차단·사람 검토 증거·법무·오디오·릴리스 증거·정적 비밀키 누출과 route splitting을 검사한다. 실제 승인이나 배포를 수행하지 않으며, 예상한 미승인/blocked 상태는 `--strict`로 잘못 차단하지 않는다.
+
+Deno CLI를 **설치하고 준비한 경우에만** 실제 Edge 타입체크/회귀테스트를 별도 opt-in으로 추가:
+
+```bash
+node scripts/hero-local.mjs qa --deep --with-deno --with-db
+```
+
+이 옵션은 `deno check` 9건과 `deno test` 7개 파일을 실행한다. 설치돼 있지 않으면 자동 건너뛰지 않고 바로 `deno --version`에서 명시적으로 중단한다.
+
+**중요:** E2E 초대→가입→플레이→리더보드 전체 플로우(`e2e/invite-play-leaderboard.spec.ts`)는 별도 로컬 Edge Functions 실행 및 테스트용 사용자·시즌 seed가 필요하다. 로컬 전용 안전한 환경 초기화·fixture가 준비되기 전에는 `qa --deep`에서 자동 실행하지 않는다. 새 플래그는 **Actions CI 전체 동등성 또는 Release PASS를 의미하지 않는다.** `LOCAL_QA_PASS` 다음의 `QA_SCOPE`에서 미실행 범위를 구분한다.
+
+2026-10-08 `eb5e6e1b`에서 실제 로컬 pgTAP 417/417과 기본 DB QA PASS를 확인했고, `c9775374`에서 스크립트 단위 테스트 6/6을 확인했다. 이 절이 추가된 새 SHA의 `--deep`은 아직 Mac 검증 전이다.

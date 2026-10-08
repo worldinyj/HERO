@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
   safePreviewBranch, safeProject, previewAppUrl, safePreviewOrigin,
-  checkPreviewBackendEnv, isValidEvidence } from "./hero-local.mjs";
+  checkPreviewBackendEnv, qaSteps, isValidEvidence } from "./hero-local.mjs";
 
 test("GitHub origin accepts the exact repo over HTTPS and SSH", () => {
   for (const remote of ["https://github.com/worldinyj/HERO.git",
@@ -112,4 +112,47 @@ test("Supabase local CLI branch metadata is excluded by Git", () => {
     "supabase/.branches/_current_branch",
   ], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
   assert.equal(actual.status, 0, actual.stderr || "Git must ignore Supabase CLI state");
+});
+
+test("deep QA adds local-only scenario, legal, and bundle secret checks", () => {
+  const commands = (options) => qaSteps(options).map(([cmd, args]) =>
+    [cmd, ...args].join(" "));
+  const basic = commands({});
+  const deep = commands({ deep: true });
+  assert.ok(basic.includes("pnpm test"));
+  assert.ok(basic.includes("pnpm build"));
+  assert.ok(!basic.some(x => x.includes("check:legal-release")));
+  for (const expected of [
+    "pnpm check:source-evidence", "pnpm check:cause-traceability",
+    "pnpm check:human-review-evidence", "pnpm check:approval-hash",
+    "pnpm check:legal-release", "pnpm check:audio-manifest",
+    "pnpm check:deployment-preflight -- --self-test",
+    "node scripts/check-client-secrets.mjs",
+    "node scripts/check-route-splitting.mjs",
+  ]) assert.ok(deep.includes(expected), expected);
+  assert.ok(deep.indexOf("node scripts/check-client-secrets.mjs") >
+    deep.indexOf("pnpm build"));
+  for (const forbidden of ["git push", "supabase db push", "supabase db reset",
+    "wrangler pages deploy", "pnpm promote:scenario --", "--strict"]) {
+    assert.equal(deep.some(command => command.includes(forbidden)), false,
+      "deep QA must not mutate outside local test fixtures: " + forbidden);
+  }
+});
+
+test("Deno and database test stages require their explicit options", () => {
+  const basic = qaSteps({});
+  assert.equal(basic.some(([name]) => name === "deno" || name === "supabase"), false);
+  const complete = qaSteps({ withDb: true, deep: true, withDeno: true });
+  const names = complete.map(([name]) => name);
+  assert.equal(names.filter(name => name === "deno").length, 16);
+  assert.deepEqual(complete.slice(-2), [
+    ["supabase", ["status", "--output", "json"]],
+    ["supabase", ["test", "db", "--local"]],
+  ]);
+  const denoCommands = complete.filter(([name]) => name === "deno");
+  assert.ok(denoCommands.some(([, args]) => args.includes(
+    "supabase/functions/_shared/submissionInput.test.ts")));
+  assert.ok(denoCommands.some(([, args]) => args.includes(
+    "supabase/functions/submit-session/index.ts")));
+  assert.equal(names.includes("wrangler"), false);
 });

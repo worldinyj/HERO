@@ -4,7 +4,9 @@
  *
  * sync              Fetch and fast-forward the protected batch branch.
  * doctor            Print the local prerequisites without changing anything.
- * qa [--with-db]    Run local CI gates and save same-SHA evidence.
+ * qa [--with-db] [--deep] [--with-deno]   Run local CI gates and save same-SHA evidence.
+ *                     --deep adds content/legal/security regression checks.
+ *                     --with-deno adds Edge typecheck & unit tests.
  * preview-check     Validate preview guards without any upload.
  * preview           Deploy a verified build to a NON-production Pages branch.
  * smoke             Smoke-check an explicitly supplied preview URL.
@@ -208,7 +210,7 @@ function doctor() {
   console.log("Branch: " + BRANCH);
   console.log("HEAD: " + sha());
   console.log("node: " + process.version);
-  for (const name of ["git", "pnpm", "supabase", "wrangler"]) {
+  for (const name of ["git", "pnpm", "supabase", "deno", "wrangler"]) {
     try { console.log(name + ": " + exec(name, ["--version"], true).split("\n")[0]); }
     catch { console.log(name + ": NOT INSTALLED"); }
   }
@@ -222,6 +224,74 @@ function sync() {
   describe("git", ["merge", "--ff-only", "origin/" + BRANCH]);
   console.log("SYNC_PASS: " + sha());
 }
+
+export function qaSteps({ withDb = false, deep = false, withDeno = false } = {}) {
+  const steps = [
+    ["node", ["--test", "scripts/hero-local.test.mjs"]],
+    ["pnpm", ["lint"]],
+    ["pnpm", ["typecheck"]],
+    ["pnpm", ["check:tasklist-progress"]],
+    ["pnpm", ["check:batch-db-contracts"]],
+  ];
+  if (deep) {
+    // Local equivalents of the read-only source/content/legal gates in ci.yml.
+    // Do not auto-approve scenarios or enforce release-only --strict gates here.
+    steps.push(
+      ["pnpm", ["validate:scenario"]],
+      ["pnpm", ["validate:scenario", "scenarios/drafts"]],
+      ["pnpm", ["check:source-evidence"]],
+      ["pnpm", ["check:cause-traceability"]],
+      ["pnpm", ["check:scenario-promotion"]],
+      ["pnpm", ["check:human-review-evidence"]],
+      ["pnpm", ["check:approval-hash"]],
+      ["pnpm", ["build:review-packet", "--", "--scenario=s03_procedure_reality_gap", "--check"]],
+      ["pnpm", ["check:release-evidence", "--", "--self-test"]],
+      ["pnpm", ["check:release-evidence"]],
+      ["pnpm", ["check:legal-release", "--", "--self-test"]],
+      ["pnpm", ["check:legal-release"]],
+      ["pnpm", ["check:mvp-readiness"]],
+      ["pnpm", ["check:audio-manifest"]],
+      ["pnpm", ["check:deployment-preflight", "--", "--self-test"]],
+      ["pnpm", ["check:staging-http", "--", "--self-test"]],
+    );
+  }
+  steps.push(["pnpm", ["test"]], ["pnpm", ["build"]]);
+  if (deep) {
+    // These validators depend on the freshly built apps/web/dist.
+    steps.push(
+      ["node", ["scripts/check-client-secrets.mjs"]],
+      ["node", ["scripts/check-route-splitting.mjs"]],
+    );
+  }
+  steps.push(["pnpm", ["exec", "playwright", "test",
+    "e2e/atomic-indexeddb-submission.spec.ts", "--project=mobile-390x844"]]);
+  if (withDeno) {
+    // Deno is an explicit opt-in: the default local QA only needs Node.
+    for (const path of [
+      "create-invite", "peek-invite", "accept-invite", "start-session",
+      "manager-user-action", "nickname-action", "admin-plant-action",
+    ]) {
+      steps.push(["deno", ["check", "--config", "supabase/functions/deno.json",
+        "supabase/functions/" + path + "/index.ts"]]);
+    }
+    for (const path of ["submit-session", "admin-scenario"]) {
+      steps.push(["deno", ["check", "--config", "supabase/functions/" +
+        path + "/deno.json", "supabase/functions/" + path + "/index.ts"]]);
+    }
+    for (const name of [
+      "inviteUrl", "lookupOutcome", "jsonObject", "uuid",
+      "invitationErrorStatus", "submissionInput", "completionReceipt",
+    ]) {
+      steps.push(["deno", ["test", "--config", "supabase/functions/deno.json",
+        "supabase/functions/_shared/" + name + ".test.ts"]]);
+    }
+  }
+  if (withDb) {
+    steps.push(["supabase", ["status", "--output", "json"]]);
+    steps.push(["supabase", ["test", "db", "--local"]]);
+  }
+  return steps;
+}
 function qa() {
   checkRepo();
   checkClean();
@@ -231,26 +301,14 @@ function qa() {
     throw Error("Missing dependencies: run pnpm install --no-frozen-lockfile first");
   }
   const withDb = hasFlag("with-db");
+  const deep = hasFlag("deep");
+  const withDeno = hasFlag("with-deno");
+  if (withDeno) prerequisite("deno");
+  if (withDb) prerequisite("supabase");
   mkdirSync(dirname(EVIDENCE), { recursive: true });
   // A failed or interrupted QA must never leave earlier green evidence.
   writeFileSync(EVIDENCE, "", { mode: 0o600 });
-  const steps = [
-    ["node", ["--test", "scripts/hero-local.test.mjs"]],
-    ["pnpm", ["lint"]],
-    ["pnpm", ["typecheck"]],
-    ["pnpm", ["check:tasklist-progress"]],
-    ["pnpm", ["check:batch-db-contracts"]],
-    ["pnpm", ["test"]],
-    ["pnpm", ["build"]],
-    ["pnpm", ["exec", "playwright", "test",
-      "e2e/atomic-indexeddb-submission.spec.ts", "--project=mobile-390x844"]],
-  ];
-  if (withDb) {
-    prerequisite("supabase");
-    // Both commands target the local stack, NEVER a linked remote project.
-    steps.push(["supabase", ["status", "--output", "json"]]);
-    steps.push(["supabase", ["test", "db", "--local"]]);
-  }
+  const steps = qaSteps({ withDb, deep, withDeno });
   for (const [command, args] of steps) describe(command, args);
   checkClean();
   checkSynced();
@@ -260,6 +318,8 @@ function qa() {
     sha: sha(),
     passedAt: new Date().toISOString(),
     withDb,
+    deep,
+    withDeno,
     distHash: treeHash(DIST),
     envHash: existsSync(PREVIEW_ENV) ? fileHash(PREVIEW_ENV) : null,
     passedCommands: steps.map(([command, args]) => [command, ...args].join(" ")),
@@ -267,8 +327,12 @@ function qa() {
   writeFileSync(EVIDENCE, JSON.stringify(result, null, 2) + "\n", { mode: 0o600 });
   console.log("\nLOCAL_QA_PASS sha=" + result.sha +
     " db=" + (withDb ? "tested" : "NOT_RUN"));
+  console.log("QA_SCOPE deep=" + (deep ? "checked" : "NOT_RUN") +
+    " deno=" + (withDeno ? "checked" : "NOT_RUN") +
+    " full_mobile_flow=NOT_RUN");
   if (!withDb) console.log("Preview deployment requires a new qa --with-db run.");
 }
+
 function verifyPreviewReadiness() {
   checkRepo();
   checkClean();
