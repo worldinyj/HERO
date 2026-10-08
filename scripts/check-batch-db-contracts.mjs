@@ -54,6 +54,22 @@ for(const collision of collisions)console.error("DUPLICATE UUID "+collision);
 check(testNames.length>=14 && collisions.length===0,
   testNames.length+" DB test files: fixed UUID namespace separation");
 
+// Auth fixture e-mails must also be distinct across suites; a shared
+// address could violate auth.users email uniqueness under parallel pgTAP.
+const emailOwners=new Map(), duplicateEmails=[];
+for(const name of testNames) {
+  const addresses=new Set((read("supabase/tests/"+name).match(
+    /[a-z0-9_.-]+@[a-z0-9_.-]+/gi
+  )||[]).map(value=>value.toLowerCase()));
+  for(const address of addresses) {
+    if(emailOwners.has(address))duplicateEmails.push(address+" in "+emailOwners.get(address)+" and "+name);
+    else emailOwners.set(address,name);
+  }
+}
+for(const collision of duplicateEmails)console.error("DUPLICATE FIXTURE EMAIL "+collision);
+check(duplicateEmails.length===0, emailOwners.size+" fixed auth fixture emails globally unique");
+
+
 for(const path of migrations) {
   const sql=read(path);
   check(/^\s*begin\s*;/im.test(sql)&&/^\s*commit\s*;/im.test(sql),path+": transaction boundary");
