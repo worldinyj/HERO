@@ -9,6 +9,7 @@ import {
 import { ScenarioSchema } from "@hero/schema";
 import { handleOptions, json } from "../_shared/http.ts";
 import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { readCommittedCompletion } from "../_shared/completionReceipt.ts";
 import { readJsonObject } from "../_shared/jsonObject.ts";
 import { isUuid } from "../_shared/uuid.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
@@ -259,12 +260,18 @@ Deno.serve(async (req) => {
     if (completionError) {
       throw completionError;
     }
+    // The DB transaction may report a concurrent winner. Never return this
+    // request's calculated evaluation when another result was committed.
+    const committed = readCommittedCompletion(completed, session.id);
+    if (!committed) throw new Error("session_completion_result_unknown");
 
     return json(req, {
-      alreadyCompleted: Boolean(completed?.already_completed),
-      sessionId: session.id,
-      evaluation,
-      serverMetricAverage: metricAverage(state),
+      alreadyCompleted: committed.alreadyCompleted,
+      sessionId: committed.sessionId,
+      evaluation: committed.evaluation,
+      ...(committed.alreadyCompleted
+        ? {}
+        : { serverMetricAverage: metricAverage(state) }),
     });
   } catch (cause) {
     const failure = classifyInvitationError(cause);
