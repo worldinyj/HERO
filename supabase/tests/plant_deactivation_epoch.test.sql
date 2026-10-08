@@ -63,11 +63,11 @@ set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000002';
 select is((select private.auth_role())::text,null::text,'suspended manager loses RLS active role');
 select is((select private.auth_plant()),null::uuid,'suspended manager loses RLS plant scope');
 -- Suspended plants must not expose other users' learning history.
-select results_eq($select count(*) from public.play_sessions$,array[0::bigint],
+select results_eq($$select count(*) from public.play_sessions$$,array[0::bigint],
   'manager has no other players session read scope while plant suspended');
 set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000003';
-select results_eq($select count(*) from public.play_sessions
-  where user_id='f1000000-0000-0000-0000-000000000003'$,array[1::bigint],
+select results_eq($$select count(*) from public.play_sessions
+  where user_id='f1000000-0000-0000-0000-000000000003'$$,array[1::bigint],
   'suspended active player retains owner-only session history SELECT');
 select is((select public.my_record_summary()->'profile'->>'nickname'),
   'EPPLAYER'::text,'suspended active player can read own summary history');
