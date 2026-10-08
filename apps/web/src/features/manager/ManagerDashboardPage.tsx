@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
+import { ReadRequestGate } from "../../lib/readRequestGate";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 import { isValidManagerDashboardLists } from "./managerDashboardResponse";
@@ -62,6 +63,7 @@ function formatDateTime(value: string | null): string {
 }
 
 export function ManagerDashboardPage() {
+  const rosterGate = useRef(new ReadRequestGate());
   const [participants, setParticipants] = useState<ParticipationRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInviteRow[]>([]);
   const [aggregates, setAggregates] = useState<AggregateRow[]>([]);
@@ -78,7 +80,8 @@ export function ManagerDashboardPage() {
   const [nicknameReconciliationReady, setNicknameReconciliationReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = useCallback(async (background = false) => {
+  const loadDashboard = useCallback(async (background = false): Promise<boolean> => {
+    const revision = rosterGate.current.begin();
     try {
       if (!background) setLoading(true);
       setError(null);
@@ -90,6 +93,8 @@ export function ManagerDashboardPage() {
         supabase.rpc("manager_job_aggregates"),
       ]);
 
+      // Superseded reads cannot commit a stale roster or unlock retries.
+      if (!rosterGate.current.isCurrent(revision)) return false;
       const firstError = participation.error ?? pending.error ?? aggregate.error;
       if (firstError) throw firstError;
 
@@ -104,19 +109,22 @@ export function ManagerDashboardPage() {
       setAggregates(aggregate.data as AggregateRow[]);
       return true;
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "발전소 참여 현황을 불러오지 못했습니다.",
-      );
+      if (rosterGate.current.isCurrent(revision)) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "발전소 참여 현황을 불러오지 못했습니다.",
+        );
+      }
       return false;
     } finally {
-      if (!background) setLoading(false);
+      if (!background && rosterGate.current.isCurrent(revision)) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void loadDashboard();
+    return () => rosterGate.current.invalidate();
   }, [loadDashboard]);
 
   const summary = useMemo(() => {

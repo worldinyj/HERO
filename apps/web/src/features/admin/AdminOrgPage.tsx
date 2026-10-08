@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
+import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
 import { isValidAdminOrgLists } from "./adminOrgResponse";
@@ -64,6 +65,7 @@ function managerPlantLabel(row: ManagerRow): string {
 }
 
 export function AdminOrgPage() {
+  const rosterGate = useRef(new ReadRequestGate());
   const [plants, setPlants] = useState<PlantRow[]>([]);
   const [managers, setManagers] = useState<ManagerRow[]>([]);
   const [pendingManagerInvites, setPendingManagerInvites] = useState<PendingManagerInviteRow[]>([]);
@@ -87,7 +89,8 @@ export function AdminOrgPage() {
   const [copied, setCopied] = useState(false);
   const [managerInviteActionPending, setManagerInviteActionPending] = useState<string | null>(null);
 
-  async function load() {
+  async function load(): Promise<boolean> {
+    const revision = rosterGate.current.begin();
     setLoading(true);
     setError(null);
 
@@ -115,6 +118,8 @@ export function AdminOrgPage() {
           .order("created_at", { ascending: false }),
       ]);
 
+      // A later refresh supersedes this snapshot, including on success.
+      if (!rosterGate.current.isCurrent(revision)) return false;
       if (plantResult.error) throw plantResult.error;
       if (managerResult.error) throw managerResult.error;
       if (inviteResult.error) throw inviteResult.error;
@@ -132,17 +137,22 @@ export function AdminOrgPage() {
       }
       return true;
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
-      );
+      if (rosterGate.current.isCurrent(revision)) {
+        setError(
+          cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
+        );
+      }
       return false;
     } finally {
-      setLoading(false);
+      if (rosterGate.current.isCurrent(revision)) setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
+    return () => rosterGate.current.invalidate();
+    // Mount-scoped read; mutations start independent revisions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const managerCountByPlant = useMemo(() => {
