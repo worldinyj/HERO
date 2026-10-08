@@ -157,6 +157,9 @@ jobs:
       - name: Test invitation URL preflight (offline)
         run: deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts
 
+      - name: Test lookup failure vs business absence (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/lookupOutcome.test.ts
+
       - name: Test REST JSON request shape (offline)
         run: deno test --config supabase/functions/deno.json supabase/functions/_shared/jsonObject.test.ts
 

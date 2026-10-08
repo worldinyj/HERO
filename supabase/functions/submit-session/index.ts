@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
 
     const sessionOutcome = singleLookupOutcome(session, sessionError);
     if (sessionOutcome === "failed") throw new Error("session_lookup_unavailable");
-    if (sessionOutcome === "missing") {
+    if (!session) {
       return json(req, { error: "session_not_found" }, 404);
     }
 
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
 
     const versionOutcome = singleLookupOutcome(version, versionError);
     if (versionOutcome === "failed") throw new Error("scenario_version_lookup_unavailable");
-    if (versionOutcome === "missing") {
+    if (!version) {
       return json(req, { error: "scenario_version_not_found" }, 404);
     }
 

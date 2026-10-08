@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
 
     const seasonOutcome = singleLookupOutcome(season, seasonError);
     if (seasonOutcome === "failed") throw new Error("season_lookup_unavailable");
-    if (seasonOutcome === "missing") {
+    if (!season) {
       return json(req, { error: "no_open_season" }, 409);
     }
 
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
     const scenarioOutcome = singleLookupOutcome(scenario, scenarioError);
     if (scenarioOutcome === "failed") throw new Error("scenario_lookup_unavailable");
-    if (scenarioOutcome === "missing") {
+    if (!scenario) {
       return json(req, { error: "competitive_scenario_not_found" }, 404);
     }
 
@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
 
     const bindingOutcome = listLookupOutcome(bindings, bindingError);
     if (bindingOutcome === "failed") throw new Error("scenario_binding_lookup_unavailable");
-    if (bindingOutcome === "empty") {
+    if (!bindings || bindings.length === 0) {
       return json(req, { error: "scenario_not_enabled_for_season" }, 409);
     }
 
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
 
     const versionOutcome = singleLookupOutcome(version, versionError);
     if (versionOutcome === "failed") throw new Error("scenario_version_lookup_unavailable");
-    if (versionOutcome === "missing") {
+    if (!version) {
       return json(req, { error: "scenario_not_enabled_for_season" }, 409);
     }
 
@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
 
       const replayDecisionOutcome = singleLookupOutcome(replayDecision, replayDecisionError);
       if (replayDecisionOutcome === "failed") throw new Error("replay_target_lookup_unavailable");
-      if (replayDecisionOutcome === "missing") {
+      if (!replayDecision) {
         return json(req, { error: "invalid_replay_target" }, 409);
       }
     }
