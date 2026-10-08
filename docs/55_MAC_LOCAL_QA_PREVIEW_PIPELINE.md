@@ -33,6 +33,34 @@ node scripts/hero-local.mjs qa
 ```
 `qa`가 순차 수행하는 검사: `node --test` 운영 스크립트 시험, lint, typecheck, tasklist 및 DB 정적 계약, Vitest, build, 그리고 실제 Chromium 두 탭 IndexedDB Playwright. 하나라도 실패하면 중지하고 PASS 근거를 저장하지 않는다.
 
+### Johnny Fiction과 macOS에서 Supabase 동시 실행
+
+Johnny Fiction이 `54321` API · `54322` DB · `54324` 메일 테스트 포트를 사용하면 HERO 기본 `supabase start`는 bind 오류로 중단된다. **Johnny Fiction 컨테이너를 중지·삭제하지 않는다.** 이 브랜치의 `supabase/config.toml`은 HERO 전용 대역으로 고정했다.
+
+| 구성요소 | HERO 로컬 포트 |
+| --- | ---: |
+| DB shadow | 55320 |
+| API | 55321 |
+| PostgreSQL | 55322 |
+| Studio | 55323 |
+| Inbucket | 55324 |
+| SMTP / POP3 (설정된 경우) | 55325 / 55326 |
+| Analytics / vector | 55327 / 55328 |
+| Pooler (활성화한 경우) | 55329 |
+| Edge inspector | 55383 |
+
+```bash
+git pull --ff-only origin work/actions-paused-batch-20261008
+for port in 55320 55321 55322 55323 55324 55325 55326 55327 55328 55329 55383; do
+  lsof -nP -iTCP:"$port" -sTCP:LISTEN
+done
+supabase start
+supabase test db --local
+node scripts/hero-local.mjs qa --with-db
+```
+
+포트 점검 결과 다른 프로세스가 출력되면 해당 서비스를 강제 종료하지 말고 포트 재배치를 검토한다. `supabase status`의 로컬 URL/키는 비밀값이므로 전체 출력을 공개하지 않는다. `supabase test db --local` 및 `qa --with-db`는 로컬 DB만 대상으로 실행하며, 원격 Supabase 링크와 DB는 변경하지 않는다.
+
 DB를 포함한 완전 QA는 별도 로컬 Docker 기반 Supabase를 실행한 후:
 ```bash
 supabase start

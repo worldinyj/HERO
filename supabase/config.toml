@@ -1,5 +1,33 @@
 project_id = "hero"
 
+# HERO-only local Supabase ports. Johnny Fiction uses 54321-54324 on the
+# same Mac; these settings isolate both databases without stopping either.
+# This does not change the hosted Supabase project's public endpoints.
+[api]
+port = 55321
+
+[db]
+port = 55322
+shadow_port = 55320
+
+[db.pooler]
+port = 55329
+
+[studio]
+port = 55323
+
+[inbucket]
+port = 55324
+smtp_port = 55325
+pop3_port = 55326
+
+[analytics]
+port = 55327
+vector_port = 55328
+
+[edge_runtime]
+inspector_port = 55383
+
 [functions.peek-invite]
 verify_jwt = false
 
