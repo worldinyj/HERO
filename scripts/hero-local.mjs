@@ -18,6 +18,9 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const BRANCH = "work/actions-paused-batch-20261008";
+// Confirmed by Wrangler project list: project slug differs from pages.dev host.
+export const PAGES_PROJECT = "hero";
+export const PAGES_DOMAIN = "hero-dnr.pages.dev";
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const EVIDENCE = join(ROOT, ".hero-local", "qa-pass.json");
 const PREVIEW_ENV = join(ROOT, "apps/web/.env.production.local");
@@ -32,6 +35,23 @@ export function safePreviewBranch(branch) {
 }
 export function safeProject(project) {
   return /^[a-z0-9](?:[a-z0-9-]{0,59}[a-z0-9])?$/.test(project);
+}
+export function previewAppUrl(branch) {
+  if (!safePreviewBranch(branch)) throw Error("Invalid preview branch: require qa- prefix");
+  return "https://" + branch + "." + PAGES_DOMAIN;
+}
+export function safePreviewOrigin(value) {
+  try {
+    const parsed = new URL(value);
+    const suffix = "." + PAGES_DOMAIN;
+    const branch = parsed.hostname.endsWith(suffix)
+      ? parsed.hostname.slice(0, -suffix.length) : "";
+    return parsed.protocol === "https:" && safePreviewBranch(branch) &&
+      !parsed.username && !parsed.password && !parsed.port &&
+      parsed.pathname === "/" && !parsed.search && !parsed.hash;
+  } catch {
+    return false;
+  }
 }
 export function isValidEvidence(record, expected, now = Date.now()) {
   return Boolean(record && record.version === 1 &&
@@ -201,8 +221,9 @@ function preview() {
   if (!hasFlag("confirm-preview")) throw Error("Missing --confirm-preview");
   const project = option("project");
   const branch = option("preview-branch");
-  if (!safeProject(project ?? "") || !safePreviewBranch(branch ?? "")) {
-    throw Error("Provide --project=<Pages-name> and --preview-branch=qa-<name>");
+  if (project !== PAGES_PROJECT || !safePreviewBranch(branch ?? "")) {
+    throw Error("Only confirmed Pages project " + PAGES_PROJECT +
+      " with --preview-branch=qa-<name> is allowed");
   }
   if (!existsSync(PREVIEW_ENV)) {
     throw Error("Create ignored apps/web/.env.production.local BEFORE local QA");
@@ -217,7 +238,7 @@ function preview() {
     throw Error("QA is stale, not DB-tested, or build/env differs. Rerun qa --with-db.");
   }
   // Check the actual preview URL's public frontend config and legal origins.
-  const appUrl = "https://" + branch + "." + project + ".pages.dev";
+  const appUrl = previewAppUrl(branch);
   describe("node", ["scripts/check-deployment-preflight.mjs",
     "--env-file=apps/web/.env.production.local",
     "--app-url=" + appUrl, "--strict"]);
@@ -231,15 +252,12 @@ function preview() {
 function smoke() {
   checkRepo();
   const url = option("url");
-  if (!url) throw Error("Provide --url=https://qa-xxx.<project>.pages.dev");
-  let parsed;
-  try { parsed = new URL(url); }
-  catch { throw Error("Invalid URL"); }
-  if (parsed.protocol !== "https:" ||
-      !/^qa-[a-z0-9-]+\.[a-z0-9-]+\.pages\.dev$/i.test(parsed.hostname) ||
-      parsed.username || parsed.password || parsed.search || parsed.hash) {
-    throw Error("Smoke checks accept only HTTPS qa-*.pages.dev preview origins");
+  if (!url) throw Error("Provide --url=https://qa-local." + PAGES_DOMAIN);
+  if (!safePreviewOrigin(url)) {
+    throw Error("Smoke checks accept only HTTPS qa-*." + PAGES_DOMAIN +
+      " preview origins (no path, query, port or credentials)");
   }
+  const parsed = new URL(url);
   describe("node", ["scripts/check-staging-http.mjs",
     "--app-url=" + parsed.origin, "--strict"]);
 }

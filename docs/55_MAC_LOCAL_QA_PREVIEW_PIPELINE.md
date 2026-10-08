@@ -77,16 +77,19 @@ QA PASS 기록은 Git 비추적 `.hero-local/qa-pass.json`에 SHA, 테스트 시
 ```bash
 wrangler login
 node scripts/hero-local.mjs qa --with-db
-node scripts/hero-local.mjs preview --project=hero-dnr --preview-branch=qa-local --confirm-preview
+# 사전 구성 검증 후, 사람이 외부 업로드를 명시적으로 승인한 경우에만:
+node scripts/hero-local.mjs preview --project=hero --preview-branch=qa-local --confirm-preview
 node scripts/hero-local.mjs smoke --url=https://qa-local.hero-dnr.pages.dev
 ```
-`hero-dnr`는 문서에 기록된 Pages 도메인에서 유추한 예시다. Cloudflare Dashboard에서 **실제 프로젝트 이름과 Production branch가 qa-local이 아닌지 반드시 확인**해야 한다.
+실제 Cloudflare Pages **프로젝트명은 `hero`**, 기본 **도메인은 `hero-dnr.pages.dev`**다. 둘은 다르므로 CLI 옵션에 `hero-dnr`을 프로젝트명으로 넣지 않는다. 이 스크립트는 `hero` 프로젝트와 `qa-*` Preview만 허용하며, 실제 업로드는 사용자 승인 전 수행하지 않는다.
+
+Cloudflare Branch control에서 **Production branch=`main`**, **Production 자동 배포=Enabled**, **Preview branch=None**으로 설정한 화면을 확인했다. 설정이 저장됐는지는 화면을 닫았다 다시 열어 확인한다. Preview 자동 배포가 꺼져도 `wrangler pages deploy` 수동 배포는 별도로 가능하다. `main`에 커밋하면 Production 자동 배포가 일어날 수 있으므로 금지한다.
 
 배포 사전차단: 청결한 정확한 로컬 브랜치, origin 추적 SHA 일치, 24시간 이내 `qa --with-db` PASS, 빌드 파일 해시/환경파일 해시 동일, preflight 통과, 프로젝트/브랜치 이름 검증, 명시적 `--confirm-preview`가 모두 필요하다. Cloudflare는 미리보기 브랜치만 배포한다. 스모크 테스트는 별도 명령으로 돌린다.
 
 Cloudflare Git 통합을 유지하는 경우, **Workers & Pages → 프로젝트 → Build → Branch control**에서 자동 production/preview 배포를 중단하고 직접 Wrangler 배포만 사용하도록 설정할 수 있다. GitHub Actions를 중단해도 Cloudflare 자체 Git 자동 배포는 별개의 설정이다.
 
 ## 5. 아직 하지 않은 일
-- 사용자 MacBook에서 위 명령 실행, 외부 Cloudflare 업로드, 원격 Supabase DB 스키마 변경, 실제 운영 롤아웃은 이 대화에서 **실행하지 않았다**.
+- 사용자 MacBook에서 Wrangler 4.148.0 설치·로그인·Pages 목록 조회는 성공했다. 전체 로컬 `qa --with-db`도 `eb5e6e1b`에서 PASS했다. 다만 이 변경으로 커밋 SHA가 달라지므로 다음 Mac QA가 필요하다. **외부 Cloudflare 업로드, 원격 Supabase DB 스키마 변경, 실제 운영 롤아웃은 이 대화에서 실행하지 않았다**.
 - 기존 릴리스 문서의 법무·실기기·시나리오·파일럿 승인 게이트는 별도로 유지한다. 미리보기 배포 PASS는 production 출시 승인이 아니다.
 - `main`, PR #79, GitHub Actions, Supabase 원격 DB, Cloudflare 현재 서비스 배포를 변경하지 않았다.

@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BRANCH, safeOrigin, safePreviewBranch, safeProject,
+import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
+  safePreviewBranch, safeProject, previewAppUrl, safePreviewOrigin,
   isValidEvidence } from "./hero-local.mjs";
 
 test("GitHub origin accepts the exact repo over HTTPS and SSH", () => {
@@ -20,9 +21,33 @@ test("preview name requires qa- prefix and project slug", () => {
     "work/actions-paused-batch-20261008", "QA-local", "qa-../evil"]) {
     assert.equal(safePreviewBranch(value), false);
   }
-  assert.equal(safeProject("hero-dnr"), true);
+  assert.equal(safeProject("hero"), true);
   assert.equal(safeProject("../prod"), false);
 });
+test("Cloudflare project slug and pages.dev domain are deliberately different", () => {
+  assert.equal(PAGES_PROJECT, "hero");
+  assert.equal(PAGES_DOMAIN, "hero-dnr.pages.dev");
+  assert.equal(previewAppUrl("qa-local"), "https://qa-local.hero-dnr.pages.dev");
+  assert.throws(() => previewAppUrl("main"), /Invalid preview branch/);
+  for (const origin of [
+    "https://qa-local.hero-dnr.pages.dev",
+    "https://qa-local.hero-dnr.pages.dev/",
+    "https://qa-build-1.hero-dnr.pages.dev",
+  ]) assert.equal(safePreviewOrigin(origin), true, origin);
+  for (const origin of [
+    "https://hero-dnr.pages.dev",
+    "https://qa-local.hero.pages.dev",
+    "https://qa-local.attacker.pages.dev",
+    "http://qa-local.hero-dnr.pages.dev",
+    "https://qa-local.hero-dnr.pages.dev:444",
+    "https://qa-local.hero-dnr.pages.dev/other",
+    "https://qa-local.hero-dnr.pages.dev/?x=1",
+    "https://qa-local.hero-dnr.pages.dev/#frag",
+    "https://user:pass@qa-local.hero-dnr.pages.dev",
+    "https://qa-local.hero-dnr.pages.dev.attacker.invalid",
+  ]) assert.equal(safePreviewOrigin(origin), false, origin);
+});
+
 test("preview evidence requires DB, exact SHA/env/dist, and recent success", () => {
   const now = Date.parse("2026-10-08T09:00:00.000Z");
   const expected = { sha: "1".repeat(40), envHash: "env-hash", distHash: "dist-hash" };
