@@ -283,3 +283,45 @@ describe("foreground recovery of confirmed tombstones", () => {
     } finally { vi.unstubAllGlobals(); }
   });
 });
+
+
+describe("legacy committed receipt safety", () => {
+  it("retains an older committed marker without a receipt, even when cleanup works", async () => {
+    fixture.records = [{ ...queued(), state: "committed" }];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toEqual({ status: "queued", reason: "confirmed_cleanup_pending" });
+    expect(fixture.records).toHaveLength(1);
+    expect(fixture.records[0].state).toBe("committed");
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("restores the cached receipt when valid and removes its local marker", async () => {
+    fixture.records = [{
+      ...queued(),
+      state: "committed",
+      completionReceipt: {
+        sessionId,
+        alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    }];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "submitted",
+      cleanupPending: false,
+      data: { sessionId, alreadyCompleted: true },
+    });
+    expect(fixture.records).toEqual([]);
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("does not claim the local cleanup succeeded when marking the receipt fails", async () => {
+    fixture.records = [queued()];
+    fixture.failQueuePut = true;
+    fixture.failDelete = true;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
+    expect(fixture.records[0]?.state).toBe("pending");
+    expect(fixture.invokes).toBe(1);
+  });
+});

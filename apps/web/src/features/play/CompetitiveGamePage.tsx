@@ -661,7 +661,9 @@ export function CompetitiveGamePage({
               <div className="offline-banner" role="status">
                 {submission.reason === "plant_inactive"
                   ? "발전소 운영 중지로 제출이 보류됐습니다. 행동 기록은 이 기기의 대기 저장소에 보관됐으며, 운영이 재개되면 다시 제출할 수 있습니다."
-                  : "제출 대기 중 · 인터넷 연결이 복구되면 재전송을 시도합니다."}
+                  : submission.reason === "confirmed_cleanup_pending"
+                    ? "서버 완료 기록은 있으나 저장된 결과 영수증을 복원할 수 없습니다. 중복 전송을 방지하기 위해 자동 재제출하지 않습니다. 관리자 확인이 필요합니다."
+                    : "제출 대기 중 · 인터넷 연결이 복구되면 재전송을 시도합니다."}
               </div>
             ) : null}
 
