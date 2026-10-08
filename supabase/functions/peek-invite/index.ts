@@ -44,7 +44,12 @@ Deno.serve(async (req) => {
       .eq("token_hash", tokenHash)
       .maybeSingle();
 
-    if (error || !data) {
+    // Database failure is not proof that a token is invalid. Keep outage
+    // status separate from a verified absence, without exposing DB details.
+    if (error) {
+      return json(req, { error: "internal_error" }, 500);
+    }
+    if (!data) {
       return json(req, { error: "invitation_not_found" }, 404);
     }
 
@@ -78,8 +83,9 @@ Deno.serve(async (req) => {
       plantDisplayName: plant.display_name,
       expiresAt: data.expires_at,
     });
-  } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    return json(req, { error: message }, 500);
+  } catch {
+    // This endpoint is public and carries bearer invitation tokens.
+    // Never echo raw PostgREST errors, configuration or key details.
+    return json(req, { error: "internal_error" }, 500);
   }
 });
