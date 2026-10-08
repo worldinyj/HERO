@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PendingSessionSubmission } from "./submissionQueue";
 
 const fixture = vi.hoisted(() => ({
@@ -175,6 +175,10 @@ function queued(): PendingSessionSubmission {
 }
 
 beforeEach(() => {
+  // Vitest runs in Node, not a browser. Node's navigator.onLine can be
+  // false/undefined; declare online explicitly for submit-to-server cases.
+  // Dedicated offline cases override this to false within their own scope.
+  vi.stubGlobal("navigator", { onLine: true });
   fixture.userId = "user-one";
   fixture.records = [];
   fixture.failDelete = false;
@@ -193,6 +197,11 @@ beforeEach(() => {
   fixture.queueListOverride = null;
   fixture.hideCommittedInQueueListing = false;
   fixture.failQueueListRead = false;
+});
+
+afterEach(() => {
+  // Restore the original Node navigator, even if a test fails mid-assertion.
+  vi.unstubAllGlobals();
 });
 
 describe("server-confirmed submissions with failed local deletion", () => {
@@ -764,7 +773,7 @@ describe("foreground online submission respects already queued immutable evidenc
     });
     expect(result.status).toBe("submitted");
     expect(fixture.submittedBodies).toHaveLength(1);
-    expect(fixture.submittedBodies[0]).toBe(saved.body);
+    expect(fixture.submittedBodies[0]).toEqual(saved.body);
     expect(fixture.records).toEqual([]);
   });
 
@@ -789,7 +798,9 @@ describe("durable first-online submission before the network request", () => {
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result.status).toBe("submitted");
     expect(fixture.pendingAtInvoke).toEqual([true]);
-    expect(fixture.submittedBodies[0]).toBe(body);
+    expect(fixture.submittedBodies[0]).toEqual(body);
+    // Initial staging must snapshot the payload, not retain a mutable caller reference.
+    expect(fixture.submittedBodies[0]).not.toBe(body);
     expect(fixture.records).toEqual([]);
   });
   it("does not call the server when the first IndexedDB put fails", async () => {
