@@ -1,4 +1,3 @@
-import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
@@ -202,55 +201,34 @@ async function setPlayerActive(
     throw new Error("plant_manager_required");
   }
 
-  const { data: target, error: targetError } = await operator.admin
-    .from("profiles")
-    .select("id, plant_id, role, real_name, nickname, is_active")
-    .eq("id", profileId)
-    .eq("plant_id", operator.plantId)
-    .eq("role", "player")
-    .maybeSingle();
-
-  if (targetError || !target) {
-    throw new Error("player_not_found");
-  }
-
-  if (target.is_active === isActive) {
-    return {
-      changed: false,
-      profileId: target.id,
-      isActive: target.is_active,
-    };
-  }
-
-  const { error: updateError } = await operator.admin
-    .from("profiles")
-    .update({
-      is_active: isActive,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", target.id)
-    .eq("plant_id", operator.plantId)
-    .eq("role", "player");
-
-  if (updateError) throw updateError;
-
-  await writeAuditLog(operator.admin, {
-    actorUserId: operator.userId,
-    plantId: operator.plantId,
-    action: isActive ? "player.reactivated" : "player.deactivated",
-    entityType: "profile",
-    entityId: target.id,
-    metadata: {
-      real_name: target.real_name,
-      nickname: target.nickname,
+  const { data, error } = await operator.admin.rpc(
+    "set_player_active_atomic",
+    {
+      p_actor_user_id: operator.userId,
+      p_profile_id: profileId,
+      p_is_active: isActive,
     },
-  });
+  );
+  if (error) throw new Error(error.message);
 
-  return {
-    changed: true,
-    profileId: target.id,
-    isActive,
-  };
+  const result = data as {
+    changed?: boolean;
+    profileId?: string;
+    isActive?: boolean;
+  } | null;
+
+  if (
+    !result ||
+    typeof result.changed !== "boolean" ||
+    result.profileId !== profileId ||
+    result.isActive !== isActive
+  ) {
+    // HTTP failure after a committed state change is still uncertain.
+    // The operator should inspect the participant list before retrying.
+    throw new Error("player_status_result_unknown");
+  }
+
+  return result;
 }
 
 Deno.serve(async (req) => {
