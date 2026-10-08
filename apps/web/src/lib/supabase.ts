@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { safeAppReturnPath } from "./safeReturnPath";
 
 let client: SupabaseClient | null = null;
 
@@ -25,17 +26,10 @@ export function getSupabase(): SupabaseClient {
   return client;
 }
 
-function safeAppPath(value: string): string {
-  if (!value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-
-  return value;
-}
 
 export async function signInWithKakao(returnPath = "/"): Promise<void> {
   const supabase = getSupabase();
-  const safeReturnPath = safeAppPath(returnPath);
+  const safeReturnPath = safeAppReturnPath(returnPath);
   const redirectTo = new URL(safeReturnPath, window.location.origin).toString();
 
   if (import.meta.env.VITE_E2E_MODE === "true") {
