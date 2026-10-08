@@ -16,3 +16,7 @@
 - 정적 연결 검사 및 정책 격리 Node/TypeScript strict 검사. 전체 Vitest, 실제 IndexedDB의 탭 간 경합, Playwright·실기기 시험은 NOT RUN.
 - 신규 replay 생성 직전 경쟁 탭의 오래된 시작 응답에 대한 순서 통제는 별도 후속 평가가 필요하며, 서버 완료 RPC 멱등성 실검증 역시 남아 있다.
 - GitHub Actions 중지, main/PR #79/Supabase/Cloudflare 변경 없음. 75.6% 진도율 유지, T5-04/09 부분 상태.
+
+## 추가 회귀 테스트
+- `competitivePersistenceProgress.test.ts`: IndexedDB 트랜잭션 mock을 사용한 최초 저장·동일 세션 발전·완료 후 캐시 제거·신규 replay 보존·로그 역행 거부·동일 길이 거부·쓰기 실패 전파 총 7개 사례를 추가했다.
+- 정책 단위 테스트와 트랜잭션 mock 테스트는 모두 GitHub 소스에 작성했지만, 이 단계에서 **Vitest 전체 실행은 하지 않았다**. 브라우저 간 실제 IDB transaction scheduling 검증도 미완료다.
