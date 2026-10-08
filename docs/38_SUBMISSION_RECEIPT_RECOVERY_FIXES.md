@@ -20,3 +20,13 @@
 - 이 세션의 전체 Vitest, monorepo TypeScript, 로컬 실제 IndexedDB, Deno, Postgres pgTAP, Playwright/실기기 테스트 **미실행**. 실행 전까지 완료로 승격 금지.
 - 마커 쓰기와 삭제가 **둘 다 실패**할 경우 이전 pending 행이 남을 수 있다. 서버의 `complete_play_session_atomic` 멱등성 실검증이 반드시 필요하다.
 - GitHub Actions 중지 유지; `main`, PR #79, Supabase staging/prod, Cloudflare 미변경. 진도 75.6%는 기존 근거로 유지.
+
+## 2026-10-08 격리 TypeScript 검증 증거
+
+로컬 Node.js 22.16.0 및 TypeScript 5.8.3 환경에서 수정된 `submitSessionWithQueue` 함수 본문을 복제해 모의 인증 사용자, 제출 서버, 대기 목록, 로컬 정리 함수로 연결했다.
+
+- `tsc --noEmit --strict --target ES2022 --module NodeNext --moduleResolution NodeNext --lib ES2022,DOM`: PASS.
+- Node.js `--experimental-strip-types` 격리 실행: **6/6 PASS**.
+- 검사 시나리오: (1) 영수증 없는 오래된 committed 행 보존, (2) 유효 완료 영수증 오프라인 복원/서버 호출 0건, (3) 신규 오프라인 제출 대기, (4) 온라인 정상 제출, (5) HTTP 400 기존 기록 차단, (6) HTTP 503 pending 대기 유지.
+- 중요한 구분: 이 결과는 **모의 의존성을 연결한 함수 단위 재현 시험**이다. GitHub에 저장된 모노레포 전체 TypeScript, Vitest 실제 모듈 테스트, IndexedDB 트랜잭션 및 원격 데이터베이스 완료 테스트의 PASS를 뜻하지 않는다.
+- 이번 단계 `submissionQueueCommit.test.ts`에 작성된 총 **16개 Vitest 테스트 케이스는 실행 대기** 상태다. 정식 완료 판정은 유지하지 않는다.
