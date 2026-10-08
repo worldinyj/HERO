@@ -176,6 +176,38 @@ check(invitePeek.includes("plant_invitation_epoch")&&
   submitSession.includes("classifyInvitationError(cause)"),
   "invitation preview/acceptance and session errors honor plant suspension");
 
+
+// The migration must invalidate preexisting inactive plant tokens before
+// reactivation and preserve only owner-scoped read-only learning history.
+const suspension = read(migrations[8]);
+const lookupEdge = read("supabase/functions/peek-invite/index.ts");
+const epochTests = read("supabase/tests/plant_deactivation_epoch.test.sql");
+check(
+  suspension.includes("set invitation_epoch = 1") &&
+  suspension.includes("where is_active = false and invitation_epoch = 0"),
+  "legacy suspended plants receive epoch backfill, old links stay revoked"
+);
+check(
+  suspension.includes('create policy "play_sessions_owner_or_admin_read"') &&
+  suspension.includes('create policy "session_decisions_owner_or_admin_read"') &&
+  suspension.includes("p.id = v_user and p.is_active = true") &&
+  suspension.includes("ps.user_id = (select auth.uid())") &&
+  suspension.includes("p.id = (select auth.uid()) and p.is_active = true") &&
+  epochTests.includes("suspended active player retains owner-only session history"),
+  "suspended Player retains only personal history while manager RLS scope is revoked"
+);
+check(
+  lookupEdge.includes('if (error) {') &&
+  lookupEdge.includes('if (!data) {') &&
+  lookupEdge.includes('{ error: "internal_error" }, 500') &&
+  !lookupEdge.includes('error: message'),
+  "public invitation lookup distinguishes DB outage from invalid token"
+);
+check(
+  !epochTests.includes("select results_eq($select"),
+  "suspension pgTAP assertions use valid dollar quoted SQL"
+);
+
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],
 ["create-invite","writeAuditLog("],

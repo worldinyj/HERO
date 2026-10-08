@@ -32,6 +32,10 @@ Migration 001의 `plants_admin_write` RLS 및 `authenticated` 테이블 직접 I
 | UI·타입 | 전체 웹 TypeScript/Vitest 및 Edge Deno 검사 |
 | 실환경 | Supabase staging 적용 후 Admin/Manager/Player Kakao E2E 및 보안 점검 |
 
+## 비활성화의 하위 데이터 접근 제약
+
+Migration 024는 Admin 발전소 활성 변경에 초대 세대값 증가를 추가하고, 중지 시 운영 범위를 차단한다. 이전에 이미 중지된 발전소도 초기 보정으로 발급된 옛 초대 링크가 되살아나지 않도록 한다. Player의 과거 본인 교육 이력은 별도 RLS로 읽기 전용 유지한다. 세부 근거 및 검사: `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md`.
+
 ## 통합 검증 및 배포 순서
 
 신규 DB 테스트 선언: 016 43 + 017 21 + 018 27 + 019 27 + 020 30 + 021 33 + 022 37 + 023 34 = **252 pgTAP assertions 작성**. 기존 테스트 파일과 합쳐 모든 SQL을 격리 DB에서 실제 실행해야 하며 선언 수만으로 PASS를 주장할 수 없다.

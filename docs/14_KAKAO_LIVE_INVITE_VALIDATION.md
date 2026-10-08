@@ -174,6 +174,23 @@
 
 권한·원자성·실기기 확인은 `docs/27_ATOMIC_ADMIN_PLANT_VALIDATION.md`를 참조한다.
 
+## 4.3 발전소 비활성화·재활성화 경계 검증 (Migration 024)
+
+| ID | 상황 | 기대 결과 | 상태 |
+|---|---|---|---|
+| SUSP-01 | 이미 중지된 발전소에 초대 링크가 남은 상태로 Migration024 적용 | 비활성 발전소 epoch 1로 backfill, 기존 epoch0 링크 영구 무효화 | NOT RUN |
+| SUSP-02 | 활성 발전소를 비활성화 | 새 초대 발급/수락 및 Player 세션 시작·완료 차단, 감사에 무효화 수량 기록 | NOT RUN |
+| SUSP-03 | 비활성화 뒤 다시 활성화 | 이전 링크는 되살아나지 않고 새로운 링크만 유효 | NOT RUN |
+| SUSP-04 | 중지된 발전소의 담당자 | RLS 발전소 범위 및 담당자 관리 작업 차단 | NOT RUN |
+| SUSP-05 | 중지된 발전소의 Player | 새 교육 실행 금지, 본인 과거 학습 세션·결정·요약만 읽기 가능 | NOT RUN |
+| SUSP-06 | 중지된 발전소의 타인 학습 이력 | 소속 담당자 포함 다른 Player의 기록 읽기 차단 | NOT RUN |
+| SUSP-07 | Admin 운영 중지/재활성화 버튼 | 코드 재입력과 영향 확인 전에는 요청 불가 | NOT RUN |
+| SUSP-08 | 초대 peek 조회 중 DB 장애 | 404 아닌 500 internal_error, 내부 SQL/설정 오류 메시지 노출 금지 | NOT RUN |
+| SUSP-09 | 초대 peek에서 실제 토큰 미존재 | 404 invitation_not_found 유지 | NOT RUN |
+| SUSP-10 | 전체 287개 pgTAP 신규 선언·16개 SQL 테스트 및 실시간 동시성 | 실제 DB에서 PASS 필요 | NOT RUN |
+
+세부 정책: `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md`.
+
 ## 5. 증거 양식
 
 ```text
@@ -194,7 +211,7 @@
 ## 6. 최종 출시 게이트
 
 - 모든 필수 시험 기록 및 보안 권한 경계 PASS
-- Migration 016~023 및 리더보드·Admin 발전소 RLS/pgTAP/CI/E2E 검증 PASS
+- Migration 016~024 및 리더보드·Admin 발전소 RLS/pgTAP/CI/E2E 검증 PASS
 - S03 사람 HF·운전·익명화·Just Culture·debrief 검토 별도 PASS
 - 개인정보/약관, 실기기·사내망, 파일럿 승인, 동일 SHA Staging Smoke/RC 게이트
 
