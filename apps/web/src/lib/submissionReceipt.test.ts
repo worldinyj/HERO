@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./submissionReceipt";
+import { isConfirmedSubmissionResponse, submissionServerErrorCode, shouldRetryQueuedOnReconnect } from "./submissionReceipt";
 
 const SESSION = "f1000000-0000-4000-8000-000000000001";
 const receipt = {
@@ -33,5 +33,15 @@ describe("Supabase FunctionsHttpError suspension code", () => {
     expect(await submissionServerErrorCode({ context: new Response("invalid", { status: 403 }) })).toBeNull();
     expect(await submissionServerErrorCode({ context: undefined })).toBeNull();
     expect(await submissionServerErrorCode({ context: new Response("[]") })).toBeNull();
+  });
+});
+
+describe("offline game reconnect submission retry", () => {
+  it("runs only after offline -> online transition", () => {
+    expect(shouldRetryQueuedOnReconnect(false, true, "queued")).toBe(true);
+    expect(shouldRetryQueuedOnReconnect(true, true, "queued")).toBe(false);
+    expect(shouldRetryQueuedOnReconnect(false, false, "queued")).toBe(false);
+    expect(shouldRetryQueuedOnReconnect(false, true, "submitted")).toBe(false);
+    expect(shouldRetryQueuedOnReconnect(true, true, "rejected")).toBe(false);
   });
 });

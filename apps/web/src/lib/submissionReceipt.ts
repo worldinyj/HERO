@@ -22,3 +22,12 @@ export async function submissionServerErrorCode(error: unknown): Promise<string 
     return typeof code === "string" ? code : null;
   } catch { return null; }
 }
+
+/** Retry once on reconnect; a pending->pending cycle is not a reconnect. */
+export function shouldRetryQueuedOnReconnect(
+  wasOnline: boolean,
+  isOnline: boolean,
+  submissionStatus: string,
+): boolean {
+  return !wasOnline && isOnline && submissionStatus === "queued";
+}

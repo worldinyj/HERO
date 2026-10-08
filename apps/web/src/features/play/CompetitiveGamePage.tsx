@@ -10,7 +10,7 @@ import {
   type GameState,
 } from "@hero/engine";
 import { ScenarioSchema, type Scenario } from "@hero/schema";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -20,6 +20,7 @@ import {
   type CompetitiveServerSession,
 } from "../../lib/competitivePersistence";
 import { getSupabase } from "../../lib/supabase";
+import { shouldRetryQueuedOnReconnect } from "../../lib/submissionReceipt";
 import {
   gameLogToSubmissionActions,
   submitSessionWithQueue,
@@ -365,10 +366,11 @@ export function CompetitiveGamePage({
 
       setSubmission({ status: "rejected", reason: result.reason });
     } catch (cause) {
+      // A broken/unavailable IndexedDB queue is NOT a durable retry.
+      // Keep the in-memory game untouched and let the player retry here.
       setSubmission({
-        status: "queued",
-        reason:
-          cause instanceof Error ? cause.message : "submission_queue_failed",
+        status: "rejected",
+        reason: cause instanceof Error ? cause.message : "submission_queue_failed",
       });
     }
   }
@@ -488,10 +490,15 @@ export function CompetitiveGamePage({
     }
   }
 
+  // Do not re-send on every queued -> submitting -> queued cycle:
+  // a suspended plant can return 403 until the Admin reactivates it.
+  const previousOnline = useRef(online);
   useEffect(() => {
-    if (online && submission.status === "queued") {
-      void submitFinishedGame();
-    }
+    const reconnect = shouldRetryQueuedOnReconnect(
+      previousOnline.current, online, submission.status,
+    );
+    previousOnline.current = online;
+    if (reconnect) void submitFinishedGame();
   }, [online, submission.status]);
 
   if (profile?.role !== "player") {
@@ -640,7 +647,14 @@ export function CompetitiveGamePage({
 
             {submission.status === "rejected" ? (
               <div className="validation-box validation-box--error" role="alert">
-                서버가 이 제출을 승인하지 않았습니다: {submission.reason}
+                {submission.reason === "submission_queue_unavailable"
+                  ? "기기의 제출 대기 저장소를 사용할 수 없습니다. 제출을 보관했다고 볼 수 없으므로 이 화면을 유지하고 다시 시도해주세요."
+                  : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
+                <button type="button" className="secondary-button compact-button"
+                  disabled={!online}
+                  onClick={() => void submitFinishedGame()}>
+                  서버 제출 다시 시도
+                </button>
               </div>
             ) : null}
 
