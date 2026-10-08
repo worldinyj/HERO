@@ -1,3 +1,4 @@
+import { writeAuditLog } from "../_shared/audit.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
