@@ -13,7 +13,7 @@ vi.mock("./offlineDb", () => ({
   COMPETITIVE_SESSION_STORE: "competitive-sessions",
   openHeroOfflineDb: async () => ({
     close: () => {},
-    transaction: (_name: string, _mode: string) => {
+    transaction: () => {
       const transaction = {
         oncomplete: null as (() => void) | null,
         onerror: null as (() => void) | null,

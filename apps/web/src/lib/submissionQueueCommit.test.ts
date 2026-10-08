@@ -73,7 +73,7 @@ vi.mock("./offlineDb", () => ({
   COMPETITIVE_SESSION_STORE: "competitive-sessions",
   openHeroOfflineDb: async () => ({
     close: () => {},
-    transaction: (name: string, _mode: string) => {
+    transaction: (name: string) => {
       const transaction = {
         oncomplete: null as (() => void) | null,
         aborted: false,
@@ -123,7 +123,7 @@ vi.mock("./offlineDb", () => ({
             ];
             queueMicrotask(() => transaction.oncomplete?.());
           },
-          index: (_name: string) => ({
+          index: () => ({
             getAll: (userId: string) => {
               if (fixture.failQueueListRead) {
                 throw new Error("simulated_queue_list_unavailable");

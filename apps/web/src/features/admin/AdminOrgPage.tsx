@@ -166,7 +166,6 @@ export function AdminOrgPage() {
     void load();
     return () => rosterGate.current.invalidate();
     // Mount-scoped read; mutations start independent revisions.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const managerCountByPlant = useMemo(() => {
