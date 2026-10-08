@@ -8,12 +8,13 @@ const tests = [
 ["my_record_summary",8],["invitation_atomic_reissue",21],
 ["invitation_atomic_cancel",27],["invitation_atomic_creation",27],
 ["player_status_atomic",30],["nickname_force_reset_atomic",33],
-["nickname_self_change_atomic",37],["admin_plant_atomic",34]
+["nickname_self_change_atomic",37],["admin_plant_atomic",34],
+["plant_deactivation_epoch",32]
 ];
 const migrations = ["leaderboard_public_projection","atomic_invitation_reissue",
 "atomic_invitation_cancel","atomic_invitation_creation","atomic_player_status",
 "atomic_nickname_force_reset","atomic_nickname_self_change",
-"atomic_admin_plant_actions"].map((s,i)=>
+"atomic_admin_plant_actions","plant_deactivation_boundaries"].map((s,i)=>
 "supabase/migrations/20261008"+String(i+16).padStart(4,"0")+"_"+s+".sql");
 const rpcs = [
 ["reissue_invitation_atomic",1,"manager-user-action"],
@@ -35,7 +36,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===252,"pgTAP declarations total 252 (NOT executed)");
+check(total===284,"pgTAP declarations total 284 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also
@@ -54,7 +55,7 @@ for(const name of testNames) {
   }
 }
 for(const collision of collisions)console.error("DUPLICATE UUID "+collision);
-check(testNames.length>=15 && collisions.length===0,
+check(testNames.length>=16 && collisions.length===0,
   testNames.length+" DB test files: fixed UUID namespace separation");
 
 // Auth fixture e-mails must also be distinct across suites; a shared
@@ -144,6 +145,36 @@ check(plantSql.includes("revoke insert,update,delete on public.plants from authe
   !adminUI.includes('.from("plants").insert(') &&
   !adminUI.includes('.from("plants")\\n        .update('),
   "plant writes cannot bypass Admin service-role audit via browser");
+
+// Suspension policy is a cross-layer security contract, not an Edge-only
+// precheck. Guard new invitations, acceptance, Player mutations and sessions
+// within transactions and permanently invalidate old invitation epochs.
+const freezeSql=read(migrations[8]);
+const authShared=read("supabase/functions/_shared/supabase.ts");
+const invitePeek=read("supabase/functions/peek-invite/index.ts");
+const inviteAccept=read("supabase/functions/accept-invite/index.ts");
+const startSession=read("supabase/functions/start-session/index.ts");
+const submitSession=read("supabase/functions/submit-session/index.ts");
+const policy=[
+  "invitation_epoch","plant_invitation_epoch","plant_invitation_revoked",
+  "guard_active_plant_invitation","guard_active_plant_profile",
+  "guard_active_plant_session","invitations_active_plant_guard",
+  "profiles_active_plant_guard","play_sessions_active_plant_guard",
+];
+check(policy.every(term=>freezeSql.includes(term)),
+  "DB enforces suspended-plant writes and permanent token epoch revocation");
+check(authShared.includes('throw new Error("plant_inactive")')&&
+  authShared.includes('.from("plants").select("is_active")')&&
+  errorSrc.includes("plant_inactive: 403")&&
+  errorSrc.includes("plant_invitation_revoked: 409"),
+  "inactive plant checked for privileged Edge roles and safely classified");
+check(invitePeek.includes("plant_invitation_epoch")&&
+  invitePeek.includes("invitation_epoch")&&
+  invitePeek.includes('"plant_invitation_revoked"')&&
+  inviteAccept.includes("classifyInvitationError(error)")&&
+  startSession.includes("classifyInvitationError(cause)")&&
+  submitSession.includes("classifyInvitationError(cause)"),
+  "invitation preview/acceptance and session errors honor plant suspension");
 
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],

@@ -23,6 +23,14 @@ const NICKNAME_ERROR_LABEL: Record<string, string> = {
   nickname_taken: "이미 사용 중인 닉네임입니다.",
 };
 
+const INVALID_INVITE_LABEL: Record<string, string> = {
+  canceled: "취소된 초대 링크입니다.",
+  expired: "만료된 초대 링크입니다.",
+  already_used: "이미 사용된 초대 링크입니다.",
+  plant_inactive: "소속 발전소의 HERO 교육 운영이 일시 중지되었습니다.",
+  plant_invitation_revoked: "발전소 운영 중지 이전에 발급된 링크는 재활성화 이후에도 사용할 수 없습니다.",
+};
+
 const JOB_LABEL: Record<string, string> = {
   sro: "SRO",
   ro: "RO",
@@ -216,11 +224,13 @@ export function InvitationPage() {
     return (
       <section className="panel">
         <h2>사용할 수 없는 초대입니다</h2>
-        <p className="muted">사유: {alreadyUsed ? "이미 사용된 링크" : preview.reason ?? "유효하지 않은 링크"}</p>
+        <p className="muted">사유: {INVALID_INVITE_LABEL[preview.reason ?? ""] ?? "유효하지 않은 초대 링크입니다."}</p>
         <p className="muted">
           {alreadyUsed
             ? "이전에 가입을 완료했다면 본인 계정으로 이동할 수 있습니다."
-            : "발전소담당자에게 새 초대 링크를 요청해주세요."}
+            : preview.reason === "plant_inactive"
+              ? "발전소 운영이 재개될 때까지 기다려주세요. 기존 초대가 중지 기간에 무효화됐다면 새 링크가 필요합니다."
+              : "발전소담당자에게 새 초대 링크를 요청해주세요."}
         </p>
         {alreadyUsed ? (
           <Link to={session ? "/" : "/login"} className="secondary-button">
