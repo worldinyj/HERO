@@ -101,3 +101,18 @@ Deno.test("unknown or potentially committed requests remain 500", () => {
     }
   }
 });
+
+Deno.test("plant deactivation and stale invitation errors are deterministic", () => {
+  for (const [error, expected] of [
+    ["plant_inactive", 403],
+    ["inactive_or_missing_profile", 403],
+    ["plant_invitation_revoked", 409],
+    ["invitation_canceled", 409],
+    ["invitation_expired", 409],
+  ] as const) {
+    const result = classifyInvitationError({ code: "P0001", message: error });
+    if (result.error !== error || result.status !== expected) {
+      throw new Error(`Unexpected classification: ${error}`);
+    }
+  }
+});

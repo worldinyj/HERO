@@ -30,6 +30,8 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
   manager_scope_violation: 403,
   manager_or_admin_required: 403,
   plant_manager_required: 403,
+  plant_inactive: 403,
+  inactive_or_missing_profile: 403,
   admin_required: 403,
 
   invitation_not_found: 404,
@@ -37,8 +39,14 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
   plant_not_found: 404,
 
   invitation_already_accepted: 409,
+  invitation_canceled: 409,
+  invitation_already_used: 409,
+  invitation_expired: 409,
+  active_cross_plant_profile: 409,
+  active_role_conflict: 409,
   invitation_already_canceled: 409,
   plant_code_taken: 409,
+  plant_invitation_revoked: 409,
 
   nickname_length: 409,
   nickname_characters: 409,
