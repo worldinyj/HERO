@@ -21,10 +21,10 @@ insert into public.seasons(id,season_key,title,starts_at,ends_at,status)
 values ('f3000000-0000-0000-0000-000000000001','epoch-plant-2098','Epoch season',
   now()-interval '1 day',now()+interval '7 days','scheduled');
 insert into public.scenarios(id,slug,title,is_competitive,is_active)
-values ('f4000000-0000-0000-0000-000000000001','epoch_guard_case','Epoch guard',true,true);
+values ('f4800000-0000-0000-0000-000000000001','epoch_guard_case','Epoch guard',true,true);
 insert into public.scenario_versions(
   id,scenario_id,version,status,default_perspective_role,content
-) values ('f5000000-0000-0000-0000-000000000001','f4000000-0000-0000-0000-000000000001',1,'published','worker','{}'::jsonb);
+) values ('f5000000-0000-0000-0000-000000000001','f4800000-0000-0000-0000-000000000001',1,'published','worker','{}'::jsonb);
 
 insert into public.play_sessions(
   id,user_id,plant_id,player_job_role,perspective_role,season_id,
