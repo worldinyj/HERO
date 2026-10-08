@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
+import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 
 interface PlantRow {
   id: string;
@@ -75,6 +76,8 @@ export function AdminOrgPage() {
   const [invitePlantId, setInvitePlantId] = useState("");
   const [inviteeName, setInviteeName] = useState("");
   const [creatingInvite, setCreatingInvite] = useState(false);
+  const [createOutcomeUnknown, setCreateOutcomeUnknown] = useState(false);
+  const [reissueUnknownIds, setReissueUnknownIds] = useState<string[]>([]);
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [managerInviteActionPending, setManagerInviteActionPending] = useState<string | null>(null);
@@ -198,6 +201,13 @@ export function AdminOrgPage() {
   }
 
   async function handleCreateManagerInvite() {
+    if (creatingInvite || createOutcomeUnknown) return;
+    // An issued URL exists only in this component: preserve it until the
+    // operator explicitly confirms it has been copied/saved.
+    if (inviteResult) {
+      setError("기존 담당자 초대 링크를 먼저 보관하고 '새 초대 작성'을 눌러주세요.");
+      return;
+    }
     if (!invitePlantId || !inviteeName.trim()) {
       setError("발전소와 담당자 이름을 입력해주세요.");
       return;
@@ -206,7 +216,6 @@ export function AdminOrgPage() {
     try {
       setCreatingInvite(true);
       setError(null);
-      setInviteResult(null);
       setCopied(false);
 
       const supabase = getSupabase();
@@ -221,20 +230,32 @@ export function AdminOrgPage() {
         },
       );
 
-      if (invokeError) throw invokeError;
+      if (invokeError) {
+        if (!isDefiniteInviteRejection(invokeError)) {
+          throw new InviteCreationOutcomeUnknownError();
+        }
+        throw invokeError;
+      }
 
-      const result = data as InviteResult & { error?: string };
-      if (!result.inviteUrl) {
-        throw new Error(result.error ?? "담당자 초대 링크 생성에 실패했습니다.");
+      const result = data as InviteResult | null;
+      if (!result?.inviteUrl || !result.invitationId) {
+        throw new InviteCreationOutcomeUnknownError();
       }
 
       setInviteResult(result);
       setInviteeName("");
       await load();
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setCreateOutcomeUnknown(true);
+        setError(
+          "담당자 초대가 생성되었을 수도 있습니다. 새로 발급하기 전에 수락 대기 목록을 확인하고 중복 초대를 정리해주세요.",
+        );
+      } else {
+        setError(
+          cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
+        );
+      }
     } finally {
       setCreatingInvite(false);
     }
@@ -244,6 +265,17 @@ export function AdminOrgPage() {
     invitationId: string,
     action: "cancel-invite" | "reissue-invite",
   ) {
+    if (managerInviteActionPending) return;
+    if (action === "reissue-invite") {
+      if (reissueUnknownIds.includes(invitationId)) {
+        setError("이 초대의 이전 재발급 결과를 확인할 수 없습니다. 수락 대기 목록을 먼저 대조해주세요.");
+        return;
+      }
+      if (inviteResult) {
+        setError("앞서 표시한 일회용 링크를 보관하고 '새 초대 작성'을 눌러주세요.");
+        return;
+      }
+    }
     try {
       setManagerInviteActionPending(`${action}:${invitationId}`);
       setError(null);
@@ -255,7 +287,12 @@ export function AdminOrgPage() {
         { body: { action, invitationId } },
       );
 
-      if (invokeError) throw invokeError;
+      if (invokeError) {
+        if (action === "reissue-invite" && !isDefiniteInviteRejection(invokeError)) {
+          throw new InviteCreationOutcomeUnknownError();
+        }
+        throw invokeError;
+      }
 
       const result = data as Partial<InviteResult> & { error?: string };
       if (result.error) throw new Error(result.error);
@@ -267,23 +304,34 @@ export function AdminOrgPage() {
           !result.expiresAt ||
           !result.plantDisplayName
         ) {
-          throw new Error("담당자 초대 링크 재발급에 실패했습니다.");
+          throw new InviteCreationOutcomeUnknownError();
         }
 
         setInviteResult(result as InviteResult);
       } else {
-        setInviteResult(null);
+        // Canceling another invite must not erase a different copied-once
+        // token currently on-screen.
+        setInviteResult((current) =>
+          current?.invitationId === invitationId ? null : current,
+        );
       }
 
       await load();
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : action === "reissue-invite"
-            ? "담당자 초대 링크 재발급에 실패했습니다."
-            : "담당자 초대를 취소하지 못했습니다.",
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setReissueUnknownIds((current) =>
+          current.includes(invitationId) ? current : [...current, invitationId],
+        );
+        setError("재발급 응답을 확인할 수 없습니다. 기존 링크가 취소되고 새 초대가 생성되었을 수 있습니다. 수락 대기 목록을 다시 확인해주세요.");
+      } else {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : action === "reissue-invite"
+              ? "담당자 초대 링크 재발급에 실패했습니다."
+              : "담당자 초대를 취소하지 못했습니다.",
+        );
+      }
     } finally {
       setManagerInviteActionPending(null);
     }
@@ -442,12 +490,27 @@ export function AdminOrgPage() {
           <button
             type="button"
             className="primary-button"
-            disabled={creatingInvite || !invitePlantId}
+            disabled={creatingInvite || createOutcomeUnknown || Boolean(inviteResult) || !invitePlantId}
             onClick={handleCreateManagerInvite}
           >
             {creatingInvite ? "초대 생성 중…" : "담당자 초대 링크 생성"}
           </button>
         </div>
+
+        {createOutcomeUnknown ? (
+          <div className="invite-result-box" role="alert">
+            <strong>초대 생성 결과 확인 필요</strong>
+            <p className="muted">서버에서 담당자 초대가 이미 생성되었을 수 있습니다. 아래 수락 대기 목록을 확인하고 필요한 항목을 정리한 뒤 새 요청을 시작해주세요.</p>
+            <button
+              type="button"
+              className="secondary-button"
+              disabled={creatingInvite}
+              onClick={() => setCreateOutcomeUnknown(false)}
+            >
+              초대 목록 대조 완료 · 새 요청 허용
+            </button>
+          </div>
+        ) : null}
 
         {inviteResult ? (
           <div className="invite-result-box">
@@ -458,6 +521,17 @@ export function AdminOrgPage() {
             <code>{inviteResult.inviteUrl}</code>
             <button type="button" className="secondary-button" onClick={handleCopyInvite}>
               {copied ? "복사 완료" : "링크 복사"}
+            </button>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => {
+                setInviteResult(null);
+                setCopied(false);
+                setError(null);
+              }}
+            >
+              링크 보관 완료 · 새 초대 작성
             </button>
           </div>
         ) : null}
@@ -478,7 +552,7 @@ export function AdminOrgPage() {
                   <button
                     type="button"
                     className="secondary-button compact-button"
-                    disabled={managerInviteActionPending !== null}
+                    disabled={managerInviteActionPending !== null || reissueUnknownIds.includes(invite.id) || Boolean(inviteResult)}
                     onClick={() => void handleManagerInviteAction(invite.id, "reissue-invite")}
                   >
                     {managerInviteActionPending === `reissue-invite:${invite.id}`
