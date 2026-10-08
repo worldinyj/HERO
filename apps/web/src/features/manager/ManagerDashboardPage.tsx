@@ -69,6 +69,7 @@ export function ManagerDashboardPage() {
   const [copiedReissue, setCopiedReissue] = useState(false);
   const [uncertainReissues, setUncertainReissues] = useState<string[]>([]);
   const [uncertainCancellations, setUncertainCancellations] = useState<string[]>([]);
+  const [invitationReconciliationReady, setInvitationReconciliationReady] = useState(false);
   const [uncertainPlayerIds, setUncertainPlayerIds] = useState<string[]>([]);
   const [uncertainNicknameIds, setUncertainNicknameIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +169,7 @@ export function ManagerDashboardPage() {
         throw new Error("cancel_result_unknown");
       }
       if (!(await loadDashboard(true))) {
+        setInvitationReconciliationReady(false);
         setUncertainCancellations((old) =>
           old.includes(invitationId) ? old : [...old, invitationId]
         );
@@ -179,6 +181,7 @@ export function ManagerDashboardPage() {
       } else {
         // A timeout/5xx can occur after the transaction commits. A second
         // cancel must be blocked until the server-side roster is reloaded.
+        setInvitationReconciliationReady(false);
         setUncertainCancellations((old) =>
           old.includes(invitationId) ? old : [...old, invitationId]
         );
@@ -193,11 +196,11 @@ export function ManagerDashboardPage() {
   async function reconcileInvitationOutcomes() {
     if (actionPending) return;
     setActionPending("invite-reconcile");
+    setInvitationReconciliationReady(false);
     try {
       if (await loadDashboard(true)) {
-        setUncertainCancellations([]);
-        setUncertainReissues([]);
-        setError(null);
+        setInvitationReconciliationReady(true);
+        setError("갱신된 초대 명단에서 취소·재발급 결과를 확인하고 잠금을 해제해주세요.");
       } else {
         setError("초대 명단 재조회에 실패했습니다. 결과 확인 전에는 잠금을 유지합니다.");
       }
@@ -206,9 +209,23 @@ export function ManagerDashboardPage() {
     }
   }
 
+  function confirmInvitationReconciliation() {
+    if (!invitationReconciliationReady || actionPending) return;
+    // The operator explicitly reviewed the freshly fetched roster.
+    // Lost one-time token URLs cannot be reconstructed from this roster.
+    setUncertainCancellations([]);
+    setUncertainReissues([]);
+    setInvitationReconciliationReady(false);
+    setError(null);
+  }
+
   async function handleReissueInvite(invitationId: string) {
     if (actionPending) return;
-    if (reissueResult || uncertainReissues.includes(invitationId)) {
+    if (
+      reissueResult ||
+      uncertainReissues.includes(invitationId) ||
+      uncertainCancellations.includes(invitationId)
+    ) {
       setError("이전 재발급 결과와 일회용 링크를 먼저 확인해주세요.");
       return;
     }
@@ -234,6 +251,7 @@ export function ManagerDashboardPage() {
       await loadDashboard(true);
     } catch (cause) {
       if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setInvitationReconciliationReady(false);
         setUncertainReissues((old) => old.includes(invitationId) ? old : [...old, invitationId]);
         setError("재발급 결과가 불확실합니다. 서버에서 생성됐을 수 있으므로 초대 목록을 대조하기 전에는 재시도하지 마세요.");
       } else {
@@ -597,14 +615,24 @@ export function ManagerDashboardPage() {
               서버의 수락 대기 명단을 다시 조회하고 실제 결과를 대조한 뒤
               재시도 잠금을 해제해주세요. 발급한 일회용 링크는 서버에서 다시 조회할 수 없습니다.
             </p>
-            <button
-              type="button"
-              className="secondary-button compact-button"
-              disabled={actionPending !== null}
-              onClick={() => void reconcileInvitationOutcomes()}
-            >
-              초대 명단 다시 조회 · 확인 후 잠금 해제
-            </button>
+            <div className="inline-actions">
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={actionPending !== null}
+                onClick={() => void reconcileInvitationOutcomes()}
+              >
+                1. 초대 명단 다시 조회
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                disabled={actionPending !== null || !invitationReconciliationReady}
+                onClick={() => confirmInvitationReconciliation()}
+              >
+                2. 결과 확인 완료 · 잠금 해제
+              </button>
+            </div>
           </div>
         ) : null}
 
