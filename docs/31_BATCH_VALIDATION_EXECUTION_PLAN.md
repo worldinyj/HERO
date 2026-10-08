@@ -12,6 +12,11 @@
 - Edge의 기존 함수들이 ACTIVE로 나열되는 것과 **현재 배치 코드가 배포되었다는 것은 전혀 다르다**.
 - 신규 pgTAP **295개 선언** + 기존 SQL 테스트는 16파일. 최신 코드 일괄 pgTAP/E2E **NOT RUN**. RELEASE BLOCKED.
 
+### 세션 Edge 조회 오류 구분 추가 회귀 게이트
+
+- `start-session`/ `submit-session`은 DB 오류·비정상 응답을 500으로, 정상 조회 후 데이터 미존재만 기존 404/409로 반환한다. `lookupOutcome.ts`, `lookupOutcome.test.ts`(Deno 3그룹), `docs/32_SESSION_LOOKUP_ERROR_VALIDATION.md` 참조.
+- 기존 TASKLIST 75.6%는 코드 산출물 진행률이며, 이 개선으로 실제 CI·DB pgTAP·E2E를 완료했다고 판정하지 않는다.
+
 ## 2. P0 검증 순서와 즉시 중단 조건
 
 ### 2.1 네트워크 없이 실행하는 정적 검사
