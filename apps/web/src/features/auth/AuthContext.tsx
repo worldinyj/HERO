@@ -143,7 +143,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signOut = useCallback(async () => {
     const supabase = getSupabase();
-    await supabase.auth.signOut();
+    // Supabase returns { error } on failure; it does not always reject.
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   }, []);
 
   const value = useMemo<AuthState>(
