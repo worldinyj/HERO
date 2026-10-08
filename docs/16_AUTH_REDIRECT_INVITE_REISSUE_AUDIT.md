@@ -19,13 +19,15 @@
 - `manager-user-action`의 `SITE_URL` 유효성 검사는 취소·생성 전에 수행
 - 사용자 수동 확인표: `docs/14_KAKAO_LIVE_INVITE_VALIDATION.md` ADM-01~05, AUTH-08~11
 
-## 3. 남아 있는 설계 위험 및 검증 요구
+## 3. 재발급 DB 원자성 — 코드 구현, 실제 검증 보류
 
-**재발급의 DB 원자성은 해결되지 않았다.**
+이전에는 기존 초대 취소·대체 초대 INSERT·감사 로그가 분리되어 중간 실패 시 원본만 취소될 수 있었다. 배치 브랜치에 다음 코드를 추가했다.
 
-현재 `manager-user-action/index.ts`의 `reissueInvite`는 (1) 기존 초대 `canceled_at` 갱신, (2) 새 초대 INSERT를 별도 Supabase 요청으로 수행한다. INSERT 실패나 중간 통신장애가 발생하면 기존 링크는 취소됐지만 새 링크는 없는 상태가 될 수 있다. 이번 변경은 UI 반복 요청과 잘못된 `SITE_URL`로 인한 원인만 완화한다.
+- `supabase/migrations/202610080017_atomic_invitation_reissue.sql`: `public.reissue_invitation_atomic` 함수에서 원본 `FOR UPDATE` 잠금, 역할·발전소 재검증, 취소·재발급·감사 2건 단일 PostgreSQL 트랜잭션 처리
+- `supabase/functions/manager-user-action/index.ts`: 개별 UPDATE/INSERT/감사 쓰기를 제거하고 service_role 전용 `.rpc("reissue_invitation_atomic")` 단일 호출로 변경
+- `supabase/tests/invitation_atomic_reissue.test.sql`: 함수 실행 권한, Admin/Manager 범위, 비활성 사용자, 중복 해시 INSERT 실패 시 원본 초대·감사 기록 롤백 등 **21 assertions** 작성
 
-출시 전에 트랜잭션을 사용하는 원자적 DB RPC 및 실패주입/동시성 회귀 테스트를 별도 설계·검증해야 한다. 이를 끝내지 않고 릴리스 준비 PASS를 기록하지 않는다.
+**아직 PASS를 선언할 수 없다.** Migration 017은 원격에 적용되지 않았고 로컬 PostgreSQL/pgTAP을 실행하지 않았다. DB row lock 동시성·통신 단절·실 Kakao 초대 E2E도 미검증이다. 프런트엔드/Edge Function이 새 RPC를 호출하기 전에 DB migration이 적용되어야 한다. 실패 시나리오 검증을 통과할 때까지 배포 차단을 유지한다.
 
 ## 4. 일괄 CI 재개 시
 
@@ -34,4 +36,5 @@
 - `deno check --config supabase/functions/deno.json supabase/functions/manager-user-action/index.ts`
 - `deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts`
 - Kakao 실계정 로그인 / 새 사용자 차단 / 관리자·담당자 초대 성공·실패 시험
-- PR/main merge, migration016 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행
+- `supabase test db`에서 Migration 017과 21 pgTAP 사례(특히 23505 rollback)를 확인하고, 동시 재발급·이미 수락된 초대/실패주입 E2E를 수행
+- PR/main merge, migration016·017 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행

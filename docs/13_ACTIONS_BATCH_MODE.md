@@ -35,7 +35,8 @@
 - 실제 Kakao 계정 검증 계획: `docs/14_KAKAO_LIVE_INVITE_VALIDATION.md` (시험 전 상태 `NOT RUN`)
 - 카카오 OAuth/로컬 E2E `next=` 복귀 주소를 단일 `safeAppReturnPath` 함수로 검증: 외부 URL, `//`, 역슬래시, 제어문자 및 위험한 percent-encoded 경로를 차단. 격리된 Node 테스트 21사례 및 TypeScript 단독 검사 통과 (**전체 Vitest/CI 미실행**).
 - Admin→발전소 담당자 발급·재발급: 응답 불확실 시 재요청 차단, 기존 일회용 URL 표시 유지, 다른 초대 취소 시 현재 URL 보호. `manager-user-action`은 `SITE_URL` 검사 후에만 기존 초대 취소.
-- 미해결 주의: `manager-user-action`의 재발급은 아직 기존 초대 취소와 새 초대 insert가 별도 DB 요청(비원자적)으로 이루어진다. 릴리스 전 트랜잭션 일원화 및 실패주입 E2E 필요.
+- Migration 017 코드 추가: `reissue_invitation_atomic`(service_role-only)으로 기존 초대 잠금·취소, 새 초대 발급, 감사 로그 두 건을 하나의 DB 트랜잭션에 통합. pgTAP 21개 작성. **실제 DB 실행·동시성 확인 전이며 원격 미적용**.
+- 검증 문서: `docs/17_ATOMIC_INVITATION_REISSUE_VALIDATION.md` (Migration 017, 21 pgTAP cases, 전부 NOT RUN)
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
@@ -78,7 +79,7 @@ supabase stop --no-backup
 3. Actions가 정상 실행될 수 있을 때 **최종 PR SHA**에서 CI, Database Policy Tests, E2E를 실행한다. 중간 커밋마다 실행·재시도하지 않는다.
 4. 테스트 실패 시 로그를 확보해 같은 배치 브랜치에서 수정한다. 코드 성공과 Runner 실행 실패를 구분한다.
 5. 모두 PASS한 뒤 승인에 따라 `main`에 병합하고 병합 SHA에서 검증한다.
-6. staging에 migration 016 적용 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
+6. 로컬 pgTAP 전체 성공 및 승인 후, staging에 migration 016 → 017 순서대로 적용하고 Edge Function `manager-user-action`과 관련 웹 버전을 호환되게 배포 → 실제 보안 검사(Security Advisor, RLS 정책) → Kakao Admin→Manager→Player 초대 검증 → S03 사람 검토 및 staging smoke.
 7. S01/S02 SOURCE_HOLD, S03 HUMAN_REVIEW_PENDING, 약관/개인정보/실기기/파일럿 등 출시 차단 게이트는 각각 별도 증거로만 해제한다.
 
 ## 6. 참조
