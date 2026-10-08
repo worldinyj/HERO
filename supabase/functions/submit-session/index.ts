@@ -4,6 +4,7 @@ import {
   evaluate,
   isFinished,
   metricAverage,
+  type GameAction,
 } from "@hero/engine";
 import { ScenarioSchema } from "@hero/schema";
 import { handleOptions, json } from "../_shared/http.ts";
