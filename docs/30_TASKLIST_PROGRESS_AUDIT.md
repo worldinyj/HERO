@@ -50,6 +50,12 @@
 - `playwright.config.ts`: 이 전체 로컬 E2E에서 기존 Vite 서버 재사용 금지. 브라우저 프로세스에서 Supabase 서비스 키 제거.
 - **새 SHA에서 Mac 회귀시험 및 실제 Edge/mobile 전체 테스트는 아직 미실행**. Tasklist T7-01은 `partial` 유지.
 
+## 1.7 로컬 Supabase Edge CORS 프록시 판정 보완
+
+- Mac 확인: `SITE_URL_PASS`였으나 Edge 응답은 POST 400/`invalid_token`이고 CORS는 4173·5173 모두 `*`; 기존 edge-check의 정확한 origin 비교 때문에 false negative.
+- 신규 로컬-only 판정: HERO loopback 환경 확인 후에만 `*` 허용. OPTIONS의 POST/Authorization/ApiKey/content-type 사전요청과 wildcard credential 금지를 검증. **실제 Mac 새 검사 PASS는 아직 미확인**, production CORS sign-off가 아니다.
+- 모바일 fixture 및 전체 E2E 미생성/미실행 상태 유지, T7-01 partial.
+
 ## 2. Phase별 진행
 
 | Phase | 작업 수 | 구현 | 부분 | 미착수 | 환산 진도 |

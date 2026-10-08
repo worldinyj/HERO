@@ -4,8 +4,8 @@ import { HERO_E2E_LOCAL_API, localE2eSeedGate } from "../e2e/localTargetGuard.mj
 import { assertFreshLocalE2eNamespace } from "../e2e/fixtureNamespace.mjs";
 import { requireFixtureAuthUuidV4 } from "../e2e/authFixtureUuid.mjs";
 import { E2E_API, inspectE2eStatus, inspectE2eWebEnv, buildE2eWebEnv } from "./check-local-e2e-preflight.mjs";
-import { E2E_WEB_ORIGIN, edgeProbeVerdict, e2eArgsVerdict,
-  browserTestEnv } from "./hero-mobile-e2e.mjs";
+import { E2E_WEB_ORIGIN, edgeProbeVerdict, edgeOptionsVerdict,
+  e2eArgsVerdict, browserTestEnv } from "./hero-mobile-e2e.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
@@ -418,4 +418,34 @@ test("Full mobile run checks for busy Vite port before any fixture creation", ()
   assert.ok(seed > before);
   assert.ok(runner.includes('server.listen(4173, "127.0.0.1"'));
   assert.ok(runner.includes("vite_port_4173_unavailable"));
+});
+
+test("local Supabase gateway wildcard is accepted only behind explicit loopback gate", () => {
+  assert.deepEqual(edgeProbeVerdict(400, { error: "invalid_token" }, "*",
+    { localLoopback: true }),
+    { ok: true, reason: "local_edge_gateway_wildcard_observed" });
+  assert.equal(edgeProbeVerdict(400, { error: "invalid_token" }, "*").ok, false);
+  assert.equal(edgeProbeVerdict(200, { error: "invalid_token" }, "*",
+    { localLoopback: true }).ok, false);
+  assert.equal(edgeProbeVerdict(400, { error: "internal_error" }, "*",
+    { localLoopback: true }).ok, false);
+  assert.equal(edgeProbeVerdict(400, { error: "invalid_token" },
+    "https://unknown.invalid", { localLoopback: true }).ok, false);
+});
+
+test("local Edge OPTIONS must authorize POST with browser authorization headers", () => {
+  const required = "authorization, x-client-info, apikey, content-type";
+  const method = "POST, OPTIONS";
+  const ok = { localLoopback: true };
+  assert.deepEqual(edgeOptionsVerdict(204, "*", method, required, null, ok),
+    { ok: true, reason: "local_edge_options_wildcard_verified" });
+  assert.equal(edgeOptionsVerdict(200, E2E_WEB_ORIGIN, method, required, null).ok, true);
+  for (const x of [
+    [403, "*", method, required, null, ok],
+    [204, "*", method, required, null, {}],
+    [204, "*", method, required, "true", ok],
+    [204, "null", method, required, null, ok],
+    [204, "*", "GET, OPTIONS", required, null, ok],
+    [204, "*", method, "content-type, apikey", null, ok],
+  ]) assert.equal(edgeOptionsVerdict(...x).ok, false);
 });

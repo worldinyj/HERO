@@ -22,14 +22,49 @@ const WEB_ENV_PATH = join(ROOT, "apps/web/.env.e2e.local");
 const RELEASE_ENV_PATH = join(ROOT, "apps/web/.env.production.local");
 const DIST_PATH = join(ROOT, "apps/web/dist");
 
-export function edgeProbeVerdict(status, json, origin) {
+/**
+ * Local Supabase's API gateway may return '*' although the function's
+ * corsHeaders() returns the requested origin. This is NOT an authorization
+ * for production wildcard CORS. Callers must separately verify loopback API.
+ */
+export function edgeProbeVerdict(status, json, origin, { localLoopback = false } = {}) {
   if (status !== 400 || !json || json.error !== "invalid_token") {
     return { ok: false, reason: "edge_handler_not_verified" };
   }
-  if (origin !== E2E_WEB_ORIGIN) {
-    return { ok: false, reason: "edge_cors_site_url_mismatch" };
+  if (origin === E2E_WEB_ORIGIN) {
+    return { ok: true, reason: "local_edge_exact_origin_verified" };
   }
-  return { ok: true, reason: "local_edge_invalid_token_guard_verified" };
+  if (origin === "*" && localLoopback) {
+    return { ok: true, reason: "local_edge_gateway_wildcard_observed" };
+  }
+  return { ok: false, reason: "edge_cors_site_url_mismatch" };
+}
+
+/** Confirm real browser CORS preflight without accepting wildcard credentials. */
+export function edgeOptionsVerdict(status, origin, methods, headers, credentials,
+  { localLoopback = false } = {}) {
+  if (status !== 200 && status !== 204) {
+    return { ok: false, reason: "edge_cors_options_failed" };
+  }
+  if (origin !== E2E_WEB_ORIGIN && !(localLoopback && origin === "*")) {
+    return { ok: false, reason: "edge_cors_options_origin_mismatch" };
+  }
+  if (origin === "*" && String(credentials).toLowerCase() === "true") {
+    return { ok: false, reason: "edge_cors_wildcard_credentials_forbidden" };
+  }
+  const methodNames = String(methods || "").split(",").map(x => x.trim().toLowerCase());
+  const headerNames = new Set(String(headers || "")
+    .split(",").map(x => x.trim().toLowerCase()));
+  if (!methodNames.includes("post")) {
+    return { ok: false, reason: "edge_cors_post_not_allowed" };
+  }
+  if (!["authorization", "apikey", "content-type", "x-client-info"]
+    .every(x => headerNames.has(x))) {
+    return { ok: false, reason: "edge_cors_required_headers_missing" };
+  }
+  return { ok: true, reason: origin === "*"
+    ? "local_edge_options_wildcard_verified"
+    : "local_edge_options_exact_verified" };
 }
 
 export function e2eArgsVerdict(args) {
@@ -138,10 +173,42 @@ async function checkEdge() {
   } catch {
     throw Error("edge_unreachable_start_supabase_functions_serve");
   }
+  // localStatus() already verified this exact API resolves only to the HERO
+  // loopback stack; allow '*' for that local gateway, never remote deploys.
   const verdict = edgeProbeVerdict(response.status, payload,
-    response.headers.get("access-control-allow-origin"));
+    response.headers.get("access-control-allow-origin"),
+    { localLoopback: true });
   if (!verdict.ok) throw Error(verdict.reason);
-  console.log("HERO_EDGE_CHECK_PASS invalid_token=400 cors=4173");
+
+  let optionsResponse;
+  try {
+    optionsResponse = await fetch(E2E_EDGE_URL, {
+      method: "OPTIONS",
+      headers: {
+        origin: E2E_WEB_ORIGIN,
+        "access-control-request-method": "POST",
+        "access-control-request-headers":
+          "authorization,apikey,content-type,x-client-info",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch {
+    throw Error("edge_cors_options_unreachable");
+  }
+  const optionsVerdict = edgeOptionsVerdict(optionsResponse.status,
+    optionsResponse.headers.get("access-control-allow-origin"),
+    optionsResponse.headers.get("access-control-allow-methods"),
+    optionsResponse.headers.get("access-control-allow-headers"),
+    optionsResponse.headers.get("access-control-allow-credentials"),
+    { localLoopback: true });
+  if (!optionsVerdict.ok) throw Error(optionsVerdict.reason);
+
+  console.log("HERO_EDGE_CHECK_PASS invalid_token=400 cors=" +
+    (verdict.reason === "local_edge_gateway_wildcard_observed"
+      ? "wildcard-local" : "exact-origin") + " options=PASS");
+  if (verdict.reason === "local_edge_gateway_wildcard_observed") {
+    console.log("EDGE_CORS_NOTE local_wildcard_observed (NOT production approval)");
+  }
   console.log("fixture_seed=NOT_RUN requests_write=NONE");
 }
 

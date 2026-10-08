@@ -71,3 +71,16 @@ Auth 관리자 createUser에 지정하는 테스트 사용자 ID 11개를 UUID v
 테스트 fixture를 생성하기 전에 127.0.0.1:4173 포트를 열고 즉시 닫아 사용 가능 여부를 확인한다.
 이미 실행 중인 Vite 웹서버가 있으면 vite_port_4173_unavailable로 중단한다.
 수동으로 다른 웹서버를 종료할 필요가 있을 때에는 사용자가 직접 해당 프로세스만 종료해야 하며 DB나 다른 프로젝트를 중지하지 않는다.
+
+## 로컬 Supabase wildcard CORS 확인 (2026-10-08)
+
+사용자 Mac에서 Edge POST `peek-invite`가 HTTP 400 / `invalid_token`을 반환하면서 4173과 5173 요청 모두 `Access-Control-Allow-Origin: *`가 관찰됨. 함수의 `_shared/http.ts`는 정확한 로컬 SITE_URL을 허용하도록 구현돼 있으므로 로컬 API 게이트웨이/런타임이 응답 헤더를 변경했을 가능성이 있으나, 원인 계층은 아직 미확인.
+
+`edge-check`의 새 조건:
+- 로컬 HERO API(127.0.0.1:55321)와 DB(127.0.0.1:55322)를 먼저 검증한 경우에만 `*`를 별도 결과로 허용
+- POST 400 + `invalid_token`은 반드시 일치해야 함
+- 브라우저 사전요청인 OPTIONS도 실행해 출처가 local exact 또는 `*`, POST 및 authorization/apikey/content-type/x-client-info 허용, wildcard+credentials=true 금지 여부를 검사
+- `HERO_EDGE_CHECK_PASS ... cors=wildcard-local options=PASS`는 **로컬 시험 준비만 의미**하며 운영 서버 CORS 승인 증거로 사용 금지
+- `edge_cors_options_*` 실패 시 테스트 데이터 생성 전 중단. 원격 Supabase는 조회하거나 수정하지 않음
+
+새 SHA로 Mac Node 회귀시험을 재실행하고 `edge-check`를 먼저 실행할 것.
