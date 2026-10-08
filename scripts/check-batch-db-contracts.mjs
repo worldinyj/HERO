@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Offline/static gate only. No database queries or GitHub Actions. */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 const read = p => readFileSync(join(resolve(import.meta.dirname, ".."), p), "utf8");
 const tests = [
@@ -33,6 +33,27 @@ for(const [name,expected] of tests) {
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
 check(total===218,"pgTAP declarations total 218 (NOT executed)");
+
+// Keep fixed UUID literals globally distinct across test files. A value
+// in a different table would not conflict today, but distinct fixtures also
+// prevent accidental test coupling when tables/joins evolve.
+const testNames=readdirSync(resolve(import.meta.dirname,"../supabase/tests"))
+  .filter(n=>n.endsWith(".test.sql")).sort();
+const owners=new Map();
+const collisions=[];
+for(const name of testNames) {
+  const content=read("supabase/tests/"+name);
+  const ids=new Set((content.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi)||[])
+    .map(v=>v.toLowerCase()));
+  for(const id of ids) {
+    if(owners.has(id)) collisions.push(id+" in "+owners.get(id)+" and "+name);
+    else owners.set(id,name);
+  }
+}
+for(const collision of collisions)console.error("DUPLICATE UUID "+collision);
+check(testNames.length>=14 && collisions.length===0,
+  testNames.length+" DB test files: fixed UUID namespace separation");
+
 for(const path of migrations) {
   const sql=read(path);
   check(/^\s*begin\s*;/im.test(sql)&&/^\s*commit\s*;/im.test(sql),path+": transaction boundary");

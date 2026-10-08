@@ -16,7 +16,7 @@ insert into public.seasons (
   ends_at,
   status
 ) values (
-  '61000000-0000-0000-0000-000000000001',
+  '6e000000-0000-0000-0000-000000000001',
   'rollover-boundary-old',
   'Rollover Boundary Old',
   '2026-09-30 15:00:00+00'::timestamptz,
@@ -135,7 +135,7 @@ select is(
 select results_eq(
   $$select count(*) from public.audit_logs
     where action = 'season.closed'
-      and entity_id = '61000000-0000-0000-0000-000000000001'$$,
+      and entity_id = '6e000000-0000-0000-0000-000000000001'$$,
   array[1::bigint],
   'season close audit event is written once'
 );
@@ -158,7 +158,7 @@ select lives_ok(
 select results_eq(
   'select count(*) from public.audit_logs
     where action = ''season.closed''
-      and entity_id = ''61000000-0000-0000-0000-000000000001''',
+      and entity_id = ''6e000000-0000-0000-0000-000000000001''',
   array[1::bigint],
   'idempotent rollover does not duplicate season.closed'
 );
