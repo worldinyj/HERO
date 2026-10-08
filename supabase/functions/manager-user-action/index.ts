@@ -2,6 +2,7 @@ import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -60,7 +61,8 @@ async function loadPendingInvite(
     .eq("id", invitationId)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) throw error;
+  if (!data) {
     throw new Error("invitation_not_found");
   }
 
@@ -303,26 +305,7 @@ Deno.serve(async (req) => {
         return json(req, { error: "unknown_action" }, 400);
     }
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status =
-      message === "unauthorized"
-        ? 401
-        : [
-            "manager_or_admin_required",
-            "plant_manager_required",
-            "admin_invitation_scope_violation",
-            "manager_scope_violation",
-          ].includes(message)
-          ? 403
-          : ["invitation_not_found", "player_not_found"].includes(message)
-            ? 404
-            : [
-                "invitation_already_accepted",
-                "invitation_already_canceled",
-              ].includes(message)
-              ? 409
-              : 500;
-
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });

@@ -1,6 +1,7 @@
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -115,8 +116,7 @@ Deno.serve(async (req) => {
       plantDisplayName: issued.plantDisplayName,
     }, 201);
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status = message === "unauthorized" ? 401 : 500;
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });
