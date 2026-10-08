@@ -355,7 +355,12 @@ export function CompetitiveGamePage({
           status: "submitted",
           evaluation: serverEvaluation(result.data),
         });
-        await clearCompetitiveSession(userId, scenarioId);
+        // A local cleanup error cannot retract a verified DB commit.
+        try {
+          await clearCompetitiveSession(userId, scenarioId);
+        } catch {
+          // Preserve the confirmed result; stale storage is reconciled later.
+        }
         return;
       }
 
@@ -641,7 +646,9 @@ export function CompetitiveGamePage({
 
             {submission.status === "queued" ? (
               <div className="offline-banner" role="status">
-                제출 대기 중 · 연결이 복구되면 자동으로 다시 전송합니다.
+                {submission.reason === "plant_inactive"
+                  ? "발전소 운영 중지로 제출이 보류됐습니다. 행동 기록은 이 기기의 대기 저장소에 보관됐으며, 운영이 재개되면 다시 제출할 수 있습니다."
+                  : "제출 대기 중 · 인터넷 연결이 복구되면 재전송을 시도합니다."}
               </div>
             ) : null}
 

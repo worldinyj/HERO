@@ -7,6 +7,9 @@ export function isConfirmedSubmissionResponse(value: unknown, sessionId: string)
     row.evaluation !== null &&
     typeof row.evaluation === "object" &&
     !Array.isArray(row.evaluation) &&
+    typeof (row.evaluation as Record<string, unknown>).ending === "string" &&
+    typeof (row.evaluation as Record<string, unknown>).hpPoint === "number" &&
+    Number.isFinite((row.evaluation as Record<string, number>).hpPoint) &&
     !Object.hasOwn(row, "error");
 }
 

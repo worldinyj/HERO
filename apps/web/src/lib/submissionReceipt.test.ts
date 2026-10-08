@@ -3,7 +3,7 @@ import { isConfirmedSubmissionResponse, submissionServerErrorCode, shouldRetryQu
 
 const SESSION = "f1000000-0000-4000-8000-000000000001";
 const receipt = {
-  sessionId: SESSION, alreadyCompleted: false, evaluation: { hpPoint: 75 },
+  sessionId: SESSION, alreadyCompleted: false, evaluation: { ending: "safe_complete", hpPoint: 75 },
 };
 
 describe("server session completion receipts", () => {
@@ -19,6 +19,9 @@ describe("server session completion receipts", () => {
     expect(isConfirmedSubmissionResponse({ ...receipt, sessionId: "wrong" }, SESSION)).toBe(false);
     expect(isConfirmedSubmissionResponse({ ...receipt, alreadyCompleted: undefined }, SESSION)).toBe(false);
     expect(isConfirmedSubmissionResponse({ ...receipt, evaluation: null }, SESSION)).toBe(false);
+    expect(isConfirmedSubmissionResponse({ ...receipt, evaluation: {} }, SESSION)).toBe(false);
+    expect(isConfirmedSubmissionResponse({ ...receipt, evaluation: { hpPoint: 1 } }, SESSION)).toBe(false);
+    expect(isConfirmedSubmissionResponse({ ...receipt, evaluation: { ending: "safe_stop", hpPoint: Number.NaN } }, SESSION)).toBe(false);
     expect(isConfirmedSubmissionResponse({ ...receipt, evaluation: [] }, SESSION)).toBe(false);
     expect(isConfirmedSubmissionResponse({ ...receipt, error: "internal_error" }, SESSION)).toBe(false);
   });
