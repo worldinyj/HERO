@@ -8,6 +8,7 @@
  */
 import { randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
+import { createServer } from "node:net";
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -144,6 +145,19 @@ async function checkEdge() {
   console.log("fixture_seed=NOT_RUN requests_write=NONE");
 }
 
+async function assertWebPortAvailable() {
+  // Reject a running Vite server before fixture seeding. Never reuse a
+  // browser server with unknown Supabase targets.
+  await new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once("error", () => reject(Error("vite_port_4173_unavailable")));
+    server.listen(4173, "127.0.0.1", () => {
+      server.close((error) => error
+        ? reject(Error("vite_port_4173_close_failed")) : resolve());
+    });
+  });
+}
+
 async function main() {
   const parsed = e2eArgsVerdict(process.argv.slice(2));
   if (!parsed.ok) throw Error(parsed.reason);
@@ -151,6 +165,7 @@ async function main() {
   await checkEdge();
   if (!parsed.run) return;
   assertGitAndFreshQa();
+  await assertWebPortAvailable();
   const passwords = {
     a: "hero-e2e-" + randomBytes(24).toString("hex"),
     b: "hero-e2e-" + randomBytes(24).toString("hex"),

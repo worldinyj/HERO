@@ -408,3 +408,14 @@ test("E2E Auth IDs use UUID v4 and admin returns the exact requested identity", 
   assert.ok(source.indexOf("for (const id of [") <
     source.indexOf("await assertFreshLocalE2eNamespace"));
 });
+
+test("Full mobile run checks for busy Vite port before any fixture creation", () => {
+  const runner = readFileSync(new URL("./hero-mobile-e2e.mjs",
+    import.meta.url), "utf8");
+  const before = runner.indexOf("await assertWebPortAvailable();");
+  const seed = runner.indexOf("command(\"pnpm\", [\"e2e:setup\"]");
+  assert.ok(before > 0);
+  assert.ok(seed > before);
+  assert.ok(runner.includes('server.listen(4173, "127.0.0.1"'));
+  assert.ok(runner.includes("vite_port_4173_unavailable"));
+});

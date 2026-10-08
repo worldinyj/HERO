@@ -4,7 +4,7 @@
 
 ## 문제
 
-`e2e/setup-local.ts`는 전달된 `SUPABASE_URL`/`API_URL`에 대해 service-role key로 Auth 유저 13개, 발전소, 초대, 프로필, 시나리오, 시즌 fixture를 생성한다. 이 스크립트에는 원격 DB URL 거부 조건이 없었다. 기본 QA는 현재 이 경로를 호출하지 않지만 전체 모바일 E2E 준비 단계에서 실수로 원격 DB를 변경할 위험이 있었다.
+`e2e/setup-local.ts`는 전달된 `SUPABASE_URL`/`API_URL`에 대해 service-role key로 Auth 유저 11개, 발전소, 초대, 프로필, 시나리오, 시즌 fixture를 생성한다. 이 스크립트에는 원격 DB URL 거부 조건이 없었다. 기본 QA는 현재 이 경로를 호출하지 않지만 전체 모바일 E2E 준비 단계에서 실수로 원격 DB를 변경할 위험이 있었다.
 
 `.github/workflows/e2e.yml`은 이전에 실패할 때 `/tmp/hero-supabase.json`을 artifact에 포함하거나 환경 값 누락 시 `/tmp/hero-supabase.env` 내용을 CI 로그로 출력할 수 있었다. Supabase status 출력에는 service-role key가 포함된다.
 
