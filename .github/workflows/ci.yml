@@ -24,6 +24,9 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+
+      - name: Check batch SQL and RPC static contracts (not pgTAP)
+        run: pnpm check:batch-db-contracts
       - run: pnpm validate:scenario
       - name: Validate scenario drafts
         run: pnpm validate:scenario scenarios/drafts

@@ -48,11 +48,22 @@
 - 신규 추가 DB 검사 집계: Migration 016 43 + 017 21 + 018 27 + 019 27 + 020 30 + 021 33 + 022 37 = **218개 assertion 소스 작성, NOT RUN**. `docs/21_ATOMIC_NICKNAME_FORCE_RESET_VALIDATION.md`, `docs/22_ATOMIC_NICKNAME_SELF_CHANGE_VALIDATION.md` 참조.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
+## 3.1 오프라인 배치 DB 계약 사전검사
+
+- `node scripts/check-batch-db-contracts.mjs` 또는 `pnpm check:batch-db-contracts` 명령 추가. **Node 20 이상, 외부 의존성·DB/네트워크·GitHub Actions 사용 없음**.
+- Migration 016~022 순서/트랜잭션 선언, 서비스 역할 한정 RPC 6종의 선언·Edge 연결, 기존 pgTAP 파일 9종의 선언 218개와 `plan()` 일치, 테스트 트랜잭션 `ROLLBACK` 표기를 점검.
+- 2026-10-08 GitHub 브랜치 실제 파일 19개를 독립 정적 비교한 결과 **19개 파일/218개 선언/6개 RPC 연결 확인, 불일치 0**. 새 명령 자체의 Node 실행 및 실제 PostgreSQL/pgTAP 수행은 별개이며 현재 **NOT RUN**.
+- `nickname_self_change_atomic.test.sql`에서 기존 열린 시즌을 테스트 트랜잭션 내부에서 임시 `scheduled`로 변경해 테스트 시즌 선택을 격리. 바깥 `ROLLBACK`으로 모든 변화를 복원. 프로덕션 DB 변경 아님.
+- 차후 최종 CI에서 `pnpm check:batch-db-contracts` 한 번 실행하도록 워크플로에 포함했으나, 현재 배치 브랜치에서 워크플로를 시작하지 않음.
+
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사
 
 작업 환경에 Node/pnpm 및 필요한 의존성이 설치되어 있을 때만 실행한다.
 
 ```bash
+# 의존성 설치 없이 즉시 수행 가능한 정적 사전검사
+node scripts/check-batch-db-contracts.mjs
+
 pnpm install --no-frozen-lockfile
 pnpm lint
 pnpm typecheck

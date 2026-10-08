@@ -21,6 +21,12 @@
 - `supabase/tests/nickname_self_change_atomic.test.sql`: **37 assertions 작성, NOT RUN**
 - `apps/web/src/features/profile/ProfilePage.tsx`
 
+## 기존 열린 시즌과 무관한 pgTAP 테스트
+
+- `nickname_self_change_atomic.test.sql`은 기존 월간 열린 시즌이 있어도 트랜잭션 내에서 기존 `open` 상태를 일시적으로 `scheduled`로 전환한 뒤 자체 테스트 시즌을 삽입한다. 테스트 종료의 `ROLLBACK`으로 모든 변경이 복구된다.
+- 실제 DB 실행은 여전히 **NOT RUN**. 계절/월 경계에서 시즌 우선순위 때문에 잘못된 시즌 ID를 집계하던 테스트 설계 위험을 예방한다.
+- `pnpm check:batch-db-contracts`는 파일명/권한 선언/218개 pgTAP 테스트 계획의 **정적 검사**일 뿐 원자성·동시성을 증명하지 않는다.
+
 ## 검증 항목 (모두 NOT RUN)
 
 | 분류 | 확인 |
