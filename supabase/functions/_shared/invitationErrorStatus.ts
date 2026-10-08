@@ -33,6 +33,14 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
 
   invitation_already_accepted: 409,
   invitation_already_canceled: 409,
+
+  nickname_length: 409,
+  nickname_characters: 409,
+  nickname_forbidden: 409,
+  nickname_taken: 409,
+  nickname_change_limit_reached: 409,
+  no_open_season: 409,
+  player_role_required: 403,
 };
 
 export function classifyInvitationError(
