@@ -8,6 +8,7 @@ import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
 import { decideQueueWrite, sameSubmissionBody, type QueueWriteOptions } from "./submissionQueueWritePolicy";
 import { decideConfirmedQueueDeletion } from "./submissionQueueDeletePolicy";
+import { decideForegroundStage } from "./submissionForegroundStagePolicy";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -409,6 +410,94 @@ async function updateAttempt(
   });
 }
 
+type ForegroundPreparation =
+  | { kind: "ready"; record: PendingSessionSubmission }
+  | { kind: "committed"; record: PendingSessionSubmission }
+  | { kind: "blocked" }
+  | { kind: "conflict" };
+
+/**
+ * A new online submission must be durable BEFORE its first server request.
+ * Check existing evidence and conditionally store the pending row within
+ * the same IndexedDB readwrite transaction.
+ */
+async function stageForegroundSubmission(
+  userId: string,
+  input: QueueableSessionSubmission,
+): Promise<ForegroundPreparation> {
+  const db = await openHeroOfflineDb();
+  if (!db) throw new Error("submission_queue_unavailable");
+  const now = new Date().toISOString();
+  const newRecord: PendingSessionSubmission = {
+    formatVersion: 1,
+    sessionId: input.body.sessionId,
+    userId,
+    scenarioId: input.scenarioId,
+    body: input.body,
+    state: "pending",
+    queuedAt: now,
+    updatedAt: now,
+    attempts: 0,
+    lastAttemptAt: null,
+    lastError: null,
+  };
+  try {
+    return await new Promise<ForegroundPreparation>((resolve, reject) => {
+      const tx = db.transaction(SUBMISSION_QUEUE_STORE, "readwrite");
+      const store = tx.objectStore(SUBMISSION_QUEUE_STORE);
+      let result: ForegroundPreparation | null = null;
+      let policyError: Error | null = null;
+      const request = store.get(newRecord.sessionId);
+      request.onsuccess = () => {
+        const existing = request.result as PendingSessionSubmission | undefined;
+        const decision = decideForegroundStage(existing, newRecord);
+        if (decision === "owner_conflict") {
+          policyError = new Error("submission_queue_owner_conflict");
+          tx.abort();
+          return;
+        }
+        if (decision === "payload_conflict") {
+          result = { kind: "conflict" };
+          return;
+        }
+        if (decision === "committed") {
+          result = { kind: "committed", record: existing! };
+          return;
+        }
+        if (decision === "blocked") {
+          result = { kind: "blocked" };
+          return;
+        }
+        if (decision === "reuse_pending") {
+          result = { kind: "ready", record: existing! };
+          return;
+        }
+        try {
+          store.put(newRecord);
+          result = { kind: "ready", record: newRecord };
+        } catch (error) {
+          policyError = error instanceof Error
+            ? error : new Error("submission_queue_write_failed");
+          tx.abort();
+        }
+      };
+      request.onerror = () => {
+        policyError = request.error ?? new Error("submission_queue_read_failed");
+      };
+      tx.oncomplete = () => {
+        if (result) resolve(result);
+        else reject(policyError ?? new Error("submission_queue_stage_incomplete"));
+      };
+      tx.onerror = () =>
+        reject(policyError ?? tx.error ?? new Error("submission_queue_stage_failed"));
+      tx.onabort = () =>
+        reject(policyError ?? tx.error ?? new Error("submission_queue_stage_aborted"));
+    });
+  } finally {
+    db.close();
+  }
+}
+
 export async function submitSessionWithQueue(
   input: QueueableSessionSubmission,
 ): Promise<SubmissionResult> {
@@ -469,42 +558,61 @@ export async function submitSessionWithQueue(
       return { status: "queued", reason: "offline" };
     }
 
-    // If an offline submission is already pending, replay exactly those
-    // persisted choices rather than reconstructing current in-memory actions.
-    const authoritativeBody = existing?.state === "pending"
-      ? existing.body : input.body;
-    const attempt = await invokeSubmission(authoritativeBody);
-
-    if (attempt.ok) {
-      // The server's completion receipt is authoritative. A broken IDB
-      // delete must not report the committed session as rejected.
+    // The list above is advisory. Recheck the CURRENT row in one write
+    // transaction, and durably stage the first online request before sending.
+    const preparation = await stageForegroundSubmission(userId, input);
+    if (preparation.kind === "conflict") {
+      return {
+        status: "rejected",
+        reason: "submission_queue_payload_conflict",
+        httpStatus: null,
+      };
+    }
+    if (preparation.kind === "blocked") {
+      return {
+        status: "rejected",
+        reason: "submission_blocked_requires_manual_retry",
+        httpStatus: null,
+      };
+    }
+    if (preparation.kind === "committed") {
+      if (!hasVerifiedCommittedReceipt(preparation.record)) {
+        return { status: "queued", reason: "confirmed_cleanup_pending" };
+      }
       const { cleanupPending } = await cleanupConfirmedLocalSession(
-        userId, input.scenarioId, input.body.sessionId,
-        undefined, attempt.data, input,
+        userId, preparation.record.scenarioId, preparation.record.sessionId,
+        preparation.record,
+      );
+      return {
+        status: "submitted",
+        data: preparation.record.completionReceipt,
+        cleanupPending,
+      };
+    }
+    // User credentials can change while waiting for IndexedDB.
+    if ((await currentUserId()) !== userId) {
+      throw new Error("authenticated_session_changed");
+    }
+    const attempt = await invokeSubmission(preparation.record.body);
+    if (attempt.ok) {
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, preparation.record.scenarioId, preparation.record.sessionId,
+        preparation.record, attempt.data,
       );
       return { status: "submitted", data: attempt.data, cleanupPending };
     }
 
     const reason = attempt.message ?? "submit_session_failed";
-
     if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
-      await enqueueForUser(userId, input, reason);
+      await updateAttempt(preparation.record, attempt, "pending");
       return { status: "queued", reason };
     }
 
-    // If an earlier offline copy exists, a permanent rejection must stop
-    // automatic retries without silently discarding the stored actions.
-    const rejectedQueuedRow = (await listQueuedSubmissions(userId)).find(
-      (item) => item.sessionId === input.body.sessionId,
-    );
-    if (rejectedQueuedRow) {
-      await updateAttempt(rejectedQueuedRow, attempt, "blocked");
-    }
-
+    // Permanent server refusal requires an explicit future manual retry.
+    await updateAttempt(preparation.record, attempt, "blocked");
     return {
       status: "rejected",
-      reason: rejectedQueuedRow
-        ? "submission_blocked_requires_manual_retry" : reason,
+      reason: "submission_blocked_requires_manual_retry",
       httpStatus: attempt.httpStatus,
     };
   });
