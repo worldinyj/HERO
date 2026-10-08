@@ -176,6 +176,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     void loadNicknameStatus().catch((cause) => {
+      setNicknameStatus(null);
       setNicknameMessage(
         cause instanceof Error
           ? cause.message
@@ -425,7 +426,9 @@ export function ProfilePage() {
               <h3>리더보드 닉네임</h3>
             </div>
             <span className="count-badge">
-              {nicknameStatus?.resetRequired
+              {nicknameStatus === null
+                ? "정책 확인 필요"
+                : nicknameStatus.resetRequired
                 ? "재설정 필요"
                 : nicknameStatus?.canChange
                   ? "변경 가능"
@@ -454,19 +457,19 @@ export function ProfilePage() {
                 minLength={2}
                 maxLength={12}
                 placeholder="2~12자 · 한글/영문/숫자"
-                disabled={nicknameStatus?.canChange === false || nicknameOutcomeUnknown}
+                disabled={nicknameStatus?.canChange !== true || nicknameOutcomeUnknown}
               />
             </label>
             <span
               className={
-                nicknameCheck?.available
+                matchesCheckedNickname(nicknameCheck, newNickname)
                   ? "nickname-check nickname-check--ok"
                   : "nickname-check"
               }
             >
               {nicknameCheck?.checking
                 ? "사용 가능 여부 확인 중…"
-                : nicknameCheck?.available
+                : matchesCheckedNickname(nicknameCheck, newNickname)
                   ? "사용 가능한 닉네임입니다."
                   : nicknameCheck?.error
                     ? NICKNAME_ERROR_LABEL[nicknameCheck.error] ??

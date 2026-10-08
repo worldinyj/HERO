@@ -12,6 +12,7 @@ export function isValidNicknameStatus(value: unknown): boolean {
     typeof value.changedThisSeason === "boolean" &&
     (season === null || typeof season === "string") &&
     (value.nickname === undefined || typeof value.nickname === "string") &&
+    (season !== null || value.canChange === false) &&
     (season === null || (typeof value.nickname === "string" && value.nickname.length > 0))
   );
 }

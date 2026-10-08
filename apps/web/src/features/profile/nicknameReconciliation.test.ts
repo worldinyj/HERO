@@ -33,6 +33,9 @@ describe("nickname reconciliation response contracts", () => {
     expect(canReconcileNickname(summary, { ...status, nickname: "STALE" })).toBe(false);
     expect(isValidNicknameStatus({ ...status, canChange: "false" })).toBe(false);
     expect(isValidNicknameStatus({ ...status, nickname: undefined })).toBe(false);
+    expect(isValidNicknameStatus({
+      canChange: true, resetRequired: false, changedThisSeason: false, seasonKey: null,
+    })).toBe(false);
     expect(canReconcileNickname({ ...summary, profile: { nickname: "N", role: "admin" } }, status)).toBe(false);
   });
 
