@@ -7,8 +7,8 @@ const tests = [
 ["leaderboard_projection_lifecycle",23],["leaderboard_plant_identity",12],
 ["my_record_summary",8],["invitation_atomic_reissue",21],
 ["invitation_atomic_cancel",27],["invitation_atomic_creation",27],
-["player_status_atomic",30],["nickname_force_reset_atomic",33],
-["nickname_self_change_atomic",37],["admin_plant_atomic",34],
+["player_status_atomic",32],["nickname_force_reset_atomic",33],
+["nickname_self_change_atomic",39],["admin_plant_atomic",34],
 ["plant_deactivation_epoch",39]
 ];
 const migrations = ["leaderboard_public_projection","atomic_invitation_reissue",
@@ -36,7 +36,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===291,"pgTAP declarations total 291 (NOT executed)");
+check(total===295,"pgTAP declarations total 295 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also

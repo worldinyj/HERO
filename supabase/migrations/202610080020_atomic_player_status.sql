@@ -32,6 +32,15 @@ begin
     raise exception 'plant_manager_required';
   end if;
 
+  -- Even an idempotent response must not disclose/manage Player state while
+  -- the plant is suspended. Lock this plant before checking target profile.
+  perform 1 from public.plants
+  where id = v_actor.plant_id and is_active = true
+  for share;
+  if not found then
+    raise exception 'plant_inactive';
+  end if;
+
   select * into v_target
   from public.profiles
   where id = p_profile_id

@@ -30,6 +30,15 @@ begin
     raise exception 'player_role_required';
   end if;
 
+  -- Validate plant status before the same-name early return. Holding a
+  -- shared plant lock serializes this function with Admin suspension.
+  perform 1 from public.plants
+  where id = v_player.plant_id and is_active = true
+  for share;
+  if not found then
+    raise exception 'plant_inactive';
+  end if;
+
   select s.id, s.season_key into v_season_id, v_season_key
   from public.seasons s
   where s.status = 'open'

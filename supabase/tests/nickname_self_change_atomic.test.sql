@@ -1,7 +1,7 @@
 -- Player self-nickname change, seasonal quota and immutable audit commit together.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(39);
 
 insert into auth.users(id,email) values
 ('c1000000-0000-0000-0000-000000000001','self-player-a@hero.test'),
@@ -111,5 +111,15 @@ set local role service_role;
 select lives_ok($$select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','AUDITSUCCESS')$$,'recovery after injected failure succeeds');
 select results_eq($$select count(*) from public.nickname_change_events where user_id='c1000000-0000-0000-0000-000000000006'$$,array[1::bigint],'event created once after recovery');
 select results_eq($$select count(*) from public.audit_logs where entity_id='c1000000-0000-0000-0000-000000000006' and action='nickname.changed'$$,array[1::bigint],'audit created once after recovery');
+-- A suspended plant cannot consume policy checks or return same-name
+-- success through the service RPC. DB guard precedes the idempotent branch.
+update public.plants set is_active=false
+where id='c2000000-0000-0000-0000-000000000001';
+select throws_ok($select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','AUDITSUCCESS')$,
+  'P0001','plant_inactive','suspended plant denies same-name no-op');
+select throws_ok($select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','BLOCKEDNEW')$,
+  'P0001','plant_inactive','suspended plant denies new nickname');
+update public.plants set is_active=true
+where id='c2000000-0000-0000-0000-000000000001';
 select * from finish();
 rollback;

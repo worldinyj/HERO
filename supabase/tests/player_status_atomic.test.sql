@@ -2,7 +2,7 @@
 -- Each fixture and fault-injection trigger is rolled back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(30);
+select plan(32);
 
 insert into auth.users(id,email) values
 ('a1000000-0000-0000-0000-000000000001','status-manager-a@hero.test'),
@@ -80,5 +80,15 @@ set local role service_role;
 select lives_ok($$select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000007',false)$$,'retry after injected fault removed succeeds');
 select results_eq($$select count(*) from public.profiles where id='a1000000-0000-0000-0000-000000000007' and is_active=false$$,array[1::bigint],'later success deactivates target exactly once');
 select results_eq($$select count(*) from public.audit_logs where action='player.deactivated' and entity_id='a1000000-0000-0000-0000-000000000007'$$,array[1::bigint],'later success records exactly one audit');
+-- A suspended plant must block both an idempotent status response
+-- and a real Player state mutation, even with a service-role caller.
+update public.plants set is_active=false
+where id='a2000000-0000-0000-0000-000000000001';
+select throws_ok($select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003',true)$,
+  'P0001','plant_inactive','suspended plant blocks status no-op');
+select throws_ok($select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003',false)$,
+  'P0001','plant_inactive','suspended plant blocks status mutation');
+update public.plants set is_active=true
+where id='a2000000-0000-0000-0000-000000000001';
 select * from finish();
 rollback;
