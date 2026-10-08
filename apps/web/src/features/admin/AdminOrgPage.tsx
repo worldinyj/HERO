@@ -620,7 +620,10 @@ export function AdminOrgPage() {
                 disabled={!canConfirmPlantTransition(
                   pendingPlantChange, plantCodeConfirmation, plantImpactAcknowledged
                 ) || creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
-                onClick={() => void handleTogglePlant(pendingPlantChange)}>
+                onClick={() => {
+                  const plant = pendingPlantChange;
+                  if (plant) void handleTogglePlant(plant);
+                }}>
                 {pendingPlantChange.is_active ? "운영 중지 확정" : "재활성화 확정"}
               </button>
             </div>
