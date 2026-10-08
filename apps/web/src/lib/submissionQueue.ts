@@ -3,6 +3,7 @@ import { openHeroOfflineDb, SUBMISSION_QUEUE_STORE } from "./offlineDb";
 import { getSupabase } from "./supabase";
 import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./submissionReceipt";
 import { serializeSubmissionForSession } from "./submissionSerial";
+import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -35,7 +36,7 @@ export interface PendingSessionSubmission extends QueueableSessionSubmission {
 }
 
 export type SubmissionResult =
-  | { status: "submitted"; data: unknown }
+  | { status: "submitted"; data: unknown; cleanupPending: boolean }
   | { status: "queued"; reason: string }
   | { status: "rejected"; reason: string; httpStatus: number | null };
 
@@ -299,8 +300,12 @@ export async function submitSessionWithQueue(
     const attempt = await invokeSubmission(input.body);
 
     if (attempt.ok) {
-      await removeQueuedSubmission(input.body.sessionId);
-      return { status: "submitted", data: attempt.data };
+      // The server's completion receipt is authoritative. A broken IDB
+      // delete must not report the committed session as rejected.
+      const { cleanupPending } = await cleanupAfterConfirmedCommit(
+        () => removeQueuedSubmission(input.body.sessionId),
+      );
+      return { status: "submitted", data: attempt.data, cleanupPending };
     }
 
     const reason = attempt.message ?? "submit_session_failed";
@@ -363,7 +368,11 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
 
         const attempt = await invokeSubmission(item.body);
         if (attempt.ok) {
-          await removeQueuedSubmission(item.sessionId);
+          // Even if deleting this local row fails, its server commit is
+          // confirmed. A later replay is safe only via DB idempotence.
+          await cleanupAfterConfirmedCommit(
+            () => removeQueuedSubmission(item.sessionId),
+          );
           return "submitted";
         }
 

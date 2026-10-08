@@ -38,7 +38,7 @@ type ReviewStage = "ending" | "reflection" | "timeline" | "review" | "incident";
 type SubmissionState =
   | { status: "idle" }
   | { status: "submitting" }
-  | { status: "submitted"; evaluation: Evaluation | null }
+  | { status: "submitted"; evaluation: Evaluation | null; cleanupPending: boolean }
   | { status: "queued"; reason: string }
   | { status: "rejected"; reason: string };
 
@@ -116,6 +116,7 @@ export function CompetitiveGamePage({
   const [submission, setSubmission] = useState<SubmissionState>({
     status: "idle",
   });
+  const submissionInFlightRef = useRef<string | null>(null);
   const [replayStarting, setReplayStarting] = useState(false);
   const [replayError, setReplayError] = useState<string | null>(null);
 
@@ -336,6 +337,10 @@ export function CompetitiveGamePage({
   async function submitFinishedGame() {
     if (!scenario || !server || !game || !userId) return;
     if (!isFinished(scenario, game)) return;
+    // A second click/reconnect event must not downgrade a confirmed result.
+    if (submissionInFlightRef.current === server.sessionId ||
+        submission.status === "submitted") return;
+    submissionInFlightRef.current = server.sessionId;
 
     setSubmission({ status: "submitting" });
 
@@ -354,12 +359,17 @@ export function CompetitiveGamePage({
         setSubmission({
           status: "submitted",
           evaluation: serverEvaluation(result.data),
+          cleanupPending: result.cleanupPending,
         });
-        // A local cleanup error cannot retract a verified DB commit.
+        // The session is committed even if clearing local replay state fails.
         try {
           await clearCompetitiveSession(userId, scenarioId);
         } catch {
-          // Preserve the confirmed result; stale storage is reconciled later.
+          setSubmission((current) =>
+            current.status === "submitted"
+              ? { ...current, cleanupPending: true }
+              : current,
+          );
         }
         return;
       }
@@ -377,6 +387,10 @@ export function CompetitiveGamePage({
         status: "rejected",
         reason: cause instanceof Error ? cause.message : "submission_queue_failed",
       });
+    } finally {
+      if (submissionInFlightRef.current === server.sessionId) {
+        submissionInFlightRef.current = null;
+      }
     }
   }
 
@@ -641,6 +655,13 @@ export function CompetitiveGamePage({
             {submission.status === "submitted" ? (
               <div className="notice" role="status">
                 서버 검증 완료 · 시즌 기록에 반영되었습니다.
+              </div>
+            ) : null}
+
+            {submission.status === "submitted" && submission.cleanupPending ? (
+              <div className="notice" role="status">
+                서버 제출은 완료되었습니다. 다만 이 기기의 임시 기록 정리가
+                지연되어 기록이 남아 있을 수 있습니다. 다시 제출할 필요는 없습니다.
               </div>
             ) : null}
 
