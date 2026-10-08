@@ -2,6 +2,7 @@ import type { GameLogEntry } from "@hero/engine";
 import { openHeroOfflineDb, SUBMISSION_QUEUE_STORE } from "./offlineDb";
 import { getSupabase } from "./supabase";
 import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./submissionReceipt";
+import { serializeSubmissionForSession } from "./submissionSerial";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -283,65 +284,105 @@ export async function submitSessionWithQueue(
 ): Promise<SubmissionResult> {
   const userId = await currentUserId();
 
-  if (!online()) {
-    await enqueueForUser(userId, input, "offline");
-    return { status: "queued", reason: "offline" };
-  }
+  // The page submit and the background queue must not write the same IDB
+  // record or invoke this session concurrently in the same JS context.
+  return serializeSubmissionForSession(userId, input.body.sessionId, async () => {
+    if ((await currentUserId()) !== userId) {
+      throw new Error("authenticated_session_changed");
+    }
 
-  const attempt = await invokeSubmission(input.body);
+    if (!online()) {
+      await enqueueForUser(userId, input, "offline");
+      return { status: "queued", reason: "offline" };
+    }
 
-  if (attempt.ok) {
-    await removeQueuedSubmission(input.body.sessionId);
-    return { status: "submitted", data: attempt.data };
-  }
+    const attempt = await invokeSubmission(input.body);
 
-  const reason = attempt.message ?? "submit_session_failed";
+    if (attempt.ok) {
+      await removeQueuedSubmission(input.body.sessionId);
+      return { status: "submitted", data: attempt.data };
+    }
 
-  if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
-    await enqueueForUser(userId, input, reason);
-    return { status: "queued", reason };
-  }
+    const reason = attempt.message ?? "submit_session_failed";
 
-  return {
-    status: "rejected",
-    reason,
-    httpStatus: attempt.httpStatus,
-  };
+    if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
+      await enqueueForUser(userId, input, reason);
+      return { status: "queued", reason };
+    }
+
+    // If an earlier offline copy exists, a permanent rejection must stop
+    // automatic retries without silently discarding the stored actions.
+    const existing = (await listQueuedSubmissions(userId)).find(
+      (item) => item.sessionId === input.body.sessionId,
+    );
+    if (existing) await updateAttempt(existing, attempt, "blocked");
+
+    return {
+      status: "rejected",
+      reason,
+      httpStatus: attempt.httpStatus,
+    };
+  });
 }
 
 async function runFlush(userId: string): Promise<SubmissionFlushResult> {
-  if (!online()) {
-    const remaining = (await listQueuedSubmissions(userId)).filter(
-      (item) => item.state === "pending",
-    ).length;
-    return { submitted: 0, blocked: 0, remaining };
-  }
-
-  const items = (await listQueuedSubmissions(userId)).filter(
+  const queued = (await listQueuedSubmissions(userId)).filter(
     (item) => item.state === "pending",
   );
+  if (!online()) {
+    return { submitted: 0, blocked: 0, remaining: queued.length };
+  }
 
   let submitted = 0;
   let blocked = 0;
 
-  for (const item of items) {
+  for (const snapshot of queued) {
     if (!online()) break;
 
-    const attempt = await invokeSubmission(item.body);
+    const outcome = await serializeSubmissionForSession(
+      userId,
+      snapshot.sessionId,
+      async () => {
+        // A queued flush may have waited behind a successful foreground
+        // submission. Re-read after acquiring the session lock rather
+        // than resurrecting its stale snapshot.
+        if (!online()) return "offline";
+        let signedInUserId: string;
+        try {
+          signedInUserId = await currentUserId();
+        } catch {
+          return "auth_unavailable";
+        }
+        if (signedInUserId !== userId) return "auth_unavailable";
 
-    if (attempt.ok) {
-      await removeQueuedSubmission(item.sessionId);
-      submitted += 1;
-      continue;
-    }
+        const item = (await listQueuedSubmissions(userId)).find(
+          (candidate) => candidate.sessionId === snapshot.sessionId &&
+            candidate.state === "pending" && candidate.userId === userId,
+        );
+        if (!item) return "skipped";
 
-    if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
-      await updateAttempt(item, attempt, "pending");
-      break;
-    }
+        const attempt = await invokeSubmission(item.body);
+        if (attempt.ok) {
+          await removeQueuedSubmission(item.sessionId);
+          return "submitted";
+        }
 
-    await updateAttempt(item, attempt, "blocked");
-    blocked += 1;
+        if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
+          await updateAttempt(item, attempt, "pending");
+          return "retryable";
+        }
+
+        await updateAttempt(item, attempt, "blocked");
+        return "blocked";
+      },
+    );
+
+    if (outcome === "submitted") submitted += 1;
+    if (outcome === "blocked") blocked += 1;
+    if (
+      outcome === "retryable" || outcome === "offline" ||
+      outcome === "auth_unavailable"
+    ) break;
   }
 
   const remaining = (await listQueuedSubmissions(userId)).filter(
