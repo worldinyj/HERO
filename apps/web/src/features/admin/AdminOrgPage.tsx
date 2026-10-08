@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
+import { readIssuedInviteLink } from "../manager/inviteResponse";
+import { isValidAdminOrgLists } from "./adminOrgResponse";
 
 interface PlantRow {
   id: string;
@@ -113,21 +115,24 @@ export function AdminOrgPage() {
       if (plantResult.error) throw plantResult.error;
       if (managerResult.error) throw managerResult.error;
       if (inviteResult.error) throw inviteResult.error;
+      if (!isValidAdminOrgLists(plantResult.data, managerResult.data, inviteResult.data)) {
+        throw new Error("admin_org_result_invalid");
+      }
 
-      setPlants((plantResult.data ?? []) as PlantRow[]);
-      setManagers((managerResult.data ?? []) as unknown as ManagerRow[]);
-      setPendingManagerInvites(
-        (inviteResult.data ?? []) as unknown as PendingManagerInviteRow[],
-      );
+      setPlants(plantResult.data as PlantRow[]);
+      setManagers(managerResult.data as unknown as ManagerRow[]);
+      setPendingManagerInvites(inviteResult.data as unknown as PendingManagerInviteRow[]);
 
       if (!invitePlantId) {
-        const firstActive = (plantResult.data ?? []).find((plant) => plant.is_active);
+        const firstActive = plantResult.data.find((plant) => plant.is_active);
         if (firstActive) setInvitePlantId(firstActive.id);
       }
+      return true;
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
       );
+      return false;
     } finally {
       setLoading(false);
     }
@@ -237,8 +242,9 @@ export function AdminOrgPage() {
         throw invokeError;
       }
 
-      const result = data as InviteResult | null;
-      if (!result?.inviteUrl || !result.invitationId) {
+      const result = readIssuedInviteLink(data);
+      if (!result) {
+        // HTTP 2xx with an invalid one-time link may follow a committed INSERT.
         throw new InviteCreationOutcomeUnknownError();
       }
 
