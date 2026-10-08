@@ -25,6 +25,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
 
+      - name: Check source TASKLIST and progress audit coverage (offline)
+        run: pnpm check:tasklist-progress
+
       - name: Check batch SQL and RPC static contracts (not pgTAP)
         run: pnpm check:batch-db-contracts
       - run: pnpm validate:scenario
