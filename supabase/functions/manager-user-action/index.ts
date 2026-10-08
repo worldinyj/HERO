@@ -91,37 +91,37 @@ async function cancelInvite(
   operator: OperatorContext,
   invitationId: string,
 ) {
-  const invitation = await loadPendingInvite(
-    operator.admin,
-    operator,
-    invitationId,
-  );
-  const canceledAt = new Date().toISOString();
-
-  const { error } = await operator.admin
-    .from("invitations")
-    .update({ canceled_at: canceledAt })
-    .eq("id", invitation.id)
-    .is("accepted_at", null)
-    .is("canceled_at", null);
-
-  if (error) throw error;
-
-  await writeAuditLog(operator.admin, {
-    actorUserId: operator.userId,
-    plantId: invitation.plant_id,
-    action: "invitation.canceled",
-    entityType: "invitation",
-    entityId: invitation.id,
-    metadata: {
-      target_role: invitation.target_role,
-      invitee_name: invitation.invitee_name,
-      job_role: invitation.job_role,
-      operator_role: operator.role,
+  // The DB function rechecks role/plant, locks the invitation against
+  // acceptance/reissue, and writes the cancellation and audit atomically.
+  const { data, error } = await operator.admin.rpc(
+    "cancel_invitation_atomic",
+    {
+      p_invitation_id: invitationId,
+      p_actor_user_id: operator.userId,
     },
-  });
+  );
+  if (error) throw new Error(error.message);
 
-  return { canceled: true, invitationId: invitation.id, canceledAt };
+  const result = data as {
+    canceled?: boolean;
+    invitationId?: string;
+    canceledAt?: string;
+  } | null;
+
+  if (
+    result?.canceled !== true ||
+    result.invitationId !== invitationId ||
+    !result.canceledAt
+  ) {
+    // A malformed HTTP response cannot prove the request was rolled back.
+    throw new Error("cancel_result_unknown");
+  }
+
+  return {
+    canceled: true,
+    invitationId: result.invitationId,
+    canceledAt: result.canceledAt,
+  };
 }
 
 async function reissueInvite(
