@@ -151,7 +151,7 @@ export async function clearCompetitiveSessionIfMatches(
   completedSessionId: string,
 ): Promise<boolean> {
   const db = await openHeroOfflineDb();
-  if (!db) return false;
+  if (!db) throw new Error("competitive_session_cleanup_unavailable");
   try {
     return await new Promise<boolean>((resolve, reject) => {
       const transaction = db.transaction(COMPETITIVE_SESSION_STORE, "readwrite");

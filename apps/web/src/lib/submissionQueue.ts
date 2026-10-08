@@ -5,6 +5,7 @@ import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./subm
 import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
+import { markQueueCommitted, queueStateNeedsNetwork } from "./submissionQueueState";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -28,7 +29,7 @@ export interface PendingSessionSubmission extends QueueableSessionSubmission {
   formatVersion: 1;
   sessionId: string;
   userId: string;
-  state: "pending" | "blocked";
+  state: "pending" | "blocked" | "committed";
   queuedAt: string;
   updatedAt: string;
   attempts: number;
@@ -221,7 +222,7 @@ export async function removeQueuedSubmission(
   sessionId: string,
 ): Promise<void> {
   const db = await openHeroOfflineDb();
-  if (!db) return;
+  if (!db) throw new Error("submission_queue_unavailable");
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -247,16 +248,28 @@ async function cleanupConfirmedLocalSession(
   userId: string,
   scenarioId: string,
   sessionId: string,
+  knownItem?: PendingSessionSubmission,
 ): Promise<{ cleanupPending: boolean }> {
-  const queued = await cleanupAfterConfirmedCommit(
-    () => removeQueuedSubmission(sessionId),
-  );
-  const cached = await cleanupAfterConfirmedCommit(
-    async () => {
-      await clearCompetitiveSessionIfMatches(userId, scenarioId, sessionId);
-    },
-  );
-  return { cleanupPending: queued.cleanupPending || cached.cleanupPending };
+  // Persist a server-confirmed marker BEFORE any local deletion. If deletion
+  // aborts, it is never safe to send this completed row over the network.
+  await cleanupAfterConfirmedCommit(async () => {
+    const item = knownItem ?? (await listQueuedSubmissions(userId)).find(
+      (candidate) => candidate.sessionId === sessionId &&
+        candidate.userId === userId,
+    );
+    if (item && item.state !== "committed") {
+      await writeQueueRecord(markQueueCommitted(item, new Date().toISOString()));
+    }
+  });
+
+  // Delete the queue marker LAST so a failed cache cleanup is recoverable.
+  const cached = await cleanupAfterConfirmedCommit(async () => {
+    await clearCompetitiveSessionIfMatches(userId, scenarioId, sessionId);
+  });
+  const queued = cached.cleanupPending
+    ? { cleanupPending: true }
+    : await cleanupAfterConfirmedCommit(() => removeQueuedSubmission(sessionId));
+  return { cleanupPending: cached.cleanupPending || queued.cleanupPending };
 }
 
 async function enqueueForUser(
@@ -352,27 +365,23 @@ export async function submitSessionWithQueue(
 }
 
 async function runFlush(userId: string): Promise<SubmissionFlushResult> {
-  const queued = (await listQueuedSubmissions(userId)).filter(
-    (item) => item.state === "pending",
-  );
-  if (!online()) {
-    return { submitted: 0, blocked: 0, remaining: queued.length };
-  }
-
+  // Committed entries require local cleanup ONLY, even without internet.
+  const snapshots = (await listQueuedSubmissions(userId))
+    .filter((item) => item.state === "committed" || item.state === "pending")
+    .sort((a, b) =>
+      (a.state === "committed" ? 0 : 1) -
+      (b.state === "committed" ? 0 : 1) ||
+      a.queuedAt.localeCompare(b.queuedAt)
+    );
   let submitted = 0;
   let blocked = 0;
 
-  for (const snapshot of queued) {
-    if (!online()) break;
-
+  for (const snapshot of snapshots) {
+    if (!online() && queueStateNeedsNetwork(snapshot.state)) break;
     const outcome = await serializeSubmissionForSession(
       userId,
       snapshot.sessionId,
       async () => {
-        // A queued flush may have waited behind a successful foreground
-        // submission. Re-read after acquiring the session lock rather
-        // than resurrecting its stale snapshot.
-        if (!online()) return "offline";
         let signedInUserId: string;
         try {
           signedInUserId = await currentUserId();
@@ -383,30 +392,33 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
 
         const item = (await listQueuedSubmissions(userId)).find(
           (candidate) => candidate.sessionId === snapshot.sessionId &&
-            candidate.state === "pending" && candidate.userId === userId,
+            candidate.userId === userId,
         );
-        if (!item) return "skipped";
+        if (!item || item.state === "blocked") return "skipped";
 
+        if (item.state === "committed") {
+          await cleanupConfirmedLocalSession(
+            userId, item.scenarioId, item.sessionId, item,
+          );
+          return "cleaned";
+        }
+
+        if (!online()) return "offline";
         const attempt = await invokeSubmission(item.body);
         if (attempt.ok) {
-          // Even if deleting this local row fails, its server commit is
-          // confirmed. A later replay is safe only via DB idempotence.
           await cleanupConfirmedLocalSession(
-            userId, item.scenarioId, item.sessionId,
+            userId, item.scenarioId, item.sessionId, item,
           );
           return "submitted";
         }
-
         if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
           await updateAttempt(item, attempt, "pending");
           return "retryable";
         }
-
         await updateAttempt(item, attempt, "blocked");
         return "blocked";
       },
     );
-
     if (outcome === "submitted") submitted += 1;
     if (outcome === "blocked") blocked += 1;
     if (
@@ -416,9 +428,8 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
   }
 
   const remaining = (await listQueuedSubmissions(userId)).filter(
-    (item) => item.state === "pending",
+    (item) => queueStateNeedsNetwork(item.state),
   ).length;
-
   return { submitted, blocked, remaining };
 }
 

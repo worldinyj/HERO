@@ -8,6 +8,7 @@ const fixture = vi.hoisted(() => ({
   invokes: 0,
   games: [] as Array<Record<string, unknown>>,
   failGameDelete: false,
+  failQueuePut: false,
 }));
 
 vi.mock("./supabase", () => ({
@@ -70,6 +71,14 @@ vi.mock("./offlineDb", () => ({
             }
             queueMicrotask(() => transaction.oncomplete?.());
           },
+          put: (row: PendingSessionSubmission) => {
+            if (fixture.failQueuePut) throw new Error("simulated_put_abort");
+            fixture.records = [
+              ...fixture.records.filter((item) => item.sessionId !== row.sessionId),
+              row,
+            ];
+            queueMicrotask(() => transaction.oncomplete?.());
+          },
           index: (_name: string) => ({
             getAll: (userId: string) => {
               const request = {
@@ -121,6 +130,7 @@ beforeEach(() => {
   fixture.invokes = 0;
   fixture.games = [];
   fixture.failGameDelete = false;
+  fixture.failQueuePut = false;
 });
 
 describe("server-confirmed submissions with failed local deletion", () => {
@@ -142,8 +152,9 @@ describe("server-confirmed submissions with failed local deletion", () => {
     fixture.records = [queued()];
     fixture.failDelete = true;
     await expect(flushQueuedSubmissions("user-one"))
-      .resolves.toEqual({ submitted: 1, blocked: 0, remaining: 1 });
+      .resolves.toEqual({ submitted: 1, blocked: 0, remaining: 0 });
     expect(fixture.records).toHaveLength(1);
+    expect(fixture.records[0].state).toBe("committed");
     expect(fixture.invokes).toBe(1);
   });
 });
@@ -185,5 +196,60 @@ describe("conditional cleanup of a confirmed competitive session", () => {
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
     expect(fixture.games).toHaveLength(1);
+  });
+});
+
+describe("committed queue recovery", () => {
+  it("removes committed tombstone without a second API invocation", async () => {
+    fixture.records = [queued()];
+    fixture.failDelete = true;
+    await flushQueuedSubmissions("user-one");
+    expect(fixture.records[0]?.state).toBe("committed");
+    const oldCount = fixture.invokes;
+    fixture.failDelete = false;
+    await expect(flushQueuedSubmissions("user-one"))
+      .resolves.toEqual({ submitted: 0, blocked: 0, remaining: 0 });
+    expect(fixture.records).toEqual([]);
+    expect(fixture.invokes).toBe(oldCount);
+  });
+
+  it("cleans a committed row while offline without network access", async () => {
+    fixture.records = [{ ...queued(), state: "committed" }];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      await expect(flushQueuedSubmissions("user-one"))
+        .resolves.toEqual({ submitted: 0, blocked: 0, remaining: 0 });
+      expect(fixture.records).toEqual([]);
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("keeps a committed row if competitive cache cleanup fails", async () => {
+    fixture.records = [queued()];
+    fixture.games = [{
+      formatVersion: 1, key: "user-one:scenario-one",
+      userId: "user-one", scenarioId: "scenario-one",
+      server: { sessionId },
+    }];
+    fixture.failGameDelete = true;
+    await flushQueuedSubmissions("user-one");
+    expect(fixture.records[0]?.state).toBe("committed");
+    const oldCount = fixture.invokes;
+    fixture.failGameDelete = false;
+    await flushQueuedSubmissions("user-one");
+    expect(fixture.games).toEqual([]);
+    expect(fixture.records).toEqual([]);
+    expect(fixture.invokes).toBe(oldCount);
+  });
+
+  it("retains pending rows after a change in signed-in user", async () => {
+    fixture.records = [queued()];
+    fixture.userId = "another-user";
+    try {
+      await expect(flushQueuedSubmissions("user-one"))
+        .resolves.toEqual({ submitted: 0, blocked: 0, remaining: 1 });
+      expect(fixture.records[0]?.state).toBe("pending");
+      expect(fixture.invokes).toBe(0);
+    } finally { fixture.userId = "user-one"; }
   });
 });
