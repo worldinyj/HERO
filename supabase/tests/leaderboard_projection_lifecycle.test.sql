@@ -4,7 +4,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(19);
+select plan(23);
 
 insert into auth.users (id, email) values
   ('61000000-0000-0000-0000-000000000001', 'projection-manager@hero.test'),
@@ -72,6 +72,49 @@ select is(
    where season_id = '64000000-0000-0000-0000-000000000001' and nickname = 'PROJP1'),
   180,
   'projection preserves season HP'
+);
+
+-- A completed session reassigned to another season must refresh BOTH
+-- projection tables, including removal of stale previous-season scores.
+insert into public.seasons (id, season_key, title, starts_at, ends_at, status)
+values (
+  '64000000-0000-0000-0000-000000000002',
+  'projection-regression-other', 'Projection Other Season',
+  now() - interval '1 day', now() + interval '1 day', 'open'
+);
+
+update public.play_sessions
+set season_id = '64000000-0000-0000-0000-000000000002'
+where id = '65000000-0000-0000-0000-000000000001';
+
+select results_eq(
+  $$select count(*) from public.leaderboard_current_public_rows
+      where season_id = '64000000-0000-0000-0000-000000000001'$$,
+  array[0::bigint],
+  'reassigned completed session disappears from original season'
+);
+select results_eq(
+  $$select count(*) from public.leaderboard_current_public_rows
+      where season_id = '64000000-0000-0000-0000-000000000002'$$,
+  array[1::bigint],
+  'reassigned completed session appears in destination season'
+);
+
+update public.play_sessions
+set season_id = '64000000-0000-0000-0000-000000000001'
+where id = '65000000-0000-0000-0000-000000000001';
+
+select results_eq(
+  $$select count(*) from public.leaderboard_current_public_rows
+      where season_id = '64000000-0000-0000-0000-000000000001'$$,
+  array[1::bigint],
+  'reversing reassignment restores original season projection'
+);
+select results_eq(
+  $$select count(*) from public.leaderboard_current_public_rows
+      where season_id = '64000000-0000-0000-0000-000000000002'$$,
+  array[0::bigint],
+  'reversing reassignment removes stale destination projection'
 );
 
 set local role authenticated;

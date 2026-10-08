@@ -334,6 +334,8 @@ begin
     or old.completed_at is distinct from new.completed_at
     or old.plant_id is distinct from new.plant_id
     or old.player_job_role is distinct from new.player_job_role
+    or old.season_id is distinct from new.season_id
+    or old.scenario_version_id is distinct from new.scenario_version_id
   ) and (old.status = 'completed' or new.status = 'completed') then
     perform private.refresh_current_leaderboard_public(new.season_id);
     if old.season_id is distinct from new.season_id then
