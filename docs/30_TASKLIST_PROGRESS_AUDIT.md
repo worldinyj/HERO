@@ -42,6 +42,14 @@
 - 테스트용 `e2e-season`은 별도 생성하며 실제 월간 open 시즌을 재사용하지 않는다. `e2e:setup` 실행 스크립트는 이미 root package.json에 존재하여 추가 변경하지 않았다.
 - 모바일 전체 플로우는 아직 미실행. 부분적 fixture 생성과 재실행 cleanup은 여전히 별도 문제이며, 데이터 초기화를 자동 수행하지 않는다.
 
+## 1.6 전체 모바일 E2E 로컬 실행 게이트 준비
+
+- 기존 `8654f5a9`: 사용자 Mac 전체 deep Deno DB QA PASS.
+- 사용자 확인: `079ea6fb` 로컬 E2E 환경 사전점검 PASS (실행 로그 별도 미첨부).
+- 신규 `hero-mobile-e2e.mjs`: `edge-check`는 쓰기 없는 POST invalid_token 검사/CORS 검증, `run --confirm-local-fixture-seed`는 same-SHA QA/로컬 fixture first-use 정책 하에서만 쓰기 및 두 모바일 뷰포트 Playwright 수행.
+- `playwright.config.ts`: 이 전체 로컬 E2E에서 기존 Vite 서버 재사용 금지. 브라우저 프로세스에서 Supabase 서비스 키 제거.
+- **새 SHA에서 Mac 회귀시험 및 실제 Edge/mobile 전체 테스트는 아직 미실행**. Tasklist T7-01은 `partial` 유지.
+
 ## 2. Phase별 진행
 
 | Phase | 작업 수 | 구현 | 부분 | 미착수 | 환산 진도 |

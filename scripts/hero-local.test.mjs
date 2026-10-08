@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { HERO_E2E_LOCAL_API, localE2eSeedGate } from "../e2e/localTargetGuard.mjs";
 import { assertFreshLocalE2eNamespace } from "../e2e/fixtureNamespace.mjs";
 import { E2E_API, inspectE2eStatus, inspectE2eWebEnv, buildE2eWebEnv } from "./check-local-e2e-preflight.mjs";
+import { E2E_WEB_ORIGIN, edgeProbeVerdict, e2eArgsVerdict,
+  browserTestEnv } from "./hero-mobile-e2e.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
@@ -340,4 +342,51 @@ test("HERO E2E env generator is create-only with no fixture or deploy side effec
     "supabase db reset", "supabase db push", "wrangler pages deploy",
     "pnpm e2e:setup", "console.log(cli.stdout)",
   ]) assert.equal(s.includes(forbidden), false, forbidden);
+});
+
+test("HERO local Edge probe requires exact handler response and site-origin CORS", () => {
+  assert.deepEqual(edgeProbeVerdict(400, {error:"invalid_token"}, E2E_WEB_ORIGIN),
+    {ok:true,reason:"local_edge_invalid_token_guard_verified"});
+  for (const [code, body, origin] of [
+    [200, {error:"invalid_token"}, E2E_WEB_ORIGIN],
+    [404, {error:"not_found"}, E2E_WEB_ORIGIN],
+    [400, {error:"invalid_token"}, "null"],
+    [400, {error:"invalid_token"}, "http://127.0.0.1:5173"],
+    [400, {error:"something_else"}, E2E_WEB_ORIGIN],
+  ]) assert.equal(edgeProbeVerdict(code, body, origin).ok, false);
+});
+
+test("HERO full mobile E2E requires explicit fixture-write confirmation", () => {
+  assert.deepEqual(e2eArgsVerdict(["edge-check"]), {ok:true,run:false});
+  assert.deepEqual(e2eArgsVerdict(["run","--confirm-local-fixture-seed"]),
+    {ok:true,run:true});
+  for (const args of [
+    [], ["run"], ["run","--confirm-preview"], ["edge-check","--unsafe"],
+    ["run","--confirm-local-fixture-seed","--reset"],
+  ]) assert.equal(e2eArgsVerdict(args).ok,false);
+});
+
+test("HERO full mobile E2E never injects server-role keys into Vite", () => {
+  const inherited = {
+    VITE_SUPABASE_URL: "https://alhpooapiokyuxysdzzp.supabase.co",
+    VITE_SERVICE_ROLE_KEY: "must-not-leak",
+    SERVICE_ROLE_KEY: "server-secret",
+    SUPABASE_SERVICE_ROLE_KEY: "server-secret-2",
+    DATABASE_URL: "postgres://remote",
+    SAFE_FLAG: "preserved",
+  };
+  const keys = { a:"test-player-a", b:"test-player-b", manager:"test-manager" };
+  const result = browserTestEnv(inherited, {ANON_KEY:"only-local-anon"}, keys);
+  assert.equal(result.VITE_SUPABASE_URL, E2E_API);
+  assert.equal(result.VITE_SUPABASE_ANON_KEY, "only-local-anon");
+  assert.equal(result.VITE_E2E_MODE, "true");
+  assert.equal(result.HERO_LOCAL_FULL_E2E, "1");
+  assert.equal(result.HERO_E2E_PASSWORD_A, keys.a);
+  assert.equal(result.VITE_SERVICE_ROLE_KEY, undefined);
+  assert.equal(result.SERVICE_ROLE_KEY, undefined);
+  assert.equal(result.SUPABASE_SERVICE_ROLE_KEY, undefined);
+  assert.equal(result.DATABASE_URL, undefined);
+  assert.equal(result.SAFE_FLAG, "preserved");
+  const pw = readFileSync(new URL("../playwright.config.ts",import.meta.url),"utf8");
+  assert.ok(pw.includes('process.env.HERO_LOCAL_FULL_E2E !== "1"'));
 });

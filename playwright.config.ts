@@ -21,7 +21,9 @@ export default defineConfig({
     command:
       "pnpm --dir apps/web dev --host 127.0.0.1 --port 4173 --strictPort --mode e2e",
     url: "http://127.0.0.1:4173",
-    reuseExistingServer: !process.env.CI,
+    // Full local auth E2E must not reuse an arbitrary Vite server whose
+    // browser Supabase configuration might point to another environment.
+    reuseExistingServer: !process.env.CI && process.env.HERO_LOCAL_FULL_E2E !== "1",
     timeout: 120_000,
   },
   projects: [
