@@ -52,3 +52,25 @@ export function readReissuedInviteLink(
   }
   return link;
 }
+
+/** Confirm that an invitation cancellation committed for this exact ID. */
+export function readCanceledInviteResult(
+  value: unknown,
+  requestedInvitationId: string,
+): { canceled: true; invitationId: string; canceledAt: string } | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const result = value as Record<string, unknown>;
+  if (
+    result.canceled !== true ||
+    result.invitationId !== requestedInvitationId ||
+    typeof result.canceledAt !== "string" ||
+    !Number.isFinite(Date.parse(result.canceledAt))
+  ) {
+    return null;
+  }
+  return {
+    canceled: true,
+    invitationId: requestedInvitationId,
+    canceledAt: result.canceledAt,
+  };
+}

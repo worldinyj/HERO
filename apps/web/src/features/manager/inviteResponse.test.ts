@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readIssuedInviteLink, readReissuedInviteLink } from "./inviteResponse";
+import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
 
 const good = {
   invitationId: "abc-123",
@@ -46,5 +46,22 @@ describe("reissued invitation must be tied to its requested original", () => {
     expect(readReissuedInviteLink({ ...reissued, reissued: false }, "original-1")).toBeNull();
     expect(readReissuedInviteLink({ ...reissued, inviteUrl: "javascript:alert(1)" }, "original-1")).toBeNull();
     expect(readReissuedInviteLink(null, "original-1")).toBeNull();
+  });
+});
+
+describe("cancellation acknowledgment matches requested invitation", () => {
+  const acknowledgment = {
+    canceled: true,
+    invitationId: "inv-123",
+    canceledAt: "2026-10-08T03:00:00.000Z",
+  };
+  it("accepts a matching committed cancellation", () => {
+    expect(readCanceledInviteResult(acknowledgment, "inv-123")).toEqual(acknowledgment);
+  });
+  it("locks ambiguous or unrelated acknowledgments", () => {
+    expect(readCanceledInviteResult(acknowledgment, "inv-other")).toBeNull();
+    expect(readCanceledInviteResult({ ...acknowledgment, canceled: false }, "inv-123")).toBeNull();
+    expect(readCanceledInviteResult({ ...acknowledgment, canceledAt: "broken" }, "inv-123")).toBeNull();
+    expect(readCanceledInviteResult(null, "inv-123")).toBeNull();
   });
 });

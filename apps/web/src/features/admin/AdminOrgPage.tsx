@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
-import { readIssuedInviteLink, readReissuedInviteLink } from "../manager/inviteResponse";
+import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
 import { isValidAdminOrgLists } from "./adminOrgResponse";
 
 interface PlantRow {
@@ -343,16 +343,7 @@ export function AdminOrgPage() {
         setCopied(false);
         setInviteResult(result);
       } else {
-        const result = data as {
-          canceled?: unknown;
-          invitationId?: unknown;
-          canceledAt?: unknown;
-        } | null;
-        if (
-          !result || result.canceled !== true ||
-          result.invitationId !== invitationId ||
-          typeof result.canceledAt !== "string"
-        ) {
+        if (!readCanceledInviteResult(data, invitationId)) {
           throw new InviteCreationOutcomeUnknownError();
         }
         // Preserve unrelated one-time URLs even after cancellation.

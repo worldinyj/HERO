@@ -4,7 +4,7 @@ import { getSupabase } from "../../lib/supabase";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 import { isValidManagerDashboardLists } from "./managerDashboardResponse";
-import { readReissuedInviteLink } from "./inviteResponse";
+import { readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -173,7 +173,7 @@ export function ManagerDashboardPage() {
       setActionPending(`invite:${invitationId}`);
       setError(null);
       const result = await invokeManagerAction({ action: "cancel-invite", invitationId });
-      if (result.canceled !== true || result.invitationId !== invitationId) {
+      if (!readCanceledInviteResult(result, invitationId)) {
         throw new Error("cancel_result_unknown");
       }
       if (!(await loadDashboard(true))) {
