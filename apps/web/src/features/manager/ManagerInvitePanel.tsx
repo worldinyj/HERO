@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
@@ -6,6 +6,7 @@ import { nextInviteBatchRange, MAX_INVITES_PER_RUN } from "./bulkInviteBatch";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 import { csvEscape } from "./bulkInviteCsv";
 import { readIssuedInviteLink } from "./inviteResponse";
+import { canStartInviteOperation } from "./inviteOperationGuard";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -193,6 +194,15 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedBulkUrl, setCopiedBulkUrl] = useState<string | null>(null);
+  // React state alone does not prevent two synchronous click handlers entering
+  // before the next render. This lock also serializes reconciliation reads.
+  const requestInFlight = useRef(false);
+  const csvReadInFlight = useRef(false);
+  const [csvPending, setCsvPending] = useState(false);
+  const canStartMutation = canStartInviteOperation({
+    singlePending, bulkPending, rosterPending: inviteRosterPending, csvPending,
+    singleOutcomeUnknown: singleRetryBlocked, bulkOutcomeUnknown: bulkRetryBlocked,
+  });
 
   async function createInvite(input: BulkInput): Promise<InviteLinkResult> {
     if (!profile?.plant_id) {
@@ -232,7 +242,8 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
   }
 
   async function reconcileInviteRoster() {
-    if (singlePending || bulkPending || inviteRosterPending) return;
+    if (requestInFlight.current || csvReadInFlight.current || singlePending || bulkPending || inviteRosterPending) return;
+    requestInFlight.current = true;
     setInviteRosterPending(true);
     setInviteRosterReady(false);
     try {
@@ -245,6 +256,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
     } catch {
       setError("초대 명단을 확인하지 못했습니다. 재시도 잠금을 유지합니다.");
     } finally {
+      requestInFlight.current = false;
       setInviteRosterPending(false);
     }
   }
@@ -257,7 +269,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
   }
 
   async function handleSingleCreate() {
-    if (singlePending || singleRetryBlocked) return;
+    if (!canStartMutation || requestInFlight.current || csvReadInFlight.current) return;
     // The one-time token cannot be retrieved from the server again.
     if (singleResult) {
       setError("현재 표시된 링크를 먼저 보관하고 '링크 보관 완료'를 눌러주세요.");
@@ -268,6 +280,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
       return;
     }
 
+    requestInFlight.current = true;
     try {
       setSinglePending(true);
       setError(null);
@@ -290,6 +303,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
         setError(cause instanceof Error ? cause.message : "초대 링크 생성에 실패했습니다.");
       }
     } finally {
+      requestInFlight.current = false;
       setSinglePending(false);
     }
   }
@@ -322,7 +336,9 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
   }
 
   async function handleCsvFile(file: File | null) {
-    if (!file || bulkPending) return;
+    if (!file || !canStartMutation || requestInFlight.current || csvReadInFlight.current) return;
+    csvReadInFlight.current = true;
+    setCsvPending(true);
 
     // Invite URLs are shown only once. Never silently destroy partially
     // generated links when a new file is chosen.
@@ -334,13 +350,18 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
     try {
       setError(null);
       setBulkInfo(null);
-      const inputs = parseInviteCsv(await file.text());
+      const fileContent = await file.text();
+      if (requestInFlight.current || !csvReadInFlight.current) return;
+      const inputs = parseInviteCsv(fileContent);
       setBulkFileName(file.name);
       setBulkInputs(inputs);
     } catch (cause) {
       setBulkInputs([]);
       setBulkFileName("");
       setError(cause instanceof Error ? cause.message : "CSV를 읽지 못했습니다.");
+    } finally {
+      csvReadInFlight.current = false;
+      setCsvPending(false);
     }
   }
 
@@ -370,7 +391,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
   }
 
   async function handleBulkCreate() {
-    if (bulkPending || bulkRetryBlocked || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length) {
+    if (!canStartMutation || requestInFlight.current || csvReadInFlight.current || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length) {
       return;
     }
 
@@ -380,6 +401,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
     const initialCount = results.length;
     const indices = nextInviteBatchRange(initialCount, bulkInputs.length);
 
+    requestInFlight.current = true;
     try {
       setBulkPending(true);
       setError(null);
@@ -422,6 +444,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
       }
     } finally {
       if (results.length > initialCount) void onChanged();
+      requestInFlight.current = false;
       setBulkPending(false);
     }
   }
@@ -477,7 +500,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
           <button
             type="button"
             className="primary-button"
-            disabled={singlePending || singleRetryBlocked || Boolean(singleResult)}
+            disabled={!canStartMutation || Boolean(singleResult)}
             onClick={() => void handleSingleCreate()}
           >
             {singlePending ? "생성 중…" : "초대 링크 생성"}
@@ -548,7 +571,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
             <input
               type="file"
               accept=".csv,text/csv"
-              disabled={bulkPending}
+              disabled={!canStartMutation}
               onChange={(event) => {
                 const file = event.currentTarget.files?.[0] ?? null;
                 event.currentTarget.value = "";
@@ -564,7 +587,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
           <button
             type="button"
             className="primary-button"
-            disabled={bulkPending || bulkRetryBlocked || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length}
+            disabled={!canStartMutation || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length}
             onClick={() => void handleBulkCreate()}
           >
             {bulkPending
