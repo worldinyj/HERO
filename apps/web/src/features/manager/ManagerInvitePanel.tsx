@@ -5,6 +5,7 @@ import { getSupabase } from "../../lib/supabase";
 import { nextInviteBatchRange, MAX_INVITES_PER_RUN } from "./bulkInviteBatch";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
 import { csvEscape } from "./bulkInviteCsv";
+import { readIssuedInviteLink } from "./inviteResponse";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -219,10 +220,11 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boo
       throw invokeError;
     }
 
-    const result = data as InviteLinkResult & { error?: string };
-    if (!result.inviteUrl) {
-      // An unexpected success response could still mean the DB insert was
-      // committed. Prevent blind reissue of a one-time token.
+    const result = readIssuedInviteLink(data);
+    if (!result) {
+      // A 2xx response with null/missing/invalid link fields may follow COMMIT.
+      // The original token cannot be retrieved; treat every malformed result
+      // as unknown, not as a deterministic failure eligible for a retry.
       throw new InviteCreationOutcomeUnknownError();
     }
 
