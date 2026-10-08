@@ -9,6 +9,7 @@ const fixture = vi.hoisted(() => ({
   games: [] as Array<Record<string, unknown>>,
   failGameDelete: false,
   failQueuePut: false,
+  queueReadOverride: null as PendingSessionSubmission | null,
   hideCommittedInQueueListing: false,
 }));
 
@@ -44,15 +45,19 @@ vi.mock("./offlineDb", () => ({
     transaction: (name: string, _mode: string) => {
       const transaction = {
         oncomplete: null as (() => void) | null,
+        aborted: false,
         onerror: null as (() => void) | null,
         onabort: null as (() => void) | null,
         error: null,
-        abort: () => queueMicrotask(() => transaction.onabort?.()),
+        abort: () => {
+          transaction.aborted = true;
+          queueMicrotask(() => transaction.onabort?.());
+        },
         objectStore: () => ({
           get: (key: string) => {
             const request = {
               result: name === "submission-queue"
-                ? fixture.records.find((row) => row.sessionId === key)
+                ? (fixture.queueReadOverride ?? fixture.records.find((row) => row.sessionId === key))
                 : fixture.games.find((row) => row.key === key),
               onsuccess: null as (() => void) | null,
               onerror: null as (() => void) | null,
@@ -60,7 +65,9 @@ vi.mock("./offlineDb", () => ({
             };
             queueMicrotask(() => {
               request.onsuccess?.();
-              queueMicrotask(() => transaction.oncomplete?.());
+              queueMicrotask(() => {
+                if (!transaction.aborted) transaction.oncomplete?.();
+              });
             });
             return request;
           },
@@ -104,7 +111,7 @@ vi.mock("./offlineDb", () => ({
   }),
 }));
 
-import { flushQueuedSubmissions, submitSessionWithQueue } from "./submissionQueue";
+import { flushQueuedSubmissions, submitSessionWithQueue, removeQueuedSubmission } from "./submissionQueue";
 
 const sessionId = "ab000000-0000-4000-8000-000000000001";
 const body = {
@@ -137,6 +144,7 @@ beforeEach(() => {
   fixture.games = [];
   fixture.failGameDelete = false;
   fixture.failQueuePut = false;
+  fixture.queueReadOverride = null;
   fixture.hideCommittedInQueueListing = false;
 });
 
@@ -427,5 +435,39 @@ describe("atomic IndexedDB queue write fallback", () => {
       expect(fixture.records[0]?.userId).toBe("another-user");
       expect(fixture.invokes).toBe(0);
     } finally { vi.unstubAllGlobals(); }
+  });
+});
+
+
+describe("verified-only IndexedDB queue removal", () => {
+  it("keeps pending choices if the receipt marker write aborts", async () => {
+    fixture.records = [queued()];
+    fixture.failQueuePut = true;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
+    expect(fixture.records).toEqual([queued()]);
+    expect(fixture.invokes).toBe(1);
+  });
+
+  it("refuses an unverified pending row at the final delete transaction", async () => {
+    const original = queued();
+    fixture.records = [original];
+    await expect(removeQueuedSubmission(sessionId, "user-one", "scenario-one"))
+      .rejects.toThrow("submission_queue_delete_not_confirmed");
+    expect(fixture.records).toEqual([original]);
+  });
+
+  it("preserves the committed row of another owner at deletion time", async () => {
+    const original = {
+      ...queued(), userId: "other-user", state: "committed" as const,
+      completionReceipt: {
+        sessionId, alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    };
+    fixture.records = [original];
+    await expect(removeQueuedSubmission(sessionId, "user-one", "scenario-one"))
+      .rejects.toThrow("submission_queue_delete_identity_conflict");
+    expect(fixture.records).toEqual([original]);
   });
 });

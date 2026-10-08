@@ -7,6 +7,7 @@ import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
 import { decideQueueWrite } from "./submissionQueueWritePolicy";
+import { decideConfirmedQueueDeletion } from "./submissionQueueDeletePolicy";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -247,20 +248,50 @@ export async function listQueuedSubmissions(
 
 export async function removeQueuedSubmission(
   sessionId: string,
+  userId: string,
+  scenarioId: string,
 ): Promise<void> {
   const db = await openHeroOfflineDb();
   if (!db) throw new Error("submission_queue_unavailable");
 
   try {
     await new Promise<void>((resolve, reject) => {
+      // The final read and delete are in the SAME readwrite transaction.
+      // Do not delete a row overwritten/replaced by another browser tab.
       const transaction = db.transaction(SUBMISSION_QUEUE_STORE, "readwrite");
-      transaction.objectStore(SUBMISSION_QUEUE_STORE).delete(sessionId);
-
+      const store = transaction.objectStore(SUBMISSION_QUEUE_STORE);
+      let policyError: Error | null = null;
+      const request = store.get(sessionId);
+      request.onsuccess = () => {
+        const stored = request.result as PendingSessionSubmission | undefined;
+        const decision = decideConfirmedQueueDeletion(
+          stored, userId, scenarioId, sessionId,
+        );
+        if (decision === "absent") return;
+        if (decision !== "delete") {
+          policyError = new Error("submission_queue_delete_" + decision);
+          transaction.abort();
+          return;
+        }
+        try {
+          store.delete(sessionId);
+        } catch (error) {
+          policyError = error instanceof Error
+            ? error : new Error("submission_queue_delete_failed");
+          transaction.abort();
+        }
+      };
+      request.onerror = () => {
+        policyError = request.error ??
+          new Error("submission_queue_delete_read_failed");
+      };
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
-        reject(transaction.error ?? new Error("submission_queue_delete_failed"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_delete_failed"));
       transaction.onabort = () =>
-        reject(transaction.error ?? new Error("submission_queue_delete_aborted"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_delete_aborted"));
     });
   } finally {
     db.close();
@@ -315,17 +346,20 @@ async function cleanupConfirmedLocalSession(
     }
   });
 
-  // Delete the queue marker LAST so a failed cache cleanup is recoverable.
+  // If receipt marker persistence failed, preserve any existing pending
+  // choices. A confirmed server response must never erase unmarked evidence.
+  if (marker.cleanupPending) return { cleanupPending: true };
+
+  // Delete the queue marker LAST so failed game-cache cleanup is recoverable.
   const cached = await cleanupAfterConfirmedCommit(async () => {
     await clearCompetitiveSessionIfMatches(userId, scenarioId, sessionId);
   });
   const queued = cached.cleanupPending
     ? { cleanupPending: true }
-    : await cleanupAfterConfirmedCommit(() => removeQueuedSubmission(sessionId));
-  return {
-    cleanupPending:
-      marker.cleanupPending || cached.cleanupPending || queued.cleanupPending,
-  };
+    : await cleanupAfterConfirmedCommit(() =>
+        removeQueuedSubmission(sessionId, userId, scenarioId)
+      );
+  return { cleanupPending: cached.cleanupPending || queued.cleanupPending };
 }
 
 async function enqueueForUser(
