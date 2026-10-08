@@ -5,6 +5,7 @@ import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
 import { isValidAdminOrgLists } from "./adminOrgResponse";
+import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 
 interface PlantRow {
   id: string;
@@ -76,6 +77,10 @@ export function AdminOrgPage() {
   const [plantName, setPlantName] = useState("");
   const [plantDisplayName, setPlantDisplayName] = useState("");
   const [creatingPlant, setCreatingPlant] = useState(false);
+  const [plantActionPending, setPlantActionPending] = useState(false);
+  const [plantOutcomeUnknown, setPlantOutcomeUnknown] = useState(false);
+  const [plantRosterReady, setPlantRosterReady] = useState(false);
+  const [plantRosterPending, setPlantRosterPending] = useState(false);
 
   const [invitePlantId, setInvitePlantId] = useState("");
   const [inviteeName, setInviteeName] = useState("");
@@ -164,11 +169,34 @@ export function AdminOrgPage() {
     return counts;
   }, [managers]);
 
+  async function reconcilePlantMutations() {
+    if (creatingPlant || plantActionPending || plantRosterPending) return;
+    setPlantRosterPending(true);
+    setPlantRosterReady(false);
+    try {
+      if (await load()) {
+        setPlantRosterReady(true);
+        setError("발전소 목록을 다시 확인한 뒤 실제 변경 결과에 맞게 잠금을 해제해주세요.");
+      } else {
+        setError("발전소 목록을 불러오지 못했습니다. 잠금을 유지합니다.");
+      }
+    } finally {
+      setPlantRosterPending(false);
+    }
+  }
+
+  function confirmPlantMutations() {
+    if (!plantRosterReady || plantRosterPending || creatingPlant || plantActionPending) return;
+    setPlantOutcomeUnknown(false);
+    setPlantRosterReady(false);
+    setError(null);
+  }
+
   async function handleCreatePlant() {
+    if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown) return;
     const code = normalizePlantCode(plantCode);
     const name = plantName.trim();
     const displayName = plantDisplayName.trim();
-
     if (!code || !name || !displayName) {
       setError("발전소 코드·정식명·표시명을 모두 입력해주세요.");
       return;
@@ -177,44 +205,69 @@ export function AdminOrgPage() {
     try {
       setCreatingPlant(true);
       setError(null);
+      setPlantRosterReady(false);
       const supabase = getSupabase();
-      const { error: insertError } = await supabase.from("plants").insert({
-        code,
-        name,
-        display_name: displayName,
-        is_active: true,
-      });
-
-      if (insertError) throw insertError;
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "admin-plant-action", {
+          body: { action: "create-plant", code, name, displayName },
+        },
+      );
+      if (invokeError) throw invokeError;
+      if (!readPlantCreated(data, code, displayName)) {
+        throw new Error("plant_creation_outcome_unknown");
+      }
 
       setPlantCode("");
       setPlantName("");
       setPlantDisplayName("");
-      await load();
+      if (!(await load())) {
+        setPlantOutcomeUnknown(true);
+        setError("발전소는 생성됐지만 목록 재조회에 실패했습니다. 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "발전소를 생성하지 못했습니다.",
-      );
+      if (isDefiniteInviteRejection(cause)) {
+        setError("발전소 생성이 거절되었습니다. 코드 중복과 입력값을 확인해주세요.");
+      } else {
+        setPlantOutcomeUnknown(true);
+        setPlantRosterReady(false);
+        setError("생성 결과를 확정할 수 없습니다. 서버 목록을 확인하기 전 재요청하지 마세요.");
+      }
     } finally {
       setCreatingPlant(false);
     }
   }
 
   async function handleTogglePlant(plant: PlantRow) {
+    if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown) return;
+    const requestedActive = !plant.is_active;
     try {
+      setPlantActionPending(true);
+      setPlantRosterReady(false);
       setError(null);
       const supabase = getSupabase();
-      const { error: updateError } = await supabase
-        .from("plants")
-        .update({ is_active: !plant.is_active })
-        .eq("id", plant.id);
-
-      if (updateError) throw updateError;
-      await load();
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "발전소 상태를 변경하지 못했습니다.",
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "admin-plant-action", {
+          body: { action: "set-plant-active", plantId: plant.id, isActive: requestedActive },
+        },
       );
+      if (invokeError) throw invokeError;
+      if (!readPlantStatus(data, plant.id, requestedActive)) {
+        throw new Error("plant_status_outcome_unknown");
+      }
+      if (!(await load())) {
+        setPlantOutcomeUnknown(true);
+        setError("발전소 상태는 처리됐지만 명단 재조회에 실패했습니다. 결과를 확인해주세요.");
+      }
+    } catch (cause) {
+      if (isDefiniteInviteRejection(cause)) {
+        setError("발전소 상태 변경이 거절되었습니다. 현재 권한과 상태를 확인해주세요.");
+      } else {
+        setPlantOutcomeUnknown(true);
+        setPlantRosterReady(false);
+        setError("상태 변경 결과가 불확실합니다. 발전소 명단 대조 전에는 다시 실행하지 마세요.");
+      }
+    } finally {
+      setPlantActionPending(false);
     }
   }
 
@@ -479,12 +532,31 @@ export function AdminOrgPage() {
           <button
             type="button"
             className="primary-button"
-            disabled={creatingPlant}
+            disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
             onClick={handleCreatePlant}
           >
             {creatingPlant ? "생성 중…" : "발전소 생성"}
           </button>
         </div>
+
+        {plantOutcomeUnknown ? (
+          <div className="invite-result-box" role="alert">
+            <strong>발전소 변경 결과 확인 필요</strong>
+            <p className="muted">서버에 이미 반영됐을 수 있습니다. 최신 발전소 목록을 확인하고 잠금을 해제해주세요.</p>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button"
+                disabled={creatingPlant || plantActionPending || plantRosterPending}
+                onClick={() => void reconcilePlantMutations()}>
+                1. 발전소 목록 다시 조회
+              </button>
+              <button type="button" className="text-button"
+                disabled={!plantRosterReady || creatingPlant || plantActionPending || plantRosterPending}
+                onClick={() => confirmPlantMutations()}>
+                2. 변경 결과 확인 · 잠금 해제
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="admin-list">
           {plants.map((plant) => (
@@ -503,6 +575,7 @@ export function AdminOrgPage() {
                 <button
                   type="button"
                   className="text-button"
+                  disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
                   onClick={() => void handleTogglePlant(plant)}
                 >
                   {plant.is_active ? "운영 중지" : "다시 활성화"}

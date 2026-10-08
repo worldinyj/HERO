@@ -17,6 +17,10 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
   invalid_invitation_token_hash: 400,
   invalid_invitation_expiration: 400,
   unknown_action: 400,
+  invalid_plant_code: 400,
+  invalid_plant_name: 400,
+  invalid_plant_display_name: 400,
+  plant_status_required: 400,
 
   unauthorized: 401,
 
@@ -26,6 +30,7 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
   manager_scope_violation: 403,
   manager_or_admin_required: 403,
   plant_manager_required: 403,
+  admin_required: 403,
 
   invitation_not_found: 404,
   player_not_found: 404,
@@ -33,6 +38,7 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
 
   invitation_already_accepted: 409,
   invitation_already_canceled: 409,
+  plant_code_taken: 409,
 
   nickname_length: 409,
   nickname_characters: 409,
