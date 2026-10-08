@@ -6,6 +6,7 @@ import {
 } from "./offlineDb";
 import { matchesCompletedCompetitiveSession } from "./competitiveCleanupPolicy";
 import { shouldPersistCompetitiveProgress } from "./competitiveProgressPolicy";
+import { shouldSaveStartedCompetitiveSession } from "./competitiveStartPolicy";
 
 export interface CompetitiveServerSession {
   sessionId: string;
@@ -36,37 +37,43 @@ function sessionKey(userId: string, scenarioId: string): string {
   return `${userId}:${scenarioId}`;
 }
 
+/**
+ * Initial start and replay response serialization. Never reset progress from
+ * a delayed resume or overwrite a newer session saved by another browser tab.
+ */
 export async function saveCompetitiveSession(
   record: Omit<StoredCompetitiveSession, "formatVersion" | "key" | "savedAt">,
-): Promise<void> {
+): Promise<boolean> {
   const db = await openHeroOfflineDb();
-  if (!db) return;
-
+  if (!db) return false;
   try {
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(
-        COMPETITIVE_SESSION_STORE,
-        "readwrite",
-      );
-
-      transaction.objectStore(COMPETITIVE_SESSION_STORE).put({
-        ...record,
-        formatVersion: 1,
-        key: sessionKey(record.userId, record.scenarioId),
-        savedAt: new Date().toISOString(),
-      } satisfies StoredCompetitiveSession);
-
-      transaction.oncomplete = () => resolve();
+    return await new Promise<boolean>((resolve, reject) => {
+      const transaction = db.transaction(COMPETITIVE_SESSION_STORE, "readwrite");
+      const store = transaction.objectStore(COMPETITIVE_SESSION_STORE);
+      let saved = false;
+      const request = store.get(sessionKey(record.userId, record.scenarioId));
+      request.onsuccess = () => {
+        if (!shouldSaveStartedCompetitiveSession(request.result, record)) return;
+        try {
+          store.put({
+            ...record,
+            formatVersion: 1,
+            key: sessionKey(record.userId, record.scenarioId),
+            savedAt: new Date().toISOString(),
+          } satisfies StoredCompetitiveSession);
+          saved = true;
+        } catch (error) {
+          reject(error);
+          try { transaction.abort(); } catch { /* already inactive */ }
+        }
+      };
+      request.onerror = () =>
+        reject(request.error ?? new Error("competitive_session_start_read_failed"));
+      transaction.oncomplete = () => resolve(saved);
       transaction.onerror = () =>
-        reject(
-          transaction.error ??
-            new Error("competitive_session_write_failed"),
-        );
+        reject(transaction.error ?? new Error("competitive_session_write_failed"));
       transaction.onabort = () =>
-        reject(
-          transaction.error ??
-            new Error("competitive_session_write_aborted"),
-        );
+        reject(transaction.error ?? new Error("competitive_session_write_aborted"));
     });
   } finally {
     db.close();

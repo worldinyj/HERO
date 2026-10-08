@@ -279,7 +279,8 @@ export function CompetitiveGamePage({
           submissionLogStart,
         };
 
-        await saveCompetitiveSession({
+        if (!active) return;
+        const initialized = await saveCompetitiveSession({
           userId,
           scenarioId,
           scenarioVersion: parsed.data.version,
@@ -287,7 +288,10 @@ export function CompetitiveGamePage({
           server: nextServer,
           game: nextGame,
         });
-
+        if (!initialized) {
+          if (!active) return;
+          throw new Error("competitive_session_cache_superseded");
+        }
         if (!active) return;
         setScenario(parsed.data);
         setServer(nextServer);
@@ -476,7 +480,7 @@ export function CompetitiveGamePage({
         submissionLogStart: nextGame.log.length,
       };
 
-      await saveCompetitiveSession({
+      const initialized = await saveCompetitiveSession({
         userId,
         scenarioId,
         scenarioVersion: parsed.data.version,
@@ -484,6 +488,7 @@ export function CompetitiveGamePage({
         server: nextServer,
         game: nextGame,
       });
+      if (!initialized) throw new Error("competitive_session_cache_superseded");
 
       setScenario(parsed.data);
       setServer(nextServer);
@@ -553,7 +558,11 @@ export function CompetitiveGamePage({
             : "현재 시즌에 게시·배정된 시나리오인지 확인해주세요."}
         </p>
         {loadError && !offlineStart ? (
-          <p className="error-text" role="alert">{loadError}</p>
+          <p className="error-text" role="alert">
+            {loadError === "competitive_session_cache_superseded"
+              ? "다른 탭에서 더 최신 플레이가 저장됐습니다. 새로고침하여 최신 세션을 불러오세요."
+              : loadError}
+          </p>
         ) : null}
         <Link className="text-link" to="/">캠페인으로 돌아가기</Link>
       </section>
@@ -689,7 +698,9 @@ export function CompetitiveGamePage({
 
             {replayError ? (
               <div className="validation-box validation-box--error" role="alert">
-                리플레이를 시작하지 못했습니다: {replayError}
+                리플레이를 시작하지 못했습니다: {replayError === "competitive_session_cache_superseded"
+                  ? "다른 탭에 최신 플레이가 저장되어 있습니다. 새로고침 후 다시 확인하세요."
+                  : replayError}
               </div>
             ) : null}
 
@@ -728,7 +739,9 @@ export function CompetitiveGamePage({
 
             {replayError ? (
               <div className="validation-box validation-box--error" role="alert">
-                리플레이를 시작하지 못했습니다: {replayError}
+                리플레이를 시작하지 못했습니다: {replayError === "competitive_session_cache_superseded"
+                  ? "다른 탭에 최신 플레이가 저장되어 있습니다. 새로고침 후 다시 확인하세요."
+                  : replayError}
               </div>
             ) : null}
 

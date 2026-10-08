@@ -67,7 +67,7 @@ import {
   updateCompetitiveSessionProgress,
 } from "./competitivePersistence";
 
-function game(sessionId: string, count: number) {
+function game(sessionId: string, count: number, startedAt = "2026-10-08T00:00:00.000Z") {
   return {
     userId: "u",
     scenarioId: "S01",
@@ -80,7 +80,7 @@ function game(sessionId: string, count: number) {
       scenarioVersionId: "scenario-version-one",
       scenarioVersion: 1,
       perspectiveRole: "ro",
-      startedAt: "2026-10-08T00:00:00.000Z",
+      startedAt,
       replayOf: null,
       replayFromNode: null,
       submissionLogStart: 0,
@@ -124,7 +124,7 @@ describe("conditional IndexedDB competitive progress transaction", () => {
 
   it("keeps the new replay when a stale callback saves an older session", async () => {
     await saveCompetitiveSession(game("session-one", 1));
-    await saveCompetitiveSession(game("replay-two", 1));
+    await saveCompetitiveSession(game("replay-two", 1, "2026-10-08T00:01:00.000Z"));
     const saved = fixture.cache;
     const before = fixture.writes;
     expect(await updateCompetitiveSessionProgress(game("session-one", 3)))
@@ -156,5 +156,30 @@ describe("conditional IndexedDB competitive progress transaction", () => {
     await expect(updateCompetitiveSessionProgress(game("session-one", 2)))
       .rejects.toThrow("simulated_indexeddb_put_failed");
     expect(fixture.cache).toEqual(before);
+  });
+});
+
+
+describe("server-started session cache atomic ordering", () => {
+  it("never rewinds a progressed session from a late identical start response", async () => {
+    expect(await saveCompetitiveSession(game("session-one", 3))).toBe(true);
+    expect(await saveCompetitiveSession(game("session-one", 0))).toBe(false);
+    expect(fixture.cache?.game.log).toHaveLength(3);
+  });
+  it("does not overwrite a newer replay with an older start response", async () => {
+    await saveCompetitiveSession(game("replay-two", 1, "2026-10-08T00:02:00.000Z"));
+    expect(await saveCompetitiveSession(game("session-one", 0))).toBe(false);
+    expect(fixture.cache?.server.sessionId).toBe("replay-two");
+  });
+  it("accepts a new replay with a strictly newer server start", async () => {
+    await saveCompetitiveSession(game("session-one", 3));
+    expect(await saveCompetitiveSession(game("replay-two", 1,
+      "2026-10-08T00:02:00.000Z"))).toBe(true);
+    expect(fixture.cache?.server.sessionId).toBe("replay-two");
+  });
+  it("refuses to replace the stored session on a timestamp tie", async () => {
+    await saveCompetitiveSession(game("session-one", 2));
+    expect(await saveCompetitiveSession(game("replay-two", 0))).toBe(false);
+    expect(fixture.cache?.server.sessionId).toBe("session-one");
   });
 });
