@@ -10,3 +10,4 @@ coverage/
 .supabase/
 playwright-report/
 test-results/
+.hero-local/
