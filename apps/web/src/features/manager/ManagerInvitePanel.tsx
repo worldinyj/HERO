@@ -229,6 +229,11 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
 
   async function handleSingleCreate() {
     if (singlePending || singleRetryBlocked) return;
+    // The one-time token cannot be retrieved from the server again.
+    if (singleResult) {
+      setError("현재 표시된 링크를 먼저 보관하고 '링크 보관 완료'를 눌러주세요.");
+      return;
+    }
     if (!name.trim()) {
       setError("초대할 사용자 이름을 입력해주세요.");
       return;
@@ -441,7 +446,7 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           <button
             type="button"
             className="primary-button"
-            disabled={singlePending || singleRetryBlocked}
+            disabled={singlePending || singleRetryBlocked || Boolean(singleResult)}
             onClick={() => void handleSingleCreate()}
           >
             {singlePending ? "생성 중…" : "초대 링크 생성"}
@@ -472,6 +477,18 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
                 </button>
                 <button type="button" className="secondary-button compact-button" onClick={() => void handleCopy()}>
                   {copied ? "복사 완료" : "링크 복사"}
+                </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={singlePending}
+                  onClick={() => {
+                    setSingleResult(null);
+                    setCopied(false);
+                    setError(null);
+                  }}
+                >
+                  링크 보관 완료 · 다음 초대 작성
                 </button>
               </div>
             </div>
