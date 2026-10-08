@@ -55,3 +55,11 @@
 - 마지막으로 결과 점수 1 HP, 결정 기록 1건(시계 9), 완료 감사 로그 1건을 확인해 **부분 반영이나 중복 INSERT가 없는지** 점검한다.
 - 두 경로의 별도 난수 fixture를 사용하며, 실패 시 연결 종료 과정에서 이미 닫힌 stdin을 다시 flush하지 않도록 보호했다.
 - Python 문법 검사와 표준 라이브러리 단위 테스트 **20/20 PASS**. 실제 로컬 PostgreSQL 2연결 시험은 아직 NOT RUN. 완료/롤백 fixture가 로컬 DB에 커밋되므로 종료 후 로컬 DB 초기화가 필요하다.
+
+## DB 없이 실제 subprocess orchestration을 실행하는 모의 시험 (2026-10-08)
+
+- 새 `scripts/test_session_completion_concurrency_flow_unit.py`는 `Popen`과 `sql`을 메모리 모의 객체로 교체하여 **프로브 함수 자체를 실행**한다. 실제 PostgreSQL·Supabase 서비스나 네트워크를 사용하지 않는다.
+- 8개 시나리오: 첫 번째 커밋 승자, 첫 번째 롤백 뒤 두 번째 승자, 잘못된 영수증 점수(각 경로), 영수증 누락, 완료 DB 상태 불일치, 행 잠금 감지 실패(각 경로).
+- 기존 URL·환경변수·SQL 생성 20건과 합쳐 로컬 Python 단위 시험 **28/28 PASS**; Python 3.13 문법 검사 PASS.
+- 실행: `python3 -m unittest discover -s scripts -p 'test_session_completion_concurrency*_unit.py' -v`
+- **검증 한계:** 이 시험은 PostgreSQL 구현의 실제 잠금 동작이 아니라 도구의 상태 전이·오류 판정을 검사한다. 별도의 Supabase 로컬 DB 2연결 실험과 pgTAP은 여전히 NOT RUN.
