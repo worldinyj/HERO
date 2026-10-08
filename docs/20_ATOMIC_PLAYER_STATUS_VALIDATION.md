@@ -41,10 +41,10 @@ Migration016 43 + 017 21 + 018 27 + 019 27 + 020 30 = **148개 추가 pgTAP 검�
 ## 안전한 일괄검증·배포 순서
 
 1. Actions 사용 허가 후 최종 PR SHA 기준으로 CI·Database Policy Tests·E2E를 **한 번에** 실행. 기존 초대/리더보드 검사를 포함.
-2. 로컬 테스트 DB에서 Migration001~020을 순서대로 적용, 016~020 포함 pgTAP 전체 검사.
+2. 로컬 테스트 DB에서 Migration001~022를 순서대로 적용, 016~020 포함 pgTAP 전체 검사.
 3. 별도 두 트랜잭션으로 동일 Player에 활성↔비활성 동시성 시험. Player 랭킹 재계산에 부작용이 없는지도 확인.
-4. 위 검증과 배포 승인 후 staging DB Migration016→017→018→019→020을 **Edge/웹 배포 전에** 적용.
-5. 새 RPC 4종의 `service_role`만 실행 권한, 기존 RLS/프로필·랭킹 트리거 상태를 검증.
+4. 위 검증과 배포 승인 후 staging DB Migration016→017→018→019→020→021→022를 **Edge/웹 배포 전에** 적용.
+5. 새 RPC 6종(초대 3·Player 상태 1·닉네임 2)의 `service_role`만 실행 권한, 기존 RLS/프로필·랭킹 트리거 상태를 검증.
 6. 배포 SHA/DB 버전/Edge 버전을 기록하고 통제된 Kakao Admin→Manager→Player 실계정 E2E 실시.
 7. 실증/법무/개인정보/S03 사람 검토 등 기존 출시 차단 게이트는 별개로 유지.
 

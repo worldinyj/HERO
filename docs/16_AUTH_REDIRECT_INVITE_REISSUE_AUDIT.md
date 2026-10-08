@@ -53,6 +53,14 @@
 - 담당자 화면은 서버 응답/명단 조회가 불확실한 상태에서 재변경을 잠그고 수동 명단 대조 후 해제하도록 구성.
 - Migration 020 미배포, 실제 로컬 DB/동시성/사용자 E2E 미검증. 출시 차단 유지.
 
+## 3.4 닉네임 강제 초기화 및 Player 자율 변경 — 코드 구현, 실행 보류
+
+- `202610080021_atomic_nickname_force_reset.sql`: 담당자 동일 발전소 Player 초기화에 `FOR UPDATE`, 새 임시 닉네임, 이력·감사 단일 트랜잭션. 33 pgTAP assertions.
+- `202610080022_atomic_nickname_self_change.sql`: 활성 Player의 시즌 1회 정책·금칙어·중복 검사, 동일 프로필 행 잠금, 갱신+이력+감사 단일 트랜잭션. 강제 초기화 후 복구 예외 유지. 37 pgTAP assertions.
+- 두 RPC 모두 `PUBLIC`/`anon`/`authenticated` 직접 실행 거부, `service_role`만 허용. `nickname-action` Edge는 RPC 호출 후 결과를 검증하고 알 수 없는 오류는 500으로 보호.
+- 담당자 대시보드 및 Player 프로필은 응답 유실 시 상태 재조회까지 중복 닉네임 변경을 잠금. **단독/실환경 Deno·DB pgTAP·브라우저 E2E NOT RUN**.
+- 신규 DB 테스트 계획 016~022 총 **218 assertions**. `docs/21_ATOMIC_NICKNAME_FORCE_RESET_VALIDATION.md`, `docs/22_ATOMIC_NICKNAME_SELF_CHANGE_VALIDATION.md` 참고.
+
 ## 4. 일괄 CI 재개 시
 
 - `pnpm --dir apps/web test`로 리다이렉트 21개 사례 포함 전체 단위 테스트
@@ -61,4 +69,4 @@
 - `deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts`
 - Kakao 실계정 로그인 / 새 사용자 차단 / 관리자·담당자 초대 성공·실패 시험
 - `supabase test db`에서 Migration 017과 21 pgTAP 사례(특히 23505 rollback)를 확인하고, 동시 재발급·이미 수락된 초대/실패주입 E2E를 수행
-- PR/main merge, migration016·017·018·019·020 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행
+- PR/main merge, migration016·017·018·019·020·021·022 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행

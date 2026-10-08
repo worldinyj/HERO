@@ -71,7 +71,7 @@
 | ADM-12 | 취소 요청과 재발급 요청을 동일 링크에 동시 실행 | 한 요청만 성공, 반대 요청은 기취소 반환, 감사 중복 없음 | NOT RUN |
 | ADM-13 | 발전소담당자 화면에서 재발급 완료 후 다른 초대 취소 | 화면의 일회용 재발급 URL 보존 | NOT RUN |
 | ADM-14 | 발전소담당자 재발급 도중 5xx 또는 네트워크 단절 | 해당 링크 중복 재발급 차단, 수락 대기 목록 대조 안내 | NOT RUN |
-| ADM-15 | 취소·재발급·생성 RPC 미배포 상태에서 Edge Function 교체 시도 | 016→017→018→019→020 DB 마이그레이션 완료 전 Edge 배포 금지 | NOT RUN |
+| ADM-15 | 취소·재발급·생성 RPC 미배포 상태에서 Edge Function 교체 시도 | 016→017→018→019→020→021→022 DB 마이그레이션 완료 전 Edge 배포 금지 | NOT RUN |
 | ADM-16 | create-invite 실행 시 감사 기록 INSERT를 실패주입 (격리 DB) | 신규 초대 INSERT도 같은 트랜잭션에서 롤백 | NOT RUN |
 | ADM-17 | 토큰 해시 충돌 및 중복 생성 시도 (격리 DB) | 추가 초대/감사 기록 생성 없이 실패 | NOT RUN |
 | ADM-18 | 담당자 단건 Player 초대 링크 생성 후 재발급 클릭 | 원래 일회용 링크가 덮어써지지 않음; 수동 보관 확인 전 새 발급 금지 | NOT RUN |
@@ -85,6 +85,16 @@
 | PLY-04 | 상태 변경 감사 INSERT 실패주입 | 프로필 상태 변경도 롤백, 기존 활성 상태 유지 | NOT RUN |
 | PLY-05 | 응답 유실/서버 5xx 후 상태 변경 버튼 재클릭 시도 | 명단 재조회 및 명시적인 잠금 해제 전에는 중복 변경 차단 | NOT RUN |
 | PLY-06 | 동시에 비활성/재활성 변경 요청 | 최종 직렬화 순서대로 상태 저장·이벤트 1회씩 감사, 손실 업데이트 없음 | NOT RUN |
+| NICK-01 | 담당자의 동일 발전소 Player 닉네임 강제 초기화 | 12자 PLAYER* 임시 닉네임, resetRequired true, 이력 1건·감사 1건 일치 | NOT RUN |
+| NICK-02 | 다른 발전소 Player/담당자/관리자 대상 강제 초기화 | DB가 서비스 권한·소속을 재검증하여 차단 | NOT RUN |
+| NICK-03 | 초기화 이력/감사 저장을 실패주입 | Player 닉네임/플래그와 이력/감사 모두 롤백 | NOT RUN |
+| NICK-04 | 강제 초기화 후 서버 5xx·응답 단절 | 담당자 화면에서 추가 초기화 잠금, 명단 대조 후만 해제 | NOT RUN |
+| NICK-05 | Player가 활성 시즌에 닉네임 1회 변경 | 닉네임/시즌 변경 이력/감사 동시 반영; 다음 자율 변경 차단 | NOT RUN |
+| NICK-06 | Manager 강제 초기화 후 Player 닉네임 재설정 | 기존 시즌 변경 여부와 무관하게 복구 허용, resetRequired 해제 | NOT RUN |
+| NICK-07 | Player 닉네임 변경 시 이벤트/감사 실패주입 | 변경 및 정책 사용횟수 모두 롤백 | NOT RUN |
+| NICK-08 | Player 닉네임 변경 후 HTTP 응답 유실 | 내 프로필·닉네임 정책 재조회 성공 전 변경 잠금 | NOT RUN |
+| NICK-09 | Player 동시 닉네임 변경 2개 요청 | 프로필 행 잠금으로 시즌당 정상 변경 1건만 통과 | NOT RUN |
+| NICK-10 | 신규 닉네임 RPC 021/022 배포 순서 점검 | DB migration 적용/EXECUTE 권한 확인 전에 nickname-action Edge 배포 금지 | NOT RUN |
 
 ## 3.1 AuthProvider / 초대 수락 회귀 확인
 
