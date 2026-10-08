@@ -111,7 +111,7 @@ vi.mock("./offlineDb", () => ({
   }),
 }));
 
-import { flushQueuedSubmissions, submitSessionWithQueue, removeQueuedSubmission } from "./submissionQueue";
+import { flushQueuedSubmissions, submitSessionWithQueue, removeQueuedSubmission, retryBlockedSubmission } from "./submissionQueue";
 
 const sessionId = "ab000000-0000-4000-8000-000000000001";
 const body = {
@@ -469,5 +469,57 @@ describe("verified-only IndexedDB queue removal", () => {
     await expect(removeQueuedSubmission(sessionId, "user-one", "scenario-one"))
       .rejects.toThrow("submission_queue_delete_identity_conflict");
     expect(fixture.records).toEqual([original]);
+  });
+});
+
+
+describe("cross-tab stale queue body and blocked submission protection", () => {
+  it("retains original decisions when a stale tab submits different actions offline", async () => {
+    const original = queued();
+    fixture.records = [original];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      await expect(submitSessionWithQueue({
+        scenarioId: "scenario-one",
+        body: { ...body, actions: [
+          { type: "continue" },
+          { type: "choice", actionId: "stale-decision" },
+        ] },
+      })).rejects.toThrow("submission_queue_payload_conflict");
+      expect(fixture.records).toEqual([original]);
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("does not auto-resend or overwrite a blocked session on reconnect", async () => {
+    fixture.records = [{ ...queued(), state: "blocked", lastError: "action_log_rejected" }];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({
+      status: "rejected", reason: "submission_blocked_requires_manual_retry",
+    });
+    expect(fixture.records[0]?.state).toBe("blocked");
+    expect(fixture.invokes).toBe(0);
+  });
+
+  it("allows explicit manual retry of blocked choices then flushes once", async () => {
+    fixture.records = [{ ...queued(), state: "blocked", lastError: "action_log_rejected" }];
+    await retryBlockedSubmission(sessionId, "user-one");
+    expect(fixture.invokes).toBe(1);
+    expect(fixture.records).toEqual([]);
+  });
+
+  it("prevents an older retry count from overwriting a more recent pending row", async () => {
+    const current = { ...queued(), attempts: 5 };
+    fixture.records = [current];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      // The list read is stale; the store.get inside the write transaction
+      // must retain the newer retry state.
+      fixture.queueReadOverride = current;
+      await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(fixture.records[0]?.attempts).toBe(5);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

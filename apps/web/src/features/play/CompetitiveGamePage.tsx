@@ -681,11 +681,14 @@ export function CompetitiveGamePage({
               <div className="validation-box validation-box--error" role="alert">
                 {submission.reason === "submission_queue_unavailable"
                   ? "기기의 제출 대기 저장소를 사용할 수 없습니다. 제출을 보관했다고 볼 수 없으므로 이 화면을 유지하고 다시 시도해주세요."
-                  : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
+                  : submission.reason === "submission_blocked_requires_manual_retry"
+                    ? "이 세션은 서버에서 제출이 거절되어 자동 재시도가 중단됐습니다. 제출 기록은 보존됩니다. 담당자 확인 후 수동 재시도해주세요."
+                    : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
                 <button type="button" className="secondary-button compact-button"
-                  disabled={!online}
+                  disabled={!online || submission.reason === "submission_blocked_requires_manual_retry"}
                   onClick={() => void submitFinishedGame()}>
-                  서버 제출 다시 시도
+                  {submission.reason === "submission_blocked_requires_manual_retry"
+                    ? "수동 재시도 필요" : "서버 제출 다시 시도"}
                 </button>
               </div>
             ) : null}

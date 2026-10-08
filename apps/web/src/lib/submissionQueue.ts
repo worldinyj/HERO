@@ -6,7 +6,7 @@ import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
 import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
-import { decideQueueWrite } from "./submissionQueueWritePolicy";
+import { decideQueueWrite, type QueueWriteOptions } from "./submissionQueueWritePolicy";
 import { decideConfirmedQueueDeletion } from "./submissionQueueDeletePolicy";
 
 export type SessionSubmissionAction =
@@ -169,6 +169,7 @@ async function invokeSubmission(
 
 async function writeQueueRecord(
   record: PendingSessionSubmission,
+  options: QueueWriteOptions = {},
 ): Promise<void> {
   const db = await openHeroOfflineDb();
   if (!db) throw new Error("submission_queue_unavailable");
@@ -183,8 +184,10 @@ async function writeQueueRecord(
       const request = store.get(record.sessionId);
       request.onsuccess = () => {
         const existing = request.result as PendingSessionSubmission | undefined;
-        const decision = decideQueueWrite(existing, record);
-        if (decision === "preserve_committed") return;
+        const decision = decideQueueWrite(existing, record, options);
+        if (decision === "preserve_committed" ||
+            decision === "preserve_blocked" ||
+            decision === "preserve_newer_attempt") return;
         if (decision !== "write") {
           policyError = new Error("submission_queue_" + decision);
           transaction.abort();
@@ -436,6 +439,17 @@ export async function submitSessionWithQueue(
       return { status: "submitted", data: receipt, cleanupPending };
     }
 
+    // A permanently blocked submission must not be silently reactivated by
+    // a reconnect or by a stale tab. Explicit manual retry uses a dedicated
+    // queue transition with allowBlockedRetry=true.
+    if (existing?.state === "blocked") {
+      return {
+        status: "rejected",
+        reason: "submission_blocked_requires_manual_retry",
+        httpStatus: null,
+      };
+    }
+
     if (!online()) {
       await enqueueForUser(userId, input, "offline");
       return { status: "queued", reason: "offline" };
@@ -584,7 +598,7 @@ export async function retryBlockedSubmission(
       state: "pending",
       updatedAt: new Date().toISOString(),
       lastError: null,
-    });
+    }, { allowBlockedRetry: true });
     return true;
   });
 
