@@ -27,3 +27,27 @@ git pull --ff-only origin work/actions-paused-batch-20261008
 node --test scripts/hero-local.test.mjs
 node scripts/hero-local.mjs qa --deep --with-db
 ```
+
+## 2026-10-08 Mac Deno QA 실행 증거와 생성 파일
+
+사용자가 Mac에서 실행한 `qa --deep --with-deno --with-db`는 아래 단계를 모두 통과했다.
+
+- Edge `deno check` 9개 성공
+- Edge `deno test` 7개 파일, 개별 테스트 22개 성공
+- 게임 엔진 19개·웹 Vitest 300개·Chromium IndexedDB 7개 성공
+- 로컬 PostgreSQL pgTAP 17개 파일, 417개 성공
+- 시나리오·원인추적·법무 차단기·비밀키 및 코드분할 검사 정상 실행
+
+그러나 종료 시 `checkClean()`가 Deno CLI가 새로 생성한 로컬 `deno.lock` **3개**를 `??` 미추적 파일로 인식해 `LOCAL_QA_PASS` 출력 전에 중단했다. 해당 실행은 **전체 QA PASS로 기록하지 않는다**.
+
+정확히 다음 경로만 `.gitignore`에 추가했다.
+
+```text
+/supabase/functions/deno.lock
+/supabase/functions/submit-session/deno.lock
+/supabase/functions/admin-scenario/deno.lock
+```
+
+실제 로컬 파일은 삭제하지 않고, Deno 재실행 때 같은 생성물이 생겨도 Git clean 검사가 false positive를 내지 않게 한다. 노드 테스트는 위 3개만 무시하며 다른 `deno.lock` 경로를 숨기지 않는지 확인한다. 이 결정은 **현재 로컬 QA 출력에 대한 임시 정책**이다. 장기적으로 Deno 의존성 재현성이 필요하면 잠금파일을 검토·정상 버전관리하는 변경을 별도로 수행한다.
+
+새 SHA에서 다시 `node scripts/hero-local.mjs qa --deep --with-deno --with-db`를 돌려 실제 `QA_SCOPE deep=checked deno=checked full_mobile_flow=NOT_RUN` 종료 확인이 필요하다.

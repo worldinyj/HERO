@@ -207,3 +207,30 @@ test("E2E CI artifact collection must never archive Supabase credential dumps", 
   assert.ok(!content.includes("cp /tmp/hero-supabase.json "));
   assert.ok(!content.includes("hero-supabase-status.json"));
 });
+
+test("Deno local lockfile outputs do not block final QA Git clean check", () => {
+  const expected = [
+    "supabase/functions/deno.lock",
+    "supabase/functions/submit-session/deno.lock",
+    "supabase/functions/admin-scenario/deno.lock",
+  ];
+  for (const path of expected) {
+    const result = spawnSync("git", [
+      "check-ignore", "--no-index", "--quiet", "--", path,
+    ], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+    assert.equal(result.status, 0,
+      path + ": Deno-generated lockfile must be Git-ignored");
+  }
+  // Other dependency lockfiles should not become silently ignored.
+  for (const path of [
+    "supabase/functions/create-invite/deno.lock",
+    "supabase/deno.lock",
+    "docs/deno.lock",
+  ]) {
+    const result = spawnSync("git", [
+      "check-ignore", "--no-index", "--quiet", "--", path,
+    ], { cwd: new URL("..", import.meta.url), encoding: "utf8" });
+    assert.equal(result.status, 1,
+      path + ": scope Deno ignoring to the three known QA outputs");
+  }
+});
