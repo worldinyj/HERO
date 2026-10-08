@@ -34,6 +34,14 @@
 - GitHub Actions E2E는 미래 수동/정책 활성화 시에만 이 플래그를 지정하고, failure artifact에 Supabase 상태 JSON을 저장하지 않는다.
 - **전체 모바일 E2E 및 실제 Edge 서비스는 아직 실행되지 않았으며**, T7-01 상태는 부분 구현 유지한다.
 
+## 1.4 Deno 포함 전체 로컬 QA 통과 및 모바일 E2E fixture 안전성
+
+- 사용자 Mac 로그: `LOCAL_QA_PASS sha=6d572c8a5edbfa1579fae042830bfb47bb9195f2 db=tested`, `QA_SCOPE deep=checked deno=checked full_mobile_flow=NOT_RUN`.
+- 엔진 19건, 웹 300건, Deno 단위테스트 22건·Edge check 9건, Chromium IndexedDB 7건, pgTAP 417건 모두 통과.
+- 신규 `e2e/fixtureNamespace.mjs`는 데이터 쓰기 전에 고정 UUID, Auth 이메일, 발전소 코드, 시나리오 slug, 시즌 key 충돌을 읽기 전용으로 검사한다. 기존 데이터가 있거나 조회가 실패하면 중지.
+- 테스트용 `e2e-season`은 별도 생성하며 실제 월간 open 시즌을 재사용하지 않는다. `e2e:setup` 실행 스크립트는 이미 root package.json에 존재하여 추가 변경하지 않았다.
+- 모바일 전체 플로우는 아직 미실행. 부분적 fixture 생성과 재실행 cleanup은 여전히 별도 문제이며, 데이터 초기화를 자동 수행하지 않는다.
+
 ## 2. Phase별 진행
 
 | Phase | 작업 수 | 구현 | 부분 | 미착수 | 환산 진도 |

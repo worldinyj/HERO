@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { HERO_E2E_LOCAL_API, localE2eSeedGate } from "../e2e/localTargetGuard.mjs";
+import { assertFreshLocalE2eNamespace } from "../e2e/fixtureNamespace.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { BRANCH, PAGES_PROJECT, PAGES_DOMAIN, safeOrigin,
@@ -233,4 +234,72 @@ test("Deno local lockfile outputs do not block final QA Git clean check", () => 
     assert.equal(result.status, 1,
       path + ": scope Deno ignoring to the three known QA outputs");
   }
+});
+
+test("E2E fixture namespace checks existing accounts and rows before writes", async () => {
+  const scope = {
+    ids: { plant:"plant1", manager:"u1", inviteA:"i1", inviteB:"i2",
+      scenario:"s1", version:"v1" },
+    authIds:["u1", "u2"], emails:["first@example.test"],
+    scenarioSlug:"e2e_competitive",
+  };
+  const calls = [];
+  function mock({ authUsers = [], collision = null, readError = null,
+    authError = null, total = null } = {}) {
+    return {
+      auth:{admin:{listUsers:async()=>{
+        calls.push("listUsers");
+        return {data:{users:authUsers,total},error:authError};
+      }}},
+      from(table) {
+        return {select(){
+          const answer=async()=>{
+            calls.push(table);
+            return {data:collision===table?[{id:"existing"}]:[],
+              error:readError===table?{message:"read error"}:null};
+          };
+          return {in(){return{limit:answer}},eq(){return{limit:answer}}};
+        }};
+      },
+    };
+  }
+  assert.deepEqual(await assertFreshLocalE2eNamespace(mock(),scope),
+    {ok:true,reason:"fresh_hero_local_fixture_namespace"});
+  assert.equal(calls[0],"listUsers");
+  assert.ok(calls.includes("seasons"));
+  for(const users of [
+    [{id:"u1",email:"other@example.test"}],
+    [{id:"no-collision",email:"FIRST@example.test"}],
+  ]) {
+    await assert.rejects(
+      ()=>assertFreshLocalE2eNamespace(mock({authUsers:users}),scope),
+      /auth_fixture_already_exists/);
+  }
+  for(const table of ["plants","profiles","invitations","scenarios",
+    "scenario_versions","seasons"]) {
+    await assert.rejects(
+      ()=>assertFreshLocalE2eNamespace(mock({collision:table}),scope),
+      /fixture_already_exists/);
+    await assert.rejects(
+      ()=>assertFreshLocalE2eNamespace(mock({readError:table}),scope),
+      /lookup_failed/);
+  }
+  await assert.rejects(
+    ()=>assertFreshLocalE2eNamespace(mock({authError:{message:"fail"}}),scope),
+    /auth_lookup_failed/);
+  await assert.rejects(
+    ()=>assertFreshLocalE2eNamespace(mock({total:1001}),scope),
+    /auth_inventory_incomplete/);
+});
+
+test("E2E setup has safe fixture guard and never reuses monthly season", () => {
+  const source=readFileSync(new URL("../e2e/setup-local.ts",
+    import.meta.url),"utf8");
+  const pkg=JSON.parse(readFileSync(new URL("../package.json",import.meta.url),"utf8"));
+  assert.equal(pkg.scripts["e2e:setup"],"tsx e2e/setup-local.ts");
+  assert.ok(source.indexOf("await assertFreshLocalE2eNamespace")>0);
+  assert.ok(source.indexOf("await assertFreshLocalE2eNamespace")<
+    source.indexOf("await createUser({"));
+  assert.ok(source.includes("season_key: HERO_E2E_SEASON_KEY"));
+  assert.ok(!source.includes('from("seasons")\n  .select("id")\n  .eq("status", "open")'));
 });
