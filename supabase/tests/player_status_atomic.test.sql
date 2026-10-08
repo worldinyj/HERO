@@ -84,9 +84,9 @@ select results_eq($$select count(*) from public.audit_logs where action='player.
 -- and a real Player state mutation, even with a service-role caller.
 update public.plants set is_active=false
 where id='a2000000-0000-0000-0000-000000000001';
-select throws_ok($select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003',true)$,
+select throws_ok($$select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003',true)$$,
   'P0001','plant_inactive','suspended plant blocks status no-op');
-select throws_ok($select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003',false)$,
+select throws_ok($$select public.set_player_active_atomic('a1000000-0000-0000-0000-000000000001','a1000000-0000-0000-0000-000000000003',false)$$,
   'P0001','plant_inactive','suspended plant blocks status mutation');
 update public.plants set is_active=true
 where id='a2000000-0000-0000-0000-000000000001';

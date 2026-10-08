@@ -88,6 +88,26 @@ mismatchedPlans.forEach(m=>console.error("INVALID pgTAP DECLARATION "+m));
 check(testNames.length===17 && allAssertions===417 && mismatchedPlans.length===0,
   testNames.length+" pgTAP suites: "+allAssertions+" total planned declarations (NOT executed)");
 
+// Each assertion must quote SQL with $$...$$ (or a valid named tag).
+// Malformed $select ... $ passed earlier plan/count checks, but cannot parse.
+const invalidSqlQuotes=[];
+for(const name of testNames) {
+  const sql=read("supabase/tests/"+name);
+  for(const m of sql.matchAll(/(?<!\$)\$(?:select|insert|update|delete)\b(?!\$)/gi)) {
+    invalidSqlQuotes.push(name+":"+sql.slice(0,m.index).split("\n").length);
+  }
+}
+invalidSqlQuotes.forEach(loc=>console.error("INVALID pgTAP SQL DOLLAR QUOTE "+loc));
+check(invalidSqlQuotes.length===0,
+  "pgTAP SQL dollar-quoted statements have no malformed $select/$insert/... delimiters");
+
+// A service-role, audit-atomic plant RPC must not be replaced by a browser
+// role direct INSERT. The RLS suite must enforce this security boundary.
+const roleMatrix=read("supabase/tests/rls_role_matrix.test.sql");
+check(/select\s+throws_ok\(\s*\$\$insert into public\.plants\s*\(code, name, display_name\)\s*values\s*\('RLS-C'/i.test(roleMatrix) &&
+  roleMatrix.includes("'admin direct plant insert denied; audited service-role RPC required'"),
+  "RLS regression asserts admin direct plant INSERT is forbidden");
+
 
 
 for(const path of migrations) {

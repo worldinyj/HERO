@@ -115,9 +115,9 @@ select results_eq($$select count(*) from public.audit_logs where entity_id='c100
 -- success through the service RPC. DB guard precedes the idempotent branch.
 update public.plants set is_active=false
 where id='c2000000-0000-0000-0000-000000000001';
-select throws_ok($select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','AUDITSUCCESS')$,
+select throws_ok($$select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','AUDITSUCCESS')$$,
   'P0001','plant_inactive','suspended plant denies same-name no-op');
-select throws_ok($select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','BLOCKEDNEW')$,
+select throws_ok($$select public.change_nickname_self_atomic('c1000000-0000-0000-0000-000000000006','BLOCKEDNEW')$$,
   'P0001','plant_inactive','suspended plant denies new nickname');
 update public.plants set is_active=true
 where id='c2000000-0000-0000-0000-000000000001';
