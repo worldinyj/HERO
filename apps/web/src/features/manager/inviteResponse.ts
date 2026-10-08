@@ -10,7 +10,8 @@ export function readIssuedInviteLink(value: unknown): IssuedInviteLink | null {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   const data = value as Record<string, unknown>;
   if (
-    typeof data.invitationId !== "string" || !data.invitationId.trim() ||
+    typeof data.invitationId !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.invitationId) ||
     typeof data.inviteUrl !== "string" || !data.inviteUrl.trim() ||
     typeof data.expiresAt !== "string" || !data.expiresAt.trim() ||
     typeof data.plantDisplayName !== "string" || !data.plantDisplayName.trim() ||
@@ -55,6 +56,7 @@ export function readReissuedInviteLink(
   const result = value as Record<string, unknown>;
   if (
     result.reissued !== true ||
+    typeof requestedInvitationId !== "string" ||
     result.oldInvitationId !== requestedInvitationId ||
     link.invitationId === requestedInvitationId
   ) {

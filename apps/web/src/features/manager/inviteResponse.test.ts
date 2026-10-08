@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
 
 const good = {
-  invitationId: "abc-123",
+  invitationId: "11111111-1111-4111-8111-111111111111",
   inviteUrl: "https://hero.example/i/one-time-token",
   expiresAt: "2026-10-15T00:00:00.000Z",
   plantDisplayName: "새울",
@@ -37,37 +37,39 @@ describe("one-time invite response integrity", () => {
     expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/i/token#fragment" })).toBeNull();
     expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/other/token" })).toBeNull();
     expect(readIssuedInviteLink({ ...good, inviteUrl: "https://hero.example/i/" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, invitationId: "not-a-uuid" })).toBeNull();
+    expect(readIssuedInviteLink({ ...good, invitationId: 42 })).toBeNull();
   });
 });
 
 describe("reissued invitation must be tied to its requested original", () => {
-  const reissued = { ...good, reissued: true, oldInvitationId: "original-1" };
+  const reissued = { ...good, reissued: true, oldInvitationId: "22222222-2222-4222-8222-222222222222" };
   it("accepts only the matching original ID and a distinct replacement", () => {
-    expect(readReissuedInviteLink(reissued, "original-1")).toEqual(good);
-    expect(readReissuedInviteLink(reissued, "different-original")).toBeNull();
-    expect(readReissuedInviteLink({ ...reissued, invitationId: "original-1" }, "original-1")).toBeNull();
+    expect(readReissuedInviteLink(reissued, "22222222-2222-4222-8222-222222222222")).toEqual(good);
+    expect(readReissuedInviteLink(reissued, "33333333-3333-4333-8333-333333333333")).toBeNull();
+    expect(readReissuedInviteLink({ ...reissued, invitationId: "22222222-2222-4222-8222-222222222222" }, "22222222-2222-4222-8222-222222222222")).toBeNull();
   });
   it("rejects incomplete rotation and malformed one-time link", () => {
-    expect(readReissuedInviteLink({ ...good }, "original-1")).toBeNull();
-    expect(readReissuedInviteLink({ ...reissued, reissued: false }, "original-1")).toBeNull();
-    expect(readReissuedInviteLink({ ...reissued, inviteUrl: "javascript:alert(1)" }, "original-1")).toBeNull();
-    expect(readReissuedInviteLink(null, "original-1")).toBeNull();
+    expect(readReissuedInviteLink({ ...good }, "22222222-2222-4222-8222-222222222222")).toBeNull();
+    expect(readReissuedInviteLink({ ...reissued, reissued: false }, "22222222-2222-4222-8222-222222222222")).toBeNull();
+    expect(readReissuedInviteLink({ ...reissued, inviteUrl: "javascript:alert(1)" }, "22222222-2222-4222-8222-222222222222")).toBeNull();
+    expect(readReissuedInviteLink(null, "22222222-2222-4222-8222-222222222222")).toBeNull();
   });
 });
 
 describe("cancellation acknowledgment matches requested invitation", () => {
   const acknowledgment = {
     canceled: true,
-    invitationId: "inv-123",
+    invitationId: "11111111-1111-4111-8111-111111111111",
     canceledAt: "2026-10-08T03:00:00.000Z",
   };
   it("accepts a matching committed cancellation", () => {
-    expect(readCanceledInviteResult(acknowledgment, "inv-123")).toEqual(acknowledgment);
+    expect(readCanceledInviteResult(acknowledgment, "11111111-1111-4111-8111-111111111111")).toEqual(acknowledgment);
   });
   it("locks ambiguous or unrelated acknowledgments", () => {
-    expect(readCanceledInviteResult(acknowledgment, "inv-other")).toBeNull();
-    expect(readCanceledInviteResult({ ...acknowledgment, canceled: false }, "inv-123")).toBeNull();
-    expect(readCanceledInviteResult({ ...acknowledgment, canceledAt: "broken" }, "inv-123")).toBeNull();
-    expect(readCanceledInviteResult(null, "inv-123")).toBeNull();
+    expect(readCanceledInviteResult(acknowledgment, "33333333-3333-4333-8333-333333333333")).toBeNull();
+    expect(readCanceledInviteResult({ ...acknowledgment, canceled: false }, "11111111-1111-4111-8111-111111111111")).toBeNull();
+    expect(readCanceledInviteResult({ ...acknowledgment, canceledAt: "broken" }, "11111111-1111-4111-8111-111111111111")).toBeNull();
+    expect(readCanceledInviteResult(null, "11111111-1111-4111-8111-111111111111")).toBeNull();
   });
 });
