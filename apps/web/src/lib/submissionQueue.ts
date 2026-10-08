@@ -4,6 +4,7 @@ import { getSupabase } from "./supabase";
 import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./submissionReceipt";
 import { serializeSubmissionForSession } from "./submissionSerial";
 import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
+import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -238,6 +239,26 @@ export async function removeQueuedSubmission(
   }
 }
 
+/**
+ * One failed cache deletion cannot cancel a verified server receipt or
+ * prevent cleanup of the other local record.
+ */
+async function cleanupConfirmedLocalSession(
+  userId: string,
+  scenarioId: string,
+  sessionId: string,
+): Promise<{ cleanupPending: boolean }> {
+  const queued = await cleanupAfterConfirmedCommit(
+    () => removeQueuedSubmission(sessionId),
+  );
+  const cached = await cleanupAfterConfirmedCommit(
+    async () => {
+      await clearCompetitiveSessionIfMatches(userId, scenarioId, sessionId);
+    },
+  );
+  return { cleanupPending: queued.cleanupPending || cached.cleanupPending };
+}
+
 async function enqueueForUser(
   userId: string,
   input: QueueableSessionSubmission,
@@ -302,8 +323,8 @@ export async function submitSessionWithQueue(
     if (attempt.ok) {
       // The server's completion receipt is authoritative. A broken IDB
       // delete must not report the committed session as rejected.
-      const { cleanupPending } = await cleanupAfterConfirmedCommit(
-        () => removeQueuedSubmission(input.body.sessionId),
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, input.scenarioId, input.body.sessionId,
       );
       return { status: "submitted", data: attempt.data, cleanupPending };
     }
@@ -370,8 +391,8 @@ async function runFlush(userId: string): Promise<SubmissionFlushResult> {
         if (attempt.ok) {
           // Even if deleting this local row fails, its server commit is
           // confirmed. A later replay is safe only via DB idempotence.
-          await cleanupAfterConfirmedCommit(
-            () => removeQueuedSubmission(item.sessionId),
+          await cleanupConfirmedLocalSession(
+            userId, item.scenarioId, item.sessionId,
           );
           return "submitted";
         }

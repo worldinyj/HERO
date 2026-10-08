@@ -4,6 +4,7 @@ import {
   COMPETITIVE_SESSION_STORE,
   openHeroOfflineDb,
 } from "./offlineDb";
+import { matchesCompletedCompetitiveSession } from "./competitiveCleanupPolicy";
 
 export interface CompetitiveServerSession {
   sessionId: string;
@@ -134,6 +135,49 @@ export async function clearCompetitiveSession(
           transaction.error ??
             new Error("competitive_session_delete_aborted"),
         );
+    });
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Conditionally remove a completed local play. Read and delete under the
+ * SAME readwrite transaction so a concurrently saved replay is preserved.
+ */
+export async function clearCompetitiveSessionIfMatches(
+  userId: string,
+  scenarioId: string,
+  completedSessionId: string,
+): Promise<boolean> {
+  const db = await openHeroOfflineDb();
+  if (!db) return false;
+  try {
+    return await new Promise<boolean>((resolve, reject) => {
+      const transaction = db.transaction(COMPETITIVE_SESSION_STORE, "readwrite");
+      const store = transaction.objectStore(COMPETITIVE_SESSION_STORE);
+      let deleted = false;
+      const request = store.get(sessionKey(userId, scenarioId));
+
+      request.onsuccess = () => {
+        if (!matchesCompletedCompetitiveSession(
+          request.result, userId, scenarioId, completedSessionId,
+        )) return;
+        try {
+          store.delete(sessionKey(userId, scenarioId));
+          deleted = true;
+        } catch (error) {
+          reject(error);
+          try { transaction.abort(); } catch { /* transaction already closed */ }
+        }
+      };
+      request.onerror = () =>
+        reject(request.error ?? new Error("competitive_session_cleanup_read_failed"));
+      transaction.oncomplete = () => resolve(deleted);
+      transaction.onerror = () =>
+        reject(transaction.error ?? new Error("competitive_session_cleanup_failed"));
+      transaction.onabort = () =>
+        reject(transaction.error ?? new Error("competitive_session_cleanup_aborted"));
     });
   } finally {
     db.close();

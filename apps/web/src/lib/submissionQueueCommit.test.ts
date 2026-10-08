@@ -6,6 +6,8 @@ const fixture = vi.hoisted(() => ({
   records: [] as PendingSessionSubmission[],
   failDelete: false,
   invokes: 0,
+  games: [] as Array<Record<string, unknown>>,
+  failGameDelete: false,
 }));
 
 vi.mock("./supabase", () => ({
@@ -34,18 +36,38 @@ vi.mock("./supabase", () => ({
 
 vi.mock("./offlineDb", () => ({
   SUBMISSION_QUEUE_STORE: "submission-queue",
+  COMPETITIVE_SESSION_STORE: "competitive-sessions",
   openHeroOfflineDb: async () => ({
     close: () => {},
-    transaction: (_name: string, _mode: string) => {
+    transaction: (name: string, _mode: string) => {
       const transaction = {
         oncomplete: null as (() => void) | null,
         onerror: null as (() => void) | null,
         onabort: null as (() => void) | null,
         error: null,
+        abort: () => queueMicrotask(() => transaction.onabort?.()),
         objectStore: () => ({
-          delete: (sessionId: string) => {
-            if (fixture.failDelete) throw new Error("simulated_idb_abort");
-            fixture.records = fixture.records.filter((row) => row.sessionId !== sessionId);
+          get: (key: string) => {
+            const request = {
+              result: fixture.games.find((row) => row.key === key),
+              onsuccess: null as (() => void) | null,
+              onerror: null as (() => void) | null,
+              error: null,
+            };
+            queueMicrotask(() => {
+              request.onsuccess?.();
+              queueMicrotask(() => transaction.oncomplete?.());
+            });
+            return request;
+          },
+          delete: (key: string) => {
+            if (name === "competitive-sessions") {
+              if (fixture.failGameDelete) throw new Error("simulated_game_delete_abort");
+              fixture.games = fixture.games.filter((row) => row.key !== key);
+            } else {
+              if (fixture.failDelete) throw new Error("simulated_idb_abort");
+              fixture.records = fixture.records.filter((row) => row.sessionId !== key);
+            }
             queueMicrotask(() => transaction.oncomplete?.());
           },
           index: (_name: string) => ({
@@ -97,6 +119,8 @@ beforeEach(() => {
   fixture.records = [];
   fixture.failDelete = false;
   fixture.invokes = 0;
+  fixture.games = [];
+  fixture.failGameDelete = false;
 });
 
 describe("server-confirmed submissions with failed local deletion", () => {
@@ -121,5 +145,45 @@ describe("server-confirmed submissions with failed local deletion", () => {
       .resolves.toEqual({ submitted: 1, blocked: 0, remaining: 1 });
     expect(fixture.records).toHaveLength(1);
     expect(fixture.invokes).toBe(1);
+  });
+});
+
+describe("conditional cleanup of a confirmed competitive session", () => {
+  const saved = (serverId: string) => ({
+    formatVersion: 1,
+    key: "user-one:scenario-one",
+    userId: "user-one",
+    scenarioId: "scenario-one",
+    server: { sessionId: serverId },
+  });
+
+  it("clears matching cached completed game after foreground submission", async () => {
+    fixture.games = [saved(sessionId)];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: false });
+    expect(fixture.games).toEqual([]);
+  });
+
+  it("preserves a newer replay from another tab for the same scenario", async () => {
+    fixture.games = [saved("newer-session")];
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: false });
+    expect(fixture.games).toEqual([saved("newer-session")]);
+  });
+
+  it("cleans the matching cached game after background queue replay", async () => {
+    fixture.records = [queued()];
+    fixture.games = [saved(sessionId)];
+    await expect(flushQueuedSubmissions("user-one"))
+      .resolves.toEqual({ submitted: 1, blocked: 0, remaining: 0 });
+    expect(fixture.games).toEqual([]);
+  });
+
+  it("reports cleanup pending but retains confirmed submission if cache deletion fails", async () => {
+    fixture.games = [saved(sessionId)];
+    fixture.failGameDelete = true;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
+    expect(fixture.games).toHaveLength(1);
   });
 });

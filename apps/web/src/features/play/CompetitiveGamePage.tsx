@@ -361,16 +361,8 @@ export function CompetitiveGamePage({
           evaluation: serverEvaluation(result.data),
           cleanupPending: result.cleanupPending,
         });
-        // The session is committed even if clearing local replay state fails.
-        try {
-          await clearCompetitiveSession(userId, scenarioId);
-        } catch {
-          setSubmission((current) =>
-            current.status === "submitted"
-              ? { ...current, cleanupPending: true }
-              : current,
-          );
-        }
+        // Queue service cleared only a matching server-confirmed game.
+        // A newer replay written by another tab must remain untouched.
         return;
       }
 
