@@ -1,4 +1,4 @@
-import { writeAuditLog, writeAuditLogs } from "../_shared/audit.ts";
+import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
@@ -149,69 +149,44 @@ async function reissueInvite(
 
   const tokenHash = await sha256Hex(token);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const canceledAt = new Date().toISOString();
+  // A single PostgreSQL function owns cancellation, replacement and audit.
+  // Partial failures (including token collision) leave the old token valid.
+  const { data: replacement, error: reissueError } = await operator.admin.rpc(
+    "reissue_invitation_atomic",
+    {
+      p_invitation_id: invitation.id,
+      p_actor_user_id: operator.userId,
+      p_token_hash: tokenHash,
+      p_expires_at: expiresAt,
+    },
+  );
 
-  const { error: cancelError } = await operator.admin
-    .from("invitations")
-    .update({ canceled_at: canceledAt })
-    .eq("id", invitation.id)
-    .is("accepted_at", null)
-    .is("canceled_at", null);
+  if (reissueError) throw new Error(reissueError.message);
 
-  if (cancelError) throw cancelError;
+  const result = replacement as {
+    reissued?: boolean;
+    oldInvitationId?: string;
+    invitationId?: string;
+    expiresAt?: string;
+  } | null;
 
-  const { data: replacement, error: insertError } = await operator.admin
-    .from("invitations")
-    .insert({
-      token_hash: tokenHash,
-      plant_id: invitation.plant_id,
-      target_role: invitation.target_role,
-      invitee_name: invitation.invitee_name,
-      job_role: invitation.target_role === "player" ? invitation.job_role : null,
-      team_name: invitation.team_name,
-      created_by: operator.userId,
-      expires_at: expiresAt,
-    })
-    .select("id")
-    .single();
-
-  if (insertError || !replacement) {
-    throw insertError ?? new Error("replacement_invitation_create_failed");
+  if (
+    result?.reissued !== true ||
+    result.oldInvitationId !== invitation.id ||
+    !result.invitationId ||
+    !result.expiresAt
+  ) {
+    // A malformed response is not proof the transaction failed. The admin
+    // interface must not auto-retry an uncertain reissue.
+    throw new Error("reissue_result_unknown");
   }
-
-  await writeAuditLogs(operator.admin, [
-    {
-      actorUserId: operator.userId,
-      plantId: invitation.plant_id,
-      action: "invitation.canceled_for_reissue",
-      entityType: "invitation",
-      entityId: invitation.id,
-      metadata: {
-        replacement_invitation_id: replacement.id,
-        operator_role: operator.role,
-      },
-    },
-    {
-      actorUserId: operator.userId,
-      plantId: invitation.plant_id,
-      action: "invitation.reissued",
-      entityType: "invitation",
-      entityId: replacement.id,
-      metadata: {
-        replaced_invitation_id: invitation.id,
-        target_role: invitation.target_role,
-        job_role: invitation.job_role,
-        operator_role: operator.role,
-      },
-    },
-  ]);
 
   return {
     reissued: true,
     oldInvitationId: invitation.id,
-    invitationId: replacement.id,
+    invitationId: result.invitationId,
     inviteUrl,
-    expiresAt,
+    expiresAt: result.expiresAt,
     plantDisplayName: plant.display_name,
   };
 }
