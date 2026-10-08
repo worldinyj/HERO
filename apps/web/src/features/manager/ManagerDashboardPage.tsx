@@ -68,6 +68,7 @@ export function ManagerDashboardPage() {
   const [reissueResult, setReissueResult] = useState<ReissueResult | null>(null);
   const [copiedReissue, setCopiedReissue] = useState(false);
   const [uncertainReissues, setUncertainReissues] = useState<string[]>([]);
+  const [uncertainPlayerIds, setUncertainPlayerIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async (background = false) => {
@@ -88,12 +89,14 @@ export function ManagerDashboardPage() {
       setParticipants((participation.data ?? []) as ParticipationRow[]);
       setPendingInvites((pending.data ?? []) as PendingInviteRow[]);
       setAggregates((aggregate.data ?? []) as AggregateRow[]);
+      return true;
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : "발전소 참여 현황을 불러오지 못했습니다.",
       );
+      return false;
     } finally {
       if (!background) setLoading(false);
     }
@@ -235,19 +238,56 @@ export function ManagerDashboardPage() {
   }
 
   async function handlePlayerActive(profileId: string, isActive: boolean) {
+    if (actionPending || uncertainPlayerIds.includes(profileId)) {
+      setError("이전 상태 변경 결과를 명단에서 확인한 뒤 다시 요청해주세요.");
+      return;
+    }
+
     try {
       setActionPending(`player:${profileId}`);
       setError(null);
-      await invokeManagerAction({
+      const result = await invokeManagerAction({
         action: "set-player-active",
         profileId,
         isActive,
       });
-      await loadDashboard(true);
+
+      if (
+        result.profileId !== profileId ||
+        result.isActive !== isActive ||
+        typeof result.changed !== "boolean"
+      ) {
+        throw new Error("player_status_result_unknown");
+      }
+
+      if (!(await loadDashboard(true))) {
+        setUncertainPlayerIds((old) => old.includes(profileId) ? old : [...old, profileId]);
+        setError("상태 변경은 완료되었지만 명단을 다시 읽지 못했습니다. 명단 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "사용자 상태 변경에 실패했습니다.",
-      );
+      if (isDefiniteInviteRejection(cause)) {
+        setError(cause instanceof Error ? cause.message : "사용자 상태 변경이 거절되었습니다.");
+      } else {
+        // The request may have committed despite the lost HTTP response.
+        setUncertainPlayerIds((old) => old.includes(profileId) ? old : [...old, profileId]);
+        await loadDashboard(true);
+        setError("상태 변경 응답을 확인할 수 없습니다. 명단에서 실제 활성 상태를 확인한 뒤 잠금을 해제해주세요.");
+      }
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  async function reconcilePlayerStatus() {
+    if (actionPending) return;
+    setActionPending("player-reconcile");
+    try {
+      if (await loadDashboard(true)) {
+        setUncertainPlayerIds([]);
+        setError(null);
+      } else {
+        setError("명단 조회에 실패했습니다. 다시 확인한 후 잠금을 해제해주세요.");
+      }
     } finally {
       setActionPending(null);
     }
@@ -338,6 +378,23 @@ export function ManagerDashboardPage() {
         <p className="muted mini-copy">
           완료 장 수와 최근 활동만 확인합니다. 개인 HP·선택·엔딩은 표시하지 않습니다.
         </p>
+        {uncertainPlayerIds.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>Player 상태 변경 결과 확인 필요</strong>
+            <p className="muted">
+              응답이 끊긴 작업은 서버에서 이미 완료됐을 수 있습니다. 표시된 명단을 재조회한 뒤
+              상태를 확인하고 다음 변경을 진행해주세요.
+            </p>
+            <button
+              type="button"
+              className="secondary-button compact-button"
+              disabled={actionPending !== null}
+              onClick={() => void reconcilePlayerStatus()}
+            >
+              명단 다시 조회 · 잠금 해제
+            </button>
+          </div>
+        ) : null}
 
         {participants.length === 0 ? (
           <p className="muted">아직 초대를 수락한 사용자가 없습니다.</p>
@@ -380,8 +437,8 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending === `player:${row.profile_id}` ||
-                        actionPending === `nickname:${row.profile_id}`
+                        actionPending !== null ||
+                        uncertainPlayerIds.includes(row.profile_id)
                       }
                       onClick={() =>
                         void handlePlayerActive(row.profile_id, !row.is_active)
