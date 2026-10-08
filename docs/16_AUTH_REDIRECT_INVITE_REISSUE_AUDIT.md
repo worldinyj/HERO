@@ -29,6 +29,14 @@
 
 **아직 PASS를 선언할 수 없다.** Migration 017은 원격에 적용되지 않았고 로컬 PostgreSQL/pgTAP을 실행하지 않았다. DB row lock 동시성·통신 단절·실 Kakao 초대 E2E도 미검증이다. 프런트엔드/Edge Function이 새 RPC를 호출하기 전에 DB migration이 적용되어야 한다. 실패 시나리오 검증을 통과할 때까지 배포 차단을 유지한다.
 
+## 3.1 초대 취소 및 수락/재발급 충돌 처리 — 코드 구현, 실제 검증 보류
+
+- `202610080018_atomic_invitation_cancel.sql`: `cancel_invitation_atomic`에서 기존 초대 행을 `FOR UPDATE` 잠그고 DB 실제 역할/발전소를 재검증한 뒤 취소와 감사 이벤트를 한 트랜잭션에서 저장.
+- `manager-user-action/index.ts`의 취소 경로도 별도 UPDATE·Audit를 제거하고 service_role 전용 RPC로 교체.
+- `invitation_atomic_cancel.test.sql` 27개 pgTAP 검사(권한, 범위, 기존 수락/취소, 재발급과의 선후 관계, 감사 INSERT 실패주입 롤백)를 작성하였으나 아직 실행하지 않음.
+- 발전소담당자 대시보드에서 재발급 링크 보존 및 서버 응답 단절 후 자동 중복 발급 잠금을 적용.
+- 실제 동시 요청 `cancel` vs `accept/reissue`는 별도 DB 세션과 E2E에서 검증해야 함. SQL 테스트에 포함된 연속 호출은 진짜 병렬 테스트가 아님.
+
 ## 4. 일괄 CI 재개 시
 
 - `pnpm --dir apps/web test`로 리다이렉트 21개 사례 포함 전체 단위 테스트
@@ -37,4 +45,4 @@
 - `deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts`
 - Kakao 실계정 로그인 / 새 사용자 차단 / 관리자·담당자 초대 성공·실패 시험
 - `supabase test db`에서 Migration 017과 21 pgTAP 사례(특히 23505 rollback)를 확인하고, 동시 재발급·이미 수락된 초대/실패주입 E2E를 수행
-- PR/main merge, migration016·017 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행
+- PR/main merge, migration016·017·018 적용, Supabase 실데이터 수정, 앱 배포는 승인된 통합검증 게이트 후에만 진행
