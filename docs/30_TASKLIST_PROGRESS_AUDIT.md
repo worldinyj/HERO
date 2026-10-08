@@ -56,6 +56,20 @@
 - 신규 로컬-only 판정: HERO loopback 환경 확인 후에만 `*` 허용. OPTIONS의 POST/Authorization/ApiKey/content-type 사전요청과 wildcard credential 금지를 검증. **실제 Mac 새 검사 PASS는 아직 미확인**, production CORS sign-off가 아니다.
 - 모바일 fixture 및 전체 E2E 미생성/미실행 상태 유지, T7-01 partial.
 
+
+## 1.8 2026-10-09 로컬 전체 모바일 E2E 실제 통과 (사용자 Mac 실행 로그)
+
+> **검증 대상 SHA**: `97e58d5faf6469928d20486d739002ce8a47f783`. 본 항목은 사용자 제공 터미널 출력에 의한 **로컬 실행 증거**이며 GitHub Actions, 원격 staging, 실제 Kakao OAuth, 실기기·법무·파일럿·릴리스 승인 증거가 아니다.
+
+- `node scripts/hero-local.mjs qa --deep --with-deno --with-db`: `LOCAL_QA_PASS sha=97e58d5faf6469928d20486d739002ce8a47f783 db=tested`; `QA_SCOPE deep=checked deno=checked full_mobile_flow=NOT_RUN` (후속 별도 모바일 E2E 수행).
+- 코드/브라우저: Node 22/22, 엔진 19/19, 웹 300/300, IndexedDB 7/7, Deno check·test 성공, lint/typecheck/build 성공, 로컬 pgTAP **17개 파일/417건 PASS**.
+- 로컬 `peek-invite`: `HERO_EDGE_CHECK_PASS invalid_token=400 cors=wildcard-local options=PASS`. 이는 로컬 와일드카드 CORS 검증일 뿐 운영 CORS 승인이 아니다.
+- `node scripts/hero-mobile-e2e.mjs run --confirm-local-fixture-seed`: `E2E_FIXTURE_PREFLIGHT_PASS`, `HERO_LOCAL_FIXTURE_SEED_PASS`, 390×844 및 360×800 각 **3개** Playwright 케이스 통과, 총 **6/6 PASS** 및 `HERO_FULL_MOBILE_E2E_PASS (local only)`.
+- 검증 흐름: 관리자→담당자→사용자 초대, 초대 없는 로그인 차단, 초대→플레이→오프라인 제출 큐 재처리→리더보드. 테스트 데이터는 HERO 로컬 DB에 **이미 생성됨**. 고정 fixture를 다시 생성하는 명령은 무조건 재실행하지 말고 충돌/잔존 상태를 먼저 확인한다. DB reset/자동 삭제 금지.
+- **상태 판정:** T7-01의 **로컬 에뮬레이션 통합 검증 증거는 충족**. 원본 TASKLIST의 전체 DoD에는 최신 코드 리뷰·실기기 및 운영 검증 등 남은 조건이 있으므로 T7-01은 `partial`, 86항목 관리용 진도율 **75.6% 유지**. 향후 코드 변경 커밋에 기존 SHA 검증을 자동 승계하지 않는다.
+- 이번 로그의 release gate는 `not_release_ready`: 경쟁 콘텐츠 승인 0/3, 법무·개인정보, staging/live, 사내망/개인기기, 실기기, 파일럿 등 **7 BLOCKED / 1 DEFERRED**. 오디오 생성물 0건 및 `audioPolicy=deferred`.
+- 차기 순서: (1) 로컬 fixture 안전 보존 및 실행 증거 기록 (2) 실제 카카오 OAuth/실기기 테스트 설계 (3) 경쟁 시나리오 전문가 5항목 승인 (4) 개인정보·배포 정책 결정 (5) 승인 후 별도 staging 검증. GitHub Actions 재실행은 사용자 요청대로 보류.
+
 ## 2. Phase별 진행
 
 | Phase | 작업 수 | 구현 | 부분 | 미착수 | 환산 진도 |
