@@ -74,6 +74,8 @@ export function ManagerDashboardPage() {
   const [invitationReconciliationReady, setInvitationReconciliationReady] = useState(false);
   const [uncertainPlayerIds, setUncertainPlayerIds] = useState<string[]>([]);
   const [uncertainNicknameIds, setUncertainNicknameIds] = useState<string[]>([]);
+  const [playerReconciliationReady, setPlayerReconciliationReady] = useState(false);
+  const [nicknameReconciliationReady, setNicknameReconciliationReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async (background = false) => {
@@ -300,6 +302,7 @@ export function ManagerDashboardPage() {
       }
 
       if (!(await loadDashboard(true))) {
+        setNicknameReconciliationReady(false);
         setUncertainNicknameIds((old) =>
           old.includes(profileId) ? old : [...old, profileId]
         );
@@ -311,6 +314,7 @@ export function ManagerDashboardPage() {
       } else {
         // A lost response may follow a committed reset. Do not blindly issue
         // a second nickname because the first can never be reconstructed.
+        setNicknameReconciliationReady(false);
         setUncertainNicknameIds((old) =>
           old.includes(profileId) ? old : [...old, profileId]
         );
@@ -325,16 +329,24 @@ export function ManagerDashboardPage() {
   async function reconcileNicknameReset() {
     if (actionPending) return;
     setActionPending("nickname-reconcile");
+    setNicknameReconciliationReady(false);
     try {
       if (await loadDashboard(true)) {
-        setUncertainNicknameIds([]);
-        setError(null);
+        setNicknameReconciliationReady(true);
+        setError("갱신된 명단의 닉네임을 실제 변경 결과와 대조한 후 잠금을 해제해주세요.");
       } else {
         setError("명단 조회에 실패했습니다. 닉네임 상태를 확인할 수 없습니다.");
       }
     } finally {
       setActionPending(null);
     }
+  }
+
+  function confirmNicknameReset() {
+    if (!nicknameReconciliationReady || actionPending) return;
+    setUncertainNicknameIds([]);
+    setNicknameReconciliationReady(false);
+    setError(null);
   }
 
   async function handlePlayerActive(profileId: string, isActive: boolean) {
@@ -361,6 +373,7 @@ export function ManagerDashboardPage() {
       }
 
       if (!(await loadDashboard(true))) {
+        setPlayerReconciliationReady(false);
         setUncertainPlayerIds((old) => old.includes(profileId) ? old : [...old, profileId]);
         setError("상태 변경은 완료되었지만 명단을 다시 읽지 못했습니다. 명단 확인 후 잠금을 해제해주세요.");
       }
@@ -369,6 +382,7 @@ export function ManagerDashboardPage() {
         setError(cause instanceof Error ? cause.message : "사용자 상태 변경이 거절되었습니다.");
       } else {
         // The request may have committed despite the lost HTTP response.
+        setPlayerReconciliationReady(false);
         setUncertainPlayerIds((old) => old.includes(profileId) ? old : [...old, profileId]);
         await loadDashboard(true);
         setError("상태 변경 응답을 확인할 수 없습니다. 명단에서 실제 활성 상태를 확인한 뒤 잠금을 해제해주세요.");
@@ -381,16 +395,24 @@ export function ManagerDashboardPage() {
   async function reconcilePlayerStatus() {
     if (actionPending) return;
     setActionPending("player-reconcile");
+    setPlayerReconciliationReady(false);
     try {
       if (await loadDashboard(true)) {
-        setUncertainPlayerIds([]);
-        setError(null);
+        setPlayerReconciliationReady(true);
+        setError("갱신된 명단의 활성 상태와 실제 변경 결과를 확인한 후 잠금을 해제해주세요.");
       } else {
-        setError("명단 조회에 실패했습니다. 다시 확인한 후 잠금을 해제해주세요.");
+        setError("명단 조회에 실패했습니다. 재시도 잠금은 유지됩니다.");
       }
     } finally {
       setActionPending(null);
     }
+  }
+
+  function confirmPlayerStatus() {
+    if (!playerReconciliationReady || actionPending) return;
+    setUncertainPlayerIds([]);
+    setPlayerReconciliationReady(false);
+    setError(null);
   }
 
   async function handleShareReissue() {
@@ -485,14 +507,18 @@ export function ManagerDashboardPage() {
               서버에서 이미 닉네임이 변경됐을 수 있습니다. 명단을 다시 읽어 변경된
               닉네임을 대조한 후 추가 요청을 진행해주세요.
             </p>
-            <button
-              type="button"
-              className="secondary-button compact-button"
-              disabled={actionPending !== null}
-              onClick={() => void reconcileNicknameReset()}
-            >
-              닉네임 명단 재조회 · 잠금 해제
-            </button>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button compact-button"
+                disabled={actionPending !== null}
+                onClick={() => void reconcileNicknameReset()}>
+                1. 닉네임 명단 다시 조회
+              </button>
+              <button type="button" className="text-button"
+                disabled={actionPending !== null || !nicknameReconciliationReady}
+                onClick={() => confirmNicknameReset()}>
+                2. 결과 확인 완료 · 잠금 해제
+              </button>
+            </div>
           </div>
         ) : null}
         {uncertainPlayerIds.length > 0 ? (
@@ -502,14 +528,18 @@ export function ManagerDashboardPage() {
               응답이 끊긴 작업은 서버에서 이미 완료됐을 수 있습니다. 표시된 명단을 재조회한 뒤
               상태를 확인하고 다음 변경을 진행해주세요.
             </p>
-            <button
-              type="button"
-              className="secondary-button compact-button"
-              disabled={actionPending !== null}
-              onClick={() => void reconcilePlayerStatus()}
-            >
-              명단 다시 조회 · 잠금 해제
-            </button>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button compact-button"
+                disabled={actionPending !== null}
+                onClick={() => void reconcilePlayerStatus()}>
+                1. Player 명단 다시 조회
+              </button>
+              <button type="button" className="text-button"
+                disabled={actionPending !== null || !playerReconciliationReady}
+                onClick={() => confirmPlayerStatus()}>
+                2. 활성 상태 확인 완료 · 잠금 해제
+              </button>
+            </div>
           </div>
         ) : null}
 
