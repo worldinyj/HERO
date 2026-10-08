@@ -135,3 +135,40 @@ describe("immutable offline payload comparison before foreground network", () =>
     expect(sameSubmissionBody(invalid as never, savedBody)).toBe(false);
   });
 });
+
+
+describe("malformed stored submission actions fail closed before network", () => {
+  const base = {
+    sessionId: "session-one",
+    actions: [{ type: "choice", actionId: "check" }],
+    reflectionAnswered: true,
+    swissCheeseViewed: true,
+  };
+  it("rejects primitive and unknown actions rather than comparing undefined fields", () => {
+    for (const invalid of ["choice", 3, true, {}, { type: "unsupported" }]) {
+      expect(sameSubmissionBody(
+        { ...base, actions: [invalid] } as never,
+        { ...base, actions: [invalid] } as never,
+      )).toBe(false);
+    }
+  });
+  it("rejects missing IDs for choices, info and cards", () => {
+    for (const type of ["choice", "info", "card"]) {
+      const invalid = { ...base, actions: [{ type }] };
+      expect(sameSubmissionBody(invalid, invalid)).toBe(false);
+    }
+  });
+  it("rejects mixed action/card identifiers on the same action", () => {
+    const invalid = { ...base, actions: [
+      { type: "card", cardId: "a", actionId: "b" },
+    ] };
+    expect(sameSubmissionBody(invalid, invalid)).toBe(false);
+  });
+  it("preserves canonical choice, info, card and continue equivalence", () => {
+    const canonical = { ...base, actions: [
+      { type: "continue" }, { type: "choice", actionId: "check" },
+      { type: "info", actionId: "review" }, { type: "card", cardId: "C04" },
+    ] };
+    expect(sameSubmissionBody(canonical, structuredClone(canonical))).toBe(true);
+  });
+});

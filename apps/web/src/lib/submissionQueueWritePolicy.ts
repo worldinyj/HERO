@@ -45,10 +45,26 @@ export function sameSubmissionBody(a: QueueWriteBody, b: QueueWriteBody): boolea
       a.actions.length !== b.actions.length) return false;
   return a.actions.every((entry, i) => {
     const other = b.actions[i];
-    return !!entry && !!other &&
-      entry.type === other.type &&
-      entry.actionId === other.actionId &&
-      entry.cardId === other.cardId;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
+        !other || typeof other !== "object" || Array.isArray(other) ||
+        entry.type !== other.type) return false;
+    switch (entry.type) {
+      case "continue":
+        return entry.actionId === undefined && other.actionId === undefined &&
+          entry.cardId === undefined && other.cardId === undefined;
+      case "choice":
+      case "info":
+        return typeof entry.actionId === "string" &&
+          entry.actionId.length > 0 &&
+          entry.actionId === other.actionId &&
+          entry.cardId === undefined && other.cardId === undefined;
+      case "card":
+        return typeof entry.cardId === "string" && entry.cardId.length > 0 &&
+          entry.cardId === other.cardId &&
+          entry.actionId === undefined && other.actionId === undefined;
+      default:
+        return false;
+    }
   });
 }
 
