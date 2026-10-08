@@ -46,7 +46,18 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
 export function classifyInvitationError(
   cause: unknown,
 ): { error: string; status: number } {
-  const message = cause instanceof Error ? cause.message : "";
+  // PostgREST may reject with a plain { code: "P0001", message: "..." }
+  // object rather than an Error instance. Accept only an *own*, data-property
+  // message from the explicit PostgreSQL RAISE EXCEPTION SQLSTATE. Unknown
+  // SQL errors, object prototypes and synthetic accessors stay opaque 500.
+  let message = cause instanceof Error ? cause.message : "";
+  if (!message && cause !== null && typeof cause === "object") {
+    const code = Object.getOwnPropertyDescriptor(cause, "code")?.value;
+    const rawMessage = Object.getOwnPropertyDescriptor(cause, "message")?.value;
+    if (code === "P0001" && typeof rawMessage === "string") {
+      message = rawMessage;
+    }
+  }
   // This intentionally checks exact messages, rather than substring matches.
   // Unknown DB/transport/response errors stay 5xx and therefore trigger the
   // client's "outcome uncertain" retry lock for issuance/reissuance.

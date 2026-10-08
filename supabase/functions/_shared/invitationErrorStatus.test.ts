@@ -34,6 +34,50 @@ Deno.test("pre-mutation validation failures expose actionable 4xx responses", ()
   }
 });
 
+Deno.test("PostgREST P0001 objects expose only allowlisted rejection codes", () => {
+  const permitted = [
+    ["invitation_already_canceled", 409],
+    ["invitation_not_found", 404],
+    ["player_not_found", 404],
+    ["nickname_change_limit_reached", 409],
+    ["nickname_taken", 409],
+  ] as const;
+  for (const [message, status] of permitted) {
+    const actual = classifyInvitationError({
+      code: "P0001",
+      message,
+      details: "internal SQL details must not be surfaced",
+      hint: "secret",
+    });
+    if (actual.status !== status || actual.error !== message) {
+      throw new Error("known PostgREST database rejection not classified");
+    }
+  }
+});
+
+Deno.test("malformed or unexpected DB error objects stay opaque", () => {
+  const inherited = Object.create({ message: "invitation_not_found", code: "P0001" });
+  const accessor = Object.defineProperty({ code: "P0001" }, "message", {
+    get() { throw new Error("must not invoke SQL message getters"); },
+  });
+  for (const value of [
+    { code: "23505", message: "nickname_taken" },
+    { code: "XX000", message: "invitation_not_found" },
+    { code: "P0001", message: "invitation_not_found: secret" },
+    { code: "P0001", message: "__proto__" },
+    { code: "P0001", message: "toString" },
+    { code: "P0001", message: 123 },
+    { message: "invitation_not_found" },
+    inherited,
+    accessor,
+  ]) {
+    const actual = classifyInvitationError(value);
+    if (actual.status !== 500 || actual.error !== "internal_error") {
+      throw new Error("opaque DB failure leaked or mapped to client rejection");
+    }
+  }
+});
+
 Deno.test("unknown or potentially committed requests remain 500", () => {
   for (const cause of [
     new Error("reissue_result_unknown"),
