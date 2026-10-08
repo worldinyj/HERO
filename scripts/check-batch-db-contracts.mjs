@@ -8,11 +8,12 @@ const tests = [
 ["my_record_summary",8],["invitation_atomic_reissue",21],
 ["invitation_atomic_cancel",27],["invitation_atomic_creation",27],
 ["player_status_atomic",30],["nickname_force_reset_atomic",33],
-["nickname_self_change_atomic",37]
+["nickname_self_change_atomic",37],["admin_plant_atomic",34]
 ];
 const migrations = ["leaderboard_public_projection","atomic_invitation_reissue",
 "atomic_invitation_cancel","atomic_invitation_creation","atomic_player_status",
-"atomic_nickname_force_reset","atomic_nickname_self_change"].map((s,i)=>
+"atomic_nickname_force_reset","atomic_nickname_self_change",
+"atomic_admin_plant_actions"].map((s,i)=>
 "supabase/migrations/20261008"+String(i+16).padStart(4,"0")+"_"+s+".sql");
 const rpcs = [
 ["reissue_invitation_atomic",1,"manager-user-action"],
@@ -20,7 +21,9 @@ const rpcs = [
 ["create_invitation_atomic",3,"create-invite"],
 ["set_player_active_atomic",4,"manager-user-action"],
 ["force_reset_nickname_atomic",5,"nickname-action"],
-["change_nickname_self_atomic",6,"nickname-action"]
+["change_nickname_self_atomic",6,"nickname-action"],
+["create_plant_atomic",7,"admin-plant-action"],
+["set_plant_active_atomic",7,"admin-plant-action"]
 ];
 let failures=0, total=0;
 function check(ok,msg) { console.log((ok?"PASS ":"FAIL ")+msg); if(!ok)failures++; }
@@ -32,7 +35,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===218,"pgTAP declarations total 218 (NOT executed)");
+check(total===252,"pgTAP declarations total 252 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also
@@ -51,7 +54,7 @@ for(const name of testNames) {
   }
 }
 for(const collision of collisions)console.error("DUPLICATE UUID "+collision);
-check(testNames.length>=14 && collisions.length===0,
+check(testNames.length>=15 && collisions.length===0,
   testNames.length+" DB test files: fixed UUID namespace separation");
 
 // Auth fixture e-mails must also be distinct across suites; a shared
@@ -129,6 +132,18 @@ check(["confirmPlayerStatus","confirmNicknameReset","confirmInvitationReconcilia
   adminUI.includes("function confirmAdminInvites()")&&
   panel.includes("function confirmInviteRoster()"),
   "uncertain operator actions require explicit confirmation");
+
+const plantSql=read(migrations[7]);
+const plantEdge=read("supabase/functions/admin-plant-action/index.ts");
+check(["created","plantId","isActive","code","displayName"].every(k=>
+  plantSql.includes("'"+k+"'") && plantEdge.includes(k)) &&
+  ["create-plant","set-plant-active","readPlantCreated","readPlantStatus",
+    "confirmPlantMutations"].every(k=>adminUI.includes(k)),
+  "Admin plant create/status: atomic DB, Edge and UI DTO contracts");
+check(plantSql.includes("revoke insert,update,delete on public.plants from authenticated;") &&
+  !adminUI.includes('.from("plants").insert(') &&
+  !adminUI.includes('.from("plants")\\n        .update('),
+  "plant writes cannot bypass Admin service-role audit via browser");
 
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],
