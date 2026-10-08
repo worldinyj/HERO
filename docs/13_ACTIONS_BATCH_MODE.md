@@ -41,6 +41,7 @@
 - Migration 019 코드 추가: `create_invitation_atomic`으로 초대 INSERT 및 감사 로그를 단일 DB 트랜잭션에 묶음. pgTAP 27개 작성; 감사 INSERT 실패주입 포함. 단건 Player 일회용 링크 덮어쓰기 UI도 방지.
 - 검증 문서: `docs/17_ATOMIC_INVITATION_REISSUE_VALIDATION.md`, `docs/18_ATOMIC_INVITATION_CANCEL_VALIDATION.md`, `docs/19_ATOMIC_INVITATION_CREATION_VALIDATION.md`. Migration 016 43 + 017 21 + 018 27 + 019 27 = **118개 pgTAP assertion 코드 작성, NOT RUN**.
 - 신규 초대 생성/취소/재발급 Edge HTTP 오류계약 정비: 명시적 DB 사전 거절만 400/401/403/404/409로 분류; 서버·DB·네트워크 결과가 불확실한 경우는 500으로 유지하며 SQL 내부 오류 문구를 외부에 전달하지 않음. `invitationErrorStatus.ts` 및 Deno 회귀 테스트 2개 추가. CI에도 테스트 명령만 등록(현 시점 **Actions 실행하지 않음**).
+- 2026-10-08 격리형 실행검사: 변경된 `invitationErrorStatus.ts` 및 `invitationErrorStatus.test.ts` 2그룹을 Node22 TypeScript stripping + Deno.test shim 환경에서 실행 **2/2 PASS**; TypeScript standalone `tsc --noEmit --strict --noUncheckedIndexedAccess` **PASS**. Deno 자체, 전체 웹/Edge 통합테스트 및 pgTAP은 **NOT RUN**.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 4. Actions 없이 로컬에서 선택적으로 실행할 검사

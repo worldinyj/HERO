@@ -35,7 +35,7 @@ DB 함수 내에서 활성 프로필과 actor-role을 재검증한다. Admin은 
 
 - `supabase/functions/_shared/invitationErrorStatus.ts`: DB 또는 권한 검증의 알려진 거절만 4xx로 변환하고, 예상치 못한 PostgreSQL 오류·DB 응답 지연·결과 누락 등은 `500 internal_error`로 유지.
 - `create-invite`, `manager-user-action` 모두 공통 변환을 사용하여 일부 DB 거절에 500을 반환하던 문제 수정.
-- `invitationErrorStatus.test.ts` Deno 단위 테스트 코드 추가; CI의 향후 일괄 검사에만 등록. 현재 **NOT RUN**.
+- `invitationErrorStatus.test.ts` Deno 단위 테스트 코드 추가; CI의 향후 일괄 검사에만 등록. **Deno runner NOT RUN** (Node22에서 동일 TS 테스트를 shim으로 격리 실행 2/2 PASS, TypeScript standalone strict + noUncheckedIndexedAccess PASS).
 - 불확실한 500은 이미 처리되었을 수 있으므로 프런트의 재발급 중지·대조 플로우 유지.
 
 ## 누적 DB 계약 점검
