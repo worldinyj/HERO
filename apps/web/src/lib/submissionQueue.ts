@@ -366,33 +366,6 @@ async function cleanupConfirmedLocalSession(
   return { cleanupPending: cached.cleanupPending || queued.cleanupPending };
 }
 
-async function enqueueForUser(
-  userId: string,
-  input: QueueableSessionSubmission,
-  reason: string,
-): Promise<void> {
-  const existing = (await listQueuedSubmissions(userId)).find(
-    (item) => item.sessionId === input.body.sessionId,
-  );
-  // Never replace a server-confirmed tombstone with a pending submission.
-  if (existing?.state === "committed") return;
-  const now = new Date().toISOString();
-
-  await writeQueueRecord({
-    formatVersion: 1,
-    sessionId: input.body.sessionId,
-    userId,
-    scenarioId: input.scenarioId,
-    body: input.body,
-    state: "pending",
-    queuedAt: existing?.queuedAt ?? now,
-    updatedAt: now,
-    attempts: existing?.attempts ?? 0,
-    lastAttemptAt: existing?.lastAttemptAt ?? null,
-    lastError: reason,
-  });
-}
-
 async function updateAttempt(
   item: PendingSessionSubmission,
   attempt: AttemptResult,
@@ -465,13 +438,10 @@ export async function submitSessionWithQueue(
       };
     }
 
-    if (!online()) {
-      await enqueueForUser(userId, input, "offline");
-      return { status: "queued", reason: "offline" };
-    }
-
-    // The list above is advisory. Recheck the CURRENT row in one write
-    // transaction, and durably stage the first online request before sending.
+    // Both offline and online paths must honor the SAME current IDB row.
+    // A stale getAll listing may omit a committed, blocked or conflicting
+    // entry; report that state rather than incorrectly claiming "queued".
+    // The transaction durably stages any new pending submission before send.
     const preparation = await stageForegroundSubmission(userId, input);
     if (preparation.kind === "conflict") {
       return {
@@ -501,6 +471,10 @@ export async function submitSessionWithQueue(
         cleanupPending,
       };
     }
+    if (!online()) {
+      return { status: "queued", reason: "offline" };
+    }
+
     // User credentials can change while waiting for IndexedDB.
     if ((await currentUserId()) !== userId) {
       throw new Error("authenticated_session_changed");

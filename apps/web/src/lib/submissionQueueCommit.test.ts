@@ -460,9 +460,8 @@ describe("atomic IndexedDB queue write fallback", () => {
     vi.stubGlobal("navigator", { onLine: false });
     try {
       const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
-      expect(result).toMatchObject({ status: "queued", reason: "offline" });
-      expect(fixture.records[0]?.state).toBe("committed");
-      expect(fixture.records[0]?.completionReceipt).toMatchObject({ sessionId });
+      expect(result).toMatchObject({ status: "submitted" });
+      expect(fixture.records).toEqual([]);
       expect(fixture.invokes).toBe(0);
     } finally { vi.unstubAllGlobals(); }
   });
@@ -527,7 +526,9 @@ describe("cross-tab stale queue body and blocked submission protection", () => {
           { type: "continue" },
           { type: "choice", actionId: "stale-decision" },
         ] },
-      })).rejects.toThrow("submission_queue_payload_conflict");
+      })).resolves.toMatchObject({
+        status: "rejected", reason: "submission_queue_payload_conflict",
+      });
       expect(fixture.records).toEqual([original]);
       expect(fixture.invokes).toBe(0);
     } finally { vi.unstubAllGlobals(); }
@@ -581,7 +582,9 @@ describe("read-before-write catches stale list snapshots", () => {
         body: { ...body, actions: [
           { type: "continue" }, { type: "choice", actionId: "wrong-choice" },
         ] },
-      })).rejects.toThrow("submission_queue_payload_conflict");
+      })).resolves.toMatchObject({
+        status: "rejected", reason: "submission_queue_payload_conflict",
+      });
       expect(fixture.records).toEqual([original]);
       expect(fixture.invokes).toBe(0);
     } finally { vi.unstubAllGlobals(); }
@@ -872,5 +875,53 @@ describe("first online marker failure after successful server confirmation", () 
       userId: "user-one", sessionId, state: "pending", body,
     });
     expect(fixture.invokes).toBe(1);
+  });
+});
+
+
+describe("offline staging reports authoritative IndexedDB state", () => {
+  it("returns blocked instead of queued when stale listing misses a manual-review row", async () => {
+    fixture.records = [{ ...queued(), state: "blocked" }];
+    fixture.queueListOverride = [];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({
+        status: "rejected", reason: "submission_blocked_requires_manual_retry",
+      });
+      expect(fixture.records[0]?.state).toBe("blocked");
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("returns confirmed cleanup pending for an unseen receipt-less tombstone", async () => {
+    fixture.records = [{ ...queued(), state: "committed" }];
+    fixture.queueListOverride = [];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({
+        status: "queued", reason: "confirmed_cleanup_pending",
+      });
+      expect(fixture.records[0]?.state).toBe("committed");
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("reports conflict instead of queued for a different user's hidden payload", async () => {
+    const saved = { ...queued(), body: {
+      ...body, actions: [{ type: "choice" as const, actionId: "stored" }],
+    } };
+    fixture.records = [saved];
+    fixture.queueListOverride = [];
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+      expect(result).toMatchObject({
+        status: "rejected", reason: "submission_queue_payload_conflict",
+      });
+      expect(fixture.records).toEqual([saved]);
+      expect(fixture.invokes).toBe(0);
+    } finally { vi.unstubAllGlobals(); }
   });
 });
