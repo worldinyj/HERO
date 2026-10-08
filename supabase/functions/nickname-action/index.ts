@@ -1,5 +1,6 @@
 import { writeAuditLog } from "../_shared/audit.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { validateNickname } from "../_shared/nickname.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import {
@@ -285,7 +286,7 @@ Deno.serve(async (req) => {
 
     return json(req, { error: "unknown_action" }, 400);
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    return json(req, { error: message }, message === "unauthorized" ? 401 : 500);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });

@@ -69,6 +69,7 @@ export function ManagerDashboardPage() {
   const [copiedReissue, setCopiedReissue] = useState(false);
   const [uncertainReissues, setUncertainReissues] = useState<string[]>([]);
   const [uncertainPlayerIds, setUncertainPlayerIds] = useState<string[]>([]);
+  const [uncertainNicknameIds, setUncertainNicknameIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async (background = false) => {
@@ -206,6 +207,11 @@ export function ManagerDashboardPage() {
   }
 
   async function handleNicknameReset(profileId: string) {
+    if (actionPending || uncertainNicknameIds.includes(profileId)) {
+      setError("이전 닉네임 초기화 결과를 명단에서 먼저 확인해주세요.");
+      return;
+    }
+
     try {
       setActionPending(`nickname:${profileId}`);
       setError(null);
@@ -219,19 +225,56 @@ export function ManagerDashboardPage() {
           },
         },
       );
-
       if (invokeError) throw invokeError;
 
-      const result = data as { reset?: boolean; error?: string };
-      if (!result.reset) {
-        throw new Error(result.error ?? "닉네임 초기화에 실패했습니다.");
+      const result = data as {
+        reset?: boolean;
+        profileId?: string;
+        nickname?: string;
+        resetRequired?: boolean;
+      } | null;
+      if (
+        result?.reset !== true ||
+        result.profileId !== profileId ||
+        typeof result.nickname !== "string" ||
+        result.resetRequired !== true
+      ) {
+        throw new Error("nickname_reset_outcome_unknown");
       }
 
-      await loadDashboard(true);
+      if (!(await loadDashboard(true))) {
+        setUncertainNicknameIds((old) =>
+          old.includes(profileId) ? old : [...old, profileId]
+        );
+        setError("초기화는 완료되었지만 명단 재조회에 실패했습니다. 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "닉네임 초기화에 실패했습니다.",
-      );
+      if (isDefiniteInviteRejection(cause)) {
+        setError(cause instanceof Error ? cause.message : "닉네임 초기화가 거절되었습니다.");
+      } else {
+        // A lost response may follow a committed reset. Do not blindly issue
+        // a second nickname because the first can never be reconstructed.
+        setUncertainNicknameIds((old) =>
+          old.includes(profileId) ? old : [...old, profileId]
+        );
+        await loadDashboard(true);
+        setError("초기화 응답을 확인할 수 없습니다. 명단의 닉네임을 대조한 뒤 재시도 잠금을 해제해주세요.");
+      }
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  async function reconcileNicknameReset() {
+    if (actionPending) return;
+    setActionPending("nickname-reconcile");
+    try {
+      if (await loadDashboard(true)) {
+        setUncertainNicknameIds([]);
+        setError(null);
+      } else {
+        setError("명단 조회에 실패했습니다. 닉네임 상태를 확인할 수 없습니다.");
+      }
     } finally {
       setActionPending(null);
     }
@@ -378,6 +421,23 @@ export function ManagerDashboardPage() {
         <p className="muted mini-copy">
           완료 장 수와 최근 활동만 확인합니다. 개인 HP·선택·엔딩은 표시하지 않습니다.
         </p>
+        {uncertainNicknameIds.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>닉네임 강제 초기화 결과 확인 필요</strong>
+            <p className="muted">
+              서버에서 이미 닉네임이 변경됐을 수 있습니다. 명단을 다시 읽어 변경된
+              닉네임을 대조한 후 추가 요청을 진행해주세요.
+            </p>
+            <button
+              type="button"
+              className="secondary-button compact-button"
+              disabled={actionPending !== null}
+              onClick={() => void reconcileNicknameReset()}
+            >
+              닉네임 명단 재조회 · 잠금 해제
+            </button>
+          </div>
+        ) : null}
         {uncertainPlayerIds.length > 0 ? (
           <div className="invite-result-box" role="alert">
             <strong>Player 상태 변경 결과 확인 필요</strong>
@@ -426,8 +486,8 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending === `nickname:${row.profile_id}` ||
-                        actionPending === `player:${row.profile_id}`
+                        actionPending !== null ||
+                        uncertainNicknameIds.includes(row.profile_id)
                       }
                       onClick={() => void handleNicknameReset(row.profile_id)}
                     >
