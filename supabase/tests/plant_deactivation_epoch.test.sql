@@ -1,7 +1,7 @@
 -- Plant suspension: token epochs, DB write guards, preserved game history.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(32);
+select plan(35);
 
 insert into auth.users(id,email) values
 ('f1000000-0000-0000-0000-000000000001','epoch-admin@hero.test'),
@@ -62,6 +62,15 @@ set local role authenticated;
 set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000002';
 select is((select private.auth_role())::text,null::text,'suspended manager loses RLS active role');
 select is((select private.auth_plant()),null::uuid,'suspended manager loses RLS plant scope');
+-- Suspended plants must not expose other users' learning history.
+select results_eq($select count(*) from public.play_sessions$,array[0::bigint],
+  'manager has no other players session read scope while plant suspended');
+set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000003';
+select results_eq($select count(*) from public.play_sessions
+  where user_id='f1000000-0000-0000-0000-000000000003'$,array[1::bigint],
+  'suspended active player retains owner-only session history SELECT');
+select is((select public.my_record_summary()->'profile'->>'nickname'),
+  'EPPLAYER'::text,'suspended active player can read own summary history');
 reset role;
 set local role service_role;
 select lives_ok($$select public.set_plant_active_atomic('f1000000-0000-0000-0000-000000000001','f2000000-0000-0000-0000-000000000001',false)$$,'repeated deactivation is a no-op');
