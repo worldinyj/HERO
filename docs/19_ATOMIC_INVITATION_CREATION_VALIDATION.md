@@ -49,9 +49,9 @@ DB 함수 내에서 활성 프로필과 actor-role을 재검증한다. Admin은 
 
 ## 적용 순서 (승인 전 실행 금지)
 
-1. 로컬 DB에서 001~015 및 016→017→018→019→020 순서대로 적용한 뒤 `supabase test db` 전체 검사.
+1. 로컬 DB에서 001~015 및 016→017→018→019→020→021→022 순서대로 적용한 뒤 `supabase test db` 전체 검사.
 2. Deno 타입검사·웹 앱 단위 테스트·컴파일 및 실제 독립 트랜잭션 경쟁 테스트 수행.
-3. 검증 통과 및 별도 승인 후 staging DB migration016→017→018→019→020 적용.
+3. 검증 통과 및 별도 승인 후 staging DB migration016→017→018→019→020→021→022 적용.
 4. 새 생성·취소·재발급 RPC의 service_role grant 확인.
 5. Edge Function `create-invite` 및 `manager-user-action`, 웹앱을 동일 릴리스 버전으로 배포.
 6. 실제 Kakao Admin→Manager→Player 발급/수락/재발급/취소 E2E 확인.
