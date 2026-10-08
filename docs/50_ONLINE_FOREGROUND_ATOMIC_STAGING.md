@@ -16,3 +16,7 @@
 - 제출 큐 IndexedDB mock 통합 시험 8건 추가. 기존 시험의 '완료 후 마커 쓰기 실패'와 '전송 전 최초 기록 쓰기 실패'를 구별하기 위해 `failQueuePutAt` 카운터 도입.
 - 실제 Vitest/IndexedDB 브라우저 멀티탭/PostgreSQL 동시성 E2E 시험은 아직 NOT RUN. 해당 기능은 T5-04 PARTIAL.
 - GitHub Actions, main, PR #79, 원격 Supabase, Cloudflare 미변경. Tasklist 진도율 75.6% 유지.
+
+## 기록 쓰기 실패 시점 분리 (2026-10-08)
+
+기존 pending 행이 있는 경우는 신규 스테이징 put이 없으므로 **영수증 마커 쓰기가 첫 번째 put**이다. 기존 회귀 2건의 오류 주입 인덱스를 1로 수정했다. 신규 온라인 최초 제출은 1번째 put이 pending 생성, 2번째 put이 committed 영수증이므로 **두 번째 put만 실패시키는 회귀 1건**을 추가했다. 이때 서버 결과는 submitted/cleanupPending으로 알리되, 원본 pending을 삭제하지 않도록 확인한다. 실제 Vitest 실행은 미완료.

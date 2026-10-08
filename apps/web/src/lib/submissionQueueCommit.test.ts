@@ -380,7 +380,7 @@ describe("legacy committed receipt safety", () => {
 
   it("does not claim the local cleanup succeeded when marking the receipt fails", async () => {
     fixture.records = [queued()];
-    fixture.failQueuePutAt = 2;
+    fixture.failQueuePutAt = 1;
     fixture.failDelete = true;
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
@@ -484,7 +484,7 @@ describe("atomic IndexedDB queue write fallback", () => {
 describe("verified-only IndexedDB queue removal", () => {
   it("keeps pending choices if the receipt marker write aborts", async () => {
     fixture.records = [queued()];
-    fixture.failQueuePutAt = 2;
+    fixture.failQueuePutAt = 1;
     const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
     expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
     expect(fixture.records).toEqual([queued()]);
@@ -856,5 +856,21 @@ describe("durable first-online submission before the network request", () => {
       userId: "user-one", state: "pending", body,
     });
     expect(fixture.invokes).toBe(0);
+  });
+});
+
+
+describe("first online marker failure after successful server confirmation", () => {
+  it("keeps first staged actions when writing the committed receipt fails", async () => {
+    fixture.failQueuePutAt = 2;
+    const result = await submitSessionWithQueue({ scenarioId: "scenario-one", body });
+    expect(result).toMatchObject({ status: "submitted", cleanupPending: true });
+    expect(fixture.queuePutCount).toBe(2);
+    expect(fixture.pendingAtInvoke).toEqual([true]);
+    expect(fixture.records).toHaveLength(1);
+    expect(fixture.records[0]).toMatchObject({
+      userId: "user-one", sessionId, state: "pending", body,
+    });
+    expect(fixture.invokes).toBe(1);
   });
 });
