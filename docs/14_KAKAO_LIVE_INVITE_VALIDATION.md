@@ -187,7 +187,10 @@
 | SUSP-07 | Admin 운영 중지/재활성화 버튼 | 코드 재입력과 영향 확인 전에는 요청 불가 | NOT RUN |
 | SUSP-08 | 초대 peek 조회 중 DB 장애 | 404 아닌 500 internal_error, 내부 SQL/설정 오류 메시지 노출 금지 | NOT RUN |
 | SUSP-09 | 초대 peek에서 실제 토큰 미존재 | 404 invitation_not_found 유지 | NOT RUN |
-| SUSP-10 | 전체 287개 pgTAP 신규 선언·16개 SQL 테스트 및 실시간 동시성 | 실제 DB에서 PASS 필요 | NOT RUN |
+| SUSP-10 | 전체 291개 pgTAP 신규 선언·16개 SQL 테스트 및 실시간 동시성 | 실제 DB에서 PASS 필요 | NOT RUN |
+
+| SUSP-11 | 재활성화 뒤 중지 이전 세대의 미수락 초대 목록 확인 | 과거 DB 이력은 보존하지만 담당자/Admin 운영 명단에서는 제외 | NOT RUN |
+| SUSP-12 | 재활성화 뒤 새 세대 초대를 발급한 뒤 목록 확인 | 현재 세대의 새 초대만 운영 명단에 표시됨 | NOT RUN |
 
 세부 정책: `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md`.
 

@@ -214,6 +214,18 @@ check(
   "suspension pgTAP assertions use valid dollar quoted SQL"
 );
 
+
+// Ensure invalidated epoch links cannot reappear in current operator lists.
+const epochSQL=read(migrations[8]);
+const adminRoster=read("apps/web/src/features/admin/AdminOrgPage.tsx");
+const epochFilter=read("apps/web/src/features/admin/adminOrgResponse.ts");
+check(epochSQL.includes("i.plant_invitation_epoch=pl.invitation_epoch") &&
+  epochSQL.includes("create or replace function public.manager_pending_invites()") &&
+  adminRoster.includes("currentPendingInvitations(") &&
+  adminRoster.includes("plant_invitation_epoch") &&
+  epochFilter.includes("current.get(i.plant_id) === i.plant_invitation_epoch"),
+  "suspension: hide old-epoch links from Admin and Manager rosters");
+
 for(const [fn,forbidden] of [
 ["manager-user-action","writeAuditLog("],
 ["create-invite","writeAuditLog("],
