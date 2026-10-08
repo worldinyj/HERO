@@ -54,13 +54,13 @@
 - Admin 조직관리의 초대 취소·재발급은 응답 유실과 명단 재조회 실패를 별도로 추적하며, 분실된 일회용 링크는 복원 가능하다고 표시하지 않음. `docs/25_ADMIN_PLAYER_INVITE_RECONCILIATION_VALIDATION.md` 참조.
 - UI 최종 계약 정리: 초대 생성·재발급·취소의 `inviteResponse.ts`는 HTTP 본문 UUID/만료시각/URL을 검증, 재발급의 기존→새 초대 ID, 취소의 요청 ID/취소시각 정합성 검증을 Admin·Manager 화면에 공통 적용. Player 상태/닉네임 초기화도 서버 명단 재조회와 사용자 확인을 분리한 2단계 잠금 해제 도입. `docs/26_INVITATION_RESPONSE_CONTRACT_VALIDATION.md` 참조. 전체 React Vitest/E2E **NOT RUN**.
 - Migration 023: Admin의 발전소 생성·활성 상태 변경을 `create_plant_atomic`/`set_plant_active_atomic` 및 `admin-plant-action` Edge로 통일. 이전 브라우저 직접 INSERT/UPDATE/DELETE 권한을 철회하고 Admin 역할 재검증, 상태 행 잠금, 감사 기록 실패 시 전체 롤백을 계약으로 명시. `admin_plant_atomic.test.sql` **34개 pgTAP 선언 작성, NOT RUN**. 누적 신규 **252개** 선언, 서비스 역할 RPC **8종**. `docs/27_ATOMIC_ADMIN_PLANT_VALIDATION.md` 참고.
-- Migration 024 비활성 발전소 경계 강화: 기존 비활성 발전소의 초대 세대값 초기 보정(구 링크 재활성화 방지), 신규 링크 발급/수락 및 교육 시작/완료 차단, 담당자 발전소 전체 범위 철회. Player 자신의 과거 교육 기록은 읽기 전용 유지하도록 RLS와 `my_record_summary` 조건 정합성 보완. Admin 화면 운영 중지/재활성화의 발전소 코드+영향 확인 의무 추가. `peek-invite` DB 조회 장애를 토큰 없음(404)과 분리하고 내부 오류 미노출. `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md` 참고. **pgTAP 총 287개 선언, DB 실행 NOT RUN**.
+- Migration 024 비활성 발전소 경계 강화: 기존 비활성 발전소의 초대 세대값 초기 보정(구 링크 재활성화 방지), 신규 링크 발급/수락 및 교육 시작/완료 차단, 담당자 발전소 전체 범위 철회. Player 자신의 과거 교육 기록은 읽기 전용 유지하도록 RLS와 `my_record_summary` 조건 정합성 보완. Admin 화면 운영 중지/재활성화의 발전소 코드+영향 확인 의무 추가. `peek-invite` DB 조회 장애를 토큰 없음(404)과 분리하고 내부 오류 미노출. `docs/28_PLANT_SUSPENSION_LIFECYCLE_VALIDATION.md` 참고. **pgTAP 총 289개 선언, DB 실행 NOT RUN**.
 - 사용자 요청에 따라 Actions를 반복 호출하지 않음
 
 ## 3.1 오프라인 배치 DB 계약 사전검사
 
 - `node scripts/check-batch-db-contracts.mjs` 또는 `pnpm check:batch-db-contracts` 명령 추가. **Node 20 이상, 외부 의존성·DB/네트워크·GitHub Actions 사용 없음**.
-- Migration 016~024 순서/트랜잭션 선언, 서비스 역할 한정 RPC 8종의 선언·Edge 연결, 추가 pgTAP 파일 11종의 선언 287개와 `plan()` 일치, 테스트 트랜잭션 `ROLLBACK` 표기를 점검.
+- Migration 016~024 순서/트랜잭션 선언, 서비스 역할 한정 RPC 8종의 선언·Edge 연결, 추가 pgTAP 파일 11종의 선언 289개와 `plan()` 일치, 테스트 트랜잭션 `ROLLBACK` 표기를 점검.
 - 2026-10-08 Migration023 추가 이전 GitHub 브랜치 실제 파일 19개를 독립 정적 비교한 결과 **19개 파일/218개 선언/6개 RPC 연결 확인, 불일치 0**. 새 명령 자체의 Node 실행 및 실제 PostgreSQL/pgTAP 수행은 별개이며 현재 **NOT RUN**.
 - `nickname_self_change_atomic.test.sql`에서 기존 열린 시즌을 테스트 트랜잭션 내부에서 임시 `scheduled`로 변경해 테스트 시즌 선택을 격리. 바깥 `ROLLBACK`으로 모든 변화를 복원. 프로덕션 DB 변경 아님.
 - 차후 최종 CI에서 `pnpm check:batch-db-contracts` 한 번 실행하도록 워크플로에 포함했으나, 현재 배치 브랜치에서 워크플로를 시작하지 않음.

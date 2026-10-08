@@ -25,13 +25,13 @@ Migration 024를 처음 적용할 때, 이미 중지된 발전소의 기존 초�
 | Edge | `supabase/functions/_shared/supabase.ts` | 비활성 발전소의 Player/담당자 작업 사전 차단 |
 | 초대 조회 | `supabase/functions/peek-invite/index.ts` | 비활성·epoch 불일치 사유 반환, DB 장애와 없는 토큰 구분, 내부 오류 미노출 |
 | Admin UI | `apps/web/src/features/admin/AdminOrgPage.tsx`, `plantTransitionConfirmation.ts` | 코드 재입력·영향 동의, 위험한 상태 전환 직전 확인 |
-| DB 검증 | `supabase/tests/plant_deactivation_epoch.test.sql` | **35개 pgTAP 선언** (DB 실행 전), 관리자 범위 차단, 구 링크 무효화, 교육 동결·재개, 본인 이력 owner 접근 |
+| DB 검증 | `supabase/tests/plant_deactivation_epoch.test.sql` | **37개 pgTAP 선언** (DB 실행 전), 관리자 범위 차단, 구 링크 무효화, 교육 동결·재개, 본인 이력 owner 접근 |
 | WEB 검증 | `apps/web/src/features/admin/plantTransitionConfirmation.test.ts` | 승인되지 않은 상태 전환 방지 (Vitest 미실행) |
 
 ## 재현 단계 (전부 NOT RUN)
 
 1. 격리 PostgreSQL에 Migration001~023 순서 적용. 중지된 발전소, 당시 발급된 미수락 초대 링크를 사전 fixture로 구성한 뒤 Migration024 적용. 이전 링크 무효화 확인.
-2. 같은 DB에서 신규 pgTAP **287개 선언**과 기존 정책 테스트 전체 실행. 중지/재활성화와 초대 발급/수락, session start/submit 동시성은 **두 연결 세션**에서 재현.
+2. 같은 DB에서 신규 pgTAP **289개 선언**과 기존 정책 테스트 전체 실행. 중지/재활성화와 초대 발급/수락, session start/submit 동시성은 **두 연결 세션**에서 재현.
 3. Admin UI: 중지 버튼 한 번으로 Edge 호출이 발생하지 않는지, 발전소 코드를 잘못 입력하거나 확인란을 선택하지 않으면 확정 버튼이 비활성인지 검증.
 4. 중지된 담당자는 Dashboard RPC 및 초대·닉네임 Edge가 403인지 확인. 활성 Player 본인은 `play_sessions`, `session_decisions`, `my_record_summary`를 읽되 다른 Player 기록은 0건인지 확인.
 5. `peek-invite`: DB 장애와 원래부터 없는 토큰, 이미 취소·수락·만료·세대 폐기된 토큰의 오류 상태를 구분하는지 점검.
@@ -41,6 +41,6 @@ Migration 024를 처음 적용할 때, 이미 중지된 발전소의 기존 초�
 
 `node scripts/check-batch-db-contracts.mjs`는 DB/네트워크 접근 없이 Migration024의 초기 세대 보정·owner RLS·초대 조회 오류 구분의 소스 계약을 추가 점검한다. **실제 PostgreSQL 원자성/SQL 런타임 테스트와 같지 않다.**
 
-기존 총 신규 pgTAP 252개 + Migration024 35개 = **287개 선언**. SQL 파일 총 16개, 원자적 서비스 역할 RPC 8종.
+기존 총 신규 pgTAP 252개 + Migration024 37개 = **289개 선언**. SQL 파일 총 16개, 원자적 서비스 역할 RPC 8종.
 
 **Actions 절약 정책을 유지한다. main·PR #79·Supabase 원격 DB·Edge·Cloudflare 배포를 변경하지 않는다.**

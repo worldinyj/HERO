@@ -1,7 +1,7 @@
 -- Plant suspension: token epochs, DB write guards, preserved game history.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(37);
 
 insert into auth.users(id,email) values
 ('f1000000-0000-0000-0000-000000000001','epoch-admin@hero.test'),
@@ -93,6 +93,18 @@ set local role authenticated;
 set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000002';
 select is((select private.auth_role())::text,'plant_manager'::text,'manager scope restored after reactivation');
 select is((select private.auth_plant()),'f2000000-0000-0000-0000-000000000001'::uuid,'manager plant scope restored');
+reset role;
+-- Disabling the account is different from suspending only its plant.
+set local role service_role;
+update public.profiles set is_active=false
+where id='f1000000-0000-0000-0000-000000000003';
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = 'f1000000-0000-0000-0000-000000000003';
+select results_eq($select count(*) from public.play_sessions$,array[0::bigint],
+  'inactive Player account cannot read historic sessions even when plant is active');
+select throws_ok($select public.my_record_summary()$,'P0001',
+  'authenticated_profile_required','inactive account cannot use personal summary RPC');
 reset role;
 select * from finish();
 rollback;
