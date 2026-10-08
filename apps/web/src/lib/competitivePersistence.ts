@@ -7,6 +7,7 @@ import {
 import { matchesCompletedCompetitiveSession } from "./competitiveCleanupPolicy";
 import { shouldPersistCompetitiveProgress } from "./competitiveProgressPolicy";
 import { shouldSaveStartedCompetitiveSession } from "./competitiveStartPolicy";
+import { isRestorableCompetitiveSession } from "./competitiveCacheValidation";
 
 export interface CompetitiveServerSession {
   sessionId: string;
@@ -156,6 +157,50 @@ export async function loadCompetitiveSession(
           );
       },
     );
+  } finally {
+    db.close();
+  }
+}
+
+/**
+ * Remove only a CURRENTLY invalid record, never an updated valid cache.
+ * A different tab may repair/replace a record between our initial readonly
+ * load and this transaction. Recheck validity before deleting it.
+ */
+export async function clearInvalidCompetitiveSession(
+  userId: string,
+  scenarioId: string,
+): Promise<boolean> {
+  const db = await openHeroOfflineDb();
+  if (!db) throw new Error("competitive_session_cleanup_unavailable");
+  try {
+    return await new Promise<boolean>((resolve, reject) => {
+      const transaction = db.transaction(COMPETITIVE_SESSION_STORE, "readwrite");
+      const store = transaction.objectStore(COMPETITIVE_SESSION_STORE);
+      let removed = false;
+      const key = sessionKey(userId, scenarioId);
+      const request = store.get(key);
+      request.onsuccess = () => {
+        if (!request.result ||
+            isRestorableCompetitiveSession(request.result, userId, scenarioId)) {
+          return;
+        }
+        try {
+          store.delete(key);
+          removed = true;
+        } catch (error) {
+          reject(error);
+          try { transaction.abort(); } catch { /* already inactive */ }
+        }
+      };
+      request.onerror = () =>
+        reject(request.error ?? new Error("competitive_invalid_cache_read_failed"));
+      transaction.oncomplete = () => resolve(removed);
+      transaction.onerror = () =>
+        reject(transaction.error ?? new Error("competitive_invalid_cache_delete_failed"));
+      transaction.onabort = () =>
+        reject(transaction.error ?? new Error("competitive_invalid_cache_delete_aborted"));
+    });
   } finally {
     db.close();
   }

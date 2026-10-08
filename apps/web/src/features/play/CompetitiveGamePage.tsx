@@ -14,7 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import {
-  clearCompetitiveSession,
+  clearInvalidCompetitiveSession,
   loadCompetitiveSession,
   saveCompetitiveSession,
   updateCompetitiveSessionProgress,
@@ -22,6 +22,7 @@ import {
 } from "../../lib/competitivePersistence";
 import { getSupabase } from "../../lib/supabase";
 import { shouldRetryQueuedOnReconnect } from "../../lib/submissionReceipt";
+import { isRestorableCompetitiveSession } from "../../lib/competitiveCacheValidation";
 import {
   gameLogToSubmissionActions,
   submitSessionWithQueue,
@@ -153,15 +154,7 @@ export function CompetitiveGamePage({
       try {
         const saved = await loadCompetitiveSession(userId, scenarioId);
 
-        if (
-          saved &&
-          saved.formatVersion === 1 &&
-          saved.userId === userId &&
-          saved.scenarioId === scenarioId &&
-          saved.scenarioVersion === saved.scenario.version &&
-          saved.game.scenarioId === scenarioId &&
-          saved.game.scenarioVersion === saved.scenarioVersion
-        ) {
+        if (isRestorableCompetitiveSession(saved, userId, scenarioId)) {
           if (!active) return;
           setScenario(saved.scenario);
           setServer({
@@ -178,7 +171,14 @@ export function CompetitiveGamePage({
         }
 
         if (saved) {
-          await clearCompetitiveSession(userId, scenarioId);
+          if (!active) return;
+          const removed = await clearInvalidCompetitiveSession(userId, scenarioId);
+          if (!active) return;
+          if (!removed) {
+            // Another tab replaced the malformed snapshot with a newer
+            // valid play. Never proceed with a stale start-session response.
+            throw new Error("competitive_session_cache_superseded");
+          }
         }
 
         if (!online) {

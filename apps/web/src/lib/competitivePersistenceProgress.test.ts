@@ -65,6 +65,7 @@ import {
   saveCompetitiveSession,
   clearCompetitiveSessionIfMatches,
   updateCompetitiveSessionProgress,
+  clearInvalidCompetitiveSession,
 } from "./competitivePersistence";
 
 function game(sessionId: string, count: number, startedAt = "2026-10-08T00:00:00.000Z") {
@@ -85,7 +86,10 @@ function game(sessionId: string, count: number, startedAt = "2026-10-08T00:00:00
       replayFromNode: null,
       submissionLogStart: 0,
     },
-    game: { log: Array.from({ length: count }, (_, i) => ({ step: i })) } as unknown as GameState,
+    game: {
+      scenarioId: "S01", scenarioVersion: 1,
+      log: Array.from({ length: count }, (_, i) => ({ step: i })),
+    } as unknown as GameState,
   };
 }
 
@@ -181,5 +185,32 @@ describe("server-started session cache atomic ordering", () => {
     await saveCompetitiveSession(game("session-one", 2));
     expect(await saveCompetitiveSession(game("replay-two", 0))).toBe(false);
     expect(fixture.cache?.server.sessionId).toBe("session-one");
+  });
+});
+
+
+describe("atomic invalid-cache deletion during concurrent session recovery", () => {
+  it("deletes a malformed cached record without touching other keys", async () => {
+    await saveCompetitiveSession(game("session-one", 1));
+    fixture.cache = {
+      ...fixture.cache!,
+      scenario: null,
+    } as unknown as StoredCompetitiveSession;
+    expect(await clearInvalidCompetitiveSession("u", "S01")).toBe(true);
+    expect(fixture.cache).toBeNull();
+  });
+
+  it("does not delete a valid cache saved after an earlier invalid snapshot", async () => {
+    await saveCompetitiveSession(game("session-one", 2));
+    // Another tab replaced the previously invalid snapshot before our
+    // readwrite deletion transaction acquired the object-store lock.
+    expect(await clearInvalidCompetitiveSession("u", "S01")).toBe(false);
+    expect(fixture.cache?.server.sessionId).toBe("session-one");
+    expect(fixture.cache?.game.log).toHaveLength(2);
+  });
+
+  it("does nothing when another tab has already removed the invalid record", async () => {
+    expect(await clearInvalidCompetitiveSession("u", "S01")).toBe(false);
+    expect(fixture.cache).toBeNull();
   });
 });
