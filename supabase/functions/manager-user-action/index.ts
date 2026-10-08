@@ -134,9 +134,19 @@ async function reissueInvite(
     invitationId,
   );
   const token = randomToken();
-  // Validate SITE_URL before canceling the old invitation: misconfiguration
-  // must never invalidate the only usable invitation link.
+  // Resolve all read/configuration dependencies before changing either
+  // invitation. A failed plant lookup must not revoke the original token.
   const inviteUrl = buildInviteUrl(Deno.env.get("SITE_URL"), token);
+  const { data: plant, error: plantError } = await operator.admin
+    .from("plants")
+    .select("display_name")
+    .eq("id", invitation.plant_id)
+    .single();
+
+  if (plantError || !plant) {
+    throw plantError ?? new Error("plant_not_found");
+  }
+
   const tokenHash = await sha256Hex(token);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const canceledAt = new Date().toISOString();
@@ -167,16 +177,6 @@ async function reissueInvite(
 
   if (insertError || !replacement) {
     throw insertError ?? new Error("replacement_invitation_create_failed");
-  }
-
-  const { data: plant, error: plantError } = await operator.admin
-    .from("plants")
-    .select("display_name")
-    .eq("id", invitation.plant_id)
-    .single();
-
-  if (plantError || !plant) {
-    throw plantError ?? new Error("plant_not_found");
   }
 
   await writeAuditLogs(operator.admin, [

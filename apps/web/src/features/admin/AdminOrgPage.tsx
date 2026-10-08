@@ -294,8 +294,21 @@ export function AdminOrgPage() {
         throw invokeError;
       }
 
-      const result = data as Partial<InviteResult> & { error?: string };
-      if (result.error) throw new Error(result.error);
+      const result = data as (Partial<InviteResult> & { error?: string }) | null;
+      // A successful status without a valid body may follow a committed
+      // token rotation. Do not treat it as safely retryable.
+      if (!result || typeof result !== "object") {
+        if (action === "reissue-invite") {
+          throw new InviteCreationOutcomeUnknownError();
+        }
+        throw new Error("초대 처리 응답을 확인하지 못했습니다.");
+      }
+      if (result.error) {
+        if (action === "reissue-invite") {
+          throw new InviteCreationOutcomeUnknownError();
+        }
+        throw new Error(result.error);
+      }
 
       if (action === "reissue-invite") {
         if (
