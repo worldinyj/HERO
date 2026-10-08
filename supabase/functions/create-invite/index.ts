@@ -1,4 +1,3 @@
-import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
 import { buildInviteUrl } from "../_shared/inviteUrl.ts";
@@ -78,42 +77,42 @@ Deno.serve(async (req) => {
     const tokenHash = await sha256Hex(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: invitation, error: insertError } = await admin
-      .from("invitations")
-      .insert({
-        token_hash: tokenHash,
-        plant_id: plantId,
-        target_role: targetRole,
-        invitee_name: inviteeName,
-        job_role: targetRole === "player" ? body.jobRole : null,
-        team_name: body.teamName?.trim() || null,
-        created_by: user.id,
-        expires_at: expiresAt,
-      })
-      .select("id")
-      .single();
+    // DB authorization is checked again inside this service-role-only RPC.
+    // A failed audit write rolls back the invitation INSERT.
+    const { data: invitation, error: issueError } = await admin.rpc(
+      "create_invitation_atomic",
+      {
+        p_actor_user_id: user.id,
+        p_plant_id: plantId,
+        p_target_role: targetRole,
+        p_invitee_name: inviteeName,
+        p_job_role: targetRole === "player" ? body.jobRole : null,
+        p_team_name: body.teamName?.trim() || null,
+        p_token_hash: tokenHash,
+        p_expires_at: expiresAt,
+      },
+    );
+    if (issueError) throw new Error(issueError.message);
 
-    if (insertError) {
-      throw insertError;
+    const issued = invitation as {
+      invitationId?: string;
+      expiresAt?: string;
+      plantDisplayName?: string;
+    } | null;
+    if (
+      !issued?.invitationId ||
+      !issued.expiresAt ||
+      !issued.plantDisplayName
+    ) {
+      // A malformed response may follow a committed issuance.
+      throw new Error("invite_creation_outcome_unknown");
     }
 
-    await writeAuditLog(admin, {
-      actorUserId: user.id,
-      plantId,
-      action: "invitation.created",
-      entityType: "invitation",
-      entityId: invitation.id,
-      metadata: {
-        target_role: targetRole,
-        job_role: targetRole === "player" ? body.jobRole : null,
-      },
-    });
-
     return json(req, {
-      invitationId: invitation.id,
+      invitationId: issued.invitationId,
       inviteUrl,
-      expiresAt,
-      plantDisplayName: plant.display_name,
+      expiresAt: issued.expiresAt,
+      plantDisplayName: issued.plantDisplayName,
     }, 201);
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "internal_error";
