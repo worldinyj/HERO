@@ -148,7 +148,7 @@ test("admin → manager → player invitation chain", async ({
     page.getByRole("heading", { name: "조직 관리" }),
   ).toBeVisible();
 
-  await page.getByLabel("발전소").selectOption({ label: "E2E 발전소 · E2E" });
+  await page.getByRole("combobox", { name: "담당자 초대 발전소" }).selectOption({ label: "E2E 발전소 · E2E" });
   await page.getByLabel("담당자 이름").fill(identity.candidateName);
   await page
     .getByRole("button", { name: "담당자 초대 링크 생성" })

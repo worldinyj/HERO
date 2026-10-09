@@ -7,6 +7,7 @@ import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult 
 import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
+import { availablePlantSuggestions, KHNP_PLANT_CATALOG } from "./khnpPlantCatalog";
 
 interface PlantRow {
   id: string;
@@ -76,6 +77,7 @@ export function AdminOrgPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [plantPreset, setPlantPreset] = useState("");
   const [plantCode, setPlantCode] = useState("");
   const [plantName, setPlantName] = useState("");
   const [plantDisplayName, setPlantDisplayName] = useState("");
@@ -225,6 +227,7 @@ export function AdminOrgPage() {
         throw new Error("plant_creation_outcome_unknown");
       }
 
+      setPlantPreset("");
       setPlantCode("");
       setPlantName("");
       setPlantDisplayName("");
@@ -525,6 +528,34 @@ export function AdminOrgPage() {
 
         <div className="admin-form-grid">
           <label>
+            <span>한수원 공식 발전소 선택 (선택사항)</span>
+            <select
+              value={plantPreset}
+              disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
+              onChange={(event) => {
+                const code = event.target.value;
+                setPlantPreset(code);
+                const preset = KHNP_PLANT_CATALOG.find(item => item.code === code);
+                if (preset) {
+                  setPlantCode(preset.code);
+                  setPlantName(preset.name);
+                  setPlantDisplayName(preset.displayName);
+                }
+              }}
+              aria-label="한수원 발전소 선택"
+            >
+              <option value="">직접 입력 또는 발전소 선택</option>
+              {availablePlantSuggestions(plants.map(item => item.code)).map(item => (
+                <option key={item.code} value={item.code}>
+                  {item.group} · {item.displayName} ({item.code})
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="muted" style={{ gridColumn: "1 / -1" }}>
+            한수원 공식 조직도 기준 목록입니다. 선택하면 아래 입력란만 채워지며, 발전소 생성 버튼을 누르기 전에는 저장되지 않습니다.
+          </p>
+          <label>
             <span>코드</span>
             <input
               value={plantCode}
@@ -680,6 +711,7 @@ export function AdminOrgPage() {
           <label>
             <span>발전소</span>
             <select
+              aria-label="담당자 초대 발전소"
               value={invitePlantId}
               onChange={(event) => setInvitePlantId(event.target.value)}
             >
