@@ -21,6 +21,7 @@ interface SeasonRow {
 
 interface CurrentRow {
   season_id: string;
+  plant_id: string;
   season_key: string;
   season_title: string;
   nickname: string;
@@ -40,6 +41,7 @@ interface CurrentRow {
 
 interface SnapshotRow {
   season_id: string;
+  plant_id: string | null;
   season_key: string;
   season_title: string;
   scope_type: Scope;
@@ -133,7 +135,6 @@ export function LeaderboardPage() {
   const [scope, setScope] = useState<Scope>("overall");
   const [seasons, setSeasons] = useState<SeasonRow[]>([]);
   const [seasonId, setSeasonId] = useState<string>("");
-  const [myPlantName, setMyPlantName] = useState<string | null>(null);
   const [rows, setRows] = useState<DisplayRow[]>([]);
   const [myRow, setMyRow] = useState<DisplayRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,7 +153,7 @@ export function LeaderboardPage() {
         selectedSeason?.id ?? "",
         selectedSeason?.status ?? "",
         scope,
-        myPlantName ?? "",
+        profile?.plant_id ?? "",
         profile?.job_role ?? "",
         profile?.nickname ?? "",
       ].join(":"),
@@ -160,7 +161,7 @@ export function LeaderboardPage() {
       selectedSeason?.id,
       selectedSeason?.status,
       scope,
-      myPlantName,
+      profile?.plant_id,
       profile?.job_role,
       profile?.nickname,
     ],
@@ -172,35 +173,22 @@ export function LeaderboardPage() {
     async function loadBase() {
       try {
         const supabase = getSupabase();
-        const seasonPromise = supabase
+        const { data: seasonData, error: seasonError } = await supabase
           .from("seasons")
           .select("id, season_key, title, status, starts_at, ends_at")
           .in("status", ["open", "closed"])
           .order("starts_at", { ascending: false })
           .limit(24);
 
-        const plantPromise = profile?.plant_id
-          ? supabase
-              .from("plants")
-              .select("display_name")
-              .eq("id", profile.plant_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null, error: null });
-
-        const [{ data: seasonData, error: seasonError }, plantResult] =
-          await Promise.all([seasonPromise, plantPromise]);
-
         if (seasonError) throw seasonError;
-        if (plantResult.error) throw plantResult.error;
         if (!active) return;
 
         const nextSeasons = (seasonData ?? []) as SeasonRow[];
         setSeasons(nextSeasons);
-        setSeasonId((current) => current || nextSeasons[0]?.id || "");
-        setMyPlantName(
-          plantResult.data && "display_name" in plantResult.data
-            ? String(plantResult.data.display_name)
-            : null,
+        setSeasonId((current) =>
+          nextSeasons.some((season) => season.id === current)
+            ? current
+            : nextSeasons[0]?.id ?? "",
         );
       } catch (cause) {
         if (active) {
@@ -215,11 +203,10 @@ export function LeaderboardPage() {
     }
 
     void loadBase();
-
     return () => {
       active = false;
     };
-  }, [profile?.plant_id]);
+  }, []);
 
   const fetchPage = useCallback(
     async (
@@ -239,15 +226,15 @@ export function LeaderboardPage() {
           .eq("season_id", selectedSeason.id);
 
         if (scope === "plant") {
-          if (!myPlantName) return [];
-          query = query.eq("plant_display_name", myPlantName);
+          if (!profile?.plant_id) return [];
+          query = query.eq("plant_id", profile?.plant_id);
         } else if (scope === "job") {
           if (!profile?.job_role) return [];
           query = query.eq("job_role", profile.job_role);
         } else if (scope === "plant_job") {
-          if (!myPlantName || !profile?.job_role) return [];
+          if (!profile?.plant_id || !profile?.job_role) return [];
           query = query
-            .eq("plant_display_name", myPlantName)
+            .eq("plant_id", profile?.plant_id)
             .eq("job_role", profile.job_role);
         }
 
@@ -272,15 +259,15 @@ export function LeaderboardPage() {
         .eq("scope_type", scope);
 
       if (scope === "plant") {
-        if (!myPlantName) return [];
-        query = query.eq("plant_display_name", myPlantName);
+        if (!profile?.plant_id) return [];
+        query = query.eq("plant_id", profile?.plant_id);
       } else if (scope === "job") {
         if (!profile?.job_role) return [];
         query = query.eq("job_role", profile.job_role);
       } else if (scope === "plant_job") {
-        if (!myPlantName || !profile?.job_role) return [];
+        if (!profile?.plant_id || !profile?.job_role) return [];
         query = query
-          .eq("plant_display_name", myPlantName)
+          .eq("plant_id", profile?.plant_id)
           .eq("job_role", profile.job_role);
       }
 
@@ -298,7 +285,7 @@ export function LeaderboardPage() {
     [
       selectedSeason,
       scope,
-      myPlantName,
+      profile?.plant_id,
       profile?.job_role,
     ],
   );

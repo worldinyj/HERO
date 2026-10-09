@@ -1,21 +1,15 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { signInWithKakao } from "../../lib/supabase";
+import { safeAppReturnPath } from "../../lib/safeReturnPath";
 
-function safeReturnPath(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-
-  return value;
-}
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const inviteRequired = searchParams.get("reason") === "invite_required";
-  const returnPath = safeReturnPath(searchParams.get("next"));
+  const returnPath = safeAppReturnPath(searchParams.get("next"));
 
   async function handleLogin() {
     try {

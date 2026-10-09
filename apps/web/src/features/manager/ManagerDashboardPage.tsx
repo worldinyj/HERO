@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
+import { ReadRequestGate } from "../../lib/readRequestGate";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
+import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
+import { isValidManagerDashboardLists } from "./managerDashboardResponse";
+import { readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -59,6 +63,7 @@ function formatDateTime(value: string | null): string {
 }
 
 export function ManagerDashboardPage() {
+  const rosterGate = useRef(new ReadRequestGate());
   const [participants, setParticipants] = useState<ParticipationRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInviteRow[]>([]);
   const [aggregates, setAggregates] = useState<AggregateRow[]>([]);
@@ -66,9 +71,17 @@ export function ManagerDashboardPage() {
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [reissueResult, setReissueResult] = useState<ReissueResult | null>(null);
   const [copiedReissue, setCopiedReissue] = useState(false);
+  const [uncertainReissues, setUncertainReissues] = useState<string[]>([]);
+  const [uncertainCancellations, setUncertainCancellations] = useState<string[]>([]);
+  const [invitationReconciliationReady, setInvitationReconciliationReady] = useState(false);
+  const [uncertainPlayerIds, setUncertainPlayerIds] = useState<string[]>([]);
+  const [uncertainNicknameIds, setUncertainNicknameIds] = useState<string[]>([]);
+  const [playerReconciliationReady, setPlayerReconciliationReady] = useState(false);
+  const [nicknameReconciliationReady, setNicknameReconciliationReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = useCallback(async (background = false) => {
+  const loadDashboard = useCallback(async (background = false): Promise<boolean> => {
+    const revision = rosterGate.current.begin();
     try {
       if (!background) setLoading(true);
       setError(null);
@@ -80,25 +93,38 @@ export function ManagerDashboardPage() {
         supabase.rpc("manager_job_aggregates"),
       ]);
 
+      // Superseded reads cannot commit a stale roster or unlock retries.
+      if (!rosterGate.current.isCurrent(revision)) return false;
       const firstError = participation.error ?? pending.error ?? aggregate.error;
       if (firstError) throw firstError;
 
-      setParticipants((participation.data ?? []) as ParticipationRow[]);
-      setPendingInvites((pending.data ?? []) as PendingInviteRow[]);
-      setAggregates((aggregate.data ?? []) as AggregateRow[]);
+      // A null/malformed RPC response cannot prove invitation, status or
+      // nickname outcomes. Keep the reconciliation lock in that case.
+      if (!isValidManagerDashboardLists(participation.data, pending.data, aggregate.data)) {
+        throw new Error("manager_dashboard_result_invalid");
+      }
+
+      setParticipants(participation.data as ParticipationRow[]);
+      setPendingInvites(pending.data as PendingInviteRow[]);
+      setAggregates(aggregate.data as AggregateRow[]);
+      return true;
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "발전소 참여 현황을 불러오지 못했습니다.",
-      );
+      if (rosterGate.current.isCurrent(revision)) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "발전소 참여 현황을 불러오지 못했습니다.",
+        );
+      }
+      return false;
     } finally {
-      if (!background) setLoading(false);
+      if (!background && rosterGate.current.isCurrent(revision)) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void loadDashboard();
+    return () => rosterGate.current.invalidate();
   }, [loadDashboard]);
 
   const summary = useMemo(() => {
@@ -122,57 +148,137 @@ export function ManagerDashboardPage() {
 
   async function invokeManagerAction(body: Record<string, unknown>) {
     const supabase = getSupabase();
+    const reissue = body.action === "reissue-invite";
     const { data, error: invokeError } = await supabase.functions.invoke(
-      "manager-user-action",
-      { body },
+      "manager-user-action", { body },
     );
-
-    if (invokeError) throw invokeError;
-
-    const result = data as Record<string, unknown> & { error?: string };
-    if (result.error) throw new Error(result.error);
+    if (invokeError) {
+      if (reissue && !isDefiniteInviteRejection(invokeError)) {
+        throw new InviteCreationOutcomeUnknownError();
+      }
+      throw invokeError;
+    }
+    const result = data as (Record<string, unknown> & { error?: string }) | null;
+    if (!result || typeof result !== "object" || result.error) {
+      if (reissue) throw new InviteCreationOutcomeUnknownError();
+      throw new Error(result?.error ?? "초대 처리 응답이 불확실합니다. 목록을 확인해주세요.");
+    }
     return result;
   }
 
   async function handleCancelInvite(invitationId: string) {
+    if (
+      actionPending ||
+      uncertainCancellations.includes(invitationId) ||
+      uncertainReissues.includes(invitationId)
+    ) {
+      setError("취소·재발급 결과를 명단과 대조한 후 다시 요청해주세요.");
+      return;
+    }
+    if (reissueResult?.invitationId === invitationId) {
+      setError("표시된 일회용 링크를 보관한 후 취소해주세요.");
+      return;
+    }
     try {
       setActionPending(`invite:${invitationId}`);
       setError(null);
-      setReissueResult(null);
-      await invokeManagerAction({
-        action: "cancel-invite",
-        invitationId,
-      });
-      await loadDashboard(true);
+      const result = await invokeManagerAction({ action: "cancel-invite", invitationId });
+      if (!readCanceledInviteResult(result, invitationId)) {
+        throw new Error("cancel_result_unknown");
+      }
+      if (!(await loadDashboard(true))) {
+        setInvitationReconciliationReady(false);
+        setUncertainCancellations((old) =>
+          old.includes(invitationId) ? old : [...old, invitationId]
+        );
+        setError("초대 취소는 완료되었지만 명단을 다시 읽지 못했습니다. 재조회 후 상태를 확인해주세요.");
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "초대 취소에 실패했습니다.");
+      if (isDefiniteInviteRejection(cause)) {
+        setError("초대 취소 요청이 거절되었습니다. 새로고침 후 초대 상태를 확인해주세요.");
+      } else {
+        // A timeout/5xx can occur after the transaction commits. A second
+        // cancel must be blocked until the server-side roster is reloaded.
+        setInvitationReconciliationReady(false);
+        setUncertainCancellations((old) =>
+          old.includes(invitationId) ? old : [...old, invitationId]
+        );
+        await loadDashboard(true);
+        setError("초대 취소 결과가 불확실합니다. 명단을 다시 확인한 뒤 재시도 잠금을 해제해주세요.");
+      }
     } finally {
       setActionPending(null);
     }
   }
 
+  async function reconcileInvitationOutcomes() {
+    if (actionPending) return;
+    setActionPending("invite-reconcile");
+    setInvitationReconciliationReady(false);
+    try {
+      if (await loadDashboard(true)) {
+        setInvitationReconciliationReady(true);
+        setError("갱신된 초대 명단에서 취소·재발급 결과를 확인하고 잠금을 해제해주세요.");
+      } else {
+        setError("초대 명단 재조회에 실패했습니다. 결과 확인 전에는 잠금을 유지합니다.");
+      }
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  function confirmInvitationReconciliation() {
+    if (!invitationReconciliationReady || actionPending) return;
+    // The operator explicitly reviewed the freshly fetched roster.
+    // Lost one-time token URLs cannot be reconstructed from this roster.
+    setUncertainCancellations([]);
+    setUncertainReissues([]);
+    setInvitationReconciliationReady(false);
+    setError(null);
+  }
+
   async function handleReissueInvite(invitationId: string) {
+    if (actionPending) return;
+    if (
+      reissueResult ||
+      uncertainReissues.includes(invitationId) ||
+      uncertainCancellations.includes(invitationId)
+    ) {
+      setError("이전 재발급 결과와 일회용 링크를 먼저 확인해주세요.");
+      return;
+    }
     try {
       setActionPending(`invite:${invitationId}`);
       setError(null);
+      const result = await invokeManagerAction({ action: "reissue-invite", invitationId });
+      const replacement = readReissuedInviteLink(result, invitationId);
+      if (!replacement) {
+        // A response with the wrong original invitation can never prove a
+        // token rotation succeeded for the requested target.
+        throw new InviteCreationOutcomeUnknownError();
+      }
       setCopiedReissue(false);
-      const result = await invokeManagerAction({
-        action: "reissue-invite",
-        invitationId,
-      });
-
-      setReissueResult(result as unknown as ReissueResult);
+      setReissueResult(replacement);
       await loadDashboard(true);
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "새 초대 링크 생성에 실패했습니다.",
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setInvitationReconciliationReady(false);
+        setUncertainReissues((old) => old.includes(invitationId) ? old : [...old, invitationId]);
+        setError("재발급 결과가 불확실합니다. 서버에서 생성됐을 수 있으므로 초대 목록을 대조하기 전에는 재시도하지 마세요.");
+      } else {
+        setError(cause instanceof Error ? cause.message : "새 초대 링크 발급에 실패했습니다.");
+      }
     } finally {
       setActionPending(null);
     }
   }
 
   async function handleNicknameReset(profileId: string) {
+    if (actionPending || uncertainNicknameIds.includes(profileId)) {
+      setError("이전 닉네임 초기화 결과를 명단에서 먼저 확인해주세요.");
+      return;
+    }
+
     try {
       setActionPending(`nickname:${profileId}`);
       setError(null);
@@ -186,41 +292,135 @@ export function ManagerDashboardPage() {
           },
         },
       );
-
       if (invokeError) throw invokeError;
 
-      const result = data as { reset?: boolean; error?: string };
-      if (!result.reset) {
-        throw new Error(result.error ?? "닉네임 초기화에 실패했습니다.");
+      const result = data as {
+        reset?: boolean;
+        profileId?: string;
+        nickname?: string;
+        resetRequired?: boolean;
+      } | null;
+      if (
+        result?.reset !== true ||
+        result.profileId !== profileId ||
+        typeof result.nickname !== "string" ||
+        result.resetRequired !== true
+      ) {
+        throw new Error("nickname_reset_outcome_unknown");
       }
 
-      await loadDashboard(true);
+      if (!(await loadDashboard(true))) {
+        setNicknameReconciliationReady(false);
+        setUncertainNicknameIds((old) =>
+          old.includes(profileId) ? old : [...old, profileId]
+        );
+        setError("초기화는 완료되었지만 명단 재조회에 실패했습니다. 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "닉네임 초기화에 실패했습니다.",
-      );
+      if (isDefiniteInviteRejection(cause)) {
+        setError(cause instanceof Error ? cause.message : "닉네임 초기화가 거절되었습니다.");
+      } else {
+        // A lost response may follow a committed reset. Do not blindly issue
+        // a second nickname because the first can never be reconstructed.
+        setNicknameReconciliationReady(false);
+        setUncertainNicknameIds((old) =>
+          old.includes(profileId) ? old : [...old, profileId]
+        );
+        await loadDashboard(true);
+        setError("초기화 응답을 확인할 수 없습니다. 명단의 닉네임을 대조한 뒤 재시도 잠금을 해제해주세요.");
+      }
     } finally {
       setActionPending(null);
     }
   }
 
+  async function reconcileNicknameReset() {
+    if (actionPending) return;
+    setActionPending("nickname-reconcile");
+    setNicknameReconciliationReady(false);
+    try {
+      if (await loadDashboard(true)) {
+        setNicknameReconciliationReady(true);
+        setError("갱신된 명단의 닉네임을 실제 변경 결과와 대조한 후 잠금을 해제해주세요.");
+      } else {
+        setError("명단 조회에 실패했습니다. 닉네임 상태를 확인할 수 없습니다.");
+      }
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  function confirmNicknameReset() {
+    if (!nicknameReconciliationReady || actionPending) return;
+    setUncertainNicknameIds([]);
+    setNicknameReconciliationReady(false);
+    setError(null);
+  }
+
   async function handlePlayerActive(profileId: string, isActive: boolean) {
+    if (actionPending || uncertainPlayerIds.includes(profileId)) {
+      setError("이전 상태 변경 결과를 명단에서 확인한 뒤 다시 요청해주세요.");
+      return;
+    }
+
     try {
       setActionPending(`player:${profileId}`);
       setError(null);
-      await invokeManagerAction({
+      const result = await invokeManagerAction({
         action: "set-player-active",
         profileId,
         isActive,
       });
-      await loadDashboard(true);
+
+      if (
+        result.profileId !== profileId ||
+        result.isActive !== isActive ||
+        typeof result.changed !== "boolean"
+      ) {
+        throw new Error("player_status_result_unknown");
+      }
+
+      if (!(await loadDashboard(true))) {
+        setPlayerReconciliationReady(false);
+        setUncertainPlayerIds((old) => old.includes(profileId) ? old : [...old, profileId]);
+        setError("상태 변경은 완료되었지만 명단을 다시 읽지 못했습니다. 명단 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "사용자 상태 변경에 실패했습니다.",
-      );
+      if (isDefiniteInviteRejection(cause)) {
+        setError(cause instanceof Error ? cause.message : "사용자 상태 변경이 거절되었습니다.");
+      } else {
+        // The request may have committed despite the lost HTTP response.
+        setPlayerReconciliationReady(false);
+        setUncertainPlayerIds((old) => old.includes(profileId) ? old : [...old, profileId]);
+        await loadDashboard(true);
+        setError("상태 변경 응답을 확인할 수 없습니다. 명단에서 실제 활성 상태를 확인한 뒤 잠금을 해제해주세요.");
+      }
     } finally {
       setActionPending(null);
     }
+  }
+
+  async function reconcilePlayerStatus() {
+    if (actionPending) return;
+    setActionPending("player-reconcile");
+    setPlayerReconciliationReady(false);
+    try {
+      if (await loadDashboard(true)) {
+        setPlayerReconciliationReady(true);
+        setError("갱신된 명단의 활성 상태와 실제 변경 결과를 확인한 후 잠금을 해제해주세요.");
+      } else {
+        setError("명단 조회에 실패했습니다. 재시도 잠금은 유지됩니다.");
+      }
+    } finally {
+      setActionPending(null);
+    }
+  }
+
+  function confirmPlayerStatus() {
+    if (!playerReconciliationReady || actionPending) return;
+    setUncertainPlayerIds([]);
+    setPlayerReconciliationReady(false);
+    setError(null);
   }
 
   async function handleShareReissue() {
@@ -294,7 +494,7 @@ export function ManagerDashboardPage() {
         </article>
       </div>
 
-      <ManagerInvitePanel onChanged={() => void loadDashboard(true)} />
+      <ManagerInvitePanel onChanged={() => loadDashboard(true)} />
 
       <section className="panel manager-section">
         <div className="section-heading">
@@ -308,6 +508,48 @@ export function ManagerDashboardPage() {
         <p className="muted mini-copy">
           완료 장 수와 최근 활동만 확인합니다. 개인 HP·선택·엔딩은 표시하지 않습니다.
         </p>
+        {uncertainNicknameIds.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>닉네임 강제 초기화 결과 확인 필요</strong>
+            <p className="muted">
+              서버에서 이미 닉네임이 변경됐을 수 있습니다. 명단을 다시 읽어 변경된
+              닉네임을 대조한 후 추가 요청을 진행해주세요.
+            </p>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button compact-button"
+                disabled={actionPending !== null}
+                onClick={() => void reconcileNicknameReset()}>
+                1. 닉네임 명단 다시 조회
+              </button>
+              <button type="button" className="text-button"
+                disabled={actionPending !== null || !nicknameReconciliationReady}
+                onClick={() => confirmNicknameReset()}>
+                2. 결과 확인 완료 · 잠금 해제
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {uncertainPlayerIds.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>Player 상태 변경 결과 확인 필요</strong>
+            <p className="muted">
+              응답이 끊긴 작업은 서버에서 이미 완료됐을 수 있습니다. 표시된 명단을 재조회한 뒤
+              상태를 확인하고 다음 변경을 진행해주세요.
+            </p>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button compact-button"
+                disabled={actionPending !== null}
+                onClick={() => void reconcilePlayerStatus()}>
+                1. Player 명단 다시 조회
+              </button>
+              <button type="button" className="text-button"
+                disabled={actionPending !== null || !playerReconciliationReady}
+                onClick={() => confirmPlayerStatus()}>
+                2. 활성 상태 확인 완료 · 잠금 해제
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {participants.length === 0 ? (
           <p className="muted">아직 초대를 수락한 사용자가 없습니다.</p>
@@ -339,8 +581,8 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending === `nickname:${row.profile_id}` ||
-                        actionPending === `player:${row.profile_id}`
+                        actionPending !== null ||
+                        uncertainNicknameIds.includes(row.profile_id)
                       }
                       onClick={() => void handleNicknameReset(row.profile_id)}
                     >
@@ -350,8 +592,8 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending === `player:${row.profile_id}` ||
-                        actionPending === `nickname:${row.profile_id}`
+                        actionPending !== null ||
+                        uncertainPlayerIds.includes(row.profile_id)
                       }
                       onClick={() =>
                         void handlePlayerActive(row.profile_id, !row.is_active)
@@ -395,6 +637,40 @@ export function ManagerDashboardPage() {
               >
                 {copiedReissue ? "복사 완료" : "링크 복사"}
               </button>
+              <button type="button" className="text-button" onClick={() => {
+                setReissueResult(null);
+                setCopiedReissue(false);
+                setError(null);
+              }}>링크 보관 완료 · 다음 발급 허용</button>
+            </div>
+          </div>
+        ) : null}
+
+        {uncertainReissues.length > 0 || uncertainCancellations.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>초대 취소·재발급 결과 확인 필요</strong>
+            <p className="muted">
+              처리된 초대가 이미 취소되거나 새로 발급되었을 수 있습니다.
+              서버의 수락 대기 명단을 다시 조회하고 실제 결과를 대조한 뒤
+              재시도 잠금을 해제해주세요. 발급한 일회용 링크는 서버에서 다시 조회할 수 없습니다.
+            </p>
+            <div className="inline-actions">
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={actionPending !== null}
+                onClick={() => void reconcileInvitationOutcomes()}
+              >
+                1. 초대 명단 다시 조회
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                disabled={actionPending !== null || !invitationReconciliationReady}
+                onClick={() => confirmInvitationReconciliation()}
+              >
+                2. 결과 확인 완료 · 잠금 해제
+              </button>
             </div>
           </div>
         ) : null}
@@ -418,7 +694,12 @@ export function ManagerDashboardPage() {
                     <button
                       type="button"
                       className="text-button"
-                      disabled={actionPending === `invite:${invite.invitation_id}`}
+                      disabled={
+                        actionPending !== null ||
+                        Boolean(reissueResult) ||
+                        uncertainReissues.includes(invite.invitation_id) ||
+                        uncertainCancellations.includes(invite.invitation_id)
+                      }
                       onClick={() => void handleReissueInvite(invite.invitation_id)}
                     >
                       새 링크
@@ -426,7 +707,12 @@ export function ManagerDashboardPage() {
                     <button
                       type="button"
                       className="text-button danger-text-button"
-                      disabled={actionPending === `invite:${invite.invitation_id}`}
+                      disabled={
+                        actionPending !== null ||
+                        reissueResult?.invitationId === invite.invitation_id ||
+                        uncertainReissues.includes(invite.invitation_id) ||
+                        uncertainCancellations.includes(invite.invitation_id)
+                      }
                       onClick={() => void handleCancelInvite(invite.invitation_id)}
                     >
                       취소

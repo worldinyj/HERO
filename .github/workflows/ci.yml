@@ -25,6 +25,12 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
+
+      - name: Check source TASKLIST and progress audit coverage (offline)
+        run: pnpm check:tasklist-progress
+
+      - name: Check batch SQL and RPC static contracts (not pgTAP)
+        run: pnpm check:batch-db-contracts
       - run: pnpm validate:scenario
       - name: Validate scenario drafts
         run: pnpm validate:scenario scenarios/drafts
@@ -149,6 +155,27 @@ jobs:
           deno check --config supabase/functions/deno.json supabase/functions/accept-invite/index.ts
           deno check --config supabase/functions/deno.json supabase/functions/start-session/index.ts
 
+      - name: Test invitation URL preflight (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/inviteUrl.test.ts
+
+      - name: Test lookup failure vs business absence (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/lookupOutcome.test.ts
+
+      - name: Test REST JSON request shape (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/jsonObject.test.ts
+
+      - name: Test REST UUID preflight (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/uuid.test.ts
+
+      - name: Test invitation failure classification (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/invitationErrorStatus.test.ts
+
+      - name: Test untrusted session submission input (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/submissionInput.test.ts
+
+      - name: Test stored session completion receipt (offline)
+        run: deno test --config supabase/functions/deno.json supabase/functions/_shared/completionReceipt.test.ts
+
       - name: Check submit-session shared engine graph
         run: deno check --config supabase/functions/submit-session/deno.json supabase/functions/submit-session/index.ts
 
@@ -160,6 +187,9 @@ jobs:
 
       - name: Check nickname policy Edge Function
         run: deno check --config supabase/functions/deno.json supabase/functions/nickname-action/index.ts
+
+      - name: Check audited Admin plant action Edge Function
+        run: deno check --config supabase/functions/deno.json supabase/functions/admin-plant-action/index.ts
 
       - name: Enforce shared audit writer
         run: |

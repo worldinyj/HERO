@@ -10,18 +10,22 @@ import {
   type GameState,
 } from "@hero/engine";
 import { ScenarioSchema, type Scenario } from "@hero/schema";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import {
-  clearCompetitiveSession,
+  clearInvalidCompetitiveSession,
   loadCompetitiveSession,
   saveCompetitiveSession,
+  updateCompetitiveSessionProgress,
   type CompetitiveServerSession,
 } from "../../lib/competitivePersistence";
 import { getSupabase } from "../../lib/supabase";
+import { shouldRetryQueuedOnReconnect } from "../../lib/submissionReceipt";
+import { isRestorableCompetitiveSession } from "../../lib/competitiveCacheValidation";
 import {
   gameLogToSubmissionActions,
+  retryBlockedSubmission,
   submitSessionWithQueue,
 } from "../../lib/submissionQueue";
 import { GameClock } from "./GameClock";
@@ -37,7 +41,7 @@ type ReviewStage = "ending" | "reflection" | "timeline" | "review" | "incident";
 type SubmissionState =
   | { status: "idle" }
   | { status: "submitting" }
-  | { status: "submitted"; evaluation: Evaluation | null }
+  | { status: "submitted"; evaluation: Evaluation | null; cleanupPending: boolean }
   | { status: "queued"; reason: string }
   | { status: "rejected"; reason: string };
 
@@ -115,6 +119,7 @@ export function CompetitiveGamePage({
   const [submission, setSubmission] = useState<SubmissionState>({
     status: "idle",
   });
+  const submissionInFlightRef = useRef<string | null>(null);
   const [replayStarting, setReplayStarting] = useState(false);
   const [replayError, setReplayError] = useState<string | null>(null);
 
@@ -150,15 +155,7 @@ export function CompetitiveGamePage({
       try {
         const saved = await loadCompetitiveSession(userId, scenarioId);
 
-        if (
-          saved &&
-          saved.formatVersion === 1 &&
-          saved.userId === userId &&
-          saved.scenarioId === scenarioId &&
-          saved.scenarioVersion === saved.scenario.version &&
-          saved.game.scenarioId === scenarioId &&
-          saved.game.scenarioVersion === saved.scenarioVersion
-        ) {
+        if (isRestorableCompetitiveSession(saved, userId, scenarioId)) {
           if (!active) return;
           setScenario(saved.scenario);
           setServer({
@@ -175,7 +172,14 @@ export function CompetitiveGamePage({
         }
 
         if (saved) {
-          await clearCompetitiveSession(userId, scenarioId);
+          if (!active) return;
+          const removed = await clearInvalidCompetitiveSession(userId, scenarioId);
+          if (!active) return;
+          if (!removed) {
+            // Another tab replaced the malformed snapshot with a newer
+            // valid play. Never proceed with a stale start-session response.
+            throw new Error("competitive_session_cache_superseded");
+          }
         }
 
         if (!online) {
@@ -276,7 +280,8 @@ export function CompetitiveGamePage({
           submissionLogStart,
         };
 
-        await saveCompetitiveSession({
+        if (!active) return;
+        const initialized = await saveCompetitiveSession({
           userId,
           scenarioId,
           scenarioVersion: parsed.data.version,
@@ -284,7 +289,10 @@ export function CompetitiveGamePage({
           server: nextServer,
           game: nextGame,
         });
-
+        if (!initialized) {
+          if (!active) return;
+          throw new Error("competitive_session_cache_superseded");
+        }
         if (!active) return;
         setScenario(parsed.data);
         setServer(nextServer);
@@ -312,7 +320,7 @@ export function CompetitiveGamePage({
   async function persist(nextGame: GameState) {
     if (!scenario || !server || !userId) return;
 
-    await saveCompetitiveSession({
+    await updateCompetitiveSessionProgress({
       userId,
       scenarioId,
       scenarioVersion: scenario.version,
@@ -335,6 +343,10 @@ export function CompetitiveGamePage({
   async function submitFinishedGame() {
     if (!scenario || !server || !game || !userId) return;
     if (!isFinished(scenario, game)) return;
+    // A second click/reconnect event must not downgrade a confirmed result.
+    if (submissionInFlightRef.current === server.sessionId ||
+        submission.status === "submitted") return;
+    submissionInFlightRef.current = server.sessionId;
 
     setSubmission({ status: "submitting" });
 
@@ -353,8 +365,10 @@ export function CompetitiveGamePage({
         setSubmission({
           status: "submitted",
           evaluation: serverEvaluation(result.data),
+          cleanupPending: result.cleanupPending,
         });
-        await clearCompetitiveSession(userId, scenarioId);
+        // Queue service cleared only a matching server-confirmed game.
+        // A newer replay written by another tab must remain untouched.
         return;
       }
 
@@ -365,11 +379,52 @@ export function CompetitiveGamePage({
 
       setSubmission({ status: "rejected", reason: result.reason });
     } catch (cause) {
+      // A broken/unavailable IndexedDB queue is NOT a durable retry.
+      // Keep the in-memory game untouched and let the player retry here.
       setSubmission({
-        status: "queued",
-        reason:
-          cause instanceof Error ? cause.message : "submission_queue_failed",
+        status: "rejected",
+        reason: cause instanceof Error ? cause.message : "submission_queue_failed",
       });
+    } finally {
+      if (submissionInFlightRef.current === server.sessionId) {
+        submissionInFlightRef.current = null;
+      }
+    }
+  }
+
+  async function retryBlockedFinishedGame() {
+    if (!server || !userId || !online ||
+        submission.status !== "rejected" ||
+        submission.reason !== "submission_blocked_requires_manual_retry" ||
+        submissionInFlightRef.current === server.sessionId) return;
+    const sessionId = server.sessionId;
+    submissionInFlightRef.current = sessionId;
+    setSubmission({ status: "submitting" });
+    try {
+      // The queue holds the authoritative, immutable submitted choices.
+      const result = await retryBlockedSubmission(sessionId, userId, scenarioId);
+      if (result.status === "submitted") {
+        setSubmission({
+          status: "submitted",
+          evaluation: serverEvaluation(result.data),
+          cleanupPending: result.cleanupPending,
+        });
+      } else if (result.status === "queued") {
+        // An offline transition after clicking should preserve manual intent.
+        setSubmission({ status: "queued", reason: result.reason });
+      } else {
+        setSubmission({ status: "rejected", reason: result.reason });
+      }
+    } catch (cause) {
+      setSubmission({
+        status: "rejected",
+        reason: cause instanceof Error
+          ? cause.message : "manual_submission_retry_failed",
+      });
+    } finally {
+      if (submissionInFlightRef.current === sessionId) {
+        submissionInFlightRef.current = null;
+      }
     }
   }
 
@@ -462,7 +517,7 @@ export function CompetitiveGamePage({
         submissionLogStart: nextGame.log.length,
       };
 
-      await saveCompetitiveSession({
+      const initialized = await saveCompetitiveSession({
         userId,
         scenarioId,
         scenarioVersion: parsed.data.version,
@@ -470,6 +525,7 @@ export function CompetitiveGamePage({
         server: nextServer,
         game: nextGame,
       });
+      if (!initialized) throw new Error("competitive_session_cache_superseded");
 
       setScenario(parsed.data);
       setServer(nextServer);
@@ -488,10 +544,15 @@ export function CompetitiveGamePage({
     }
   }
 
+  // Do not re-send on every queued -> submitting -> queued cycle:
+  // a suspended plant can return 403 until the Admin reactivates it.
+  const previousOnline = useRef(online);
   useEffect(() => {
-    if (online && submission.status === "queued") {
-      void submitFinishedGame();
-    }
+    const reconnect = shouldRetryQueuedOnReconnect(
+      previousOnline.current, online, submission.status,
+    );
+    previousOnline.current = online;
+    if (reconnect) void submitFinishedGame();
   }, [online, submission.status]);
 
   if (profile?.role !== "player") {
@@ -534,7 +595,11 @@ export function CompetitiveGamePage({
             : "현재 시즌에 게시·배정된 시나리오인지 확인해주세요."}
         </p>
         {loadError && !offlineStart ? (
-          <p className="error-text" role="alert">{loadError}</p>
+          <p className="error-text" role="alert">
+            {loadError === "competitive_session_cache_superseded"
+              ? "다른 탭에서 더 최신 플레이가 저장됐습니다. 새로고침하여 최신 세션을 불러오세요."
+              : loadError}
+          </p>
         ) : null}
         <Link className="text-link" to="/">캠페인으로 돌아가기</Link>
       </section>
@@ -632,15 +697,46 @@ export function CompetitiveGamePage({
               </div>
             ) : null}
 
+            {submission.status === "submitted" && submission.cleanupPending ? (
+              <div className="notice" role="status">
+                서버 제출은 완료되었습니다. 다만 이 기기의 임시 기록 정리가
+                지연되어 기록이 남아 있을 수 있습니다. 다시 제출할 필요는 없습니다.
+              </div>
+            ) : null}
+
             {submission.status === "queued" ? (
               <div className="offline-banner" role="status">
-                제출 대기 중 · 연결이 복구되면 자동으로 다시 전송합니다.
+                {submission.reason === "plant_inactive"
+                  ? "발전소 운영 중지로 제출이 보류됐습니다. 행동 기록은 이 기기의 대기 저장소에 보관됐으며, 운영이 재개되면 다시 제출할 수 있습니다."
+                  : submission.reason === "confirmed_cleanup_pending"
+                    ? "서버 완료 기록은 있으나 저장된 결과 영수증을 복원할 수 없습니다. 중복 전송을 방지하기 위해 자동 재제출하지 않습니다. 관리자 확인이 필요합니다."
+                    : submission.reason === "offline_manual_retry_unavailable"
+                      ? "현재 오프라인 상태여서 수동 재시도를 시작하지 않았습니다. 기존 거절 기록을 유지하고 연결 복구 후 확인해주세요."
+                      : "제출 대기 중 · 인터넷 연결이 복구되면 재전송을 시도합니다."}
               </div>
             ) : null}
 
             {submission.status === "rejected" ? (
               <div className="validation-box validation-box--error" role="alert">
-                서버가 이 제출을 승인하지 않았습니다: {submission.reason}
+                {submission.reason === "submission_queue_unavailable"
+                  ? "기기의 제출 대기 저장소를 사용할 수 없습니다. 제출을 보관했다고 볼 수 없으므로 이 화면을 유지하고 다시 시도해주세요."
+                  : submission.reason === "submission_blocked_requires_manual_retry"
+                    ? "이 세션은 서버에서 제출이 거절되어 자동 재시도가 중단됐습니다. 제출 기록은 보존됩니다. 담당자 확인 후 수동 재시도해주세요."
+                    : submission.reason === "submission_queue_payload_conflict"
+                      ? "이 기기에 이미 보관한 제출 기록과 현재 화면의 행동 로그가 다릅니다. 기존 기록을 보호하기 위해 다시 보내지 않았습니다. 새로고침 후 보관된 세션을 확인해주세요."
+                      : `서버가 제출을 승인하지 않았거나 대기 저장에 실패했습니다: ${submission.reason}`}
+                <button type="button" className="secondary-button compact-button"
+                  disabled={!online}
+                  onClick={() => {
+                    if (submission.reason === "submission_blocked_requires_manual_retry") {
+                      void retryBlockedFinishedGame();
+                    } else {
+                      void submitFinishedGame();
+                    }
+                  }}>
+                  {submission.reason === "submission_blocked_requires_manual_retry"
+                    ? "보관된 기록 수동 재시도" : "서버 제출 다시 시도"}
+                </button>
               </div>
             ) : null}
 
@@ -652,7 +748,9 @@ export function CompetitiveGamePage({
 
             {replayError ? (
               <div className="validation-box validation-box--error" role="alert">
-                리플레이를 시작하지 못했습니다: {replayError}
+                리플레이를 시작하지 못했습니다: {replayError === "competitive_session_cache_superseded"
+                  ? "다른 탭에 최신 플레이가 저장되어 있습니다. 새로고침 후 다시 확인하세요."
+                  : replayError}
               </div>
             ) : null}
 
@@ -691,7 +789,9 @@ export function CompetitiveGamePage({
 
             {replayError ? (
               <div className="validation-box validation-box--error" role="alert">
-                리플레이를 시작하지 못했습니다: {replayError}
+                리플레이를 시작하지 못했습니다: {replayError === "competitive_session_cache_superseded"
+                  ? "다른 탭에 최신 플레이가 저장되어 있습니다. 새로고침 후 다시 확인하세요."
+                  : replayError}
               </div>
             ) : null}
 

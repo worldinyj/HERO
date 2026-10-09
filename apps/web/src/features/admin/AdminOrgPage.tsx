@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
+import { ReadRequestGate } from "../../lib/readRequestGate";
+import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
+import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
+import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
+import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
+import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
 
 interface PlantRow {
   id: string;
@@ -8,6 +14,7 @@ interface PlantRow {
   name: string;
   display_name: string;
   is_active: boolean;
+  invitation_epoch: number;
   created_at: string;
 }
 
@@ -34,6 +41,7 @@ interface PendingManagerInviteRow {
   id: string;
   plant_id: string;
   invitee_name: string;
+  plant_invitation_epoch: number;
   expires_at: string;
   created_at: string;
   plants:
@@ -61,6 +69,7 @@ function managerPlantLabel(row: ManagerRow): string {
 }
 
 export function AdminOrgPage() {
+  const rosterGate = useRef(new ReadRequestGate());
   const [plants, setPlants] = useState<PlantRow[]>([]);
   const [managers, setManagers] = useState<ManagerRow[]>([]);
   const [pendingManagerInvites, setPendingManagerInvites] = useState<PendingManagerInviteRow[]>([]);
@@ -71,15 +80,28 @@ export function AdminOrgPage() {
   const [plantName, setPlantName] = useState("");
   const [plantDisplayName, setPlantDisplayName] = useState("");
   const [creatingPlant, setCreatingPlant] = useState(false);
+  const [plantActionPending, setPlantActionPending] = useState(false);
+  const [plantOutcomeUnknown, setPlantOutcomeUnknown] = useState(false);
+  const [plantRosterReady, setPlantRosterReady] = useState(false);
+  const [plantRosterPending, setPlantRosterPending] = useState(false);
+  const [pendingPlantChange, setPendingPlantChange] = useState<PlantRow | null>(null);
+  const [plantCodeConfirmation, setPlantCodeConfirmation] = useState("");
+  const [plantImpactAcknowledged, setPlantImpactAcknowledged] = useState(false);
 
   const [invitePlantId, setInvitePlantId] = useState("");
   const [inviteeName, setInviteeName] = useState("");
   const [creatingInvite, setCreatingInvite] = useState(false);
+  const [createOutcomeUnknown, setCreateOutcomeUnknown] = useState(false);
+  const [reissueUnknownIds, setReissueUnknownIds] = useState<string[]>([]);
+  const [cancelUnknownIds, setCancelUnknownIds] = useState<string[]>([]);
+  const [adminRosterReady, setAdminRosterReady] = useState(false);
+  const [adminRosterPending, setAdminRosterPending] = useState(false);
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [managerInviteActionPending, setManagerInviteActionPending] = useState<string | null>(null);
 
-  async function load() {
+  async function load(): Promise<boolean> {
+    const revision = rosterGate.current.begin();
     setLoading(true);
     setError(null);
 
@@ -90,7 +112,7 @@ export function AdminOrgPage() {
       const [plantResult, managerResult, inviteResult] = await Promise.all([
         supabase
           .from("plants")
-          .select("id, code, name, display_name, is_active, created_at")
+          .select("id, code, name, display_name, is_active, invitation_epoch, created_at")
           .order("display_name", { ascending: true }),
         supabase
           .from("profiles")
@@ -99,7 +121,7 @@ export function AdminOrgPage() {
           .order("real_name", { ascending: true }),
         supabase
           .from("invitations")
-          .select("id, plant_id, invitee_name, expires_at, created_at, plants(display_name, code)")
+          .select("id, plant_id, invitee_name, plant_invitation_epoch, expires_at, created_at, plants(display_name, code)")
           .eq("target_role", "plant_manager")
           .is("accepted_at", null)
           .is("canceled_at", null)
@@ -107,31 +129,43 @@ export function AdminOrgPage() {
           .order("created_at", { ascending: false }),
       ]);
 
+      // A later refresh supersedes this snapshot, including on success.
+      if (!rosterGate.current.isCurrent(revision)) return false;
       if (plantResult.error) throw plantResult.error;
       if (managerResult.error) throw managerResult.error;
       if (inviteResult.error) throw inviteResult.error;
+      if (!isValidAdminOrgLists(plantResult.data, managerResult.data, inviteResult.data)) {
+        throw new Error("admin_org_result_invalid");
+      }
 
-      setPlants((plantResult.data ?? []) as PlantRow[]);
-      setManagers((managerResult.data ?? []) as unknown as ManagerRow[]);
-      setPendingManagerInvites(
-        (inviteResult.data ?? []) as unknown as PendingManagerInviteRow[],
-      );
+      setPlants(plantResult.data as PlantRow[]);
+      setManagers(managerResult.data as unknown as ManagerRow[]);
+      setPendingManagerInvites(currentPendingInvitations(
+        plantResult.data as PlantRow[],
+        inviteResult.data as unknown as PendingManagerInviteRow[],
+      ));
 
       if (!invitePlantId) {
         const firstActive = (plantResult.data ?? []).find((plant) => plant.is_active);
         if (firstActive) setInvitePlantId(firstActive.id);
       }
+      return true;
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
-      );
+      if (rosterGate.current.isCurrent(revision)) {
+        setError(
+          cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
+        );
+      }
+      return false;
     } finally {
-      setLoading(false);
+      if (rosterGate.current.isCurrent(revision)) setLoading(false);
     }
   }
 
   useEffect(() => {
     void load();
+    return () => rosterGate.current.invalidate();
+    // Mount-scoped read; mutations start independent revisions.
   }, []);
 
   const managerCountByPlant = useMemo(() => {
@@ -143,11 +177,34 @@ export function AdminOrgPage() {
     return counts;
   }, [managers]);
 
+  async function reconcilePlantMutations() {
+    if (creatingPlant || plantActionPending || plantRosterPending) return;
+    setPlantRosterPending(true);
+    setPlantRosterReady(false);
+    try {
+      if (await load()) {
+        setPlantRosterReady(true);
+        setError("발전소 목록을 다시 확인한 뒤 실제 변경 결과에 맞게 잠금을 해제해주세요.");
+      } else {
+        setError("발전소 목록을 불러오지 못했습니다. 잠금을 유지합니다.");
+      }
+    } finally {
+      setPlantRosterPending(false);
+    }
+  }
+
+  function confirmPlantMutations() {
+    if (!plantRosterReady || plantRosterPending || creatingPlant || plantActionPending) return;
+    setPlantOutcomeUnknown(false);
+    setPlantRosterReady(false);
+    setError(null);
+  }
+
   async function handleCreatePlant() {
+    if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown) return;
     const code = normalizePlantCode(plantCode);
     const name = plantName.trim();
     const displayName = plantDisplayName.trim();
-
     if (!code || !name || !displayName) {
       setError("발전소 코드·정식명·표시명을 모두 입력해주세요.");
       return;
@@ -156,48 +213,120 @@ export function AdminOrgPage() {
     try {
       setCreatingPlant(true);
       setError(null);
+      setPlantRosterReady(false);
       const supabase = getSupabase();
-      const { error: insertError } = await supabase.from("plants").insert({
-        code,
-        name,
-        display_name: displayName,
-        is_active: true,
-      });
-
-      if (insertError) throw insertError;
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "admin-plant-action", {
+          body: { action: "create-plant", code, name, displayName },
+        },
+      );
+      if (invokeError) throw invokeError;
+      if (!readPlantCreated(data, code, displayName)) {
+        throw new Error("plant_creation_outcome_unknown");
+      }
 
       setPlantCode("");
       setPlantName("");
       setPlantDisplayName("");
-      await load();
+      if (!(await load())) {
+        setPlantOutcomeUnknown(true);
+        setError("발전소는 생성됐지만 목록 재조회에 실패했습니다. 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "발전소를 생성하지 못했습니다.",
-      );
+      if (isDefiniteInviteRejection(cause)) {
+        setError("발전소 생성이 거절되었습니다. 코드 중복과 입력값을 확인해주세요.");
+      } else {
+        setPlantOutcomeUnknown(true);
+        setPlantRosterReady(false);
+        setError("생성 결과를 확정할 수 없습니다. 서버 목록을 확인하기 전 재요청하지 마세요.");
+      }
     } finally {
       setCreatingPlant(false);
     }
   }
 
   async function handleTogglePlant(plant: PlantRow) {
+    if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown) return;
+    if (!canConfirmPlantTransition(pendingPlantChange, plantCodeConfirmation, plantImpactAcknowledged) ||
+        pendingPlantChange?.id !== plant.id ||
+        pendingPlantChange.is_active !== plant.is_active) return;
+    const current = plants.find((p) => p.id === plant.id);
+    if (!current || current.is_active !== plant.is_active) {
+      setPendingPlantChange(null);
+      setError("발전소 상태가 변경되었습니다. 명단을 새로 조회한 후 다시 선택해주세요.");
+      return;
+    }
+    setPendingPlantChange(null);
+    setPlantCodeConfirmation("");
+    setPlantImpactAcknowledged(false);
+    const requestedActive = !plant.is_active;
     try {
+      setPlantActionPending(true);
+      setPlantRosterReady(false);
       setError(null);
       const supabase = getSupabase();
-      const { error: updateError } = await supabase
-        .from("plants")
-        .update({ is_active: !plant.is_active })
-        .eq("id", plant.id);
-
-      if (updateError) throw updateError;
-      await load();
-    } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "발전소 상태를 변경하지 못했습니다.",
+      const { data, error: invokeError } = await supabase.functions.invoke(
+        "admin-plant-action", {
+          body: { action: "set-plant-active", plantId: plant.id, isActive: requestedActive },
+        },
       );
+      if (invokeError) throw invokeError;
+      if (!readPlantStatus(data, plant.id, requestedActive)) {
+        throw new Error("plant_status_outcome_unknown");
+      }
+      if (!(await load())) {
+        setPlantOutcomeUnknown(true);
+        setError("발전소 상태는 처리됐지만 명단 재조회에 실패했습니다. 결과를 확인해주세요.");
+      }
+    } catch (cause) {
+      if (isDefiniteInviteRejection(cause)) {
+        setError("발전소 상태 변경이 거절되었습니다. 현재 권한과 상태를 확인해주세요.");
+      } else {
+        setPlantOutcomeUnknown(true);
+        setPlantRosterReady(false);
+        setError("상태 변경 결과가 불확실합니다. 발전소 명단 대조 전에는 다시 실행하지 마세요.");
+      }
+    } finally {
+      setPlantActionPending(false);
     }
   }
 
+  async function reconcileAdminInvites() {
+    if (creatingInvite || managerInviteActionPending || adminRosterPending) return;
+    setAdminRosterPending(true);
+    setAdminRosterReady(false);
+    try {
+      if (await load()) {
+        setAdminRosterReady(true);
+        setError("새로 불러온 수락 대기 초대를 확인하고 필요한 중복 초대를 정리한 뒤 잠금을 해제해주세요.");
+      } else {
+        setError("관리자 초대 명단을 다시 읽지 못했습니다. 잠금 상태를 유지합니다.");
+      }
+    } finally {
+      setAdminRosterPending(false);
+    }
+  }
+
+  function confirmAdminInvites() {
+    if (!adminRosterReady || creatingInvite || managerInviteActionPending || adminRosterPending) return;
+    setCreateOutcomeUnknown(false);
+    setReissueUnknownIds([]);
+    setCancelUnknownIds([]);
+    setAdminRosterReady(false);
+    setError(null);
+  }
+
   async function handleCreateManagerInvite() {
+    if (
+      creatingInvite || createOutcomeUnknown || adminRosterPending ||
+      reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0
+    ) return;
+    // An issued URL exists only in this component: preserve it until the
+    // operator explicitly confirms it has been copied/saved.
+    if (inviteResult) {
+      setError("기존 담당자 초대 링크를 먼저 보관하고 '새 초대 작성'을 눌러주세요.");
+      return;
+    }
     if (!invitePlantId || !inviteeName.trim()) {
       setError("발전소와 담당자 이름을 입력해주세요.");
       return;
@@ -206,7 +335,6 @@ export function AdminOrgPage() {
     try {
       setCreatingInvite(true);
       setError(null);
-      setInviteResult(null);
       setCopied(false);
 
       const supabase = getSupabase();
@@ -221,20 +349,34 @@ export function AdminOrgPage() {
         },
       );
 
-      if (invokeError) throw invokeError;
+      if (invokeError) {
+        if (!isDefiniteInviteRejection(invokeError)) {
+          throw new InviteCreationOutcomeUnknownError();
+        }
+        throw invokeError;
+      }
 
-      const result = data as InviteResult & { error?: string };
-      if (!result.inviteUrl) {
-        throw new Error(result.error ?? "담당자 초대 링크 생성에 실패했습니다.");
+      const result = readIssuedInviteLink(data);
+      if (!result) {
+        // HTTP 2xx with an invalid one-time link may follow a committed INSERT.
+        throw new InviteCreationOutcomeUnknownError();
       }
 
       setInviteResult(result);
       setInviteeName("");
       await load();
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setAdminRosterReady(false);
+        setCreateOutcomeUnknown(true);
+        setError(
+          "담당자 초대가 생성되었을 수도 있습니다. 새로 발급하기 전에 수락 대기 목록을 확인하고 중복 초대를 정리해주세요.",
+        );
+      } else {
+        setError(
+          cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
+        );
+      }
     } finally {
       setCreatingInvite(false);
     }
@@ -244,46 +386,85 @@ export function AdminOrgPage() {
     invitationId: string,
     action: "cancel-invite" | "reissue-invite",
   ) {
+    if (managerInviteActionPending || creatingInvite || adminRosterPending) return;
+    if (
+      createOutcomeUnknown ||
+      reissueUnknownIds.includes(invitationId) ||
+      cancelUnknownIds.includes(invitationId)
+    ) {
+      setError("이전 초대 발급·재발급·취소 결과를 명단에서 먼저 확인해주세요.");
+      return;
+    }
+    if (inviteResult?.invitationId === invitationId) {
+      setError("표시된 일회용 링크를 먼저 보관하고 다음 작업을 진행해주세요.");
+      return;
+    }
+    if (action === "reissue-invite" && inviteResult) {
+      setError("기존 일회용 링크를 보관하고 '새 초대 작성'을 눌러주세요.");
+      return;
+    }
+
     try {
       setManagerInviteActionPending(`${action}:${invitationId}`);
       setError(null);
-      setCopied(false);
 
       const supabase = getSupabase();
       const { data, error: invokeError } = await supabase.functions.invoke(
         "manager-user-action",
         { body: { action, invitationId } },
       );
-
-      if (invokeError) throw invokeError;
-
-      const result = data as Partial<InviteResult> & { error?: string };
-      if (result.error) throw new Error(result.error);
-
-      if (action === "reissue-invite") {
-        if (
-          !result.invitationId ||
-          !result.inviteUrl ||
-          !result.expiresAt ||
-          !result.plantDisplayName
-        ) {
-          throw new Error("담당자 초대 링크 재발급에 실패했습니다.");
+      if (invokeError) {
+        if (!isDefiniteInviteRejection(invokeError)) {
+          throw new InviteCreationOutcomeUnknownError();
         }
-
-        setInviteResult(result as InviteResult);
-      } else {
-        setInviteResult(null);
+        throw invokeError;
       }
 
-      await load();
+      if (action === "reissue-invite") {
+        const result = readReissuedInviteLink(data, invitationId);
+        if (!result) throw new InviteCreationOutcomeUnknownError();
+        setCopied(false);
+        setInviteResult(result);
+      } else {
+        if (!readCanceledInviteResult(data, invitationId)) {
+          throw new InviteCreationOutcomeUnknownError();
+        }
+        // Preserve unrelated one-time URLs even after cancellation.
+      }
+
+      if (!(await load())) {
+        setAdminRosterReady(false);
+        if (action === "reissue-invite") {
+          setReissueUnknownIds((current) =>
+            current.includes(invitationId) ? current : [...current, invitationId]
+          );
+        } else {
+          setCancelUnknownIds((current) =>
+            current.includes(invitationId) ? current : [...current, invitationId]
+          );
+        }
+        setError("초대 작업은 완료되었지만 명단을 다시 읽지 못했습니다. 확인 후 잠금을 해제해주세요.");
+      }
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : action === "reissue-invite"
-            ? "담당자 초대 링크 재발급에 실패했습니다."
-            : "담당자 초대를 취소하지 못했습니다.",
-      );
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setAdminRosterReady(false);
+        if (action === "reissue-invite") {
+          setReissueUnknownIds((current) =>
+            current.includes(invitationId) ? current : [...current, invitationId]
+          );
+        } else {
+          setCancelUnknownIds((current) =>
+            current.includes(invitationId) ? current : [...current, invitationId]
+          );
+        }
+        setError("초대 취소·재발급의 서버 반영 여부가 불확실합니다. 명단을 재조회하고 대조하기 전에는 재시도하지 마세요.");
+      } else {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "담당자 초대 처리가 거절되었습니다.",
+        );
+      }
     } finally {
       setManagerInviteActionPending(null);
     }
@@ -371,12 +552,87 @@ export function AdminOrgPage() {
           <button
             type="button"
             className="primary-button"
-            disabled={creatingPlant}
+            disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
             onClick={handleCreatePlant}
           >
             {creatingPlant ? "생성 중…" : "발전소 생성"}
           </button>
         </div>
+
+        {plantOutcomeUnknown ? (
+          <div className="invite-result-box" role="alert">
+            <strong>발전소 변경 결과 확인 필요</strong>
+            <p className="muted">서버에 이미 반영됐을 수 있습니다. 최신 발전소 목록을 확인하고 잠금을 해제해주세요.</p>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button"
+                disabled={creatingPlant || plantActionPending || plantRosterPending}
+                onClick={() => void reconcilePlantMutations()}>
+                1. 발전소 목록 다시 조회
+              </button>
+              <button type="button" className="text-button"
+                disabled={!plantRosterReady || creatingPlant || plantActionPending || plantRosterPending}
+                onClick={() => confirmPlantMutations()}>
+                2. 변경 결과 확인 · 잠금 해제
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {pendingPlantChange ? (
+          <div className="invite-result-box" role="alert" aria-label="발전소 운영 상태 변경 확인">
+            <strong>
+              {pendingPlantChange.display_name} · {pendingPlantChange.code} —
+              {pendingPlantChange.is_active ? " 운영 중지 확인" : " 재활성화 확인"}
+            </strong>
+            <p className="muted">
+              {pendingPlantChange.is_active
+                ? "운영을 중지하면 담당자 및 Player의 이용이 차단되고, 진행 중 교육도 일시 중지됩니다. 아직 수락하지 않은 초대 링크는 무효화되며 재활성화해도 되살아나지 않습니다. 교육 기록은 보존됩니다."
+                : "운영을 다시 시작하면 담당자·Player 접근과 기존 교육 재개가 가능해집니다. 이전에 무효화된 초대 링크는 복원되지 않으므로 새 링크를 발급해야 합니다."}
+            </p>
+            <p className="muted">
+              현재 이 발전소의 활성 담당자 {managerCountByPlant.get(pendingPlantChange.id) ?? 0}명 ·
+              수락 대기 담당자 초대 {pendingManagerInvites.filter((invite) =>
+                invite.plant_id === pendingPlantChange.id
+              ).length}건. Player 초대 및 교육 세션도 영향을 받을 수 있습니다.
+            </p>
+            <label>
+              <span>확인을 위해 발전소 코드 {pendingPlantChange.code} 입력</span>
+              <input
+                value={plantCodeConfirmation}
+                onChange={(event) => setPlantCodeConfirmation(event.target.value)}
+                autoComplete="off"
+                placeholder={pendingPlantChange.code}
+                aria-label="발전소 상태 변경 확인 코드"
+              />
+            </label>
+            <label>
+              <input type="checkbox" checked={plantImpactAcknowledged}
+                onChange={(event) => setPlantImpactAcknowledged(event.target.checked)} />
+              <span>접근 제한·교육 중단과 기존 초대 링크 무효화 영향을 확인했습니다.</span>
+            </label>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button"
+                disabled={creatingPlant || plantActionPending || plantRosterPending}
+                onClick={() => {
+                  setPendingPlantChange(null);
+                  setPlantCodeConfirmation("");
+                  setPlantImpactAcknowledged(false);
+                }}>
+                취소
+              </button>
+              <button type="button" className="text-button"
+                disabled={!canConfirmPlantTransition(
+                  pendingPlantChange, plantCodeConfirmation, plantImpactAcknowledged
+                ) || creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
+                onClick={() => {
+                  const plant = pendingPlantChange;
+                  if (plant) void handleTogglePlant(plant);
+                }}>
+                {pendingPlantChange.is_active ? "운영 중지 확정" : "재활성화 확정"}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="admin-list">
           {plants.map((plant) => (
@@ -395,7 +651,13 @@ export function AdminOrgPage() {
                 <button
                   type="button"
                   className="text-button"
-                  onClick={() => void handleTogglePlant(plant)}
+                  disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
+                  onClick={() => {
+                    setPendingPlantChange(plant);
+                    setPlantCodeConfirmation("");
+                    setPlantImpactAcknowledged(false);
+                    setError(null);
+                  }}
                 >
                   {plant.is_active ? "운영 중지" : "다시 활성화"}
                 </button>
@@ -442,12 +704,45 @@ export function AdminOrgPage() {
           <button
             type="button"
             className="primary-button"
-            disabled={creatingInvite || !invitePlantId}
+            disabled={
+              creatingInvite || createOutcomeUnknown || Boolean(inviteResult) ||
+              !invitePlantId || adminRosterPending ||
+              reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0
+            }
             onClick={handleCreateManagerInvite}
           >
             {creatingInvite ? "초대 생성 중…" : "담당자 초대 링크 생성"}
           </button>
         </div>
+
+        {createOutcomeUnknown || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0 ? (
+          <div className="invite-result-box" role="alert">
+            <strong>담당자 초대 처리 결과 확인 필요</strong>
+            <p className="muted">
+              초대 생성·취소·재발급이 서버에서 이미 처리되었을 수 있습니다.
+              수락 대기 명단을 실제로 다시 읽고 대조한 뒤 명시적으로 잠금을 해제해주세요.
+              분실한 일회용 토큰은 서버에서 복구할 수 없습니다.
+            </p>
+            <div className="inline-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={creatingInvite || managerInviteActionPending !== null || adminRosterPending}
+                onClick={() => void reconcileAdminInvites()}
+              >
+                1. 담당자 초대 명단 다시 조회
+              </button>
+              <button
+                type="button"
+                className="text-button"
+                disabled={!adminRosterReady || creatingInvite || managerInviteActionPending !== null || adminRosterPending}
+                onClick={() => confirmAdminInvites()}
+              >
+                2. 결과 확인 완료 · 잠금 해제
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {inviteResult ? (
           <div className="invite-result-box">
@@ -458,6 +753,17 @@ export function AdminOrgPage() {
             <code>{inviteResult.inviteUrl}</code>
             <button type="button" className="secondary-button" onClick={handleCopyInvite}>
               {copied ? "복사 완료" : "링크 복사"}
+            </button>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => {
+                setInviteResult(null);
+                setCopied(false);
+                setError(null);
+              }}
+            >
+              링크 보관 완료 · 새 초대 작성
             </button>
           </div>
         ) : null}
@@ -478,7 +784,11 @@ export function AdminOrgPage() {
                   <button
                     type="button"
                     className="secondary-button compact-button"
-                    disabled={managerInviteActionPending !== null}
+                    disabled={
+                      managerInviteActionPending !== null || creatingInvite || adminRosterPending ||
+                      createOutcomeUnknown || reissueUnknownIds.includes(invite.id) ||
+                      cancelUnknownIds.includes(invite.id) || Boolean(inviteResult)
+                    }
                     onClick={() => void handleManagerInviteAction(invite.id, "reissue-invite")}
                   >
                     {managerInviteActionPending === `reissue-invite:${invite.id}`
@@ -488,7 +798,12 @@ export function AdminOrgPage() {
                   <button
                     type="button"
                     className="text-button"
-                    disabled={managerInviteActionPending !== null}
+                    disabled={
+                      managerInviteActionPending !== null || creatingInvite || adminRosterPending ||
+                      createOutcomeUnknown || reissueUnknownIds.includes(invite.id) ||
+                      cancelUnknownIds.includes(invite.id) ||
+                      inviteResult?.invitationId === invite.id
+                    }
                     onClick={() => void handleManagerInviteAction(invite.id, "cancel-invite")}
                   >
                     {managerInviteActionPending === `cancel-invite:${invite.id}`

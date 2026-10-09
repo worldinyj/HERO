@@ -1,5 +1,7 @@
 # HERO — Task List
 
+> 현재 진행도·상태 판정은 [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md)에서 확인하세요. TASKLIST 원문은 계획 기준으로 유지하며, 최신 검증 실행 순서는 [31_BATCH_VALIDATION_EXECUTION_PLAN.md](31_BATCH_VALIDATION_EXECUTION_PLAN.md)에 기록합니다.
+
 | 항목 | 내용 |
 |---|---|
 | 문서 버전 | **v1.4** (v1.3 + Direct/Root/Contributing 원인분류·방어막·재발방지대책 추적성 반영) |

@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
+import { nextInviteBatchRange, MAX_INVITES_PER_RUN } from "./bulkInviteBatch";
+import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
+import { csvEscape } from "./bulkInviteCsv";
+import { readIssuedInviteLink } from "./inviteResponse";
+import { canStartInviteOperation } from "./inviteOperationGuard";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
 
@@ -142,10 +147,6 @@ function parseInviteCsv(text: string): BulkInput[] {
   return rows;
 }
 
-function csvEscape(value: string): string {
-  return `"${value.replaceAll('"', '""')}"`;
-}
-
 function downloadBulkCsv(rows: BulkResult[]) {
   const header = ["name", "job_role", "team_name", "invite_url", "expires_at"];
   const lines = [
@@ -174,20 +175,34 @@ function downloadBulkCsv(rows: BulkResult[]) {
   URL.revokeObjectURL(url);
 }
 
-export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
+export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boolean> }) {
   const { profile } = useAuth();
   const [name, setName] = useState("");
   const [jobRole, setJobRole] = useState<JobRole>("worker");
   const [teamName, setTeamName] = useState("");
   const [singlePending, setSinglePending] = useState(false);
+  const [singleRetryBlocked, setSingleRetryBlocked] = useState(false);
+  const [inviteRosterReady, setInviteRosterReady] = useState(false);
+  const [inviteRosterPending, setInviteRosterPending] = useState(false);
   const [singleResult, setSingleResult] = useState<InviteLinkResult | null>(null);
   const [bulkPending, setBulkPending] = useState(false);
+  const [bulkRetryBlocked, setBulkRetryBlocked] = useState(false);
   const [bulkFileName, setBulkFileName] = useState("");
   const [bulkInputs, setBulkInputs] = useState<BulkInput[]>([]);
   const [bulkResults, setBulkResults] = useState<BulkResult[]>([]);
+  const [bulkInfo, setBulkInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [copiedBulkUrl, setCopiedBulkUrl] = useState<string | null>(null);
+  // React state alone does not prevent two synchronous click handlers entering
+  // before the next render. This lock also serializes reconciliation reads.
+  const requestInFlight = useRef(false);
+  const csvReadInFlight = useRef(false);
+  const [csvPending, setCsvPending] = useState(false);
+  const canStartMutation = canStartInviteOperation({
+    singlePending, bulkPending, rosterPending: inviteRosterPending, csvPending,
+    singleOutcomeUnknown: singleRetryBlocked, bulkOutcomeUnknown: bulkRetryBlocked,
+  });
 
   async function createInvite(input: BulkInput): Promise<InviteLinkResult> {
     if (!profile?.plant_id) {
@@ -208,22 +223,64 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       },
     );
 
-    if (invokeError) throw invokeError;
+    if (invokeError) {
+      if (!isDefiniteInviteRejection(invokeError)) {
+        throw new InviteCreationOutcomeUnknownError();
+      }
+      throw invokeError;
+    }
 
-    const result = data as InviteLinkResult & { error?: string };
-    if (!result.inviteUrl) {
-      throw new Error(result.error ?? "초대 링크 생성에 실패했습니다.");
+    const result = readIssuedInviteLink(data);
+    if (!result) {
+      // A 2xx response with null/missing/invalid link fields may follow COMMIT.
+      // The original token cannot be retrieved; treat every malformed result
+      // as unknown, not as a deterministic failure eligible for a retry.
+      throw new InviteCreationOutcomeUnknownError();
     }
 
     return result;
   }
 
+  async function reconcileInviteRoster() {
+    if (requestInFlight.current || csvReadInFlight.current || singlePending || bulkPending || inviteRosterPending) return;
+    requestInFlight.current = true;
+    setInviteRosterPending(true);
+    setInviteRosterReady(false);
+    try {
+      if (await onChanged()) {
+        setInviteRosterReady(true);
+        setError("갱신된 수락 대기 명단을 확인하고 필요 시 중복 초대를 정리한 뒤 해제를 선택해주세요.");
+      } else {
+        setError("초대 명단을 불러오지 못했습니다. 재시도 잠금을 유지합니다.");
+      }
+    } catch {
+      setError("초대 명단을 확인하지 못했습니다. 재시도 잠금을 유지합니다.");
+    } finally {
+      requestInFlight.current = false;
+      setInviteRosterPending(false);
+    }
+  }
+
+  function confirmInviteRoster() {
+    if (!inviteRosterReady || inviteRosterPending || singlePending || bulkPending) return;
+    setSingleRetryBlocked(false);
+    setInviteRosterReady(false);
+    setError(null);
+  }
+
   async function handleSingleCreate() {
+    if (!canStartMutation || requestInFlight.current || csvReadInFlight.current) return;
+    // The one-time token cannot be retrieved from the server again.
+    if (singleResult) {
+      setError("현재 표시된 링크를 먼저 보관하고 '링크 보관 완료'를 눌러주세요.");
+      return;
+    }
     if (!name.trim()) {
       setError("초대할 사용자 이름을 입력해주세요.");
       return;
     }
 
+    requestInFlight.current = true;
     try {
       setSinglePending(true);
       setError(null);
@@ -236,10 +293,17 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
       setSingleResult(result);
       setName("");
       setTeamName("");
-      onChanged();
+      void onChanged();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "초대 링크 생성에 실패했습니다.");
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        setInviteRosterReady(false);
+        setSingleRetryBlocked(true);
+        setError("응답을 확인하지 못했습니다. 초대가 서버에 생성되었을 수도 있습니다. 담당자 초대 목록을 확인하기 전에는 같은 대상을 다시 초대하지 마세요.");
+      } else {
+        setError(cause instanceof Error ? cause.message : "초대 링크 생성에 실패했습니다.");
+      }
     } finally {
+      requestInFlight.current = false;
       setSinglePending(false);
     }
   }
@@ -272,16 +336,32 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   }
 
   async function handleCsvFile(file: File | null) {
-    if (!file) return;
+    if (!file || !canStartMutation || requestInFlight.current || csvReadInFlight.current) return;
+    csvReadInFlight.current = true;
+    setCsvPending(true);
+
+    // Invite URLs are shown only once. Never silently destroy partially
+    // generated links when a new file is chosen.
+    if (bulkResults.length > 0) {
+      setError("기존 초대 링크를 CSV로 저장한 뒤 '새 목록 시작'을 눌러주세요.");
+      return;
+    }
 
     try {
       setError(null);
-      setBulkResults([]);
+      setBulkInfo(null);
+      const fileContent = await file.text();
+      if (requestInFlight.current || !csvReadInFlight.current) return;
+      const inputs = parseInviteCsv(fileContent);
       setBulkFileName(file.name);
-      setBulkInputs(parseInviteCsv(await file.text()));
+      setBulkInputs(inputs);
     } catch (cause) {
       setBulkInputs([]);
+      setBulkFileName("");
       setError(cause instanceof Error ? cause.message : "CSV를 읽지 못했습니다.");
+    } finally {
+      csvReadInFlight.current = false;
+      setCsvPending(false);
     }
   }
 
@@ -311,17 +391,26 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
   }
 
   async function handleBulkCreate() {
-    if (bulkInputs.length === 0) {
-      setError("먼저 CSV 파일을 선택해주세요.");
+    if (!canStartMutation || requestInFlight.current || csvReadInFlight.current || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length) {
       return;
     }
 
+    // Keep successes even if the next request fails. Retrying resumes at the
+    // first unfinished index, so one-time links are not generated twice.
+    const results = [...bulkResults];
+    const initialCount = results.length;
+    const indices = nextInviteBatchRange(initialCount, bulkInputs.length);
+
+    requestInFlight.current = true;
     try {
       setBulkPending(true);
       setError(null);
-      const results: BulkResult[] = [];
+      setBulkInfo(null);
 
-      for (const input of bulkInputs) {
+      for (const index of indices) {
+        const input = bulkInputs[index];
+        if (!input) throw new Error("초대 목록 항목을 찾지 못했습니다.");
+
         const result = await createInvite(input);
         results.push({
           ...input,
@@ -329,17 +418,33 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           expiresAt: result.expiresAt,
           plantDisplayName: result.plantDisplayName,
         });
+        // Persist every successful link to the UI immediately.
+        setBulkResults([...results]);
       }
 
-      setBulkResults(results);
-      onChanged();
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? `일괄 초대 중 중단되었습니다: ${cause.message}`
-          : "일괄 초대 생성에 실패했습니다.",
+      setBulkInfo(
+        results.length === bulkInputs.length
+          ? `${results.length}명 초대 링크 생성이 완료되었습니다. CSV를 안전하게 보관해주세요.`
+          : `${results.length}/${bulkInputs.length}명 완료. 이번 실행은 ${MAX_INVITES_PER_RUN}건 이하로 제한됩니다. 남은 항목은 서버 요청 한도가 회복된 후 재개해주세요.`,
       );
+    } catch (cause) {
+      setBulkResults([...results]);
+      if (cause instanceof InviteCreationOutcomeUnknownError) {
+        // The interrupted request may have committed on the server. Retrying
+        // the same row automatically would create a second valid invitation.
+        setInviteRosterReady(false);
+        setBulkRetryBlocked(true);
+        setError(
+          `${results.length}/${bulkInputs.length}명 확인 완료, 다음 요청의 성공 여부는 불확실합니다. 생성된 링크를 CSV로 저장하고 담당자 초대 목록에서 해당 대상의 미수락 초대를 확인·정리한 뒤에만 새로운 초대를 진행하세요. 자동 재개는 잠겼습니다.`,
+        );
+      } else {
+        setError(
+          `${results.length}/${bulkInputs.length}명 생성 후 중단되었습니다. 이미 생성된 링크를 CSV로 저장하고 요청 제한이 해제되면 남은 항목부터 재개하세요. 상세: ${cause instanceof Error ? cause.message : "초대 생성 실패"}`,
+        );
+      }
     } finally {
+      if (results.length > initialCount) void onChanged();
+      requestInFlight.current = false;
       setBulkPending(false);
     }
   }
@@ -395,11 +500,36 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
           <button
             type="button"
             className="primary-button"
-            disabled={singlePending}
+            disabled={!canStartMutation || Boolean(singleResult)}
             onClick={() => void handleSingleCreate()}
           >
             {singlePending ? "생성 중…" : "초대 링크 생성"}
           </button>
+
+          {singleRetryBlocked ? (
+            <div className="invite-result-box" role="alert">
+              <strong>초대 생성 결과 확인 필요</strong>
+              <p className="muted">서버에서 이미 생성했을 수 있으므로 같은 대상을 곧바로 재시도하지 마세요. 담당자 초대 목록의 미수락 항목을 확인하고 중복 초대를 취소한 뒤 새 요청을 시작해주세요.</p>
+              <div className="inline-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={singlePending || bulkPending || inviteRosterPending}
+                  onClick={() => void reconcileInviteRoster()}
+                >
+                  1. 수락 대기 초대 다시 조회
+                </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={!inviteRosterReady || inviteRosterPending || singlePending || bulkPending}
+                  onClick={() => confirmInviteRoster()}
+                >
+                  2. 결과 확인 · 새 요청 허용
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {singleResult ? (
             <div className="invite-result-box">
@@ -412,6 +542,18 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
                 <button type="button" className="secondary-button compact-button" onClick={() => void handleCopy()}>
                   {copied ? "복사 완료" : "링크 복사"}
                 </button>
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={singlePending}
+                  onClick={() => {
+                    setSingleResult(null);
+                    setCopied(false);
+                    setError(null);
+                  }}
+                >
+                  링크 보관 완료 · 다음 초대 작성
+                </button>
               </div>
             </div>
           ) : null}
@@ -420,7 +562,8 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
         <div className="manager-invite-form">
           <strong>CSV 일괄 초대</strong>
           <p className="muted mini-copy">
-            헤더: name, job_role, team_name · 최대 200명
+            헤더: name, job_role, team_name · 파일 최대 200명 · 한 번에 최대 {MAX_INVITES_PER_RUN}건
+            (서버는 계정당 10분에 30회 요청 제한)
           </p>
 
           <label className="file-drop compact-file-drop">
@@ -428,22 +571,74 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
             <input
               type="file"
               accept=".csv,text/csv"
-              onChange={(event) => void handleCsvFile(event.target.files?.[0] ?? null)}
+              disabled={!canStartMutation}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0] ?? null;
+                event.currentTarget.value = "";
+                void handleCsvFile(file);
+              }}
             />
           </label>
 
           {bulkInputs.length > 0 ? (
-            <p className="notice">{bulkInputs.length}명을 확인했습니다. 생성 후 링크 CSV를 다운로드할 수 있습니다.</p>
+            <p className="notice">{bulkInputs.length}명 중 {bulkResults.length}명 생성 완료. 생성된 링크는 즉시 아래에 표시되며 CSV로 저장할 수 있습니다.</p>
           ) : null}
 
           <button
             type="button"
             className="primary-button"
-            disabled={bulkPending || bulkInputs.length === 0}
+            disabled={!canStartMutation || bulkInputs.length === 0 || bulkResults.length >= bulkInputs.length}
             onClick={() => void handleBulkCreate()}
           >
-            {bulkPending ? `${bulkInputs.length}명 생성 중…` : "일괄 링크 생성"}
+            {bulkPending
+              ? `${bulkResults.length}/${bulkInputs.length}명 생성 중…`
+              : bulkResults.length === 0
+                ? "일괄 링크 생성 시작"
+                : bulkResults.length === bulkInputs.length
+                  ? "전체 생성 완료"
+                  : `남은 ${bulkInputs.length - bulkResults.length}명 재개`}
           </button>
+
+          {bulkInfo ? <p className="notice" role="status">{bulkInfo}</p> : null}
+          {bulkRetryBlocked ? (
+            <div className="invite-result-box" role="alert">
+              <strong>미확인 요청이 있어 자동 재개를 중지했습니다</strong>
+              <p className="muted">확인된 링크를 우선 CSV로 저장해주세요. 담당자 초대 목록에서 실패 지점의 미수락 초대가 이미 만들어졌는지 확인하고, 필요하면 취소한 후 새 목록을 시작해야 합니다.</p>
+              <div className="inline-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={bulkPending || singlePending || inviteRosterPending}
+                  onClick={() => void reconcileInviteRoster()}
+                >
+                  1. 수락 대기 초대 다시 조회
+                </button>
+                <span className="muted">
+                  {inviteRosterReady
+                    ? "2. 목록을 대조하고 아래에서 새 목록을 시작하세요."
+                    : "명단이 정상 조회되기 전에는 새 목록을 시작할 수 없습니다."}
+                </span>
+              </div>
+              {bulkResults.length === 0 ? (
+                <button
+                  type="button"
+                  className="text-button"
+                  disabled={!inviteRosterReady || bulkPending || singlePending || inviteRosterPending}
+                  onClick={() => {
+                    setBulkInputs([]);
+                    setBulkResults([]);
+                    setBulkRetryBlocked(false);
+                    setInviteRosterReady(false);
+                    setBulkFileName("");
+                    setBulkInfo(null);
+                    setError(null);
+                  }}
+                >
+                  2. 결과 확인 완료 · 새 CSV 선택
+                </button>
+              ) : null}
+            </div>
+          ) : null}
 
           {bulkResults.length > 0 ? (
             <div className="invite-result-box">
@@ -484,7 +679,26 @@ export function ManagerInvitePanel({ onChanged }: { onChanged: () => void }) {
                 className="secondary-button"
                 onClick={() => downloadBulkCsv(bulkResults)}
               >
-                링크 CSV 다운로드
+                생성된 {bulkResults.length}명 링크 CSV 다운로드
+              </button>
+              <p className="muted mini-copy">일회용 링크는 다시 조회할 수 없습니다. 새 파일을 시작하기 전에 반드시 저장해주세요.</p>
+              <button
+                type="button"
+                className="text-button"
+                disabled={bulkPending || singlePending || (bulkRetryBlocked && !inviteRosterReady)}
+                onClick={() => {
+                  if (bulkRetryBlocked && !inviteRosterReady) return;
+                  setBulkResults([]);
+                  setBulkInputs([]);
+                  setBulkFileName("");
+                  setBulkInfo(null);
+                  setBulkRetryBlocked(false);
+                  setInviteRosterReady(false);
+                  setError(null);
+                  setCopiedBulkUrl(null);
+                }}
+              >
+                새 목록 시작 (현재 화면의 링크 지우기)
               </button>
             </div>
           ) : null}

@@ -1,6 +1,9 @@
-import { writeAuditLog } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { buildInviteUrl } from "../_shared/inviteUrl.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { isUuid } from "../_shared/uuid.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -34,13 +37,23 @@ Deno.serve(async (req) => {
     });
     if (limited) return limited;
 
-    const body = (await req.json()) as CreateInviteBody;
+    const parsed = await readJsonObject(req);
+    if (!parsed) return json(req, { error: "invalid_request" }, 400);
+    const body = parsed as CreateInviteBody;
 
-    const plantId = body.plantId?.trim();
-    const inviteeName = body.inviteeName?.trim();
+    // RequestBody is a compile-time type only: enforce JSON types at runtime
+    // before .trim(), enum casts or database/RPC calls.
+    const plantId = typeof body.plantId === "string" ? body.plantId.trim() : null;
+    const inviteeName = typeof body.inviteeName === "string" ? body.inviteeName.trim() : null;
     const targetRole = body.targetRole;
+    const jobRoles: readonly string[] = ["sro", "ro", "field_operator", "supervisor", "worker"];
 
-    if (!plantId || !inviteeName || !targetRole) {
+    if (
+      !isUuid(plantId) || !inviteeName ||
+      (targetRole !== "plant_manager" && targetRole !== "player") ||
+      (body.teamName != null && typeof body.teamName !== "string") ||
+      (targetRole === "player" && body.jobRole != null && !jobRoles.includes(body.jobRole))
+    ) {
       return json(req, { error: "invalid_request" }, 400);
     }
 
@@ -71,56 +84,51 @@ Deno.serve(async (req) => {
     }
 
     const token = randomToken();
+    // Validate SITE_URL and construct the one-time link BEFORE inserting the
+    // invitation. A missing/bad URL must never create an unrecoverable token.
+    const inviteUrl = buildInviteUrl(Deno.env.get("SITE_URL"), token);
     const tokenHash = await sha256Hex(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: invitation, error: insertError } = await admin
-      .from("invitations")
-      .insert({
-        token_hash: tokenHash,
-        plant_id: plantId,
-        target_role: targetRole,
-        invitee_name: inviteeName,
-        job_role: targetRole === "player" ? body.jobRole : null,
-        team_name: body.teamName?.trim() || null,
-        created_by: user.id,
-        expires_at: expiresAt,
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      throw insertError;
-    }
-
-    await writeAuditLog(admin, {
-      actorUserId: user.id,
-      plantId,
-      action: "invitation.created",
-      entityType: "invitation",
-      entityId: invitation.id,
-      metadata: {
-        target_role: targetRole,
-        job_role: targetRole === "player" ? body.jobRole : null,
+    // DB authorization is checked again inside this service-role-only RPC.
+    // A failed audit write rolls back the invitation INSERT.
+    const { data: invitation, error: issueError } = await admin.rpc(
+      "create_invitation_atomic",
+      {
+        p_actor_user_id: user.id,
+        p_plant_id: plantId,
+        p_target_role: targetRole,
+        p_invitee_name: inviteeName,
+        p_job_role: targetRole === "player" ? body.jobRole : null,
+        p_team_name: body.teamName?.trim() || null,
+        p_token_hash: tokenHash,
+        p_expires_at: expiresAt,
       },
-    });
+    );
+    if (issueError) throw new Error(issueError.message);
 
-    const siteUrl = Deno.env.get("SITE_URL");
-    if (!siteUrl) {
-      throw new Error("missing_site_url");
+    const issued = invitation as {
+      invitationId?: string;
+      expiresAt?: string;
+      plantDisplayName?: string;
+    } | null;
+    if (
+      !issued?.invitationId ||
+      !issued.expiresAt ||
+      !issued.plantDisplayName
+    ) {
+      // A malformed response may follow a committed issuance.
+      throw new Error("invite_creation_outcome_unknown");
     }
-
-    const inviteUrl = new URL(`/i/${token}`, siteUrl).toString();
 
     return json(req, {
-      invitationId: invitation.id,
+      invitationId: issued.invitationId,
       inviteUrl,
-      expiresAt,
-      plantDisplayName: plant.display_name,
+      expiresAt: issued.expiresAt,
+      plantDisplayName: issued.plantDisplayName,
     }, 201);
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status = message === "unauthorized" ? 401 : 500;
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });

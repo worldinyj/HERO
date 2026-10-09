@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { getSupabase } from "../../lib/supabase";
+import { isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
+import { canReconcileNickname, isValidMyRecordSummary, isValidNicknameStatus, matchesCheckedNickname } from "./nicknameReconciliation";
 import { AudioSettings } from "../audio/AudioSettings";
 import { useAuth } from "../auth/AuthContext";
 
@@ -108,11 +110,13 @@ export function ProfilePage() {
   const [nicknameStatus, setNicknameStatus] = useState<NicknameStatus | null>(null);
   const [newNickname, setNewNickname] = useState("");
   const [nicknameCheck, setNicknameCheck] = useState<{
+    value: string;
     checking: boolean;
     available: boolean;
     error: string | null;
   } | null>(null);
   const [nicknamePending, setNicknamePending] = useState(false);
+  const [nicknameOutcomeUnknown, setNicknameOutcomeUnknown] = useState(false);
   const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,6 +135,7 @@ export function ProfilePage() {
     );
 
     if (invokeError) throw invokeError;
+    if (!isValidNicknameStatus(result)) throw new Error("nickname_status_result_invalid");
     setNicknameStatus(result as NicknameStatus);
   }, [profile?.role]);
 
@@ -147,6 +152,7 @@ export function ProfilePage() {
         );
 
         if (rpcError) throw rpcError;
+        if (!isValidMyRecordSummary(result)) throw new Error("profile_summary_result_invalid");
         if (active) setData(result as MyRecordSummary);
       } catch (cause) {
         if (active) {
@@ -170,6 +176,7 @@ export function ProfilePage() {
 
   useEffect(() => {
     void loadNicknameStatus().catch((cause) => {
+      setNicknameStatus(null);
       setNicknameMessage(
         cause instanceof Error
           ? cause.message
@@ -194,7 +201,8 @@ export function ProfilePage() {
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          setNicknameCheck({ checking: true, available: false, error: null });
+          if (!active) return;
+          setNicknameCheck({ value, checking: true, available: false, error: null });
           const supabase = getSupabase();
           const { data: result, error: invokeError } = await supabase.functions.invoke(
             "nickname-action",
@@ -210,13 +218,15 @@ export function ProfilePage() {
           };
 
           setNicknameCheck({
+            value,
             checking: false,
-            available: response.available === true,
-            error: response.error ?? null,
+            available: response?.available === true,
+            error: typeof response?.error === "string" ? response.error : null,
           });
         } catch {
           if (active) {
             setNicknameCheck({
+              value,
               checking: false,
               available: false,
               error: "nickname_check_failed",
@@ -253,63 +263,102 @@ export function ProfilePage() {
   }
 
   async function handleNicknameChange() {
-    if (!newNickname.trim() || nicknameCheck?.available !== true) return;
+    if (
+      nicknamePending ||
+      nicknameOutcomeUnknown ||
+      !newNickname.trim() ||
+      !matchesCheckedNickname(nicknameCheck, newNickname)
+    ) return;
 
     try {
       setNicknamePending(true);
       setNicknameMessage(null);
+      const requestedNickname = newNickname.trim();
       const supabase = getSupabase();
       const { data: result, error: invokeError } = await supabase.functions.invoke(
         "nickname-action",
-        {
-          body: {
-            action: "change-self",
-            nickname: newNickname.trim(),
-          },
-        },
+        { body: { action: "change-self", nickname: requestedNickname } },
       );
-
       if (invokeError) throw invokeError;
 
       const response = result as {
         changed?: boolean;
         nickname?: string;
+        resetRequired?: boolean;
+        seasonKey?: string;
         error?: string;
-      };
+      } | null;
 
-      if (response.error) {
-        throw new Error(
-          NICKNAME_ERROR_LABEL[response.error] ?? response.error,
-        );
+      if (
+        !response ||
+        typeof response.changed !== "boolean" ||
+        typeof response.nickname !== "string" ||
+        response.nickname !== requestedNickname ||
+        typeof response.resetRequired !== "boolean" ||
+        typeof response.seasonKey !== "string" ||
+        response.error
+      ) {
+        throw new Error("nickname_change_outcome_unknown");
       }
 
-      const nextNickname = response.nickname;
-      if (nextNickname) {
-        setData((current) =>
-          current
-            ? {
-                ...current,
-                profile: {
-                  ...current.profile,
-                  nickname: nextNickname,
-                },
-              }
-            : current,
-        );
-      }
-
+      // Preserve the narrowed, server-verified string beyond the setState closure.
+      const confirmedNickname = response.nickname;
+      setData((current) =>
+        current
+          ? { ...current, profile: { ...current.profile, nickname: confirmedNickname } }
+          : current,
+      );
       setNewNickname("");
       setNicknameCheck(null);
-      setNicknameMessage(
-        response.changed === false
-          ? "현재 닉네임과 같습니다."
-          : "닉네임이 변경되었습니다.",
-      );
+
+      // The mutation is confirmed, but a failed follow-up read must not
+      // silently leave stale limits or allow another blind nickname change.
       await refreshProfile();
       await loadNicknameStatus();
+      setNicknameMessage(
+        response.changed ? "닉네임이 변경되었습니다." : "현재 닉네임과 같습니다.",
+      );
     } catch (cause) {
-      const raw = cause instanceof Error ? cause.message : "닉네임 변경에 실패했습니다.";
-      setNicknameMessage(NICKNAME_ERROR_LABEL[raw] ?? raw);
+      if (isDefiniteInviteRejection(cause)) {
+        setNicknameMessage("닉네임 변경 요청이 거절되었습니다. 입력값과 시즌 변경 제한을 확인해주세요.");
+        try {
+          await loadNicknameStatus();
+        } catch {
+          // Preserve the rejection; user can retry the status read manually.
+        }
+      } else {
+        setNicknameOutcomeUnknown(true);
+        setNicknameMessage("닉네임 변경이 이미 완료됐을 수 있습니다. 현재 프로필과 시즌 변경 상태를 다시 확인하기 전에는 재요청하지 마세요.");
+      }
+    } finally {
+      setNicknamePending(false);
+    }
+  }
+
+  async function reconcileNicknameChange() {
+    if (nicknamePending) return;
+    setNicknamePending(true);
+    try {
+      const supabase = getSupabase();
+      const { data: refreshed, error: refreshError } = await supabase.rpc(
+        "my_record_summary",
+      );
+      if (refreshError) throw refreshError;
+      if (!isValidMyRecordSummary(refreshed)) throw new Error("profile_summary_result_invalid");
+      const { data: policy, error: policyError } = await supabase.functions.invoke(
+        "nickname-action", { body: { action: "status" } },
+      );
+      if (policyError) throw policyError;
+      if (!canReconcileNickname(refreshed, policy)) throw new Error("nickname_reconciliation_mismatch");
+      await refreshProfile();
+      setNicknameStatus(policy as NicknameStatus);
+      setData(refreshed as MyRecordSummary);
+      setNicknameOutcomeUnknown(false);
+      setNewNickname("");
+      setNicknameCheck(null);
+      setNicknameMessage("현재 닉네임과 시즌 변경 가능 상태를 다시 확인했습니다.");
+    } catch {
+      setNicknameMessage("프로필 재조회에 실패했습니다. 잠금 상태를 유지하니 다시 확인해주세요.");
     } finally {
       setNicknamePending(false);
     }
@@ -379,7 +428,9 @@ export function ProfilePage() {
               <h3>리더보드 닉네임</h3>
             </div>
             <span className="count-badge">
-              {nicknameStatus?.resetRequired
+              {nicknameStatus === null
+                ? "정책 확인 필요"
+                : nicknameStatus.resetRequired
                 ? "재설정 필요"
                 : nicknameStatus?.canChange
                   ? "변경 가능"
@@ -408,19 +459,19 @@ export function ProfilePage() {
                 minLength={2}
                 maxLength={12}
                 placeholder="2~12자 · 한글/영문/숫자"
-                disabled={nicknameStatus?.canChange === false}
+                disabled={nicknameStatus?.canChange !== true || nicknameOutcomeUnknown}
               />
             </label>
             <span
               className={
-                nicknameCheck?.available
+                matchesCheckedNickname(nicknameCheck, newNickname)
                   ? "nickname-check nickname-check--ok"
                   : "nickname-check"
               }
             >
               {nicknameCheck?.checking
                 ? "사용 가능 여부 확인 중…"
-                : nicknameCheck?.available
+                : matchesCheckedNickname(nicknameCheck, newNickname)
                   ? "사용 가능한 닉네임입니다."
                   : nicknameCheck?.error
                     ? NICKNAME_ERROR_LABEL[nicknameCheck.error] ??
@@ -434,8 +485,9 @@ export function ProfilePage() {
               className="primary-button"
               disabled={
                 nicknamePending ||
+                nicknameOutcomeUnknown ||
                 nicknameStatus?.canChange !== true ||
-                nicknameCheck?.available !== true
+                !matchesCheckedNickname(nicknameCheck, newNickname)
               }
               onClick={() => void handleNicknameChange()}
             >
@@ -443,6 +495,23 @@ export function ProfilePage() {
             </button>
           </div>
 
+          {nicknameOutcomeUnknown ? (
+            <div className="invite-result-box" role="alert">
+              <strong>닉네임 변경 결과 확인 필요</strong>
+              <p className="muted">
+                서버에서 이미 변경됐을 수 있습니다. 현재 프로필과 시즌 변경 기록을
+                다시 조회하고 확인된 뒤에만 다음 변경을 요청할 수 있습니다.
+              </p>
+              <button
+                type="button"
+                className="secondary-button compact-button"
+                disabled={nicknamePending}
+                onClick={() => void reconcileNicknameChange()}
+              >
+                내 닉네임·시즌 상태 다시 조회
+              </button>
+            </div>
+          ) : null}
           {nicknameMessage ? (
             <p className="notice" role="status">{nicknameMessage}</p>
           ) : null}

@@ -2,6 +2,15 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { localE2eSeedGate } from "./localTargetGuard.mjs";
+import { assertFreshLocalE2eNamespace, HERO_E2E_SEASON_KEY } from "./fixtureNamespace.mjs";
+import { requireFixtureAuthUuidV4 } from "./authFixtureUuid.mjs";
+
+// Fail closed BEFORE createClient() or any auth/database mutation.
+const localGate = localE2eSeedGate(process.env);
+if (!localGate.ok) {
+  throw new Error("E2E_LOCAL_FIXTURE_BLOCKED: " + localGate.reason);
+}
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.API_URL;
 const SERVICE_ROLE_KEY =
@@ -30,17 +39,17 @@ const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 
 const IDS = {
   plant: "71000000-0000-0000-0000-000000000001",
-  manager: "70000000-0000-0000-0000-000000000001",
-  adminA: "70000000-0000-0000-0000-000000000011",
-  adminB: "70000000-0000-0000-0000-000000000012",
-  managerCandidateA: "70000000-0000-0000-0000-000000000021",
-  managerCandidateB: "70000000-0000-0000-0000-000000000022",
-  playerCandidateA: "70000000-0000-0000-0000-000000000031",
-  playerCandidateB: "70000000-0000-0000-0000-000000000032",
-  playerA: "70000000-0000-0000-0000-000000000101",
-  playerB: "70000000-0000-0000-0000-000000000102",
-  uninvitedA: "70000000-0000-0000-0000-000000000201",
-  uninvitedB: "70000000-0000-0000-0000-000000000202",
+  manager: "70000000-0000-4000-8000-000000000001",
+  adminA: "70000000-0000-4000-8000-000000000011",
+  adminB: "70000000-0000-4000-8000-000000000012",
+  managerCandidateA: "70000000-0000-4000-8000-000000000021",
+  managerCandidateB: "70000000-0000-4000-8000-000000000022",
+  playerCandidateA: "70000000-0000-4000-8000-000000000031",
+  playerCandidateB: "70000000-0000-4000-8000-000000000032",
+  playerA: "70000000-0000-4000-8000-000000000101",
+  playerB: "70000000-0000-4000-8000-000000000102",
+  uninvitedA: "70000000-0000-4000-8000-000000000201",
+  uninvitedB: "70000000-0000-4000-8000-000000000202",
   inviteA: "72000000-0000-0000-0000-000000000101",
   inviteB: "72000000-0000-0000-0000-000000000102",
   scenario: "73000000-0000-0000-0000-000000000001",
@@ -122,19 +131,56 @@ const uninvitedIdentities = [
   },
 ] as const;
 
+// Validate all fixed Auth IDs before ANY local network write.
+for (const id of [
+  IDS.manager,
+  ...adminIdentities.map(x => x.id),
+  ...managerCandidates.map(x => x.id),
+  ...playerCandidates.map(x => x.id),
+  ...identities.map(x => x.id),
+  ...uninvitedIdentities.map(x => x.id),
+]) requireFixtureAuthUuidV4(id);
+
+// Run all reads before the FIRST Auth or database write. Existing fixtures
+// cause a safe stop, not an automatic reset or upsert.
+await assertFreshLocalE2eNamespace(admin, {
+  ids: IDS,
+  scenarioSlug: "e2e_competitive",
+  authIds: [
+    IDS.manager,
+    ...adminIdentities.map(x => x.id),
+    ...managerCandidates.map(x => x.id),
+    ...playerCandidates.map(x => x.id),
+    ...identities.map(x => x.id),
+    ...uninvitedIdentities.map(x => x.id),
+  ],
+  emails: [
+    "hero-e2e-manager@example.test",
+    ...adminIdentities.map(x => x.email),
+    ...managerCandidates.map(x => x.email),
+    ...playerCandidates.map(x => x.email),
+    ...identities.map(x => x.email),
+    ...uninvitedIdentities.map(x => x.email),
+  ],
+});
+console.log("E2E_FIXTURE_PREFLIGHT_PASS (local namespace available)");
+
 async function createUser(input: {
   id: string;
   email: string;
   password: string;
 }) {
-  const { error } = await admin.auth.admin.createUser({
-    id: input.id,
+  const { data, error } = await admin.auth.admin.createUser({
+    id: requireFixtureAuthUuidV4(input.id),
     email: input.email,
     password: input.password,
     email_confirm: true,
   });
 
   if (error) throw error;
+  if (data?.user?.id !== input.id) {
+    throw Error("E2E_AUTH_USER_ID_MISMATCH: stop_without_cleanup");
+  }
 }
 
 await createUser({
@@ -232,34 +278,20 @@ const { error: versionError } = await admin.from("scenario_versions").insert({
 });
 if (versionError) throw versionError;
 
-const now = new Date().toISOString();
-let { data: season, error: seasonError } = await admin
+// Do not attach E2E scenarios to migration-created monthly seasons.
+const { data: season, error: seasonError } = await admin
   .from("seasons")
+  .insert({
+    season_key: HERO_E2E_SEASON_KEY,
+    title: "E2E 시즌",
+    starts_at: new Date(Date.now() - 3_600_000).toISOString(),
+    ends_at: new Date(Date.now() + 86_400_000).toISOString(),
+    status: "open",
+  })
   .select("id")
-  .eq("status", "open")
-  .lte("starts_at", now)
-  .gt("ends_at", now)
-  .order("starts_at", { ascending: false })
-  .limit(1)
-  .maybeSingle();
-
-if (seasonError) throw seasonError;
-
-if (!season) {
-  const { data: createdSeason, error } = await admin
-    .from("seasons")
-    .insert({
-      season_key: "e2e-season",
-      title: "E2E 시즌",
-      starts_at: new Date(Date.now() - 3_600_000).toISOString(),
-      ends_at: new Date(Date.now() + 86_400_000).toISOString(),
-      status: "open",
-    })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  season = createdSeason;
+  .single();
+if (seasonError || !season) {
+  throw seasonError ?? Error("e2e_local_season_creation_failed");
 }
 
 const { error: bindingError } = await admin.from("season_scenarios").insert({

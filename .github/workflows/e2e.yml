@@ -58,7 +58,8 @@ jobs:
 
           if [ -z "${API_URL:-}" ] || [ -z "${ANON_KEY:-}" ] || [ -z "${SERVICE_ROLE_KEY:-}" ]; then
             echo "Required local Supabase variables are missing"
-            cat /tmp/hero-supabase.env
+            # Never print local anon/service-role credentials into Actions logs.
+            echo "Supabase local status is missing required values (redacted)"
             exit 1
           fi
 
@@ -91,6 +92,9 @@ jobs:
           exit 1
 
       - name: Seed E2E users, invitations, season, and scenario
+        # Explicit fixture-write approval, restricted at runtime to 127.0.0.1:55321.
+        env:
+          HERO_E2E_ALLOW_FIXTURE_SEED: "1"
         run: pnpm e2e:setup
 
       - name: Install Chromium
@@ -104,7 +108,8 @@ jobs:
         run: |
           mkdir -p test-results
           cp /tmp/hero-functions.log test-results/hero-functions.log || true
-          cp /tmp/hero-supabase.json test-results/hero-supabase-status.json || true
+          # /tmp/hero-supabase.json contains local service-role credentials.
+          # Do NOT attach Supabase status dumps to shared CI artifacts.
 
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -90,7 +90,7 @@ select throws_ok(
 
 insert into public.plants (id, code, name, display_name)
 values (
-  '61000000-0000-0000-0000-000000000001',
+  '6f000000-0000-0000-0000-000000000001',
   'BOOTSTRAP',
   'Bootstrap Test Plant',
   'Bootstrap'
@@ -107,7 +107,7 @@ select throws_ok(
     )
     values (
       'admin-invite-must-fail',
-      '61000000-0000-0000-0000-000000000001',
+      '6f000000-0000-0000-0000-000000000001',
       'admin',
       'Should Fail',
       '60000000-0000-0000-0000-000000000001',

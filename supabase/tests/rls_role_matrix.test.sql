@@ -327,9 +327,13 @@ select results_eq(
   array[3::bigint],
   'admin can read all decision logs'
 );
-select lives_ok(
+-- Even an authenticated admin must use the audited service-role-only
+-- create_plant_atomic RPC, never a direct INSERT from the browser.
+select throws_ok(
   $$insert into public.plants (code, name, display_name) values ('RLS-C', 'RLS Plant C', 'RLS C')$$,
-  'admin can create a plant'
+  '42501',
+  null,
+  'admin direct plant insert denied; audited service-role RPC required'
 );
 select throws_ok(
   $$select * from public.my_current_rank()$$,

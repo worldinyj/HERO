@@ -1,6 +1,9 @@
-import { writeAuditLog, writeAuditLogs } from "../_shared/audit.ts";
 import { randomToken, sha256Hex } from "../_shared/crypto.ts";
 import { handleOptions, json } from "../_shared/http.ts";
+import { buildInviteUrl } from "../_shared/inviteUrl.ts";
+import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
+import { isUuid } from "../_shared/uuid.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
@@ -59,7 +62,8 @@ async function loadPendingInvite(
     .eq("id", invitationId)
     .maybeSingle();
 
-  if (error || !data) {
+  if (error) throw error;
+  if (!data) {
     throw new Error("invitation_not_found");
   }
 
@@ -90,37 +94,37 @@ async function cancelInvite(
   operator: OperatorContext,
   invitationId: string,
 ) {
-  const invitation = await loadPendingInvite(
-    operator.admin,
-    operator,
-    invitationId,
-  );
-  const canceledAt = new Date().toISOString();
-
-  const { error } = await operator.admin
-    .from("invitations")
-    .update({ canceled_at: canceledAt })
-    .eq("id", invitation.id)
-    .is("accepted_at", null)
-    .is("canceled_at", null);
-
-  if (error) throw error;
-
-  await writeAuditLog(operator.admin, {
-    actorUserId: operator.userId,
-    plantId: invitation.plant_id,
-    action: "invitation.canceled",
-    entityType: "invitation",
-    entityId: invitation.id,
-    metadata: {
-      target_role: invitation.target_role,
-      invitee_name: invitation.invitee_name,
-      job_role: invitation.job_role,
-      operator_role: operator.role,
+  // The DB function rechecks role/plant, locks the invitation against
+  // acceptance/reissue, and writes the cancellation and audit atomically.
+  const { data, error } = await operator.admin.rpc(
+    "cancel_invitation_atomic",
+    {
+      p_invitation_id: invitationId,
+      p_actor_user_id: operator.userId,
     },
-  });
+  );
+  if (error) throw new Error(error.message);
 
-  return { canceled: true, invitationId: invitation.id, canceledAt };
+  const result = data as {
+    canceled?: boolean;
+    invitationId?: string;
+    canceledAt?: string;
+  } | null;
+
+  if (
+    result?.canceled !== true ||
+    result.invitationId !== invitationId ||
+    !result.canceledAt
+  ) {
+    // A malformed HTTP response cannot prove the request was rolled back.
+    throw new Error("cancel_result_unknown");
+  }
+
+  return {
+    canceled: true,
+    invitationId: result.invitationId,
+    canceledAt: result.canceledAt,
+  };
 }
 
 async function reissueInvite(
@@ -133,38 +137,9 @@ async function reissueInvite(
     invitationId,
   );
   const token = randomToken();
-  const tokenHash = await sha256Hex(token);
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const canceledAt = new Date().toISOString();
-
-  const { error: cancelError } = await operator.admin
-    .from("invitations")
-    .update({ canceled_at: canceledAt })
-    .eq("id", invitation.id)
-    .is("accepted_at", null)
-    .is("canceled_at", null);
-
-  if (cancelError) throw cancelError;
-
-  const { data: replacement, error: insertError } = await operator.admin
-    .from("invitations")
-    .insert({
-      token_hash: tokenHash,
-      plant_id: invitation.plant_id,
-      target_role: invitation.target_role,
-      invitee_name: invitation.invitee_name,
-      job_role: invitation.target_role === "player" ? invitation.job_role : null,
-      team_name: invitation.team_name,
-      created_by: operator.userId,
-      expires_at: expiresAt,
-    })
-    .select("id")
-    .single();
-
-  if (insertError || !replacement) {
-    throw insertError ?? new Error("replacement_invitation_create_failed");
-  }
-
+  // Resolve all read/configuration dependencies before changing either
+  // invitation. A failed plant lookup must not revoke the original token.
+  const inviteUrl = buildInviteUrl(Deno.env.get("SITE_URL"), token);
   const { data: plant, error: plantError } = await operator.admin
     .from("plants")
     .select("display_name")
@@ -175,44 +150,46 @@ async function reissueInvite(
     throw plantError ?? new Error("plant_not_found");
   }
 
-  await writeAuditLogs(operator.admin, [
+  const tokenHash = await sha256Hex(token);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  // A single PostgreSQL function owns cancellation, replacement and audit.
+  // Partial failures (including token collision) leave the old token valid.
+  const { data: replacement, error: reissueError } = await operator.admin.rpc(
+    "reissue_invitation_atomic",
     {
-      actorUserId: operator.userId,
-      plantId: invitation.plant_id,
-      action: "invitation.canceled_for_reissue",
-      entityType: "invitation",
-      entityId: invitation.id,
-      metadata: {
-        replacement_invitation_id: replacement.id,
-        operator_role: operator.role,
-      },
+      p_invitation_id: invitation.id,
+      p_actor_user_id: operator.userId,
+      p_token_hash: tokenHash,
+      p_expires_at: expiresAt,
     },
-    {
-      actorUserId: operator.userId,
-      plantId: invitation.plant_id,
-      action: "invitation.reissued",
-      entityType: "invitation",
-      entityId: replacement.id,
-      metadata: {
-        replaced_invitation_id: invitation.id,
-        target_role: invitation.target_role,
-        job_role: invitation.job_role,
-        operator_role: operator.role,
-      },
-    },
-  ]);
+  );
 
-  const siteUrl = Deno.env.get("SITE_URL");
-  if (!siteUrl) {
-    throw new Error("missing_site_url");
+  if (reissueError) throw new Error(reissueError.message);
+
+  const result = replacement as {
+    reissued?: boolean;
+    oldInvitationId?: string;
+    invitationId?: string;
+    expiresAt?: string;
+  } | null;
+
+  if (
+    result?.reissued !== true ||
+    result.oldInvitationId !== invitation.id ||
+    !result.invitationId ||
+    !result.expiresAt
+  ) {
+    // A malformed response is not proof the transaction failed. The admin
+    // interface must not auto-retry an uncertain reissue.
+    throw new Error("reissue_result_unknown");
   }
 
   return {
     reissued: true,
     oldInvitationId: invitation.id,
-    invitationId: replacement.id,
-    inviteUrl: new URL(`/i/${token}`, siteUrl).toString(),
-    expiresAt,
+    invitationId: result.invitationId,
+    inviteUrl,
+    expiresAt: result.expiresAt,
     plantDisplayName: plant.display_name,
   };
 }
@@ -226,55 +203,34 @@ async function setPlayerActive(
     throw new Error("plant_manager_required");
   }
 
-  const { data: target, error: targetError } = await operator.admin
-    .from("profiles")
-    .select("id, plant_id, role, real_name, nickname, is_active")
-    .eq("id", profileId)
-    .eq("plant_id", operator.plantId)
-    .eq("role", "player")
-    .maybeSingle();
-
-  if (targetError || !target) {
-    throw new Error("player_not_found");
-  }
-
-  if (target.is_active === isActive) {
-    return {
-      changed: false,
-      profileId: target.id,
-      isActive: target.is_active,
-    };
-  }
-
-  const { error: updateError } = await operator.admin
-    .from("profiles")
-    .update({
-      is_active: isActive,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", target.id)
-    .eq("plant_id", operator.plantId)
-    .eq("role", "player");
-
-  if (updateError) throw updateError;
-
-  await writeAuditLog(operator.admin, {
-    actorUserId: operator.userId,
-    plantId: operator.plantId,
-    action: isActive ? "player.reactivated" : "player.deactivated",
-    entityType: "profile",
-    entityId: target.id,
-    metadata: {
-      real_name: target.real_name,
-      nickname: target.nickname,
+  const { data, error } = await operator.admin.rpc(
+    "set_player_active_atomic",
+    {
+      p_actor_user_id: operator.userId,
+      p_profile_id: profileId,
+      p_is_active: isActive,
     },
-  });
+  );
+  if (error) throw new Error(error.message);
 
-  return {
-    changed: true,
-    profileId: target.id,
-    isActive,
-  };
+  const result = data as {
+    changed?: boolean;
+    profileId?: string;
+    isActive?: boolean;
+  } | null;
+
+  if (
+    !result ||
+    typeof result.changed !== "boolean" ||
+    result.profileId !== profileId ||
+    result.isActive !== isActive
+  ) {
+    // HTTP failure after a committed state change is still uncertain.
+    // The operator should inspect the participant list before retrying.
+    throw new Error("player_status_result_unknown");
+  }
+
+  return result;
 }
 
 Deno.serve(async (req) => {
@@ -287,7 +243,9 @@ Deno.serve(async (req) => {
 
   try {
     const operator = await requireOperator(req);
-    const body = (await req.json()) as RequestBody;
+    const parsed = await readJsonObject(req);
+    if (!parsed) return json(req, { error: "invalid_request" }, 400);
+    const body = parsed as RequestBody;
     const limited = await guardRateLimit(req, operator.admin, {
       scope: `manager-user-action:${body.action ?? "unknown"}`,
       subject: operator.userId,
@@ -298,14 +256,14 @@ Deno.serve(async (req) => {
 
     switch (body.action) {
       case "cancel-invite": {
-        if (!body.invitationId) {
+        if (!isUuid(body.invitationId)) {
           return json(req, { error: "invitation_id_required" }, 400);
         }
         return json(req, await cancelInvite(operator, body.invitationId));
       }
 
       case "reissue-invite": {
-        if (!body.invitationId) {
+        if (!isUuid(body.invitationId)) {
           return json(req, { error: "invitation_id_required" }, 400);
         }
         return json(
@@ -316,7 +274,7 @@ Deno.serve(async (req) => {
       }
 
       case "set-player-active": {
-        if (!body.profileId || typeof body.isActive !== "boolean") {
+        if (!isUuid(body.profileId) || typeof body.isActive !== "boolean") {
           return json(req, { error: "profile_id_and_active_required" }, 400);
         }
         return json(
@@ -329,26 +287,7 @@ Deno.serve(async (req) => {
         return json(req, { error: "unknown_action" }, 400);
     }
   } catch (cause) {
-    const message = cause instanceof Error ? cause.message : "internal_error";
-    const status =
-      message === "unauthorized"
-        ? 401
-        : [
-            "manager_or_admin_required",
-            "plant_manager_required",
-            "admin_invitation_scope_violation",
-            "manager_scope_violation",
-          ].includes(message)
-          ? 403
-          : ["invitation_not_found", "player_not_found"].includes(message)
-            ? 404
-            : [
-                "invitation_already_accepted",
-                "invitation_already_canceled",
-              ].includes(message)
-              ? 409
-              : 500;
-
-    return json(req, { error: message }, status);
+    const failure = classifyInvitationError(cause);
+    return json(req, { error: failure.error }, failure.status);
   }
 });

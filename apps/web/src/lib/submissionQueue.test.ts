@@ -114,6 +114,13 @@ describe("submission queue helpers", () => {
     expect(isRetryableSubmissionStatus(503)).toBe(true);
   });
 
+  it("holds a suspended plant submission for future reactivation", () => {
+    expect(isRetryableSubmissionStatus(403, "plant_inactive")).toBe(true);
+    expect(isRetryableSubmissionStatus(403, "forbidden")).toBe(false);
+    expect(isRetryableSubmissionStatus(403, "admin_required")).toBe(false);
+    expect(isRetryableSubmissionStatus(409, "plant_inactive")).toBe(false);
+  });
+
   it("does not retry permanent validation or authorization failures", () => {
     expect(isRetryableSubmissionStatus(400)).toBe(false);
     expect(isRetryableSubmissionStatus(403)).toBe(false);

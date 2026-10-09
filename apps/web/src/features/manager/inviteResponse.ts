@@ -1,0 +1,88 @@
+/** One-time invitation URLs must never be treated as issued on malformed data. */
+export interface IssuedInviteLink {
+  invitationId: string;
+  inviteUrl: string;
+  expiresAt: string;
+  plantDisplayName: string;
+}
+
+export function readIssuedInviteLink(value: unknown): IssuedInviteLink | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const data = value as Record<string, unknown>;
+  if (
+    typeof data.invitationId !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.invitationId) ||
+    typeof data.inviteUrl !== "string" || !data.inviteUrl.trim() ||
+    typeof data.expiresAt !== "string" || !data.expiresAt.trim() ||
+    typeof data.plantDisplayName !== "string" || !data.plantDisplayName.trim() ||
+    data.error !== undefined
+  ) return null;
+
+  try {
+    const url = new URL(data.inviteUrl);
+    // Match the Edge buildInviteUrl contract: HTTPS except loopback dev,
+    // with an absolute /i/<one-time-token> path and no appended material.
+    const localHttp = url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]");
+    const tokenPart = url.pathname.startsWith("/i/") ? url.pathname.slice(3) : "";
+    if (
+      (url.protocol !== "https:" && !localHttp) ||
+      !url.hostname || url.username || url.password ||
+      !tokenPart || tokenPart.includes("/") ||
+      url.search || url.hash
+    ) return null;
+    if (!Number.isFinite(Date.parse(data.expiresAt))) return null;
+  } catch {
+    return null;
+  }
+
+  return {
+    invitationId: data.invitationId,
+    inviteUrl: data.inviteUrl,
+    expiresAt: data.expiresAt,
+    plantDisplayName: data.plantDisplayName,
+  };
+}
+
+/** Reissue is a token rotation, not a new unrelated invite response. */
+export function readReissuedInviteLink(
+  value: unknown,
+  requestedInvitationId: string,
+): IssuedInviteLink | null {
+  const link = readIssuedInviteLink(value);
+  if (!link || value === null || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const result = value as Record<string, unknown>;
+  if (
+    result.reissued !== true ||
+    typeof requestedInvitationId !== "string" ||
+    result.oldInvitationId !== requestedInvitationId ||
+    link.invitationId === requestedInvitationId
+  ) {
+    return null;
+  }
+  return link;
+}
+
+/** Confirm that an invitation cancellation committed for this exact ID. */
+export function readCanceledInviteResult(
+  value: unknown,
+  requestedInvitationId: string,
+): { canceled: true; invitationId: string; canceledAt: string } | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const result = value as Record<string, unknown>;
+  if (
+    result.canceled !== true ||
+    result.invitationId !== requestedInvitationId ||
+    typeof result.canceledAt !== "string" ||
+    !Number.isFinite(Date.parse(result.canceledAt))
+  ) {
+    return null;
+  }
+  return {
+    canceled: true,
+    invitationId: requestedInvitationId,
+    canceledAt: result.canceledAt,
+  };
+}

@@ -10,3 +10,14 @@ coverage/
 .supabase/
 playwright-report/
 test-results/
+.hero-local/
+# Supabase CLI local worktree metadata; preserve on Mac, never commit.
+supabase/.temp/
+supabase/.branches/
+
+# Deno 2 local CLI generates these three lockfiles during qa --with-deno.
+# Pin/commit them only as a separate dependency-governance decision.
+# Scope to verified local outputs; do not blanket-ignore all *.lock files.
+/supabase/functions/deno.lock
+/supabase/functions/submit-session/deno.lock
+/supabase/functions/admin-scenario/deno.lock

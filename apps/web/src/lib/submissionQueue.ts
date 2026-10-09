@@ -1,6 +1,14 @@
 import type { GameLogEntry } from "@hero/engine";
 import { openHeroOfflineDb, SUBMISSION_QUEUE_STORE } from "./offlineDb";
 import { getSupabase } from "./supabase";
+import { isConfirmedSubmissionResponse, submissionServerErrorCode } from "./submissionReceipt";
+import { serializeSubmissionForSession } from "./submissionSerial";
+import { cleanupAfterConfirmedCommit } from "./submissionCleanup";
+import { clearCompetitiveSessionIfMatches } from "./competitivePersistence";
+import { markQueueCommitted, queueStateNeedsNetwork, hasVerifiedCommittedReceipt } from "./submissionQueueState";
+import { decideQueueWrite, type QueueWriteOptions } from "./submissionQueueWritePolicy";
+import { decideConfirmedQueueDeletion } from "./submissionQueueDeletePolicy";
+import { stageForegroundSubmission } from "./submissionForegroundStore";
 
 export type SessionSubmissionAction =
   | { type: "continue" }
@@ -24,7 +32,8 @@ export interface PendingSessionSubmission extends QueueableSessionSubmission {
   formatVersion: 1;
   sessionId: string;
   userId: string;
-  state: "pending" | "blocked";
+  state: "pending" | "blocked" | "committed";
+  completionReceipt?: unknown;
   queuedAt: string;
   updatedAt: string;
   attempts: number;
@@ -33,7 +42,7 @@ export interface PendingSessionSubmission extends QueueableSessionSubmission {
 }
 
 export type SubmissionResult =
-  | { status: "submitted"; data: unknown }
+  | { status: "submitted"; data: unknown; cleanupPending: boolean }
   | { status: "queued"; reason: string }
   | { status: "rejected"; reason: string; httpStatus: number | null };
 
@@ -72,7 +81,9 @@ export function submissionHttpStatus(error: unknown): number | null {
 
 export function isRetryableSubmissionStatus(
   status: number | null,
+  errorCode: string | null = null,
 ): boolean {
+  if (status === 403 && errorCode === "plant_inactive") return true;
   return (
     status === null ||
     status === 401 ||
@@ -136,29 +147,18 @@ async function invokeSubmission(
     if (error) {
       return {
         ok: false,
-        message: errorMessage(error),
+        message: submissionHttpStatus(error) === 403 &&
+          (await submissionServerErrorCode(error)) === "plant_inactive"
+          ? "plant_inactive" : errorMessage(error),
         httpStatus: submissionHttpStatus(error),
       };
     }
 
-    if (
-      data &&
-      typeof data === "object" &&
-      "error" in data &&
-      typeof (data as { error?: unknown }).error === "string"
-    ) {
-      return {
-        ok: false,
-        message: String((data as { error: string }).error),
-        httpStatus: 400,
-      };
+    if (!isConfirmedSubmissionResponse(data, body.sessionId)) {
+      // A malformed 2xx might follow COMMIT. Never discard cached choices.
+      return { ok: false, message: "submission_result_unknown", httpStatus: null };
     }
-
-    return {
-      ok: true,
-      data,
-      httpStatus: 200,
-    };
+    return { ok: true, data, httpStatus: 200 };
   } catch (error) {
     return {
       ok: false,
@@ -170,20 +170,48 @@ async function invokeSubmission(
 
 async function writeQueueRecord(
   record: PendingSessionSubmission,
+  options: QueueWriteOptions = {},
 ): Promise<void> {
   const db = await openHeroOfflineDb();
-  if (!db) return;
+  if (!db) throw new Error("submission_queue_unavailable");
 
   try {
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(SUBMISSION_QUEUE_STORE, "readwrite");
-      transaction.objectStore(SUBMISSION_QUEUE_STORE).put(record);
-
+      const store = transaction.objectStore(SUBMISSION_QUEUE_STORE);
+      let policyError: Error | null = null;
+      // Check and put inside the SAME readwrite transaction. Even without
+      // Web Locks, a stale tab cannot downgrade a committed completion.
+      const request = store.get(record.sessionId);
+      request.onsuccess = () => {
+        const existing = request.result as PendingSessionSubmission | undefined;
+        const decision = decideQueueWrite(existing, record, options);
+        if (decision === "preserve_committed" ||
+            decision === "preserve_blocked" ||
+            decision === "preserve_newer_attempt") return;
+        if (decision !== "write") {
+          policyError = new Error("submission_queue_" + decision);
+          transaction.abort();
+          return;
+        }
+        try {
+          store.put(record);
+        } catch (error) {
+          policyError = error instanceof Error
+            ? error : new Error("submission_queue_write_failed");
+          transaction.abort();
+        }
+      };
+      request.onerror = () => {
+        policyError = request.error ?? new Error("submission_queue_read_failed");
+      };
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
-        reject(transaction.error ?? new Error("submission_queue_write_failed"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_write_failed"));
       transaction.onabort = () =>
-        reject(transaction.error ?? new Error("submission_queue_write_aborted"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_write_aborted"));
     });
   } finally {
     db.close();
@@ -224,49 +252,118 @@ export async function listQueuedSubmissions(
 
 export async function removeQueuedSubmission(
   sessionId: string,
+  userId: string,
+  scenarioId: string,
 ): Promise<void> {
   const db = await openHeroOfflineDb();
-  if (!db) return;
+  if (!db) throw new Error("submission_queue_unavailable");
 
   try {
     await new Promise<void>((resolve, reject) => {
+      // The final read and delete are in the SAME readwrite transaction.
+      // Do not delete a row overwritten/replaced by another browser tab.
       const transaction = db.transaction(SUBMISSION_QUEUE_STORE, "readwrite");
-      transaction.objectStore(SUBMISSION_QUEUE_STORE).delete(sessionId);
-
+      const store = transaction.objectStore(SUBMISSION_QUEUE_STORE);
+      let policyError: Error | null = null;
+      const request = store.get(sessionId);
+      request.onsuccess = () => {
+        const stored = request.result as PendingSessionSubmission | undefined;
+        const decision = decideConfirmedQueueDeletion(
+          stored, userId, scenarioId, sessionId,
+        );
+        if (decision === "absent") return;
+        if (decision !== "delete") {
+          policyError = new Error("submission_queue_delete_" + decision);
+          transaction.abort();
+          return;
+        }
+        try {
+          store.delete(sessionId);
+        } catch (error) {
+          policyError = error instanceof Error
+            ? error : new Error("submission_queue_delete_failed");
+          transaction.abort();
+        }
+      };
+      request.onerror = () => {
+        policyError = request.error ??
+          new Error("submission_queue_delete_read_failed");
+      };
       transaction.oncomplete = () => resolve();
       transaction.onerror = () =>
-        reject(transaction.error ?? new Error("submission_queue_delete_failed"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_delete_failed"));
       transaction.onabort = () =>
-        reject(transaction.error ?? new Error("submission_queue_delete_aborted"));
+        reject(policyError ?? transaction.error ??
+          new Error("submission_queue_delete_aborted"));
     });
   } finally {
     db.close();
   }
 }
 
-async function enqueueForUser(
+/**
+ * One failed cache deletion cannot cancel a verified server receipt or
+ * prevent cleanup of the other local record.
+ */
+async function cleanupConfirmedLocalSession(
   userId: string,
-  input: QueueableSessionSubmission,
-  reason: string,
-): Promise<void> {
-  const existing = (await listQueuedSubmissions(userId)).find(
-    (item) => item.sessionId === input.body.sessionId,
-  );
-  const now = new Date().toISOString();
-
-  await writeQueueRecord({
-    formatVersion: 1,
-    sessionId: input.body.sessionId,
-    userId,
-    scenarioId: input.scenarioId,
-    body: input.body,
-    state: "pending",
-    queuedAt: existing?.queuedAt ?? now,
-    updatedAt: now,
-    attempts: existing?.attempts ?? 0,
-    lastAttemptAt: existing?.lastAttemptAt ?? null,
-    lastError: reason,
+  scenarioId: string,
+  sessionId: string,
+  knownItem?: PendingSessionSubmission,
+  receipt?: unknown,
+  submission?: QueueableSessionSubmission,
+): Promise<{ cleanupPending: boolean }> {
+  // Persist a server-confirmed marker BEFORE any local deletion. If deletion
+  // aborts, it is never safe to send this completed row over the network.
+  const marker = await cleanupAfterConfirmedCommit(async () => {
+    const item = knownItem ?? (await listQueuedSubmissions(userId)).find(
+      (candidate) => candidate.sessionId === sessionId &&
+        candidate.userId === userId,
+    );
+    const now = new Date().toISOString();
+    if (item) {
+      // An existing marker may come from a pre-receipt client. Upgrade it
+      // only with a real matching receipt, never invented local scores.
+      if (item.state !== "committed" ||
+          (isConfirmedSubmissionResponse(receipt, sessionId) &&
+           !hasVerifiedCommittedReceipt(item))) {
+        await writeQueueRecord(markQueueCommitted(item, now, receipt));
+      }
+    } else if (submission && isConfirmedSubmissionResponse(receipt, sessionId)) {
+      // Foreground first-time completion may have no queue row. Create a
+      // durable receipt marker before touching either local cache.
+      await writeQueueRecord({
+        formatVersion: 1,
+        sessionId,
+        userId,
+        scenarioId,
+        body: submission.body,
+        state: "committed",
+        completionReceipt: receipt,
+        queuedAt: now,
+        updatedAt: now,
+        attempts: 0,
+        lastAttemptAt: null,
+        lastError: null,
+      });
+    }
   });
+
+  // If receipt marker persistence failed, preserve any existing pending
+  // choices. A confirmed server response must never erase unmarked evidence.
+  if (marker.cleanupPending) return { cleanupPending: true };
+
+  // Delete the queue marker LAST so failed game-cache cleanup is recoverable.
+  const cached = await cleanupAfterConfirmedCommit(async () => {
+    await clearCompetitiveSessionIfMatches(userId, scenarioId, sessionId);
+  });
+  const queued = cached.cleanupPending
+    ? { cleanupPending: true }
+    : await cleanupAfterConfirmedCommit(() =>
+        removeQueuedSubmission(sessionId, userId, scenarioId)
+      );
+  return { cleanupPending: cached.cleanupPending || queued.cleanupPending };
 }
 
 async function updateAttempt(
@@ -291,71 +388,149 @@ export async function submitSessionWithQueue(
 ): Promise<SubmissionResult> {
   const userId = await currentUserId();
 
-  if (!online()) {
-    await enqueueForUser(userId, input, "offline");
-    return { status: "queued", reason: "offline" };
-  }
+  // The page submit and the background queue must not write the same IDB
+  // record or invoke this session concurrently in the same JS context.
+  return serializeSubmissionForSession(userId, input.body.sessionId, async () => {
+    if ((await currentUserId()) !== userId) {
+      throw new Error("authenticated_session_changed");
+    }
 
-  const attempt = await invokeSubmission(input.body);
+    // A previous getAll snapshot is unnecessary and may be stale. The single
+    // readwrite preflight below verifies the CURRENT owner, scenario, body
+    // and terminal state before any network call or local cleanup.
+    const preparation = await stageForegroundSubmission(userId, input);
+    if (preparation.kind === "conflict") {
+      return {
+        status: "rejected",
+        reason: "submission_queue_payload_conflict",
+        httpStatus: null,
+      };
+    }
+    if (preparation.kind === "blocked") {
+      return {
+        status: "rejected",
+        reason: "submission_blocked_requires_manual_retry",
+        httpStatus: null,
+      };
+    }
+    if (preparation.kind === "committed") {
+      if (!hasVerifiedCommittedReceipt(preparation.record)) {
+        return { status: "queued", reason: "confirmed_cleanup_pending" };
+      }
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, preparation.record.scenarioId, preparation.record.sessionId,
+        preparation.record,
+      );
+      return {
+        status: "submitted",
+        data: preparation.record.completionReceipt,
+        cleanupPending,
+      };
+    }
+    if (!online()) {
+      return { status: "queued", reason: "offline" };
+    }
 
-  if (attempt.ok) {
-    await removeQueuedSubmission(input.body.sessionId);
-    return { status: "submitted", data: attempt.data };
-  }
+    // User credentials can change while waiting for IndexedDB.
+    if ((await currentUserId()) !== userId) {
+      throw new Error("authenticated_session_changed");
+    }
+    const attempt = await invokeSubmission(preparation.record.body);
+    if (attempt.ok) {
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, preparation.record.scenarioId, preparation.record.sessionId,
+        preparation.record, attempt.data,
+      );
+      return { status: "submitted", data: attempt.data, cleanupPending };
+    }
 
-  const reason = attempt.message ?? "submit_session_failed";
+    const reason = attempt.message ?? "submit_session_failed";
+    if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
+      await updateAttempt(preparation.record, attempt, "pending");
+      return { status: "queued", reason };
+    }
 
-  if (isRetryableSubmissionStatus(attempt.httpStatus)) {
-    await enqueueForUser(userId, input, reason);
-    return { status: "queued", reason };
-  }
-
-  return {
-    status: "rejected",
-    reason,
-    httpStatus: attempt.httpStatus,
-  };
+    // Permanent server refusal requires an explicit future manual retry.
+    await updateAttempt(preparation.record, attempt, "blocked");
+    return {
+      status: "rejected",
+      reason: "submission_blocked_requires_manual_retry",
+      httpStatus: attempt.httpStatus,
+    };
+  });
 }
 
 async function runFlush(userId: string): Promise<SubmissionFlushResult> {
-  if (!online()) {
-    const remaining = (await listQueuedSubmissions(userId)).filter(
-      (item) => item.state === "pending",
-    ).length;
-    return { submitted: 0, blocked: 0, remaining };
-  }
-
-  const items = (await listQueuedSubmissions(userId)).filter(
-    (item) => item.state === "pending",
-  );
-
+  // Committed entries require local cleanup ONLY, even without internet.
+  const snapshots = (await listQueuedSubmissions(userId))
+    .filter((item) => item.state === "committed" || item.state === "pending")
+    .sort((a, b) =>
+      (a.state === "committed" ? 0 : 1) -
+      (b.state === "committed" ? 0 : 1) ||
+      a.queuedAt.localeCompare(b.queuedAt)
+    );
   let submitted = 0;
   let blocked = 0;
 
-  for (const item of items) {
-    if (!online()) break;
+  for (const snapshot of snapshots) {
+    if (!online() && queueStateNeedsNetwork(snapshot.state)) break;
+    const outcome = await serializeSubmissionForSession(
+      userId,
+      snapshot.sessionId,
+      async () => {
+        let signedInUserId: string;
+        try {
+          signedInUserId = await currentUserId();
+        } catch {
+          return "auth_unavailable";
+        }
+        if (signedInUserId !== userId) return "auth_unavailable";
 
-    const attempt = await invokeSubmission(item.body);
+        const item = (await listQueuedSubmissions(userId)).find(
+          (candidate) => candidate.sessionId === snapshot.sessionId &&
+            candidate.userId === userId,
+        );
+        if (!item || item.state === "blocked") return "skipped";
 
-    if (attempt.ok) {
-      await removeQueuedSubmission(item.sessionId);
-      submitted += 1;
-      continue;
-    }
+        if (item.state === "committed") {
+          if (!hasVerifiedCommittedReceipt(item)) {
+            // Legacy/unverified marker: retain evidence for manual review.
+            // It is not eligible for API re-submission or local deletion.
+            return "unverified_committed";
+          }
+          await cleanupConfirmedLocalSession(
+            userId, item.scenarioId, item.sessionId, item,
+          );
+          return "cleaned";
+        }
 
-    if (isRetryableSubmissionStatus(attempt.httpStatus)) {
-      await updateAttempt(item, attempt, "pending");
-      break;
-    }
-
-    await updateAttempt(item, attempt, "blocked");
-    blocked += 1;
+        if (!online()) return "offline";
+        const attempt = await invokeSubmission(item.body);
+        if (attempt.ok) {
+          await cleanupConfirmedLocalSession(
+            userId, item.scenarioId, item.sessionId, item, attempt.data,
+          );
+          return "submitted";
+        }
+        if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
+          await updateAttempt(item, attempt, "pending");
+          return "retryable";
+        }
+        await updateAttempt(item, attempt, "blocked");
+        return "blocked";
+      },
+    );
+    if (outcome === "submitted") submitted += 1;
+    if (outcome === "blocked") blocked += 1;
+    if (
+      outcome === "retryable" || outcome === "offline" ||
+      outcome === "auth_unavailable"
+    ) break;
   }
 
   const remaining = (await listQueuedSubmissions(userId)).filter(
-    (item) => item.state === "pending",
+    (item) => queueStateNeedsNetwork(item.state),
   ).length;
-
   return { submitted, blocked, remaining };
 }
 
@@ -373,26 +548,95 @@ export function flushQueuedSubmissions(
   return promise;
 }
 
+/**
+ * Explicit player-initiated retry of a permanently blocked submission.
+ * Always send the immutable choices already stored in IndexedDB, rather
+ * than reconstructing a possibly stale game log from the React component.
+ * Hold the session lock through the receipt and cleanup.
+ */
 export async function retryBlockedSubmission(
   sessionId: string,
   userId: string,
-): Promise<void> {
-  const item = (await listQueuedSubmissions(userId)).find(
-    (candidate) => candidate.sessionId === sessionId,
-  );
+  scenarioId?: string,
+): Promise<SubmissionResult> {
+  return serializeSubmissionForSession(userId, sessionId, async () => {
+    if ((await currentUserId()) !== userId) {
+      throw new Error("authenticated_session_changed");
+    }
+    const item = (await listQueuedSubmissions(userId)).find(
+      (candidate) => candidate.sessionId === sessionId &&
+        candidate.userId === userId,
+    );
+    if (!item || item.state !== "blocked") {
+      return {
+        status: "rejected", reason: "blocked_submission_not_found",
+        httpStatus: null,
+      };
+    }
+    if (scenarioId && item.scenarioId !== scenarioId) {
+      return {
+        status: "rejected", reason: "blocked_submission_scenario_mismatch",
+        httpStatus: null,
+      };
+    }
+    if (!online()) {
+      return { status: "queued", reason: "offline_manual_retry_unavailable" };
+    }
 
-  if (!item || item.state !== "blocked") return;
+    // The only allowed blocked -> pending transition.
+    await writeQueueRecord({
+      ...item,
+      state: "pending",
+      updatedAt: new Date().toISOString(),
+      lastError: null,
+    }, { allowBlockedRetry: true });
 
-  await writeQueueRecord({
-    ...item,
-    state: "pending",
-    updatedAt: new Date().toISOString(),
-    lastError: null,
+    // A concurrent tab could have committed while we awaited the IDB
+    // transaction. Never retransmit a verified completed session.
+    const current = (await listQueuedSubmissions(userId)).find(
+      (candidate) => candidate.sessionId === sessionId &&
+        candidate.userId === userId,
+    );
+    if (current?.state === "committed") {
+      if (!hasVerifiedCommittedReceipt(current)) {
+        return { status: "queued", reason: "confirmed_cleanup_pending" };
+      }
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, current.scenarioId, sessionId, current,
+      );
+      return {
+        status: "submitted", data: current.completionReceipt, cleanupPending,
+      };
+    }
+    if (!current || current.state !== "pending") {
+      return {
+        status: "rejected", reason: "blocked_submission_not_found",
+        httpStatus: null,
+      };
+    }
+
+    const attempt = await invokeSubmission(current.body);
+    if (attempt.ok) {
+      const { cleanupPending } = await cleanupConfirmedLocalSession(
+        userId, current.scenarioId, sessionId, current, attempt.data,
+      );
+      return { status: "submitted", data: attempt.data, cleanupPending };
+    }
+
+    const reason = attempt.message ?? "submit_session_failed";
+    if (isRetryableSubmissionStatus(attempt.httpStatus, attempt.message)) {
+      await updateAttempt(current, attempt, "pending");
+      return { status: "queued", reason };
+    }
+
+    // Permanent rejections require another explicit manual decision.
+    await updateAttempt(current, attempt, "blocked");
+    return {
+      status: "rejected",
+      reason: "submission_blocked_requires_manual_retry",
+      httpStatus: attempt.httpStatus,
+    };
   });
-
-  if (online()) {
-    await flushQueuedSubmissions(userId);
-  }
 }
 
 export function startSubmissionQueueProcessor(
@@ -403,9 +647,11 @@ export function startSubmissionQueueProcessor(
   let active = true;
 
   const flush = () => {
-    if (!active || !online()) return;
+    if (!active) return;
+    // "committed" rows need only local IndexedDB cleanup and must also run
+    // while offline. Pending network submissions are skipped by runFlush.
     void flushQueuedSubmissions(userId).catch(() => {
-      // The queue remains durable. A later reconnect/visibility change retries.
+      // Keep durable rows; retry on later visibility/network change.
     });
   };
 

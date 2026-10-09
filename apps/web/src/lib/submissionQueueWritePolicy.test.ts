@@ -1,0 +1,174 @@
+import { describe, expect, it } from "vitest";
+import { decideQueueWrite, sameSubmissionBody, type QueueWriteRecord } from "./submissionQueueWritePolicy";
+const pending: QueueWriteRecord = {
+  userId: "user-one", sessionId: "session-one", state: "pending",
+};
+const receipt = (sessionId: string) => ({
+  sessionId, alreadyCompleted: true,
+  evaluation: { ending: "safe_complete", hpPoint: 80 },
+});
+const committed: QueueWriteRecord = {
+  ...pending, state: "committed", completionReceipt: receipt("session-one"),
+};
+describe("IndexedDB transaction monotonic queue writer", () => {
+  it("allows initial pending and valid committed promotion", () => {
+    expect(decideQueueWrite(undefined, pending)).toBe("write");
+    expect(decideQueueWrite(pending, committed)).toBe("write");
+  });
+  it("only unblocks a rejected submission during explicit manual retry", () => {
+    expect(decideQueueWrite(pending, { ...pending, state: "blocked" })).toBe("write");
+    expect(decideQueueWrite({ ...pending, state: "blocked" }, pending))
+      .toBe("preserve_blocked");
+    expect(decideQueueWrite({ ...pending, state: "blocked" }, pending,
+      { allowBlockedRetry: true })).toBe("write");
+  });
+  it("prevents stale pending or blocked writes to committed entries", () => {
+    expect(decideQueueWrite(committed, pending)).toBe("preserve_committed");
+    expect(decideQueueWrite(committed, { ...pending, state: "blocked" }))
+      .toBe("preserve_committed");
+  });
+  it("does not replace an already verified completion receipt", () => {
+    expect(decideQueueWrite(committed, {
+      ...committed, completionReceipt: receipt("session-one"),
+    })).toBe("preserve_committed");
+  });
+  it("upgrades only legacy committed records to verified receipts", () => {
+    expect(decideQueueWrite({ ...pending, state: "committed" }, committed)).toBe("write");
+  });
+  it("rejects invalid/mismatched committed receipts", () => {
+    expect(decideQueueWrite(undefined, { ...pending, state: "committed" }))
+      .toBe("invalid_committed_receipt");
+    expect(decideQueueWrite(pending, {
+      ...committed, completionReceipt: receipt("different"),
+    })).toBe("invalid_committed_receipt");
+  });
+  it("prevents cross-user reuse of the same IndexedDB session key", () => {
+    expect(decideQueueWrite(pending, { ...pending, userId: "another" }))
+      .toBe("owner_conflict");
+    expect(decideQueueWrite(committed, { ...committed, userId: "another" }))
+      .toBe("owner_conflict");
+  });
+});
+
+
+describe("immutable queued submission payload and monotonic retries", () => {
+  const body = {
+    sessionId: "session-one",
+    actions: [
+      { type: "continue" },
+      { type: "choice", actionId: "verify-tag" },
+    ],
+    reflectionAnswered: true,
+    swissCheeseViewed: true,
+  };
+  const saved = { ...pending, scenarioId: "S01", attempts: 3, body };
+
+  it("accepts a retry with identical actions and newer attempt count", () => {
+    expect(decideQueueWrite(saved, { ...saved, attempts: 4 })).toBe("write");
+  });
+  it("does not allow stale attempts to replace a newer queued record", () => {
+    expect(decideQueueWrite(saved, { ...saved, attempts: 2 }))
+      .toBe("preserve_newer_attempt");
+  });
+  it("rejects different actions in the same session", () => {
+    expect(decideQueueWrite(saved, {
+      ...saved, body: { ...body, actions: [
+        { type: "continue" }, { type: "choice", actionId: "skip-tag" },
+      ] },
+    })).toBe("payload_conflict");
+  });
+  it("rejects a shortened offline action log", () => {
+    expect(decideQueueWrite(saved, {
+      ...saved, body: { ...body, actions: [{ type: "continue" }] },
+    })).toBe("payload_conflict");
+  });
+  it("rejects a different scenario bound to the same session key", () => {
+    expect(decideQueueWrite(saved, { ...saved, scenarioId: "S02" }))
+      .toBe("session_conflict");
+  });
+  it("rejects a changed reflection flag for previously queued actions", () => {
+    expect(decideQueueWrite(saved, {
+      ...saved, body: { ...body, reflectionAnswered: false },
+    })).toBe("payload_conflict");
+  });
+  it("permits server-confirmed commitment despite a lower local retry counter", () => {
+    expect(decideQueueWrite(saved, {
+      ...saved, state: "committed", attempts: 0,
+      completionReceipt: {
+        sessionId: "session-one", alreadyCompleted: true,
+        evaluation: { ending: "safe_complete", hpPoint: 80 },
+      },
+    })).toBe("write");
+  });
+});
+
+
+describe("immutable offline payload comparison before foreground network", () => {
+  const savedBody = {
+    sessionId: "session-one",
+    actions: [{ type: "continue" }, { type: "choice", actionId: "safe" }],
+    reflectionAnswered: true,
+    swissCheeseViewed: true,
+  };
+  it("accepts an equivalent action log reconstructed with different object identity", () => {
+    expect(sameSubmissionBody(savedBody, structuredClone(savedBody))).toBe(true);
+  });
+  it("detects a changed decision", () => {
+    expect(sameSubmissionBody(savedBody, {
+      ...savedBody, actions: [{ type: "continue" }, { type: "choice", actionId: "unsafe" }],
+    })).toBe(false);
+  });
+  it("detects a changed session and missing actions", () => {
+    expect(sameSubmissionBody(savedBody, { ...savedBody, sessionId: "other" })).toBe(false);
+    expect(sameSubmissionBody(savedBody, { ...savedBody, actions: [] })).toBe(false);
+  });
+  it("detects a changed reflection or safety-timeline acknowledgement", () => {
+    expect(sameSubmissionBody(savedBody, {
+      ...savedBody, reflectionAnswered: false,
+    })).toBe(false);
+    expect(sameSubmissionBody(savedBody, {
+      ...savedBody, swissCheeseViewed: false,
+    })).toBe(false);
+  });
+  it("fails closed on malformed IndexedDB action entries", () => {
+    const invalid = { ...savedBody, actions: [null] };
+    expect(sameSubmissionBody(invalid as never, savedBody)).toBe(false);
+  });
+});
+
+
+describe("malformed stored submission actions fail closed before network", () => {
+  const base = {
+    sessionId: "session-one",
+    actions: [{ type: "choice", actionId: "check" }],
+    reflectionAnswered: true,
+    swissCheeseViewed: true,
+  };
+  it("rejects primitive and unknown actions rather than comparing undefined fields", () => {
+    for (const invalid of ["choice", 3, true, {}, { type: "unsupported" }]) {
+      expect(sameSubmissionBody(
+        { ...base, actions: [invalid] } as never,
+        { ...base, actions: [invalid] } as never,
+      )).toBe(false);
+    }
+  });
+  it("rejects missing IDs for choices, info and cards", () => {
+    for (const type of ["choice", "info", "card"]) {
+      const invalid = { ...base, actions: [{ type }] };
+      expect(sameSubmissionBody(invalid, invalid)).toBe(false);
+    }
+  });
+  it("rejects mixed action/card identifiers on the same action", () => {
+    const invalid = { ...base, actions: [
+      { type: "card", cardId: "a", actionId: "b" },
+    ] };
+    expect(sameSubmissionBody(invalid, invalid)).toBe(false);
+  });
+  it("preserves canonical choice, info, card and continue equivalence", () => {
+    const canonical = { ...base, actions: [
+      { type: "continue" }, { type: "choice", actionId: "check" },
+      { type: "info", actionId: "review" }, { type: "card", cardId: "C04" },
+    ] };
+    expect(sameSubmissionBody(canonical, structuredClone(canonical))).toBe(true);
+  });
+});
