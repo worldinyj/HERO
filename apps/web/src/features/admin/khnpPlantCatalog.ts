@@ -122,3 +122,16 @@ export function availablePlantSuggestions(existingCodes: Iterable<string>): Plan
   const codes = new Set(Array.from(existingCodes, code => code.toUpperCase()));
   return KHNP_PLANT_CATALOG.filter(plant => !codes.has(plant.code));
 }
+
+export const KHNP_HEADQUARTERS = ["고리", "한빛", "월성", "한울", "새울"] as const;
+
+export function groupedPlantSuggestions(existingCodes: Iterable<string>) {
+  const codes = new Set(Array.from(existingCodes, code => code.trim().toUpperCase()));
+  return KHNP_HEADQUARTERS.map(group => ({
+    group,
+    plants: KHNP_PLANT_CATALOG.filter(plant => plant.group === group).map(plant => ({
+      ...plant,
+      registered: codes.has(plant.code),
+    })),
+  }));
+}

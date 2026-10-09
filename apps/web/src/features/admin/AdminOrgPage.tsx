@@ -7,7 +7,7 @@ import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult 
 import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
-import { availablePlantSuggestions, KHNP_PLANT_CATALOG } from "./khnpPlantCatalog";
+import { groupedPlantSuggestions, KHNP_PLANT_CATALOG } from "./khnpPlantCatalog";
 
 interface PlantRow {
   id: string;
@@ -536,7 +536,7 @@ export function AdminOrgPage() {
                 const code = event.target.value;
                 setPlantPreset(code);
                 const preset = KHNP_PLANT_CATALOG.find(item => item.code === code);
-                if (preset) {
+                if (preset && !plants.some(plant => plant.code.toUpperCase() === preset.code)) {
                   setPlantCode(preset.code);
                   setPlantName(preset.name);
                   setPlantDisplayName(preset.displayName);
@@ -545,15 +545,19 @@ export function AdminOrgPage() {
               aria-label="한수원 발전소 선택"
             >
               <option value="">직접 입력 또는 발전소 선택</option>
-              {availablePlantSuggestions(plants.map(item => item.code)).map(item => (
-                <option key={item.code} value={item.code}>
-                  {item.group} · {item.displayName} ({item.code})
-                </option>
+              {groupedPlantSuggestions(plants.map(item => item.code)).map(headquarters => (
+                <optgroup key={headquarters.group} label={`${headquarters.group}원자력본부`}>
+                  {headquarters.plants.map(item => (
+                    <option key={item.code} value={item.code} disabled={item.registered}>
+                      {item.displayName} ({item.code}){item.registered ? " · 등록 완료" : ""}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
           <p className="muted" style={{ gridColumn: "1 / -1" }}>
-            한수원 공식 조직도 기준 목록입니다. 선택하면 아래 입력란만 채워지며, 발전소 생성 버튼을 누르기 전에는 저장되지 않습니다.
+            본부별 목록입니다. 등록 완료된 발전소는 선택할 수 없습니다. 선택 시 입력란만 채워지며 생성 버튼을 누르기 전에는 저장되지 않습니다.
           </p>
           <label>
             <span>코드</span>
