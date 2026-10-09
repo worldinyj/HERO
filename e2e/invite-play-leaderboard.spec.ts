@@ -158,7 +158,12 @@ test("admin → manager → player invitation chain", async ({
   await expect(review).not.toBeVisible();
 
   await page.getByRole("combobox", { name: "담당자 초대 발전소" }).selectOption({ label: "E2E 발전소 · E2E" });
+  const createManagerInviteButton = page.getByRole("button", { name: "담당자 초대 링크 생성" });
+  await expect(createManagerInviteButton).toBeDisabled();
+  await page.getByLabel("담당자 이름").fill("   ");
+  await expect(createManagerInviteButton).toBeDisabled();
   await page.getByLabel("담당자 이름").fill(identity.candidateName);
+  await expect(createManagerInviteButton).toBeEnabled();
   await page
     .getByRole("button", { name: "담당자 초대 링크 생성" })
     .click();
