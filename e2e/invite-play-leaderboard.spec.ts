@@ -148,6 +148,15 @@ test("admin → manager → player invitation chain", async ({
     page.getByRole("heading", { name: "조직 관리" }),
   ).toBeVisible();
 
+  // Review and cancel plant creation without mutating the database.
+  await page.getByRole("combobox", { name: "한수원 발전소 선택" }).selectOption("KORI1");
+  await page.getByRole("button", { name: "발전소 생성 검토" }).click();
+  const review = page.getByRole("group", { name: "발전소 생성 최종 확인" });
+  await expect(review).toContainText("KORI1");
+  await expect(review).toContainText("고리원자력본부 제1발전소");
+  await review.getByRole("button", { name: "취소" }).click();
+  await expect(review).not.toBeVisible();
+
   await page.getByRole("combobox", { name: "담당자 초대 발전소" }).selectOption({ label: "E2E 발전소 · E2E" });
   await page.getByLabel("담당자 이름").fill(identity.candidateName);
   await page
