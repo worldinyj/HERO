@@ -711,6 +711,7 @@ export function AdminOrgPage() {
           <label>
             <span>발전소</span>
             <select
+              aria-label="담당자 초대 발전소"
               value={invitePlantId}
               onChange={(event) => setInvitePlantId(event.target.value)}
             >
