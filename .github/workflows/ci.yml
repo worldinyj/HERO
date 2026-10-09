@@ -108,6 +108,9 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Verify static SNS sharing metadata and OG image
+        run: node scripts/check-social-metadata.mjs
+
       - name: Verify Kakao share SDK contract
         run: |
           grep -q 'KAKAO_SDK_VERSION = "2.8.2"' apps/web/src/lib/kakaoShare.ts
