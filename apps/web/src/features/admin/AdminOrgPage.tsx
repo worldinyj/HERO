@@ -78,6 +78,7 @@ export function AdminOrgPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [plantPreset, setPlantPreset] = useState("");
+  const [plantCreationReview, setPlantCreationReview] = useState<{ code: string; name: string; displayName: string } | null>(null);
   const [plantCode, setPlantCode] = useState("");
   const [plantName, setPlantName] = useState("");
   const [plantDisplayName, setPlantDisplayName] = useState("");
@@ -102,7 +103,7 @@ export function AdminOrgPage() {
   const [copied, setCopied] = useState(false);
   const [managerInviteActionPending, setManagerInviteActionPending] = useState<string | null>(null);
 
-  async function load(): Promise<boolean> {
+  async function load(preferredInvitePlantCode?: string): Promise<boolean> {
     const revision = rosterGate.current.begin();
     setLoading(true);
     setError(null);
@@ -147,7 +148,12 @@ export function AdminOrgPage() {
         inviteResult.data as unknown as PendingManagerInviteRow[],
       ));
 
-      if (!invitePlantId) {
+      const preferredPlant = preferredInvitePlantCode
+        ? (plantResult.data ?? []).find((plant) => plant.code.toUpperCase() === preferredInvitePlantCode && plant.is_active)
+        : null;
+      if (preferredPlant) {
+        setInvitePlantId(preferredPlant.id);
+      } else if (!invitePlantId) {
         const firstActive = (plantResult.data ?? []).find((plant) => plant.is_active);
         if (firstActive) setInvitePlantId(firstActive.id);
       }
@@ -202,8 +208,7 @@ export function AdminOrgPage() {
     setError(null);
   }
 
-  async function handleCreatePlant() {
-    if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown) return;
+  function requestPlantCreationReview() {
     const code = normalizePlantCode(plantCode);
     const name = plantName.trim();
     const displayName = plantDisplayName.trim();
@@ -211,7 +216,30 @@ export function AdminOrgPage() {
       setError("발전소 코드·정식명·표시명을 모두 입력해주세요.");
       return;
     }
+    if (plants.some((plant) => plant.code.toUpperCase() === code)) {
+      setError("이미 등록된 발전소 코드입니다. 기존 목록을 확인해주세요.");
+      setPlantCreationReview(null);
+      return;
+    }
+    setError(null);
+    setPlantCreationReview({ code, name, displayName });
+  }
 
+  async function handleCreatePlant() {
+    if (creatingPlant || plantActionPending || plantRosterPending || plantOutcomeUnknown || !plantCreationReview) return;
+    const code = normalizePlantCode(plantCode);
+    const name = plantName.trim();
+    const displayName = plantDisplayName.trim();
+    if (!code || !name || !displayName ||
+        plantCreationReview.code !== code || plantCreationReview.name !== name ||
+        plantCreationReview.displayName !== displayName ||
+        plants.some((plant) => plant.code.toUpperCase() === code)) {
+      setPlantCreationReview(null);
+      setError("발전소 입력값 또는 목록이 바뀌었습니다. 다시 확인해주세요.");
+      return;
+    }
+
+    setPlantCreationReview(null);
     try {
       setCreatingPlant(true);
       setError(null);
@@ -231,7 +259,7 @@ export function AdminOrgPage() {
       setPlantCode("");
       setPlantName("");
       setPlantDisplayName("");
-      if (!(await load())) {
+      if (!(await load(code))) {
         setPlantOutcomeUnknown(true);
         setError("발전소는 생성됐지만 목록 재조회에 실패했습니다. 확인 후 잠금을 해제해주세요.");
       }
@@ -535,6 +563,7 @@ export function AdminOrgPage() {
               onChange={(event) => {
                 const code = event.target.value;
                 setPlantPreset(code);
+                setPlantCreationReview(null);
                 const preset = KHNP_PLANT_CATALOG.find(item => item.code === code);
                 if (preset && !plants.some(plant => plant.code.toUpperCase() === preset.code)) {
                   setPlantCode(preset.code);
@@ -563,7 +592,7 @@ export function AdminOrgPage() {
             <span>코드</span>
             <input
               value={plantCode}
-              onChange={(event) => setPlantCode(normalizePlantCode(event.target.value))}
+              onChange={(event) => { setPlantCode(normalizePlantCode(event.target.value)); setPlantCreationReview(null); }}
               placeholder="예: HANUL"
               maxLength={20}
             />
@@ -572,7 +601,7 @@ export function AdminOrgPage() {
             <span>정식명</span>
             <input
               value={plantName}
-              onChange={(event) => setPlantName(event.target.value)}
+              onChange={(event) => { setPlantName(event.target.value); setPlantCreationReview(null); }}
               placeholder="예: 한울원자력본부"
             />
           </label>
@@ -580,7 +609,7 @@ export function AdminOrgPage() {
             <span>표시명</span>
             <input
               value={plantDisplayName}
-              onChange={(event) => setPlantDisplayName(event.target.value)}
+              onChange={(event) => { setPlantDisplayName(event.target.value); setPlantCreationReview(null); }}
               placeholder="예: 한울"
             />
           </label>
@@ -588,11 +617,30 @@ export function AdminOrgPage() {
             type="button"
             className="primary-button"
             disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
-            onClick={handleCreatePlant}
+            onClick={requestPlantCreationReview}
           >
-            {creatingPlant ? "생성 중…" : "발전소 생성"}
+            발전소 생성 검토
           </button>
         </div>
+
+        {plantCreationReview ? (
+          <div className="invite-result-box" role="group" aria-label="발전소 생성 최종 확인">
+            <strong>발전소 생성 최종 확인</strong>
+            <p>코드: {plantCreationReview.code}</p>
+            <p>정식명: {plantCreationReview.name}</p>
+            <p>표시명: {plantCreationReview.displayName}</p>
+            <p className="muted">확정하면 운영 DB에 실제 발전소가 등록됩니다. 담당자 초대는 별도 작업입니다.</p>
+            <div className="inline-actions">
+              <button type="button" className="secondary-button"
+                onClick={() => setPlantCreationReview(null)}>취소</button>
+              <button type="button" className="primary-button"
+                disabled={creatingPlant || plantActionPending || plantOutcomeUnknown || plantRosterPending}
+                onClick={() => void handleCreatePlant()}>
+                {creatingPlant ? "생성 중…" : "정보 확인 · 발전소 생성 확정"}
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {plantOutcomeUnknown ? (
           <div className="invite-result-box" role="alert">
