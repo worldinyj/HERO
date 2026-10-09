@@ -358,8 +358,14 @@ export function AdminOrgPage() {
       setError("기존 담당자 초대 링크를 먼저 보관하고 '새 초대 작성'을 눌러주세요.");
       return;
     }
-    if (!invitePlantId || !inviteeName.trim()) {
-      setError("발전소와 담당자 이름을 입력해주세요.");
+    const selectedPlant = plants.find((plant) => plant.id === invitePlantId && plant.is_active);
+    const candidateName = inviteeName.trim();
+    if (!selectedPlant || !candidateName) {
+      setError("운영 중인 발전소를 선택하고 담당자 이름을 입력해주세요.");
+      return;
+    }
+    if (candidateName.length > 100) {
+      setError("담당자 이름은 100자 이내로 입력해주세요.");
       return;
     }
 
@@ -375,7 +381,7 @@ export function AdminOrgPage() {
           body: {
             plantId: invitePlantId,
             targetRole: "plant_manager",
-            inviteeName: inviteeName.trim(),
+            inviteeName: candidateName,
           },
         },
       );
@@ -782,7 +788,10 @@ export function AdminOrgPage() {
               value={inviteeName}
               onChange={(event) => setInviteeName(event.target.value)}
               placeholder="예: 홍길동"
+              maxLength={100}
+              autoComplete="off"
             />
+            <span className="muted mini-copy">담당자의 실명을 입력하세요. 앞뒤 공백은 제외되며 100자 이내입니다.</span>
           </label>
 
           <button
@@ -790,7 +799,8 @@ export function AdminOrgPage() {
             className="primary-button"
             disabled={
               creatingInvite || createOutcomeUnknown || Boolean(inviteResult) ||
-              !invitePlantId || adminRosterPending ||
+              !plants.some((plant) => plant.id === invitePlantId && plant.is_active) ||
+              !inviteeName.trim() || inviteeName.trim().length > 100 || adminRosterPending ||
               reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0
             }
             onClick={handleCreateManagerInvite}
