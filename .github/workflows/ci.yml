@@ -108,6 +108,9 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Check initial JavaScript loading budget
+        run: node scripts/check-initial-load-budget.mjs
+
       - name: Verify static SNS sharing metadata and OG image
         run: node scripts/check-social-metadata.mjs
 

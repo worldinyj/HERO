@@ -1,0 +1,83 @@
+{
+  "dateKst": "2026-10-11",
+  "baselineCommit": "38bcd40a648d7e9f26597c0489bf74cad5767395",
+  "scope": "Local production-build login route; excludes real devices and production measurements",
+  "before": {
+    "conditions": {
+      "viewport": "390x844",
+      "cpuSlowdown": 4,
+      "latencyMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "coldCache": true,
+      "serviceWorker": "blocked",
+      "externalRequests": "blocked"
+    },
+    "runs": [
+      {
+        "lcpMs": 1600,
+        "jsBytes": 639824,
+        "scripts": [
+          "/assets/index-BJFb7gyM.js",
+          "/assets/supabase-BYg9BeTj.js"
+        ]
+      },
+      {
+        "lcpMs": 1460,
+        "jsBytes": 639824,
+        "scripts": [
+          "/assets/index-BJFb7gyM.js",
+          "/assets/supabase-BYg9BeTj.js"
+        ]
+      },
+      {
+        "lcpMs": 1452,
+        "jsBytes": 639824,
+        "scripts": [
+          "/assets/index-BJFb7gyM.js",
+          "/assets/supabase-BYg9BeTj.js"
+        ]
+      }
+    ],
+    "medianLcpMs": 1460
+  },
+  "after": {
+    "conditions": {
+      "viewport": "390x844",
+      "cpuSlowdown": 4,
+      "latencyMs": 150,
+      "downloadBytesPerSecond": 200000,
+      "coldCache": true,
+      "serviceWorker": "blocked",
+      "externalRequests": "blocked"
+    },
+    "runs": [
+      {
+        "lcpMs": 1404,
+        "jsBytes": 534040,
+        "scripts": [
+          "/assets/index-DWaO3G6U.js",
+          "/assets/supabase-BYg9BeTj.js"
+        ]
+      },
+      {
+        "lcpMs": 1308,
+        "jsBytes": 534040,
+        "scripts": [
+          "/assets/index-DWaO3G6U.js",
+          "/assets/supabase-BYg9BeTj.js"
+        ]
+      },
+      {
+        "lcpMs": 1288,
+        "jsBytes": 534040,
+        "scripts": [
+          "/assets/index-DWaO3G6U.js",
+          "/assets/supabase-BYg9BeTj.js"
+        ]
+      }
+    ],
+    "medianLcpMs": 1308
+  },
+  "initialJsReductionPercent": 16.5,
+  "medianLcpReductionPercent": 10.4
+}

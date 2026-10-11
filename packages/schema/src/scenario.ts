@@ -1,6 +1,7 @@
 import * as z from "zod";
+import { SCENARIO_SCHEMA_VERSION } from "./version.ts";
 
-export const SCENARIO_SCHEMA_VERSION = "1.0.0" as const;
+export { SCENARIO_SCHEMA_VERSION } from "./version.ts";
 
 export const JobRoleSchema = z.enum([
   "sro",
