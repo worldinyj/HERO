@@ -22,4 +22,14 @@
 4. 웹을 빌드하고 수동 Cloudflare Pages 운영 배포한다.
 5. 관리자에서 재생성 → 링크 복사 → 기존 담당자의 같은 카카오 계정으로 접속 → 기존 정보 보존을 실제 계정으로 확인한다. 다른 계정 거부와 이전 링크 무효화도 확인한다.
 
-이 문서의 검증은 로컬 구현 검증이다. 운영 DB·Edge Function·웹 배포 또는 손병집 담당자의 실제 접속 완료를 의미하지 않는다.
+로컬 검증만으로 실제 카카오 계정의 접속 완료를 판단하지 않는다.
+
+## 운영 반영 확인 (2026-10-11 KST)
+
+- 사용자 후속 지시 `다음 권장하는대로 진행`에 따라 PR [#89](https://github.com/worldinyj/HERO/pull/89) 제출. quality, pgTAP, mobile-flow, Cloudflare Preview 모두 PASS 후 병합했다. 운영 코드 SHA: `38bcd40a648d7e9f26597c0489bf74cad5767395`.
+- Migration `202610110025`만 적용했다. 기존 함수 정의 해시를 적용 직전 검증하고 신규 SQL·migration history INSERT를 같은 트랜잭션으로 처리했다. 과거 016–024 이력을 수정하거나 전체 db push를 실행하지 않았다. 적용 후 정확한 SQL 이력, 함수 3개 본문, service-role 전용 권한, UUID 대상 컬럼 및 역할 제약을 확인했다.
+- 서버 함수 ACTIVE: manager-user-action v5, accept-invite v4, peek-invite v4. 앞의 두 함수 JWT 검증 활성, 공개 preview 함수 JWT 검증 비활성으로 기존 인증 계약 유지.
+- Cloudflare 운영 수동 배포 성공: `3075453e-0b42-4693-a99c-2c8e1f92e682`, 2026-10-11 16:24 KST. [운영 사이트](https://hero-dnr.pages.dev/admin). 자동 운영 배포는 비활성 유지.
+- 운영 HTTP 34개 검사 PASS, index.html·AdminOrgPage·주 앱 JavaScript의 실제 응답 바이트가 로컬 빌드와 일치했다.
+- 실제 로그인된 관리자 화면에서 손병집의 활성 상태와 재생성 버튼 표시를 확인했다. 확인창의 대상·동일 계정·7일 안내를 확인하고 취소했다. 실제 링크 발급이나 담당자 로그인 수락을 대신 실행하지 않았다.
+- 남은 사용자 검증: 관리자에서 새 링크를 발급·복사하고, 손병집 담당자가 가입 당시와 동일한 카카오 계정으로 접속하여 소속·닉네임·학습기록 보존을 확인한다. 사용된 과거 링크의 `already_used`는 정상적인 일회용 링크 상태다.

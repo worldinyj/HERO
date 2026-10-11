@@ -1,0 +1,58 @@
+{
+  "recordedDateKst": "2026-10-11",
+  "pullRequest": "https://github.com/worldinyj/HERO/pull/89",
+  "commit": "38bcd40a648d7e9f26597c0489bf74cad5767395",
+  "migration": {
+    "version": "202610110025",
+    "name": "manager_reinvitation",
+    "applied": true,
+    "exactSqlHistoryVerified": true,
+    "functionBodyAndPermissionsVerified": true,
+    "priorMigrationHistoryModified": false
+  },
+  "edgeFunctions": [
+    {
+      "name": "manager-user-action",
+      "version": 5,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "name": "accept-invite",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": true
+    },
+    {
+      "name": "peek-invite",
+      "version": 4,
+      "status": "ACTIVE",
+      "verifyJwt": false
+    }
+  ],
+  "cloudflare": {
+    "project": "hero",
+    "productionAutomaticDeploymentsEnabled": false,
+    "deploymentId": "3075453e-0b42-4693-a99c-2c8e1f92e682",
+    "url": "https://3075453e.hero-dnr.pages.dev",
+    "environment": "production",
+    "commit": "38bcd40a648d7e9f26597c0489bf74cad5767395",
+    "latestStage": {
+      "name": "deploy",
+      "started_on": null,
+      "ended_on": "2026-10-11T07:24:20.677282Z",
+      "status": "success"
+    },
+    "createdOn": "2026-10-11T07:24:19.442016Z"
+  },
+  "httpChecks": {
+    "passed": 34,
+    "total": 34
+  },
+  "adminUi": {
+    "regenerateButtonVerified": true,
+    "reviewAndCancelVerified": true,
+    "realInvitationIssuedByAgent": false
+  },
+  "actualKakaoManagerAcceptance": "NOT_RUN"
+}
