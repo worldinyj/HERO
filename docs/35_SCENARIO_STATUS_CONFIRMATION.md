@@ -14,3 +14,9 @@
 - 상태 확인 모달의 WCAG 2.2 AA 관련 axe 자동 검사 포함. 실제 기기·보조기기 검증을 대신하지 않는다.
 
 테스트는 루프백 Supabase API 응답을 fixture로 가로챈다. 운영 DB의 시나리오를 생성하거나 승인·배포·보관 상태로 바꾸지 않는다. 이번 변경은 웹에만 해당하며 Edge Function/DB 마이그레이션은 없다. 기존 상태 변경 API의 권한·전이·게시 처리는 그대로 사용한다. DB 트랜잭션 원자성이나 다중 관리자 동시 변경 제어를 추가한 작업은 아니다.
+
+## 운영 반영 (2026-10-11 KST)
+
+PR #92의 quality·pgTAP·mobile-flow·Cloudflare Preview 검사가 모두 통과한 뒤 병합 커밋 `afb99405ab5cc1ca93b2260b97924033815c40e9`를 수동 운영 배포했다. Cloudflare production 배포 `1fd441b7-b37a-4c9d-8f3a-7517fd0edb81`가 success이고, 운영 자동 배포는 비활성 상태를 유지한다. HTTP 34개 검사와 HTML·초기 JS·CSS·관리자 시나리오 JS의 로컬 빌드 바이트 일치를 확인했다.
+
+실제 관리자 화면에서 목록 새로고침이 완료되는 것을 확인했다. 저장 버전이 0개여서 운영 확인 창/실제 상태 변경 요청은 수행하지 않았다. 확인 창의 동작은 루프백 fixture 검증 결과이며 운영 승인·게시 검증으로 간주하지 않는다. 증빙: `ops/scenario-status-confirmation-deployment-20261011.json`.
