@@ -1,0 +1,62 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(35);
+insert into auth.users(id,email) values
+('fa100000-0000-0000-0000-000000000001','scenario-atomic-admin@hero.test'),('fa100000-0000-0000-0000-000000000002','scenario-atomic-player@hero.test'),('fa100000-0000-0000-0000-000000000003','scenario-atomic-inactive@hero.test');
+insert into public.plants(id,code,name,display_name) values ('fa400000-0000-0000-0000-000000000001','SA-TEST','Scenario atomic','Scenario atomic');
+insert into public.profiles(id,plant_id,role,real_name,nickname,is_active) values
+('fa100000-0000-0000-0000-000000000001',null,'admin','Admin','SAADMIN',true),('fa100000-0000-0000-0000-000000000002','fa400000-0000-0000-0000-000000000001','player','Player','SAPLAYER',true),('fa100000-0000-0000-0000-000000000003',null,'admin','Inactive','SAOFF',false);
+insert into public.scenarios(id,slug,title,is_competitive) values ('fa200000-0000-0000-0000-000000000001','atomic_scenario_test','Atomic test',false);
+insert into public.scenario_versions(id,scenario_id,version,status,default_perspective_role,content) values
+('fa300000-0000-0000-0000-000000000001','fa200000-0000-0000-0000-000000000001',1,'published','worker','{"id":"s00_tutorial"}'::jsonb),
+('fa300000-0000-0000-0000-000000000002','fa200000-0000-0000-0000-000000000001',2,'review','worker','{"id":"s00_tutorial"}'::jsonb),
+('fa300000-0000-0000-0000-000000000003','fa200000-0000-0000-0000-000000000001',3,'approved','worker','{"id":"s00_tutorial"}'::jsonb);
+select ok(not has_function_privilege('anon','public.set_scenario_status_atomic(uuid,uuid,public.scenario_status,public.scenario_status,jsonb)','EXECUTE'),'anon execution permission');
+select ok(not has_function_privilege('authenticated','public.set_scenario_status_atomic(uuid,uuid,public.scenario_status,public.scenario_status,jsonb)','EXECUTE'),'authenticated execution permission');
+select ok(has_function_privilege('service_role','public.set_scenario_status_atomic(uuid,uuid,public.scenario_status,public.scenario_status,jsonb)','EXECUTE'),'service_role execution permission');
+set local role authenticated;
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','approved','{"id":"s00_tutorial"}'::jsonb)$$,'42501',null,'browser cannot spoof actor');
+set local role service_role;
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000002','fa300000-0000-0000-0000-000000000002','review','approved','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','admin_required','non admin denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000003','fa300000-0000-0000-0000-000000000002','review','approved','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','admin_required','inactive admin denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000004','review','approved','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','scenario_version_not_found','missing version denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','draft','review','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','scenario_status_conflict','stale state denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','approved','{}'::jsonb)$$,'P0001','scenario_content_conflict','changed content denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','published','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','invalid_status_transition','skip approval denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','review','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','invalid_status_transition','same status denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review',null,'{"id":"s00_tutorial"}'::jsonb)$$,'P0001','invalid_status_transition','null target denied');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002',null,'approved','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','scenario_status_conflict','null expectation denied');
+select lives_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','approved','{"id":"s00_tutorial"}'::jsonb)$$,'approve exact snapshot');
+select ok((select approved_by='fa100000-0000-0000-0000-000000000001'::uuid and approved_at is not null from public.scenario_versions where id='fa300000-0000-0000-0000-000000000002'),'approval actor and time recorded');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','approved','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','scenario_status_conflict','duplicate confirmation rejected');
+reset role;
+create function pg_temp.reject_scenario_audit() returns trigger language plpgsql as $$begin if new.entity_id='fa300000-0000-0000-0000-000000000002' and new.action='scenario.status_changed' and new.metadata->>'to'='published' then raise exception 'injected_scenario_audit_failure'; end if; return new; end;$$;
+create trigger reject_scenario_audit before insert on public.audit_logs for each row execute function pg_temp.reject_scenario_audit();
+set local role service_role;
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','approved','published','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','injected_scenario_audit_failure','target audit failure rolls back all writes');
+select is((select status::text from public.scenario_versions where id='fa300000-0000-0000-0000-000000000001'),'published','previous publication retained on failure');
+select is((select status::text from public.scenario_versions where id='fa300000-0000-0000-0000-000000000002'),'approved','new publication rolled back');
+select ok((select published_at is null from public.scenario_versions where id='fa300000-0000-0000-0000-000000000002'),'failed publication leaves no timestamp');
+select results_eq($$select count(*) from public.audit_logs where entity_id='fa300000-0000-0000-0000-000000000001'$$,array[0::bigint],'replacement audit rolled back too');
+reset role;
+drop trigger reject_scenario_audit on public.audit_logs;
+set local role service_role;
+select lives_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','approved','published','{"id":"s00_tutorial"}'::jsonb)$$,'publish after repair');
+select is((select status::text from public.scenario_versions where id='fa300000-0000-0000-0000-000000000001'),'archived','previous version archived');
+select ok((select status='published' and published_at is not null from public.scenario_versions where id='fa300000-0000-0000-0000-000000000002'),'new publication and timestamp committed');
+select results_eq($$select count(*) from public.audit_logs where entity_id='fa300000-0000-0000-0000-000000000001' and metadata->>'replacement_version_id'='fa300000-0000-0000-0000-000000000002'$$,array[1::bigint],'replacement audited once');
+select results_eq($$select count(*) from public.audit_logs where entity_id='fa300000-0000-0000-0000-000000000002' and metadata->>'to'='published'$$,array[1::bigint],'publication audited once');
+select lives_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000003','approved','published','{"id":"s00_tutorial"}'::jsonb)$$,'another approved version replaces publication');
+select results_eq($$select count(*) from public.scenario_versions where scenario_id='fa200000-0000-0000-0000-000000000001' and status='published'$$,array[1::bigint],'exactly one published version');
+select is((select status::text from public.scenario_versions where id='fa300000-0000-0000-0000-000000000002'),'archived','second replacement archives prior publication');
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','approved','published','{"id":"s00_tutorial"}'::jsonb)$$,'P0001','scenario_status_conflict','archived snapshot cannot publish');
+select lives_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','archived','draft','{"id":"s00_tutorial"}'::jsonb)$$,'restore to draft');
+select lives_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','draft','review','{"id":"s00_tutorial"}'::jsonb)$$,'submit to review');
+select lives_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','review','draft','{"id":"s00_tutorial"}'::jsonb)$$,'return to draft');
+reset role;
+select throws_ok($$update public.scenario_versions set status='published' where id='fa300000-0000-0000-0000-000000000002'$$,'23505',null,'unique index rejects bypassed duplicate publication');
+update public.scenario_versions set status='approved',content='{"id":"competitive_test"}' where id='fa300000-0000-0000-0000-000000000002';
+set local role service_role;
+select throws_ok($$select public.set_scenario_status_atomic('fa100000-0000-0000-0000-000000000001','fa300000-0000-0000-0000-000000000002','approved','published','{"id":"competitive_test"}'::jsonb)$$,'P0001','scenario_incident_debrief_required','missing competitive debrief denied');
+select * from finish();
+rollback;

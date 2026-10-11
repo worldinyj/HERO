@@ -5,7 +5,7 @@ import tutorial from "../scenarios/data/S00_tutorial.json" with { type: "json" }
 const adminId = "f6100000-0000-0000-0000-000000000001";
 const versionId = "f6200000-0000-0000-0000-000000000001";
 
-async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: boolean; status?: "draft" | "approved"; allowStatus?: boolean; statusError?: boolean; wrongStatusResponse?: boolean; delayedStatus?: boolean } = {}) {
+async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: boolean; status?: "draft" | "approved"; allowStatus?: boolean; statusError?: boolean; wrongStatusResponse?: boolean; delayedStatus?: boolean; statusConflict?: boolean } = {}) {
   let currentStatus: string = options.status ?? "draft";
   let statusAttempts = 0;
   const calls: Array<Record<string, unknown>> = [];
@@ -37,6 +37,11 @@ async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: 
         if (options.delayedStatus) await pending;
         if (options.statusError && statusAttempts === 1) {
           await route.fulfill({ status: 409, json: { error: "scenario_incident_debrief_required" } });
+          return;
+        }
+        if (options.statusConflict) {
+          currentStatus = "archived";
+          await route.fulfill({ status: 409, json: { error: "scenario_status_conflict" } });
           return;
         }
         currentStatus = String(request.status);
@@ -163,7 +168,7 @@ test("explicit confirmation sends once, blocks pending dismissal, and updates th
   await expect(dialog).not.toBeVisible();
   await expect(page.locator(".scenario-status")).toHaveText("검토");
   await expect(page.getByRole("heading", { name: "시나리오 관리", exact: true })).toBeFocused();
-  expect(calls.filter(call => call.action === "set-status")).toEqual([{ action: "set-status", scenarioVersionId: versionId, status: "review" }]);
+  expect(calls.filter(call => call.action === "set-status")).toEqual([{ action: "set-status", scenarioVersionId: versionId, status: "review", expectedStatus: "draft" }]);
 });
 
 test("publication describes impact and an HTTP error permits a deliberate retry", async ({ page }, testInfo) => {
@@ -198,4 +203,18 @@ test("a mismatched success remains unconfirmed and refresh can reconcile the out
   await expect(page.locator(".scenario-status")).toHaveText("검토");
   expect(calls.filter(call => call.action === "set-status")).toHaveLength(1);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+
+test("a stale status request stays unconfirmed and refresh shows the other administrator's change", async ({ page }) => {
+  const { calls } = await fixture(page, { allowStatus: true, statusConflict: true });
+  await page.getByRole("button", { name: "검토로", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "검토 상태로 변경", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("다른 관리자가 상태를 변경했습니다");
+  await expect(page.locator(".scenario-status")).toHaveText("초안");
+  await dialog.getByRole("button", { name: "취소", exact: true }).click();
+  await page.getByRole("button", { name: "목록 새로고침", exact: true }).click();
+  await expect(page.locator(".scenario-status")).toHaveText("보관");
+  expect(calls.filter(call => call.action === "set-status")).toHaveLength(1);
 });
