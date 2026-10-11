@@ -115,8 +115,8 @@ export const KHNP_PLANT_CATALOG: readonly PlantSuggestion[] = [
     "displayName": "신한울1발",
     "group": "한울",
     "source": "https://m.khnp.co.kr/hanul/contents.do?key=1743"
-  }
-  ,{
+  },
+  {
     "code": "KHNP_HQ",
     "name": "한국수력원자력 본사",
     "displayName": "본사",
