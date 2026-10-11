@@ -166,4 +166,4 @@ HERO/
 
 ## 튜토리얼 나레이션 제작
 
-BGM/SFX와 별도로 [튜토리얼 나레이션 제작 패키지](../assets/audio/prompts/NARRATION_S00_V1.md)를 사용한다. 기존 ElevenLabs 보이스 Jin Geon Song 선정 정보, Eleven v4 합성용 원문 5개, 파일명과 향후 재생 연결 기준을 정리했다. 나레이션 런타임은 구현했으며 실제 음원 생성·청취 검수·등록·운영 음성 검증은 대기 중이다.
+BGM/SFX와 별도로 [튜토리얼 나레이션 제작 패키지](../assets/audio/prompts/NARRATION_S00_V1.md)를 사용한다. 기존 ElevenLabs 보이스 Jin Geon Song 선정 정보, Eleven v4 합성용 원문 5개, 파일명과 향후 재생 연결 기준을 정리했다. 나레이션 런타임과 5개 음원 등록을 완료했다. 사용자가 생성 출처·권리·청취 검수를 확인했고 파일 기술 검수 기록은 `assets/audio/reviews/`에 보관한다. iOS Safari·Samsung Internet 실기기 및 현장 사용성 검증은 별도 확인 대상이다.

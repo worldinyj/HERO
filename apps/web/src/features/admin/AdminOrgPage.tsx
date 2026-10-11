@@ -534,6 +534,7 @@ export function AdminOrgPage() {
           <Link className="admin-subnav-link" to="/admin/scenarios">
             시나리오
           </Link>
+          <Link className="admin-subnav-link" to="/admin/audit">감사 이력</Link>
         </nav>
         <p className="eyebrow">Super Admin</p>
         <h2 id="admin-title">조직 관리</h2>

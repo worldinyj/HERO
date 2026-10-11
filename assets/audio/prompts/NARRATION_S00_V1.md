@@ -4,7 +4,7 @@
 
 ## 현재 상태와 범위
 
-튜토리얼 `s00_tutorial` v1의 원문에서 추출한 제작 대본이다. 음성 파일 생성·청취 검수·운영 음원 등록은 아직 완료되지 않았다. 나레이션 전용 재생 채널·설정·장면 연결은 구현했다. 실제 파일이 승인 manifest에 등록되기 전에는 나레이션이 재생되지 않는다.
+튜토리얼 `s00_tutorial` v1의 원문에서 추출한 제작 대본이다. 2026-10-11 사용자가 제작한 MP3 5개를 제공하고 추천 목소리·Eleven v4 생성, 사용 권한 및 대본·발음·톤 청취 검수를 확인했다. 파일은 `/audio/narration/`의 승인 manifest에 등록했다. 생성 기록과 검수 범위는 `assets/audio/reviews/AUDIO_REVIEW_LOG.md`를 참조한다. iOS Safari·Samsung Internet 실기기 검증은 별도 확인 대상이다.
 
 원본: `scenarios/data/S00_tutorial.json`. 기계 판독용 대본과 원본 SHA-256: `assets/audio/prompts/NARRATION_S00_V1.json`.
 
@@ -23,7 +23,7 @@
 
 공개 보이스 설명은 따뜻하고 차분한 중저음의 한국어 나레이션이다. 이 설명을 기준으로 HERO의 절제된 기술 현장 분위기와 중립적인 훈련 안내에 맞는 기존 보이스로 선정했다. 새 Voice Design 보이스를 만드는 절차는 이번 작업에서 제외한다.
 
-확인 범위: 2026-10-11 JSON2Video 공개 ElevenLabs 보이스 목록에서 이름·ID·설명을 확인했다. ElevenLabs 공식 라이브러리는 로그인 화면으로 연결되어 계정 내 현재 제공 여부와 v4 미리듣기는 확인하지 못했다. 이 선정은 설명에 근거하며 청취 평가를 완료했다는 뜻이 아니다. 생성 전 ElevenLabs에서 같은 이름/ID를 확인하고 아래 문구로 발음·톤을 점검한다.
+확인 범위: 2026-10-11 JSON2Video 공개 ElevenLabs 보이스 목록에서 이름·ID·설명을 확인했다. ElevenLabs 공식 라이브러리는 로그인 화면으로 연결되어 Codex가 직접 계정 내 제공 여부·v4 미리듣기를 확인하지는 못했다. 이후 사용자가 이 목소리·v4로 파일을 생성하고 청취 검수를 완료했다고 확인했다. 추가 제작 시 같은 이름/ID를 확인하고 아래 문구로 발음·톤을 점검한다.
 
 - [보이스 이름·ID·성별 확인 자료](https://json2video.com/ai-voices/elevenlabs/voices/BbsagRO6ohd8MKPS2Ob0/)
 - [한국어 보이스 목록·음색 설명](https://json2video.com/ai-voices/elevenlabs/languages/korean/)
@@ -93,7 +93,7 @@ v4 공식 안내에 따르면 Stability와 Similarity를 사용하며 Speed/Styl
 진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방어막의 상태를 함께 돌아봅니다.
 ```
 
-## 게임 연결 기준 — 구현 완료, 음원 등록 대기
+## 게임 연결 기준 — 구현 및 5개 음원 등록 완료
 
 - 튜토리얼 버전과 node/action ID로 음성을 연결한다. 문구나 시나리오 버전 변경 시 대본 일치 여부를 확인하고 다시 제작한다.
 - 브라우저 오디오 사용 동의/사용자 제스처 이후 해당 장면에서만 한 번 재생한다. 선택 질문은 선택지보다 먼저 읽되 선택 조작을 막지 않는다.

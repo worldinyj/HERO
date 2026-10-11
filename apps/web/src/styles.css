@@ -2907,3 +2907,8 @@ h3 {
 
 .narration-control { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-block: 0.75rem; }
 .narration-control small { flex-basis: 100%; }
+
+.audit-history-row { padding: 16px 0; border-bottom: 1px solid rgba(138, 150, 173, 0.25); overflow-wrap: anywhere; }
+.audit-history-row p, .audit-history-row dl { font-size: 0.875rem; }
+.audit-history-row summary { cursor: pointer; }
+.audit-history-row dd { margin: 4px 0 12px; }
