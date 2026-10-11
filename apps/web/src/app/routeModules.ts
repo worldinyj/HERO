@@ -44,3 +44,7 @@ export function preloadGameRoute(): void {
 export function preloadBriefingRoute(): void {
   void loadBriefingPageModule();
 }
+
+export const loadAdminAuditPageModule = cachedLoader(
+  () => import("../features/admin/AdminAuditPage"),
+);

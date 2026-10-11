@@ -254,6 +254,7 @@ export function AdminScenarioPage() {
           <Link to="/admin">조직 관리</Link>
           <span aria-hidden="true">/</span>
           <strong>시나리오</strong>
+          <Link to="/admin/audit">감사 이력</Link>
         </div>
         <p className="eyebrow">Scenario Studio</p>
         <h2 id="scenario-admin-title" tabIndex={-1}>시나리오 관리</h2>
