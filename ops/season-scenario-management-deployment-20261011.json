@@ -1,0 +1,143 @@
+{
+  "date": "2026-10-11",
+  "pullRequest": "https://github.com/worldinyj/HERO/pull/95",
+  "mainCommit": "30efc512a3d6b153693f5069b3f8cddbcbb1d6e8",
+  "ci": {
+    "quality": "PASS",
+    "pgtap": {
+      "files": 20,
+      "assertions": 529,
+      "status": "PASS"
+    },
+    "mobile": {
+      "tests": 88,
+      "status": "PASS"
+    },
+    "preview": "PASS"
+  },
+  "local": {
+    "unitTests": 349,
+    "mobileFixtureTests": 62,
+    "pgtapNewAssertions": 46,
+    "concurrency": [
+      "CONCURRENT_CONNECT_PASS",
+      "ARCHIVAL_VS_CONNECT_PASS"
+    ],
+    "developmentMigrationThrough": "202610110027",
+    "disposableTestDatabaseRemoved": true
+  },
+  "database": {
+    "migration": "202610110027",
+    "exactSourceAndThreeFunctionBodiesVerified": true,
+    "permissions": [
+      {
+        "name": "public.admin_season_scenario_overview",
+        "securityDefiner": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": true
+      },
+      {
+        "name": "private.season_binding_revision",
+        "securityDefiner": false,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": false
+      },
+      {
+        "name": "public.set_season_scenario_atomic",
+        "securityDefiner": true,
+        "anonExecute": false,
+        "authenticatedExecute": false,
+        "serviceRoleExecute": true
+      }
+    ],
+    "legacyBrowserSyncAllowed": false,
+    "bindingsPreserved": true,
+    "scenarioVersions": 0,
+    "bindingCount": 0,
+    "countsBefore": {
+      "audits": 3,
+      "profiles": 2,
+      "sessions": 0
+    },
+    "countsAfter": {
+      "audits": 5,
+      "profiles": 2,
+      "sessions": 0
+    },
+    "interveningOperationalAuditEvents": [
+      {
+        "action": "invitation.created",
+        "created_at": "2026-10-11 13:44:09.284906+00",
+        "entity_type": "invitation"
+      },
+      {
+        "action": "plant.created",
+        "created_at": "2026-10-11 13:43:44.942006+00",
+        "entity_type": "plant"
+      }
+    ],
+    "overview": {
+      "scenarios": [],
+      "season": {
+        "endsAt": "2026-10-31T15:00:00+00:00",
+        "id": "fb4cb35c-dc74-48ee-8f58-8c8723792965",
+        "seasonKey": "2026-10",
+        "startsAt": "2026-09-30T15:00:00+00:00",
+        "title": "2026년 10월 시즌"
+      }
+    }
+  },
+  "edge": {
+    "slug": "admin-scenario",
+    "status": "ACTIVE",
+    "version": 5,
+    "verify_jwt": true
+  },
+  "web": {
+    "pullRequest": 95,
+    "mergeCommit": "30efc512a3d6b153693f5069b3f8cddbcbb1d6e8",
+    "deployment": {
+      "id": "1fea2939-deb9-4eb3-8c2b-12d7a5d38808",
+      "url": "https://1fea2939.hero-dnr.pages.dev",
+      "environment": "production",
+      "commit": "30efc512a3d6b153693f5069b3f8cddbcbb1d6e8",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-10-11T13:49:27.395945Z",
+        "status": "success"
+      },
+      "created_on": "2026-10-11T13:49:25.982338Z"
+    },
+    "productionAutoDeploy": false,
+    "assets": [
+      {
+        "asset": "index.html",
+        "bytes": 2328,
+        "match": true
+      },
+      {
+        "asset": "assets/index-CtjkEGb9.js",
+        "bytes": 310331,
+        "match": true
+      },
+      {
+        "asset": "assets/index-C0RrsgPj.css",
+        "bytes": 44209,
+        "match": true
+      },
+      {
+        "asset": "assets/AdminScenarioPage-BXb_l38Z.js",
+        "bytes": 36928,
+        "match": true
+      }
+    ]
+  },
+  "http": {
+    "verdict": "staging_http_ready",
+    "checks": 34
+  },
+  "liveAdminRead": "Authenticated screen loaded current October season, KST date range and no competitive scenarios guidance; no production scenario connection/disconnection performed."
+}
