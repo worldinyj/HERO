@@ -13,11 +13,15 @@ import { readJsonObject } from "../_shared/jsonObject.ts";
 type ScenarioStatus = "draft" | "review" | "approved" | "published" | "archived";
 
 interface RequestBody {
-  action?: "list" | "preview" | "upload" | "set-status";
+  action?: "list" | "preview" | "upload" | "set-status" | "season-overview" | "set-season-scenario";
   scenario?: unknown;
   scenarioVersionId?: string;
   status?: ScenarioStatus;
   expectedStatus?: ScenarioStatus;
+  seasonId?: string;
+  scenarioId?: string;
+  versionId?: string | null;
+  expectedRevision?: string;
 }
 
 const STATUSES: readonly string[] = ["draft", "review", "approved", "published", "archived"];
@@ -189,16 +193,43 @@ Deno.serve(async (req) => {
     if (!raw) return json(req, { error: "invalid_request" }, 400);
     const body = raw as RequestBody;
     const action = body.action ?? "list";
+    const isRead = action === "list" || action === "preview" || action === "season-overview";
     const limited = await guardRateLimit(req, admin, {
       scope: `admin-scenario:${action}`,
       subject: user.id,
-      limit: action === "list" || action === "preview" ? 120 : 30,
-      windowSeconds: action === "list" || action === "preview" ? 300 : 600,
+      limit: isRead ? 120 : 30,
+      windowSeconds: isRead ? 300 : 600,
     });
     if (limited) return limited;
 
     if (action === "list") {
       return json(req, { versions: await listVersions(admin) });
+    }
+
+    if (action === "season-overview") {
+      const { data, error } = await admin.rpc("admin_season_scenario_overview", { p_actor_user_id: user.id });
+      if (error) return json(req, { error: error.code === "P0001" && error.message === "admin_required" ? "admin_required" : "season_overview_unavailable" }, error.code === "P0001" && error.message === "admin_required" ? 403 : 500);
+      return json(req, data);
+    }
+
+    if (action === "set-season-scenario") {
+      if (!isUuid(body.seasonId) || !isUuid(body.scenarioId) ||
+          (body.versionId !== null && !isUuid(body.versionId)) ||
+          typeof body.expectedRevision !== "string" || !/^[0-9a-f]{32}$/.test(body.expectedRevision)) {
+        return json(req, { error: "invalid_request" }, 400);
+      }
+      const { data, error } = await admin.rpc("set_season_scenario_atomic", {
+        p_actor_user_id: user.id, p_season_id: body.seasonId, p_scenario_id: body.scenarioId,
+        p_version_id: body.versionId, p_expected_revision: body.expectedRevision,
+      });
+      if (error) {
+        const domain: Record<string, number> = { admin_required: 403, scenario_not_found: 404,
+          season_no_longer_open: 409, season_binding_conflict: 409, scenario_not_eligible: 409,
+          scenario_version_not_published: 409, binding_no_change: 409 };
+        const known = error.code === "P0001" && Object.hasOwn(domain, error.message);
+        return json(req, { error: known ? error.message : "season_binding_unavailable" }, known ? domain[error.message] : 500);
+      }
+      return json(req, data);
     }
 
     if (action === "preview") {

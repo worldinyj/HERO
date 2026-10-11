@@ -29,6 +29,7 @@ async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: 
       const request = route.request().postDataJSON() as Record<string, unknown>;
       calls.push(request);
       if (request.action === "list") body = { versions: [{ id: versionId, version: 1, status: currentStatus, default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: tutorial.id, title: tutorial.title, is_active: true, is_competitive: false } }] };
+      else if (request.action === "season-overview") body = { season: null, scenarios: [] };
       else if (request.action === "preview") {
         if (options.delayed) await pending;
         body = { preview: true, scenarioVersionId: options.wrongVersion ? adminId : versionId, scenario: tutorial };
@@ -80,7 +81,7 @@ test("local preview plays and restarts without creating sessions or records", as
   await expect(preview).not.toBeVisible();
   await expect(page.getByRole("button", { name: "입력한 JSON 미리보기", exact: true })).toBeFocused();
   await expect(page.getByRole("textbox", { name: "시나리오 JSON", exact: true })).toHaveValue(JSON.stringify(tutorial));
-  expect(calls.every(call => call.action === "list")).toBe(true);
+  expect(calls.every(call => ["list", "season-overview"].includes(String(call.action)))).toBe(true);
   expect(await page.evaluate(async () => (await indexedDB.databases()).length)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
@@ -110,7 +111,7 @@ test("saved preview requests the exact version; canceled late responses stay clo
   await expect(preview).toBeVisible();
   await expect(preview).toContainText("저장된 버전 · 초안");
   expect(calls.filter(call => call.action === "preview").every(call => call.scenarioVersionId === versionId)).toBe(true);
-  expect(calls.every(call => ["list", "preview"].includes(String(call.action)))).toBe(true);
+  expect(calls.every(call => ["list", "preview", "season-overview"].includes(String(call.action)))).toBe(true);
 });
 
 test("mismatched saved version responses cannot display content", async ({ page }) => {

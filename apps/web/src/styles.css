@@ -2901,3 +2901,6 @@ h3 {
 .scenario-diff-item dl { display: grid; gap: 12px; }
 .scenario-diff-item dd { margin: 4px 0 0; }
 .scenario-diff-item pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8125rem; }
+
+.season-scenario-panel { overflow-wrap: anywhere; }
+.season-scenario-panel .scenario-status-actions { display: flex; flex-wrap: wrap; gap: 12px; }
