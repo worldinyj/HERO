@@ -53,3 +53,7 @@ Reflective and neutral post-scenario music. Gentle resolution, learning-and-reco
 - LOOP review
 - SAGE HF audio review
 - GUARD rights/technical review
+
+## 제작 순서·복사용 전체 프롬프트
+
+현재 연결된 첫 제작 대상 8개와 전체 20개 큐의 완전한 프롬프트는 [AUDIO_PRODUCTION_V1.md](AUDIO_PRODUCTION_V1.md), 구조화 데이터·프롬프트 해시는 [AUDIO_PRODUCTION_V1.json](AUDIO_PRODUCTION_V1.json)을 참조한다. 검수 전 후보 저장 위치는 `assets/audio/candidates/`이며 앱 공개 폴더에 바로 넣지 않는다.

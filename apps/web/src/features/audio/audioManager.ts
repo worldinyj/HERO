@@ -74,6 +74,11 @@ export class HeroAudioManager {
   private unlocked = false;
   private bgm: HTMLAudioElement | null = null;
   private bgmAssetId: string | null = null;
+  private bgmAsset: AudioManifestAsset | null = null;
+  private bgmRequest = 0;
+  private sfxRequest = 0;
+  private sfxAssets = new Map<HTMLAudioElement, AudioManifestAsset>();
+  private fadingBgm: HTMLAudioElement | null = null;
   private dialogueDuck = false;
   private narration: HTMLAudioElement | null = null;
   private narrationAsset: AudioManifestAsset | null = null;
@@ -108,6 +113,8 @@ export class HeroAudioManager {
           : patch.initialized,
     });
     persistSettings(this.settings);
+    if (this.settings.bgmMuted || this.settings.bgmVolume === 0) this.stopBgm(0);
+    if (this.settings.sfxMuted || this.settings.sfxVolume === 0) this.stopAllSfx();
     if (this.settings.narrationMuted || this.settings.narrationVolume === 0) this.stopNarration();
     this.applyCurrentVolumes();
 
@@ -139,14 +146,8 @@ export class HeroAudioManager {
   }
 
   async playBgm(assetId: string): Promise<boolean> {
-    if (
-      !canUseDom() ||
-      !this.unlocked ||
-      !this.settings.initialized ||
-      this.settings.bgmMuted
-    ) {
-      return false;
-    }
+    const ticket = ++this.bgmRequest;
+    if (!this.canPlay("bgm")) return false;
 
     if (this.bgmAssetId === assetId && this.bgm && !this.bgm.paused) {
       this.applyCurrentVolumes();
@@ -154,7 +155,7 @@ export class HeroAudioManager {
     }
 
     const asset = await this.findAsset(assetId, ["bgm"]);
-    if (!asset) return false;
+    if (!asset || ticket !== this.bgmRequest || !this.canPlay("bgm")) return false;
 
     const next = new Audio(asset.path);
     next.loop = asset.loop !== false;
@@ -168,8 +169,13 @@ export class HeroAudioManager {
       return false;
     }
 
+    if (ticket !== this.bgmRequest || !this.canPlay("bgm")) {
+      next.pause(); next.src = "";
+      return false;
+    }
     const previous = this.bgm;
     this.bgm = next;
+    this.bgmAsset = asset;
     this.bgmAssetId = assetId;
 
     this.fadeBgm(previous, next, 450);
@@ -177,11 +183,13 @@ export class HeroAudioManager {
   }
 
   stopBgm(fadeMs = 240): void {
+    this.bgmRequest += 1;
     const current = this.bgm;
     this.bgm = null;
     this.bgmAssetId = null;
+    this.bgmAsset = null;
 
-    if (!current) return;
+    if (!current) { this.fadeBgm(null, null, 0); return; }
     this.fadeBgm(current, null, fadeMs);
   }
 
@@ -191,22 +199,17 @@ export class HeroAudioManager {
   }
 
   async playSfx(assetId: string): Promise<() => void> {
-    if (
-      !canUseDom() ||
-      !this.unlocked ||
-      !this.settings.initialized ||
-      this.settings.sfxMuted
-    ) {
-      return () => {};
-    }
+    const ticket = this.sfxRequest;
+    if (!this.canPlay("sfx")) return () => {};
 
     const asset = await this.findAsset(assetId, ["sfx", "stinger"]);
-    if (!asset) return () => {};
+    if (!asset || ticket !== this.sfxRequest || !this.canPlay("sfx")) return () => {};
 
     const voiceLimit = this.settings.reducedSensory ? 2 : 4;
     while (this.sfxVoices.length >= voiceLimit) {
       const oldest = this.sfxVoices.shift();
       if (oldest) {
+        this.sfxAssets.delete(oldest);
         oldest.pause();
         oldest.src = "";
       }
@@ -216,15 +219,18 @@ export class HeroAudioManager {
     voice.preload = "auto";
     voice.volume = this.sfxTargetVolume(asset);
     this.sfxVoices.push(voice);
+    this.sfxAssets.set(voice, asset);
 
     const cleanup = () => {
       const index = this.sfxVoices.indexOf(voice);
       if (index >= 0) this.sfxVoices.splice(index, 1);
+      this.sfxAssets.delete(voice);
       voice.pause();
       voice.src = "";
     };
 
     voice.addEventListener("ended", cleanup, { once: true });
+    voice.addEventListener("error", cleanup, { once: true });
 
     try {
       await voice.play();
@@ -233,10 +239,16 @@ export class HeroAudioManager {
       return () => {};
     }
 
+    if (ticket !== this.sfxRequest || !this.canPlay("sfx") || !this.sfxAssets.has(voice)) {
+      cleanup();
+      return () => {};
+    }
     return cleanup;
   }
 
   stopAllSfx(): void {
+    this.sfxRequest += 1;
+    this.sfxAssets.clear();
     for (const voice of this.sfxVoices.splice(0)) {
       voice.pause();
       voice.src = "";
@@ -289,6 +301,12 @@ export class HeroAudioManager {
       voice.src = "";
     }
     this.applyCurrentVolumes();
+  }
+
+  private canPlay(channel: "bgm" | "sfx"): boolean {
+    return canUseDom() && this.unlocked && this.settings.initialized && !document.hidden &&
+      (channel === "bgm" ? !this.settings.bgmMuted && this.settings.bgmVolume > 0 :
+        !this.settings.sfxMuted && this.settings.sfxVolume > 0);
   }
 
   private canNarrate(): boolean {
@@ -349,7 +367,8 @@ export class HeroAudioManager {
 
     const duckFactor = (this.dialogueDuck || this.narration) ? 0.42 : 1;
     const sensoryFactor = this.settings.reducedSensory ? 0.72 : 1;
-    return this.settings.bgmVolume * duckFactor * sensoryFactor;
+    const gain = Math.max(0, Math.min(1, this.bgmAsset?.defaultVolume ?? 1));
+    return this.settings.bgmVolume * gain * duckFactor * sensoryFactor;
   }
 
   private sfxTargetVolume(asset: AudioManifestAsset): number {
@@ -374,10 +393,8 @@ export class HeroAudioManager {
     }
 
     for (const voice of this.sfxVoices) {
-      voice.volume = this.settings.sfxMuted
-        ? 0
-        : this.settings.sfxVolume *
-          (this.settings.reducedSensory ? 0.58 : 1);
+      const asset = this.sfxAssets.get(voice);
+      if (asset) voice.volume = this.sfxTargetVolume(asset);
     }
   }
 
@@ -393,6 +410,17 @@ export class HeroAudioManager {
       this.volumeAnimation = null;
     }
 
+    // A new transition cancels the outgoing track from the previous fade.
+    if (this.fadingBgm && this.fadingBgm !== previous) {
+      this.fadingBgm.pause(); this.fadingBgm.src = "";
+    }
+    this.fadingBgm = previous;
+    if (durationMs <= 0) {
+      if (previous) { previous.pause(); previous.src = ""; }
+      if (next) next.volume = this.bgmTargetVolume();
+      this.fadingBgm = null;
+      return;
+    }
     const startedAt = performance.now();
     const previousStart = previous?.volume ?? 0;
 
@@ -416,6 +444,7 @@ export class HeroAudioManager {
 
       this.volumeAnimation = null;
 
+      this.fadingBgm = null;
       if (previous) {
         previous.pause();
         previous.src = "";

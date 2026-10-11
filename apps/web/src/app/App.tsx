@@ -161,6 +161,7 @@ export function App() {
   const playRoute = location.pathname.startsWith("/play/");
   const briefingRoute = location.pathname.startsWith("/briefing/");
   const immersiveRoute = playRoute || briefingRoute;
+  const bgmSilent = audioSettings.bgmMuted || audioSettings.bgmVolume === 0;
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -183,7 +184,12 @@ export function App() {
   }, [profile?.is_active, profile?.role, session?.user.id]);
 
   useEffect(() => {
-    if (!audioSettings.initialized || audioSettings.bgmMuted) {
+    return () => audioManager.stopAllSfx();
+  }, [audioManager, location.pathname]);
+
+  useEffect(() => {
+    if (!audioSettings.initialized || bgmSilent ||
+        (!briefingRoute && !playRoute && location.pathname !== "/")) {
       audioManager.stopBgm();
       return;
     }
@@ -195,9 +201,10 @@ export function App() {
         : "BGM-01";
 
     void audioManager.playBgm(cue);
+    return () => audioManager.stopBgm();
   }, [
     audioManager,
-    audioSettings.bgmMuted,
+    bgmSilent,
     audioSettings.initialized,
     briefingRoute,
     location.pathname,
