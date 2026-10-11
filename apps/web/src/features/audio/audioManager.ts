@@ -2,6 +2,8 @@ import {
   DEFAULT_AUDIO_SETTINGS,
   isApprovedRuntimeAsset,
   normalizeAudioSettings,
+  matchesNarration,
+  type NarrationBinding,
   type AudioManifest,
   type AudioManifestAsset,
   type AudioSettings,
@@ -73,6 +75,9 @@ export class HeroAudioManager {
   private bgm: HTMLAudioElement | null = null;
   private bgmAssetId: string | null = null;
   private dialogueDuck = false;
+  private narration: HTMLAudioElement | null = null;
+  private narrationAsset: AudioManifestAsset | null = null;
+  private narrationRequest = 0;
   private sfxVoices: HTMLAudioElement[] = [];
   private volumeAnimation: number | null = null;
 
@@ -103,6 +108,7 @@ export class HeroAudioManager {
           : patch.initialized,
     });
     persistSettings(this.settings);
+    if (this.settings.narrationMuted || this.settings.narrationVolume === 0) this.stopNarration();
     this.applyCurrentVolumes();
 
     for (const listener of this.listeners) {
@@ -120,6 +126,7 @@ export class HeroAudioManager {
       initialized: true,
       bgmMuted: !soundOn,
       sfxMuted: !soundOn,
+      narrationMuted: !soundOn,
     });
 
     if (soundOn) {
@@ -236,6 +243,59 @@ export class HeroAudioManager {
     }
   }
 
+  async hasNarration(request: NarrationBinding): Promise<boolean> {
+    return (await this.loadManifest()).assets.some((asset) => matchesNarration(asset, request));
+  }
+
+  async playNarration(request: NarrationBinding): Promise<boolean> {
+    this.stopNarration();
+    const ticket = this.narrationRequest;
+    if (!this.canNarrate()) return false;
+    const manifest = await this.loadManifest();
+    if (ticket !== this.narrationRequest || !this.canNarrate()) return false;
+    const asset = manifest.assets.find((candidate) => matchesNarration(candidate, request));
+    if (!asset) return false;
+    const voice = new Audio(asset.path);
+    voice.preload = "auto";
+    this.narration = voice;
+    this.narrationAsset = asset;
+    const cleanup = () => {
+      if (this.narration === voice) this.stopNarration();
+    };
+    voice.addEventListener("ended", cleanup, { once: true });
+    voice.addEventListener("error", cleanup, { once: true });
+    this.applyCurrentVolumes();
+    try {
+      await voice.play();
+      if (ticket !== this.narrationRequest) {
+        voice.pause();
+        voice.src = "";
+        return false;
+      }
+      return true;
+    } catch {
+      cleanup();
+      return false;
+    }
+  }
+
+  stopNarration(): void {
+    this.narrationRequest += 1;
+    const voice = this.narration;
+    this.narration = null;
+    this.narrationAsset = null;
+    if (voice) {
+      voice.pause();
+      voice.src = "";
+    }
+    this.applyCurrentVolumes();
+  }
+
+  private canNarrate(): boolean {
+    return canUseDom() && this.unlocked && this.settings.initialized &&
+      !this.settings.narrationMuted && this.settings.narrationVolume > 0 && !document.hidden;
+  }
+
   private async loadManifest(): Promise<AudioManifest> {
     if (this.manifestPromise) return this.manifestPromise;
 
@@ -287,7 +347,7 @@ export class HeroAudioManager {
   private bgmTargetVolume(): number {
     if (this.settings.bgmMuted) return 0;
 
-    const duckFactor = this.dialogueDuck ? 0.42 : 1;
+    const duckFactor = (this.dialogueDuck || this.narration) ? 0.42 : 1;
     const sensoryFactor = this.settings.reducedSensory ? 0.72 : 1;
     return this.settings.bgmVolume * duckFactor * sensoryFactor;
   }
@@ -305,6 +365,10 @@ export class HeroAudioManager {
   }
 
   private applyCurrentVolumes(): void {
+    if (this.narration && this.narrationAsset) {
+      const gain = this.narrationAsset.defaultVolume ?? 1;
+      this.narration.volume = this.settings.narrationVolume * Math.max(0, Math.min(1, gain));
+    }
     if (this.bgm) {
       this.bgm.volume = this.bgmTargetVolume();
     }
@@ -331,7 +395,7 @@ export class HeroAudioManager {
 
     const startedAt = performance.now();
     const previousStart = previous?.volume ?? 0;
-    const nextTarget = next ? this.bgmTargetVolume() : 0;
+
 
     const tick = (now: number) => {
       const progress =
@@ -342,7 +406,7 @@ export class HeroAudioManager {
       }
 
       if (next) {
-        next.volume = nextTarget * progress;
+        next.volume = this.bgmTargetVolume() * progress;
       }
 
       if (progress < 1) {

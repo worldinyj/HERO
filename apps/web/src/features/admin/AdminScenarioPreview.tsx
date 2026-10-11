@@ -65,7 +65,7 @@ function PreviewPlayer({ scenario, sourceLabel, onClose }: PreviewProps) {
           <p className="muted">이 결과는 검토용입니다. 다른 선택 경로는 ‘처음부터 다시 보기’로 확인할 수 있습니다.</p>
           <IncidentDebrief scenario={scenario} game={game} replayEnabled={false} onReplay={() => {}} />
         </>
-      ) : <PlayNodeStage key={`${playthrough}:${game.nodeId}`} view={view} onAction={dispatch} />}
+      ) : <PlayNodeStage key={`${playthrough}:${game.nodeId}`} scenarioId={scenario.id} scenarioVersion={scenario.version} view={view} onAction={dispatch} />}
     </section>
   );
 }

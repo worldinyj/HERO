@@ -15,12 +15,12 @@ export function AudioSettings() {
           <h3>소리 설정</h3>
         </div>
         <span className="count-badge">
-          {settings.bgmMuted && settings.sfxMuted ? "무음" : "사용"}
+          {settings.bgmMuted && settings.sfxMuted && settings.narrationMuted ? "무음" : "사용"}
         </span>
       </div>
 
       <p className="muted mini-copy">
-        BGM과 효과음은 학습을 돕는 보조 요소입니다. 소리를 끄더라도 모든
+        BGM·효과음·나레이션은 학습을 돕는 보조 요소입니다. 소리를 끄더라도 모든
         판단정보와 피드백은 화면에서 동일하게 제공됩니다.
       </p>
 
@@ -86,6 +86,21 @@ export function AudioSettings() {
             });
           }}
         />
+      </div>
+
+      <div className="audio-setting-row">
+        <label className="audio-toggle">
+          <input type="checkbox" checked={!settings.narrationMuted} onChange={(event) => {
+            wakeAudio();
+            updateSettings({ initialized: true, narrationMuted: !event.target.checked });
+          }} />
+          <span>나레이션</span>
+        </label>
+        <input aria-label="나레이션 볼륨" type="range" min="0" max="1" step="0.05"
+          value={settings.narrationVolume} onChange={(event) => {
+            wakeAudio();
+            updateSettings({ initialized: true, narrationVolume: Number(event.target.value) });
+          }} />
       </div>
 
       <label className="audio-sensory-toggle">

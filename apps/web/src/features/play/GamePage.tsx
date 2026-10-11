@@ -1,3 +1,4 @@
+import { NarrationControl } from "../audio/NarrationControl";
 import { getScenarioById } from "@hero/content";
 import {
   evaluate,
@@ -177,6 +178,8 @@ export function GamePage() {
             <h2>{node.title}</h2>
             <EndingStamp ending={node.ending} />
             <p>{node.summary}</p>
+            <NarrationControl request={{ scenarioId: scenario.id, scenarioVersion: scenario.version,
+              nodeId: view.nodeId, field: "summary", text: node.summary }} />
 
             <div className="tutorial-score">
               <div>
@@ -265,6 +268,7 @@ export function GamePage() {
       ) : null}
 
       <PlayNodeStage
+        scenarioId={scenario.id} scenarioVersion={scenario.version}
         view={view}
         onAction={(action) => dispatch(scenario, action)}
       />
