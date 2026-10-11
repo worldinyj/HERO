@@ -184,6 +184,10 @@ export function App() {
   }, [profile?.is_active, profile?.role, session?.user.id]);
 
   useEffect(() => {
+    return () => audioManager.stopAllSfx();
+  }, [audioManager, location.pathname]);
+
+  useEffect(() => {
     if (!audioSettings.initialized || bgmSilent ||
         (!briefingRoute && !playRoute && location.pathname !== "/")) {
       audioManager.stopBgm();
