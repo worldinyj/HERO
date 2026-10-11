@@ -1,10 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 import tutorial from "../scenarios/data/S00_tutorial.json" with { type: "json" };
 
 const adminId = "f6100000-0000-0000-0000-000000000001";
 const versionId = "f6200000-0000-0000-0000-000000000001";
 
-async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: boolean } = {}) {
+async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: boolean; status?: "draft" | "approved"; allowStatus?: boolean; statusError?: boolean; wrongStatusResponse?: boolean; delayedStatus?: boolean } = {}) {
+  let currentStatus: string = options.status ?? "draft";
+  let statusAttempts = 0;
   const calls: Array<Record<string, unknown>> = [];
   let release: () => void = () => {};
   const pending = new Promise<void>(resolve => { release = resolve; });
@@ -25,10 +28,19 @@ async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: 
     else if (url.pathname === "/functions/v1/admin-scenario") {
       const request = route.request().postDataJSON() as Record<string, unknown>;
       calls.push(request);
-      if (request.action === "list") body = { versions: [{ id: versionId, version: 1, status: "draft", default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: tutorial.id, title: tutorial.title, is_active: true, is_competitive: false } }] };
+      if (request.action === "list") body = { versions: [{ id: versionId, version: 1, status: currentStatus, default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: tutorial.id, title: tutorial.title, is_active: true, is_competitive: false } }] };
       else if (request.action === "preview") {
         if (options.delayed) await pending;
         body = { preview: true, scenarioVersionId: options.wrongVersion ? adminId : versionId, scenario: tutorial };
+      } else if (request.action === "set-status" && options.allowStatus) {
+        statusAttempts += 1;
+        if (options.delayedStatus) await pending;
+        if (options.statusError && statusAttempts === 1) {
+          await route.fulfill({ status: 409, json: { error: "scenario_incident_debrief_required" } });
+          return;
+        }
+        currentStatus = String(request.status);
+        body = { updated: true, version: { id: options.wrongStatusResponse ? adminId : versionId, version: 1, status: currentStatus } };
       } else throw new Error(`Unexpected mutating admin action: ${request.action}`);
     } else throw new Error(`Preview tried to use another API: ${url.pathname}`);
     await route.fulfill({ json: body });
@@ -114,4 +126,76 @@ test("an automatic transition loop fails safely and a corrected preview can reop
   await expect(page.getByRole("alert")).toContainText("미리보기를 실행하지 못했습니다.");
   await page.getByRole("button", { name: "미리보기 닫기", exact: true }).click();
   await expect(await editorPreview(page)).toBeVisible();
+});
+
+
+test("status confirmation cancels by button and Escape without mutations; focus returns", async ({ page }) => {
+  const { calls } = await fixture(page, { allowStatus: true });
+  const trigger = page.getByRole("button", { name: "검토로", exact: true });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "시나리오 상태 변경 확인", exact: true });
+  await expect(dialog).toContainText(`${tutorial.title} · v1`);
+  await expect(dialog).toContainText("초안 → 검토");
+  await expect(dialog.getByRole("button", { name: "취소", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("button", { name: "검토 상태로 변경", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("button", { name: "취소", exact: true })).toBeFocused();
+  await dialog.getByRole("button", { name: "취소", exact: true }).click();
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  expect(calls.filter(call => call.action === "set-status")).toHaveLength(0);
+});
+
+test("explicit confirmation sends once, blocks pending dismissal, and updates the list", async ({ page }) => {
+  const { calls, release } = await fixture(page, { allowStatus: true, delayedStatus: true });
+  await page.getByRole("button", { name: "검토로", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "검토 상태로 변경", exact: true }).click();
+  await expect(dialog.getByRole("button", { name: "변경 중…", exact: true })).toBeDisabled();
+  await expect(dialog.getByRole("button", { name: "취소", exact: true })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeVisible();
+  release();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator(".scenario-status")).toHaveText("검토");
+  await expect(page.getByRole("heading", { name: "시나리오 관리", exact: true })).toBeFocused();
+  expect(calls.filter(call => call.action === "set-status")).toEqual([{ action: "set-status", scenarioVersionId: versionId, status: "review" }]);
+});
+
+test("publication describes impact and an HTTP error permits a deliberate retry", async ({ page }, testInfo) => {
+  const { calls } = await fixture(page, { allowStatus: true, status: "approved", statusError: true });
+  await page.getByRole("button", { name: "배포로", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("기존 배포 버전은 보관");
+  await expect(dialog).toContainText("활성 시즌의 버전 연결도 필요");
+  const accessibility = await new AxeBuilder({ page }).include(".scenario-status-dialog").withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  expect(accessibility.violations).toEqual([]);
+  if (testInfo.project.name === "mobile-390x844") await page.screenshot({ path: "/tmp/hero-scenario-status-dialog-mobile.png" });
+  const confirm = dialog.getByRole("button", { name: "배포 상태로 변경", exact: true });
+  await confirm.click();
+  await expect(dialog.getByRole("alert")).toContainText("익명화된 실사건 회고");
+  await expect(page.locator(".scenario-status")).toHaveText("승인");
+  await expect(confirm).toBeEnabled();
+  await confirm.click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator(".scenario-status")).toHaveText("배포");
+  expect(calls.filter(call => call.action === "set-status")).toHaveLength(2);
+});
+
+test("a mismatched success remains unconfirmed and refresh can reconcile the outcome", async ({ page }) => {
+  const { calls } = await fixture(page, { allowStatus: true, wrongStatusResponse: true });
+  await page.getByRole("button", { name: "검토로", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "검토 상태로 변경", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("반영 여부를 확인");
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "취소", exact: true }).click();
+  await page.getByRole("button", { name: "목록 새로고침", exact: true }).click();
+  await expect(page.locator(".scenario-status")).toHaveText("검토");
+  expect(calls.filter(call => call.action === "set-status")).toHaveLength(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
