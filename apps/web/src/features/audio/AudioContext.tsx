@@ -37,15 +37,15 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void manager.primeManifest();
-    const stopWhenHidden = () => { if (document.hidden) manager.stopNarration(); };
+    const stopWhenHidden = () => { if (document.hidden) { manager.stopNarration(); manager.stopAllSfx(); } };
     document.addEventListener("visibilitychange", stopWhenHidden);
-    const stop = () => manager.stopNarration();
+    const stop = () => { manager.stopNarration(); manager.stopAllSfx(); manager.stopBgm(0); };
     // pagehide also covers navigation into the browser back/forward cache.
     window.addEventListener("pagehide", stop);
     return () => {
       document.removeEventListener("visibilitychange", stopWhenHidden);
       window.removeEventListener("pagehide", stop);
-      manager.stopNarration();
+      stop();
     };
   }, [manager]);
 
