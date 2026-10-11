@@ -149,7 +149,7 @@ test("admin → manager → player invitation chain", async ({
   ).toBeVisible();
 
   // Review and cancel plant creation without mutating the database.
-  await page.getByRole("combobox", { name: "한수원 발전소 선택" }).selectOption("KORI1");
+  await page.getByRole("combobox", { name: "한수원 사업소·발전소 선택" }).selectOption("KORI1");
   await page.getByRole("button", { name: "발전소 생성 검토" }).click();
   const review = page.getByRole("group", { name: "발전소 생성 최종 확인" });
   await expect(review).toContainText("KORI1");

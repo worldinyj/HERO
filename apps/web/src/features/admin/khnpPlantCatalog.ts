@@ -115,6 +115,27 @@ export const KHNP_PLANT_CATALOG: readonly PlantSuggestion[] = [
     "displayName": "신한울1발",
     "group": "한울",
     "source": "https://m.khnp.co.kr/hanul/contents.do?key=1743"
+  },
+  {
+    "code": "KHNP_HQ",
+    "name": "한국수력원자력 본사",
+    "displayName": "본사",
+    "group": "본사",
+    "source": "https://www.khnp.co.kr/"
+  },
+  {
+    "code": "KHNP_CRI",
+    "name": "한국수력원자력 중앙연구원",
+    "displayName": "중앙연구원",
+    "group": "중앙연구원",
+    "source": "https://www.khnp.co.kr/"
+  },
+  {
+    "code": "KHNP_HRDI",
+    "name": "한국수력원자력 인재개발원",
+    "displayName": "인재개발원",
+    "group": "인재개발원",
+    "source": "https://www.khnp.co.kr/"
   }
 ];
 
@@ -123,7 +144,11 @@ export function availablePlantSuggestions(existingCodes: Iterable<string>): Plan
   return KHNP_PLANT_CATALOG.filter(plant => !codes.has(plant.code));
 }
 
-export const KHNP_HEADQUARTERS = ["고리", "한빛", "월성", "한울", "새울"] as const;
+export const KHNP_HEADQUARTERS = ["본사", "중앙연구원", "인재개발원", "고리", "한빛", "월성", "한울", "새울"] as const;
+
+export function khnpGroupLabel(group: string): string {
+  return ["본사", "중앙연구원", "인재개발원"].includes(group) ? group : `${group}원자력본부`;
+}
 
 export function groupedPlantSuggestions(existingCodes: Iterable<string>) {
   const codes = new Set(Array.from(existingCodes, code => code.trim().toUpperCase()));
