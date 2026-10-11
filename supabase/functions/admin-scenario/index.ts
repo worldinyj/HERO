@@ -17,15 +17,10 @@ interface RequestBody {
   scenario?: unknown;
   scenarioVersionId?: string;
   status?: ScenarioStatus;
+  expectedStatus?: ScenarioStatus;
 }
 
-const TRANSITIONS: Record<ScenarioStatus, ScenarioStatus[]> = {
-  draft: ["review", "archived"],
-  review: ["draft", "approved", "archived"],
-  approved: ["review", "published", "archived"],
-  published: ["archived"],
-  archived: ["draft"],
-};
+const STATUSES: readonly string[] = ["draft", "review", "approved", "published", "archived"];
 
 async function requireAdmin(req: Request) {
   const admin = adminClient();
@@ -140,78 +135,44 @@ async function setStatus(
   userId: string,
   scenarioVersionId: string,
   targetStatus: ScenarioStatus,
+  expectedStatus?: ScenarioStatus,
 ) {
   const { data: current, error: currentError } = await admin
     .from("scenario_versions")
-    .select("id, scenario_id, version, status, content")
+    .select("id, status, content")
     .eq("id", scenarioVersionId)
     .maybeSingle();
-
-  if (currentError || !current) {
-    throw new Error("scenario_version_not_found");
+  if (currentError) throw new Error("scenario_status_unavailable");
+  if (!current) throw new Error("scenario_version_not_found");
+  if (expectedStatus !== undefined && current.status !== expectedStatus) {
+    throw new Error("scenario_status_conflict");
   }
-
-  const currentStatus = current.status as ScenarioStatus;
-  if (!TRANSITIONS[currentStatus].includes(targetStatus)) {
-    throw new Error(`invalid_status_transition:${currentStatus}->${targetStatus}`);
-  }
-
-  if (targetStatus === "published") {
+  if (targetStatus === "approved" || targetStatus === "published") {
     const parsed = ScenarioSchema.safeParse(current.content);
-    if (!parsed.success) {
+    if (!parsed.success || validateScenarioGraph(parsed.data).some(issue => issue.severity === "error")) {
       throw new Error("scenario_content_invalid");
     }
-
-    if (
-      parsed.data.id !== "s00_tutorial" &&
-      !parsed.data.incidentDebrief
-    ) {
+    if (targetStatus === "published" && parsed.data.id !== "s00_tutorial" && !parsed.data.incidentDebrief) {
       throw new Error("scenario_incident_debrief_required");
     }
-
-    const { error: archiveError } = await admin
-      .from("scenario_versions")
-      .update({ status: "archived" })
-      .eq("scenario_id", current.scenario_id)
-      .eq("status", "published")
-      .neq("id", current.id);
-
-    if (archiveError) throw archiveError;
   }
-
-  const update: Record<string, unknown> = { status: targetStatus };
-
-  if (targetStatus === "approved") {
-    update.approved_by = userId;
-    update.approved_at = new Date().toISOString();
-  }
-
-  if (targetStatus === "published") {
-    update.published_at = new Date().toISOString();
-  }
-
-  const { data: updated, error: updateError } = await admin
-    .from("scenario_versions")
-    .update(update)
-    .eq("id", current.id)
-    .select("id, version, status, approved_at, published_at")
-    .single();
-
-  if (updateError) throw updateError;
-
-  await writeAuditLog(admin, {
-    actorUserId: userId,
-    action: "scenario.status_changed",
-    entityType: "scenario_version",
-    entityId: current.id,
-    metadata: {
-      from: currentStatus,
-      to: targetStatus,
-      version: current.version,
-    },
+  // Older cached clients omit expectedStatus. Even those requests use the
+  // read snapshot as a compare-and-set guard inside the locked transaction.
+  const { data, error } = await admin.rpc("set_scenario_status_atomic", {
+    p_actor_user_id: userId,
+    p_version_id: scenarioVersionId,
+    p_expected_status: expectedStatus ?? current.status,
+    p_target_status: targetStatus,
+    p_expected_content: current.content,
   });
-
-  return updated;
+  if (error) {
+    const domainErrors = ["admin_required", "scenario_version_not_found", "scenario_status_conflict",
+      "scenario_content_conflict", "invalid_status_transition", "scenario_content_invalid",
+      "scenario_incident_debrief_required"];
+    throw new Error(error.code === "P0001" && domainErrors.includes(error.message)
+      ? error.message : "scenario_status_unavailable");
+  }
+  return data;
 }
 
 Deno.serve(async (req) => {
@@ -298,7 +259,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === "set-status") {
-      if (!body.scenarioVersionId || !body.status) {
+      if (!isUuid(body.scenarioVersionId) || !STATUSES.includes(body.status ?? "") ||
+          (body.expectedStatus !== undefined && !STATUSES.includes(body.expectedStatus))) {
         return json(req, { error: "scenario_version_and_status_required" }, 400);
       }
 
@@ -306,7 +268,8 @@ Deno.serve(async (req) => {
         admin,
         user.id,
         body.scenarioVersionId,
-        body.status,
+        body.status!,
+        body.expectedStatus,
       );
 
       return json(req, { updated: true, version: updated });
@@ -320,9 +283,13 @@ Deno.serve(async (req) => {
         ? 401
         : message === "admin_required"
           ? 403
+          : message === "scenario_version_not_found"
+            ? 404
           : message === "scenario_version_already_exists"
             ? 409
-            : message === "scenario_incident_debrief_required" ||
+            : message === "scenario_status_conflict" ||
+                message === "scenario_content_conflict" ||
+                message === "scenario_incident_debrief_required" ||
                 message === "scenario_content_invalid" ||
                 message.startsWith("invalid_status_transition")
               ? 409
