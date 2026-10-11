@@ -6,6 +6,7 @@ import { AdminScenarioPreview } from "./AdminScenarioPreview";
 import { parsePreviewJson, readSavedPreview, type PreviewIssue } from "./scenarioPreviewValidation";
 
 import { confirmedStatusResponse, scenarioErrorMessage, STATUS_LABEL, type ScenarioStatus } from "./scenarioStatus";
+import { SeasonScenarioPanel } from "./SeasonScenarioPanel";
 import { ScenarioVersionComparison } from "./ScenarioVersionComparison";
 import { ScenarioStatusDialog, type StatusChange } from "./ScenarioStatusDialog";
 
@@ -71,6 +72,7 @@ export function AdminScenarioPage() {
   const [warnings, setWarnings] = useState<UploadIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [seasonBusy, setSeasonBusy] = useState(false);
   const [statusPending, setStatusPending] = useState<string | null>(null);
   const [statusChange, setStatusChange] = useState<StatusChange | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -250,7 +252,7 @@ export function AdminScenarioPage() {
         <p className="muted">
           JSON은 서버에서 스키마와 그래프 무결성을 다시 검증한 뒤 초안으로 저장됩니다.
         </p>
-        <button type="button" className="text-button" disabled={loading || saving || Boolean(statusPending)} onClick={() => void load()}>목록 새로고침</button>
+        <button type="button" className="text-button" disabled={loading || saving || (Boolean(statusPending) || seasonBusy)} onClick={() => void load()}>목록 새로고침</button>
       </header>
 
       {error ? (
@@ -300,7 +302,7 @@ export function AdminScenarioPage() {
           </div>
         ) : null}
 
-        <button type="button" className="secondary-button" disabled={saving || !preview?.scenario} onClick={event => { previewTrigger.current = event.currentTarget; previewEditor(); }}>입력한 JSON 미리보기</button>
+        <button type="button" className="secondary-button" disabled={saving || seasonBusy || !preview?.scenario} onClick={event => { previewTrigger.current = event.currentTarget; previewEditor(); }}>입력한 JSON 미리보기</button>
         {preview?.warnings.length ? <div className="validation-box"><strong>미리보기 검토 경고</strong>{preview.warnings.map((issue, index) => <p key={index}>{issue.message}</p>)}</div> : null}
 
         {issues.length > 0 ? (
@@ -329,7 +331,7 @@ export function AdminScenarioPage() {
         <button
           type="button"
           className="primary-button"
-          disabled={saving || !preview?.scenario}
+          disabled={saving || seasonBusy || !preview?.scenario}
           onClick={handleUpload}
         >
           {saving ? "검증·저장 중…" : "서버 검증 후 초안 저장"}
@@ -340,9 +342,11 @@ export function AdminScenarioPage() {
       {previewIssues.length ? <section className="panel validation-box validation-box--error" role="alert"><strong>미리보기를 열 수 없습니다.</strong>{previewIssues.slice(0, 8).map((issue, index) => <p key={index}>{issue.path ? `${issue.path}: ` : ""}{issue.message}</p>)}</section> : null}
       {playPreview ? <AdminScenarioPreview key={playPreview.revision} scenario={playPreview.scenario} sourceLabel={playPreview.sourceLabel} onClose={() => closePreview()} /> : null}
 
+      <SeasonScenarioPanel invoke={invoke} refreshKey={versions} disabled={saving || Boolean(statusPending)} onBusy={setSeasonBusy} />
+
       <ScenarioVersionComparison versions={comparisonVersions} editor={preview?.scenario ?? null} readVersion={id => invoke({ action: "preview", scenarioVersionId: id })} />
 
-      {statusChange ? <ScenarioStatusDialog change={statusChange} pending={Boolean(statusPending)} error={statusError} onCancel={closeStatusDialog} onConfirm={() => void handleStatus()} /> : null}
+      {statusChange ? <ScenarioStatusDialog change={statusChange} pending={(Boolean(statusPending) || seasonBusy)} error={statusError} onCancel={closeStatusDialog} onConfirm={() => void handleStatus()} /> : null}
 
       <section className="panel admin-section">
         <div className="section-heading">
@@ -388,7 +392,7 @@ export function AdminScenarioPage() {
                         key={status}
                         type="button"
                         className={status === "published" ? "primary-button compact-button" : "secondary-button compact-button"}
-                        disabled={Boolean(statusPending) || saving}
+                        disabled={Boolean(statusPending) || seasonBusy || saving}
                         onClick={event => { statusTrigger.current = event.currentTarget; setStatusError(null); setStatusChange({ id: row.id, title: scenario?.title ?? "시나리오", slug: scenario?.slug ?? "-", version: row.version, from: row.status, to: status }); }}
                       >
                         {STATUS_LABEL[status]}로
