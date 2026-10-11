@@ -26,3 +26,9 @@ DB 마이그레이션은 없다. 서버 admin-scenario → 웹 순서로 배포�
 - 초기 JS 크기 게이트와 소셜 메타데이터 검사 통과. 게임 검증/미리보기 코드는 관리자 lazy 경로에 포함되며 첫 로그인 번들의 크기 한도를 유지한다.
 
 모바일 테스트는 Supabase 응답을 fixture로 가로채는 UI 검사다. 실제 계정의 관리자 권한과 서버 배포 상태는 운영 반영 후 별도 확인한다.
+
+## 운영 배포 확인 (2026-10-11 KST)
+
+PR #91을 병합한 `58c14b7646a009f6883a03925f93cd9524381d27`를 운영 반영했다. quality·pgTAP·mobile-flow·Cloudflare Preview 모두 통과했다. admin-scenario는 v3 ACTIVE / JWT 검증 유지이며 DB 변경은 없다. Cloudflare 운영 배포 `56e65b1e-8403-4aa7-b30a-4ac9fcad884f`는 success이고 운영 자동 배포는 비활성 상태를 유지한다.
+
+운영 HTTP 34개 검사와 HTML·초기 JS·관리자 시나리오 JS·공유 엔진 JS의 로컬 빌드 바이트 일치를 확인했다. 실제 로그인된 관리자 화면에서 튜토리얼 JSON을 저장 없이 열어 행동 선택 화면과 닫기 후 포커스 복귀를 확인했다. 저장된 시나리오 버전은 0개였으므로 실제 저장 버전 preview 호출 검증은 남아 있다(응답 계약과 취소 동작은 fixture 테스트 통과). 증빙: `ops/admin-scenario-preview-deployment-20261011.json`.

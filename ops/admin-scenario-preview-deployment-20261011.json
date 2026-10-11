@@ -1,0 +1,70 @@
+{
+  "pullRequest": 91,
+  "mergeCommit": "58c14b7646a009f6883a03925f93cd9524381d27",
+  "deployment": {
+    "id": "56e65b1e-8403-4aa7-b30a-4ac9fcad884f",
+    "url": "https://56e65b1e.hero-dnr.pages.dev",
+    "environment": "production",
+    "commit": "58c14b7646a009f6883a03925f93cd9524381d27",
+    "stage": {
+      "name": "deploy",
+      "started_on": null,
+      "ended_on": "2026-10-11T08:41:14.535513Z",
+      "status": "success"
+    },
+    "created_on": "2026-10-11T08:41:13.227744Z"
+  },
+  "productionAutoDeploy": false,
+  "assets": [
+    {
+      "asset": "index.html",
+      "bytes": 2328,
+      "match": true
+    },
+    {
+      "asset": "assets/index-tOJbBFjT.js",
+      "bytes": 310331,
+      "match": true
+    },
+    {
+      "asset": "assets/AdminScenarioPage-Cv22eEFp.js",
+      "bytes": 12859,
+      "match": true
+    },
+    {
+      "asset": "assets/src-CC1oPXHz.js",
+      "bytes": 105360,
+      "match": true
+    }
+  ],
+  "function": {
+    "slug": "admin-scenario",
+    "status": "ACTIVE",
+    "version": 3,
+    "verify_jwt": true,
+    "ezbr_sha256": "6c0193af97f9d30511f281881b852bed43c0ab8b17226d331d9e14aa91341d06"
+  },
+  "httpChecks": {
+    "passed": 34,
+    "total": 34
+  },
+  "ci": {
+    "quality": "pass",
+    "pgtap": "pass",
+    "mobile-flow": "pass",
+    "Cloudflare Pages": "pass"
+  },
+  "localTests": {
+    "unit": 330,
+    "mobilePreview": 10
+  },
+  "productionUi": {
+    "adminAuthenticated": true,
+    "jsonPreviewOpened": true,
+    "decisionVisible": true,
+    "closeRestoresFocus": true,
+    "savedVersionCount": 0,
+    "savedVersionPreview": "not verified live; fixture tests passed",
+    "scenarioSaved": false
+  }
+}
