@@ -7,11 +7,13 @@ import {
 import { handleOptions, json } from "../_shared/http.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
+import { isUuid } from "../_shared/uuid.ts";
+import { readJsonObject } from "../_shared/jsonObject.ts";
 
 type ScenarioStatus = "draft" | "review" | "approved" | "published" | "archived";
 
 interface RequestBody {
-  action?: "list" | "upload" | "set-status";
+  action?: "list" | "preview" | "upload" | "set-status";
   scenario?: unknown;
   scenarioVersionId?: string;
   status?: ScenarioStatus;
@@ -222,18 +224,29 @@ Deno.serve(async (req) => {
 
   try {
     const { admin, user } = await requireAdmin(req);
-    const body = (await req.json()) as RequestBody;
+    const raw = await readJsonObject(req);
+    if (!raw) return json(req, { error: "invalid_request" }, 400);
+    const body = raw as RequestBody;
     const action = body.action ?? "list";
     const limited = await guardRateLimit(req, admin, {
       scope: `admin-scenario:${action}`,
       subject: user.id,
-      limit: action === "list" ? 120 : 30,
-      windowSeconds: action === "list" ? 300 : 600,
+      limit: action === "list" || action === "preview" ? 120 : 30,
+      windowSeconds: action === "list" || action === "preview" ? 300 : 600,
     });
     if (limited) return limited;
 
     if (action === "list") {
       return json(req, { versions: await listVersions(admin) });
+    }
+
+    if (action === "preview") {
+      if (!isUuid(body.scenarioVersionId)) return json(req, { error: "invalid_request" }, 400);
+      const { data, error } = await admin.from("scenario_versions")
+        .select("id, content").eq("id", body.scenarioVersionId).maybeSingle();
+      if (error) return json(req, { error: "scenario_preview_unavailable" }, 500);
+      if (!data) return json(req, { error: "scenario_version_not_found" }, 404);
+      return json(req, { preview: true, scenarioVersionId: data.id, scenario: data.content });
     }
 
     if (action === "upload") {
