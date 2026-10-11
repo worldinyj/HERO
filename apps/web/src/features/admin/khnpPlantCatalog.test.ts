@@ -4,7 +4,7 @@ import { availablePlantSuggestions, groupedPlantSuggestions, khnpGroupLabel, KHN
 describe("KHNP station presets", () => {
   it("keeps all eighteen KHNP organizational entries unique", () => {
     expect(KHNP_PLANT_CATALOG).toHaveLength(18);
-    expect(new Set(KHNP_PLANT_CATALOG.map(item => item.code)).size).toBe(15);
+    expect(new Set(KHNP_PLANT_CATALOG.map(item => item.code)).size).toBe(18);
     expect(KHNP_PLANT_CATALOG.every(item => item.source.startsWith("https://"))).toBe(true);
   });
   it("includes Shin-Hanul as a distinct unit and prevents HANUL3 duplication", () => {
@@ -15,7 +15,7 @@ describe("KHNP station presets", () => {
   it("groups five headquarters and three central organizations and keeps registered plants visible but unavailable", () => {
     const groups = groupedPlantSuggestions(["hanul3"]);
     expect(groups.map(group => group.group)).toEqual(["본사", "중앙연구원", "인재개발원", "고리", "한빛", "월성", "한울", "새울"]);
-    expect(groups.flatMap(group => group.plants)).toHaveLength(15);
+    expect(groups.flatMap(group => group.plants)).toHaveLength(18);
     const hanul3 = groups.flatMap(group => group.plants).find(item => item.code === "HANUL3");
     expect(hanul3?.registered).toBe(true);
     expect(groups.flatMap(group => group.plants).filter(item => item.registered)).toHaveLength(1);
