@@ -14,6 +14,8 @@ import {
   saveGameSession,
 } from "../../lib/gamePersistence";
 
+let hydrationRequest = 0;
+
 interface TutorialGameStore {
   game: GameState | null;
   previousBestMetricAvg: number | null;
@@ -47,6 +49,7 @@ export const useTutorialGameStore = create<TutorialGameStore>((set, get) => ({
   hydrating: false,
 
   start: (scenario) => {
+    hydrationRequest += 1;
     const game = createGame(scenario, {
       simulationSeed: "tutorial-local-v1",
       presentationSeed: "tutorial-ui-v1",
@@ -62,10 +65,12 @@ export const useTutorialGameStore = create<TutorialGameStore>((set, get) => ({
   },
 
   hydrate: async (scenario) => {
+    const request = ++hydrationRequest;
     set({ hydrating: true });
 
     try {
       const saved = await loadGameSession(scenario.id);
+      if (request !== hydrationRequest) return false;
 
       if (
         saved &&
@@ -86,6 +91,7 @@ export const useTutorialGameStore = create<TutorialGameStore>((set, get) => ({
 
       if (saved) {
         await clearGameSession(scenario.id);
+        if (request !== hydrationRequest) return false;
       }
 
       set({
@@ -96,6 +102,7 @@ export const useTutorialGameStore = create<TutorialGameStore>((set, get) => ({
       });
       return false;
     } catch {
+      if (request !== hydrationRequest) return false;
       set({
         game: null,
         previousBestMetricAvg: null,
@@ -149,6 +156,7 @@ export const useTutorialGameStore = create<TutorialGameStore>((set, get) => ({
   },
 
   reset: () => {
+    hydrationRequest += 1;
     const scenarioId = get().game?.scenarioId;
     if (scenarioId) {
       void clearGameSession(scenarioId).catch(() => {

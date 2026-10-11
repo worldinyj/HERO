@@ -448,7 +448,7 @@ export function CompetitiveBriefingPage({
           type="button"
           className="primary-button briefing-start"
           disabled={!canStart || !audioSettings.initialized}
-          onClick={() => navigate(`/play/${scenarioId}`)}
+          onClick={() => { audioManager.unlock(); navigate(`/play/${scenarioId}`); }}
         >
           {data.resumeAvailable
             ? "이어하기"

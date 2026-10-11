@@ -162,3 +162,8 @@ HERO/
 - 접근성: mute 상태에서도 의미 손실 없음
 
 승인되지 않은 후보 파일은 `apps/web/public/audio`에 넣지 않는다.
+
+
+## 튜토리얼 나레이션 제작
+
+BGM/SFX와 별도로 [튜토리얼 나레이션 제작 패키지](../assets/audio/prompts/NARRATION_S00_V1.md)를 사용한다. 기존 ElevenLabs 보이스 Jin Geon Song 선정 정보, Eleven v4 합성용 원문 5개, 파일명과 향후 재생 연결 기준을 정리했다. 나레이션 런타임은 구현했으며 실제 음원 생성·청취 검수·등록·운영 음성 검증은 대기 중이다.

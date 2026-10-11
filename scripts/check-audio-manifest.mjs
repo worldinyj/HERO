@@ -45,8 +45,8 @@ if (!existsSync(manifestPath)) {
           ids.add(asset.id);
         }
 
-        if (!["bgm", "sfx", "stinger"].includes(asset.kind)) {
-          fail(`${prefix}.kind must be bgm, sfx, or stinger`);
+        if (!["bgm", "sfx", "stinger", "narration"].includes(asset.kind)) {
+          fail(`${prefix}.kind must be bgm, sfx, stinger, or narration`);
         }
 
         if (
@@ -88,6 +88,35 @@ if (!existsSync(manifestPath)) {
           if (asset.approved === true && !existsSync(filePath)) {
             fail(`${prefix}: approved file is missing: ${asset.path}`);
           }
+        }
+
+        if (asset.kind === "narration") {
+          const binding = asset.narration;
+          if (!binding || typeof binding.scenarioId !== "string" ||
+              !/^[a-z0-9_]+$/u.test(binding.scenarioId) ||
+              !Number.isInteger(binding.scenarioVersion) || binding.scenarioVersion < 1 ||
+              typeof binding.nodeId !== "string" ||
+              !["text", "prompt", "revealText", "summary"].includes(binding.field) ||
+              typeof binding.text !== "string" || !binding.text.trim()) {
+            fail(`${prefix}: narration requires scenario/version/node/field/text binding`);
+          } else {
+            const scenarioFile = resolve(root, "scenarios/data", `${binding.scenarioId === "s00_tutorial" ? "S00_tutorial" : binding.scenarioId}.json`);
+            if (!existsSync(scenarioFile)) {
+              fail(`${prefix}: narration source must be an approved local scenario`);
+            } else {
+              const scenario = JSON.parse(readFileSync(scenarioFile, "utf8"));
+              const node = scenario.nodes[binding.nodeId];
+              const text = binding.field === "revealText"
+                ? node?.infoActions?.find((info) => info.actionId === binding.actionId)?.revealText
+                : node?.[binding.field];
+              if (scenario.id !== binding.scenarioId || scenario.version !== binding.scenarioVersion || text !== binding.text ||
+                  (binding.field !== "revealText" && binding.actionId !== undefined)) {
+                fail(`${prefix}: narration differs from scenario source`);
+              }
+            }
+          }
+          if (asset.loop === true || asset.preload === "essential") fail(`${prefix}: narration must not loop or use essential preload`);
+          if (asset.approved === true && (typeof asset.provenance?.voiceId !== "string" || !asset.provenance.voiceId.trim())) fail(`${prefix}: narration provenance.voiceId is required`);
         }
 
         if (asset.approved === true) {

@@ -1,3 +1,4 @@
+import { NarrationControl } from "../../audio/NarrationControl";
 import type { GameAction, GameView } from "@hero/engine";
 import type { ScenarioNode } from "@hero/schema";
 import { useEffect, useState } from "react";
@@ -8,10 +9,13 @@ import { BarrierCardTray } from "./BarrierCardTray";
 type DecisionNode = Extract<ScenarioNode, { type: "decision" }>;
 
 export function DecisionStage({
+  scenarioId, scenarioVersion,
   node,
   view,
   onAction,
 }: {
+  scenarioId: string;
+  scenarioVersion: number;
   node: DecisionNode;
   view: GameView;
   onAction: (action: GameAction) => void;
@@ -27,6 +31,7 @@ export function DecisionStage({
     <article className="decision-panel">
       <p className="eyebrow">Decision</p>
       <h2>{node.prompt}</h2>
+      <NarrationControl request={{ scenarioId, scenarioVersion, nodeId: view.nodeId, field: "prompt", text: node.prompt }} />
 
       {node.infoActions.length > 0 ? (
         <section
@@ -49,6 +54,8 @@ export function DecisionStage({
                   onClick={() => {
                     setSelectedChoice(null);
                     void audioManager.playSfx("SFX-05");
+                    void audioManager.playNarration({ scenarioId, scenarioVersion, nodeId: view.nodeId,
+                      field: "revealText", actionId: info.actionId, text: info.revealText });
                     onAction({ type: "info", actionId: info.actionId });
                   }}
                 >
@@ -66,9 +73,11 @@ export function DecisionStage({
               ),
             )
             .map((info) => (
-              <p key={info.actionId} className="info-reveal" role="status">
-                {info.revealText}
-              </p>
+              <div key={info.actionId}>
+                <p className="info-reveal" role="status">{info.revealText}</p>
+                <NarrationControl autoPlay={false} request={{ scenarioId, scenarioVersion,
+                  nodeId: view.nodeId, field: "revealText", actionId: info.actionId, text: info.revealText }} />
+              </div>
             ))}
         </section>
       ) : null}

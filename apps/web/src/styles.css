@@ -2904,3 +2904,6 @@ h3 {
 
 .season-scenario-panel { overflow-wrap: anywhere; }
 .season-scenario-panel .scenario-status-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.narration-control { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-block: 0.75rem; }
+.narration-control small { flex-basis: 100%; }

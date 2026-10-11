@@ -1,3 +1,4 @@
+import { NarrationControl } from "../audio/NarrationControl";
 import {
   act,
   createGame,
@@ -642,6 +643,8 @@ export function CompetitiveGamePage({
             <h2>{node.title}</h2>
             <EndingStamp ending={node.ending} />
             <p>{node.summary}</p>
+            <NarrationControl request={{ scenarioId: scenario.id, scenarioVersion: scenario.version,
+              nodeId: view.nodeId, field: "summary", text: node.summary }} />
             <p className="review-note">
               결과는 한 사람의 마지막 행동이 아니라 조건과 방어막의 누적을
               중심으로 돌아봅니다. 회고가 끝나면 서버가 동일 seed와 행동 로그를
@@ -832,7 +835,7 @@ export function CompetitiveGamePage({
         </div>
       ) : null}
 
-      <PlayNodeStage view={view} onAction={dispatch} />
+      <PlayNodeStage scenarioId={scenario.id} scenarioVersion={scenario.version} view={view} onAction={dispatch} />
     </section>
   );
 }

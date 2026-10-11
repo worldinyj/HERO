@@ -78,6 +78,18 @@ export function AdminScenarioPage() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const statusLock = useRef(false);
   const statusTrigger = useRef<HTMLButtonElement | null>(null);
+  const restoreStatusFocus = useRef(false);
+  useEffect(() => {
+    if (statusChange || !restoreStatusFocus.current) return;
+    restoreStatusFocus.current = false;
+    // Restore after the dialog and refreshed status buttons have committed.
+    const frame = window.requestAnimationFrame(() => {
+      const trigger = statusTrigger.current;
+      if (trigger?.isConnected && !trigger.disabled) trigger.focus();
+      else document.getElementById("scenario-admin-title")?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [statusChange]);
   const [error, setError] = useState<string | null>(null);
   const [playPreview, setPlayPreview] = useState<{ scenario: Scenario; sourceLabel: string; revision: number } | null>(null);
   const [previewIssues, setPreviewIssues] = useState<PreviewIssue[]>([]);
@@ -210,13 +222,9 @@ export function AdminScenarioPage() {
 
   function closeStatusDialog() {
     if (statusLock.current) return;
+    restoreStatusFocus.current = true;
     setStatusChange(null);
     setStatusError(null);
-    window.requestAnimationFrame(() => {
-      const trigger = statusTrigger.current;
-      if (trigger?.isConnected && !trigger.disabled) trigger.focus();
-      else document.getElementById("scenario-admin-title")?.focus();
-    });
   }
 
   async function handleStatus() {
