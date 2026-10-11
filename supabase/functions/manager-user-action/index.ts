@@ -7,7 +7,7 @@ import { readJsonObject } from "../_shared/jsonObject.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
 
-type Action = "cancel-invite" | "reissue-invite" | "set-player-active";
+type Action = "cancel-invite" | "reissue-invite" | "reinvite-manager" | "set-player-active";
 type OperatorRole = "admin" | "plant_manager";
 
 interface RequestBody {
@@ -233,6 +233,27 @@ async function setPlayerActive(
   return result;
 }
 
+async function reinviteManager(operator: OperatorContext, profileId: string) {
+  if (operator.role !== "admin") throw new Error("admin_required");
+  const token = randomToken();
+  const inviteUrl = buildInviteUrl(Deno.env.get("SITE_URL"), token);
+  const { data, error } = await operator.admin.rpc("reinvite_manager_atomic", {
+    p_actor_user_id: operator.userId,
+    p_profile_id: profileId,
+    p_token_hash: await sha256Hex(token),
+    p_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+  if (error) throw error;
+  const result = data as Record<string, unknown> | null;
+  if (result?.reissued !== true || result.managerProfileId !== profileId ||
+    !isUuid(result.invitationId) || typeof result.expiresAt !== "string" ||
+    !Number.isFinite(Date.parse(result.expiresAt)) ||
+    typeof result.plantDisplayName !== "string" || !result.plantDisplayName.trim()) {
+    throw new Error("reinvite_result_unknown");
+  }
+  return { ...result, inviteUrl };
+}
+
 Deno.serve(async (req) => {
   const options = handleOptions(req);
   if (options) return options;
@@ -255,6 +276,10 @@ Deno.serve(async (req) => {
     if (limited) return limited;
 
     switch (body.action) {
+      case "reinvite-manager": {
+        if (!isUuid(body.profileId)) return json(req, { error: "invalid_request" }, 400);
+        return json(req, await reinviteManager(operator, body.profileId), 201);
+      }
       case "cancel-invite": {
         if (!isUuid(body.invitationId)) {
           return json(req, { error: "invitation_id_required" }, 400);

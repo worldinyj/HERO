@@ -14,6 +14,7 @@ interface InvitePreview {
   plantDisplayName?: string;
   expiresAt?: string;
   reason?: string;
+  existingManager?: boolean;
 }
 
 const NICKNAME_ERROR_LABEL: Record<string, string> = {
@@ -167,11 +168,9 @@ export function InvitationPage() {
     if (
       !session ||
       accepted ||
-      !verifiedNickname?.available ||
-      verifiedNickname.checking ||
       pending ||
-      !termsAccepted ||
-      !privacyAccepted
+      (!preview?.existingManager && (!verifiedNickname?.available || verifiedNickname.checking ||
+        !termsAccepted || !privacyAccepted))
     ) return;
 
     try {
@@ -180,7 +179,7 @@ export function InvitationPage() {
 
       const supabase = getSupabase();
       const { data, error: invokeError } = await supabase.functions.invoke("accept-invite", {
-        body: {
+        body: preview?.existingManager ? { token } : {
           token,
           nickname,
           termsAccepted,
@@ -188,7 +187,16 @@ export function InvitationPage() {
         },
       });
 
-      if (invokeError) throw invokeError;
+      if (invokeError) {
+        if (preview?.existingManager && "context" in invokeError && invokeError.context instanceof Response) {
+          const failure = await invokeError.context.clone().json().catch(() => null) as { error?: string } | null;
+          if (failure?.error === "invitation_account_mismatch") {
+            throw new Error("이전에 담당자로 가입한 카카오 계정으로 로그인해주세요. 현재 로그인한 계정은 이 링크의 대상이 아닙니다.");
+          }
+          if (failure?.error === "active_manager_required") throw new Error("담당자 계정의 활성 상태와 소속을 관리자에게 확인해주세요.");
+        }
+        throw invokeError;
+      }
 
       const result = data as { accepted?: boolean; error?: string };
       if (!result.accepted) {
@@ -264,11 +272,20 @@ export function InvitationPage() {
         </div>
       ) : !session ? (
         <>
-          <p className="muted">카카오 로그인 후 닉네임과 동의를 확인하면 가입이 완료됩니다.</p>
+          <p className="muted">{preview.existingManager
+            ? "이전에 담당자로 가입한 동일한 카카오 계정으로 로그인해주세요. 기존 닉네임과 학습기록을 유지합니다."
+            : "카카오 로그인 후 닉네임과 동의를 확인하면 가입이 완료됩니다."}</p>
           <button className="kakao-button" type="button" onClick={handleKakaoLogin}>
             카카오로 시작하기
           </button>
         </>
+      ) : preview.existingManager ? (
+        <div className="invite-form">
+          <p className="notice">기존 담당자 계정의 접속을 확인합니다. 닉네임·권한·학습기록은 유지됩니다.</p>
+          <button type="button" className="primary-button" disabled={pending} onClick={handleAccept}>
+            {pending ? "계정 확인 중…" : "기존 담당자 계정으로 접속"}
+          </button>
+        </div>
       ) : (
         <div className="invite-form">
           <label>

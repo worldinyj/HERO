@@ -14,6 +14,8 @@ Deno.test("pre-mutation validation failures expose actionable 4xx responses", ()
     ["manager_or_admin_required", 403],
     ["manager_scope_violation", 403],
     ["admin_invitation_scope_violation", 403],
+    ["invitation_account_mismatch", 403],
+    ["active_manager_required", 403],
     ["plant_not_found", 404],
     ["invitation_not_found", 404],
     ["invitation_already_accepted", 409],

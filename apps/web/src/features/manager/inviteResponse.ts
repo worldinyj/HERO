@@ -44,6 +44,14 @@ export function readIssuedInviteLink(value: unknown): IssuedInviteLink | null {
   };
 }
 
+/** A manager re-entry response must refer to the selected existing identity. */
+export function readManagerReinviteLink(value: unknown, profileId: string): IssuedInviteLink | null {
+  const link = readIssuedInviteLink(value);
+  if (!link || value === null || typeof value !== "object") return null;
+  const data = value as Record<string, unknown>;
+  return data.reissued === true && data.managerProfileId === profileId ? link : null;
+}
+
 /** Reissue is a token rotation, not a new unrelated invite response. */
 export function readReissuedInviteLink(
   value: unknown,
