@@ -36,6 +36,7 @@ async function fixture(page: Page, options: { delay?: string; mismatch?: "id" | 
     else if (url.pathname === "/functions/v1/admin-scenario") {
       const request = route.request().postDataJSON() as Record<string, unknown>; calls.push(request);
       if (request.action === "list") body = { versions: options.empty ? [] : [beforeId, afterId, otherId].map((id, index) => ({ id, version: index === 1 ? 2 : 1, status: "draft", default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: index === 2 ? otherId : beforeId, slug: index === 2 ? "other_scenario" : tutorial.id, title: index === 2 ? "다른 시나리오" : "목록의 최신 제목", is_active: true, is_competitive: false } })) };
+      else if (request.action === "season-overview") body = { season: null, scenarios: [] };
       else if (request.action === "preview") {
         if (request.scenarioVersionId === options.delay) await delayed;
         const scenario = request.scenarioVersionId === afterId ? editedScenario() : structuredClone(tutorial);
@@ -80,7 +81,7 @@ test("saved versions compare by stable action ID without mutating state", async 
   await time.scrollIntoViewIfNeeded();
   if (testInfo.project.name === "mobile-390x844") await page.screenshot({ path: "/tmp/hero-scenario-comparison-mobile.png" });
   expect(calls.filter(call => call.action === "preview").map(call => call.scenarioVersionId).sort()).toEqual([beforeId, afterId].sort());
-  expect(calls.every(call => ["list", "preview"].includes(String(call.action)))).toBe(true);
+  expect(calls.every(call => ["list", "preview", "season-overview"].includes(String(call.action)))).toBe(true);
   expect(await page.evaluate(async () => (await indexedDB.databases()).length)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await result.getByRole("button", { name: "비교 닫기", exact: true }).click();
