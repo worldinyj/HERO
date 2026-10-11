@@ -28,8 +28,10 @@ export async function scenarioErrorMessage(cause: unknown): Promise<string> {
       if (data && typeof data === "object" && "error" in data && typeof data.error === "string") code = data.error;
     } catch { /* Keep the safe fallback for malformed server responses. */ }
   }
-  if (code.startsWith("invalid_status_transition:")) return "현재 상태에서는 변경할 수 없습니다. 취소 후 목록을 새로고침해 현재 상태를 확인해주세요.";
+  if (code === "invalid_status_transition" || code.startsWith("invalid_status_transition:")) return "현재 상태에서는 변경할 수 없습니다. 취소 후 목록을 새로고침해 현재 상태를 확인해주세요.";
   const messages: Record<string, string> = {
+    scenario_status_conflict: "다른 관리자가 상태를 변경했습니다. 취소 후 목록을 새로고침해 현재 상태를 확인해주세요.",
+    scenario_content_conflict: "저장된 내용이 변경되었습니다. 취소 후 목록을 새로고침하고 내용을 다시 확인해주세요.",
     scenario_incident_debrief_required: "경쟁 시나리오를 배포하려면 익명화된 실사건 회고를 먼저 작성해야 합니다.",
     scenario_content_invalid: "저장된 시나리오 내용이 현재 스키마와 맞지 않습니다. 새 버전으로 다시 업로드해주세요.",
     scenario_version_not_found: "해당 버전을 찾을 수 없습니다. 취소 후 목록을 새로고침해주세요.",

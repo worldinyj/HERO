@@ -10,7 +10,7 @@ const tests = [
 ["player_status_atomic",32],["nickname_force_reset_atomic",33],
 ["nickname_self_change_atomic",39],["admin_plant_atomic",34],
 ["plant_deactivation_epoch",39],["session_completion_atomic",33],
-["manager_reinvitation",31]
+["manager_reinvitation",31],["scenario_status_atomic",35]
 ];
 const migrations = ["leaderboard_public_projection","atomic_invitation_reissue",
 "atomic_invitation_cancel","atomic_invitation_creation","atomic_player_status",
@@ -37,7 +37,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===359,"pgTAP declarations total 359 (NOT executed)");
+check(total===394,"pgTAP declarations total 394 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also
@@ -86,7 +86,7 @@ for (const name of testNames) {
   if(plan!==count) mismatchedPlans.push(name+": plan "+plan+" != "+count);
 }
 mismatchedPlans.forEach(m=>console.error("INVALID pgTAP DECLARATION "+m));
-check(testNames.length===18 && allAssertions===448 && mismatchedPlans.length===0,
+check(testNames.length===19 && allAssertions===483 && mismatchedPlans.length===0,
   testNames.length+" pgTAP suites: "+allAssertions+" total planned declarations (NOT executed)");
 
 // Each assertion must quote SQL with $$...$$ (or a valid named tag).
@@ -346,6 +346,24 @@ check(managerReinviteSql.includes("references public.profiles(id)") &&
   managerReinviteSql.includes("to service_role;") &&
   adminUI.includes("readManagerReinviteLink(data, manager.id)"),
   "manager re-entry: bound identity, permission checks and exact UI response");
+const scenarioStatusSql = read("supabase/migrations/202610110026_atomic_scenario_status.sql");
+const scenarioStatusEdge = read("supabase/functions/admin-scenario/index.ts");
+check(scenarioStatusSql.includes("create unique index scenario_versions_one_published") &&
+  scenarioStatusSql.includes("where status = 'published'") &&
+  scenarioStatusSql.includes("from public.scenarios where id = v_scenario_id for update") &&
+  scenarioStatusSql.includes("v_current.status is distinct from p_expected_status") &&
+  scenarioStatusSql.includes("v_current.content is distinct from p_expected_content") &&
+  scenarioStatusSql.includes("from public, anon, authenticated;") &&
+  scenarioStatusSql.includes("to service_role;"),
+  "scenario status: single publication, parent lock, snapshot guards and service-only RPC");
+const statusStart = scenarioStatusEdge.indexOf("async function setStatus(");
+const statusEnd = scenarioStatusEdge.indexOf("Deno.serve", statusStart);
+const statusBody = scenarioStatusEdge.slice(statusStart, statusEnd);
+check(statusBody.includes('admin.rpc("set_scenario_status_atomic"') &&
+  statusBody.includes("p_expected_content: current.content") &&
+  !statusBody.includes(".update(") && !statusBody.includes("writeAuditLog(") &&
+  read("apps/web/src/features/admin/AdminScenarioPage.tsx").includes("expectedStatus: change.from"),
+  "scenario status: one atomic RPC and browser's confirmed prior state");
 console.log(failures?"STATIC CONTRACT CHECK FAIL: "+failures:
 "STATIC CONTRACT CHECK PASS. PostgreSQL/pgTAP/E2E NOT RUN.");
 if(failures)process.exitCode=1;

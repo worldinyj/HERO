@@ -27,6 +27,11 @@ describe("scenario server error guidance", () => {
     expect(message).toContain("목록을 새로고침");
     expect(message).not.toContain("secret");
   });
+  it("explains concurrent state and content changes", async () => {
+    expect(await scenarioErrorMessage({ context: new Response(JSON.stringify({ error: "scenario_status_conflict" }), { status: 409 }) })).toContain("다른 관리자가 상태를 변경");
+    expect(await scenarioErrorMessage(new Error("scenario_content_conflict"))).toContain("저장된 내용이 변경");
+    expect(await scenarioErrorMessage(new Error("invalid_status_transition"))).toContain("목록을 새로고침");
+  });
   it("does not expose unknown, malformed, or inherited error codes", async () => {
     for (const cause of [new Error("database secret"), new Error("toString"), { context: new Response("not JSON") }, { context: new Response("null") }, null]) {
       expect(await scenarioErrorMessage(cause)).toBe("처리 결과를 확인하지 못했습니다. 취소 후 목록을 새로고침해 반영 여부를 확인한 뒤 다시 시도해주세요.");

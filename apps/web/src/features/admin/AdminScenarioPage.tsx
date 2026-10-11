@@ -224,7 +224,7 @@ export function AdminScenarioPage() {
     setStatusPending(change.id);
     setStatusError(null);
     try {
-      const data = await invoke({ action: "set-status", scenarioVersionId: change.id, status: change.to });
+      const data = await invoke({ action: "set-status", scenarioVersionId: change.id, status: change.to, expectedStatus: change.from });
       if (!confirmedStatusResponse(data, change.id, change.to, change.version)) throw new Error("unconfirmed_status_response");
       await load();
       statusLock.current = false;
