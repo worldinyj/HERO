@@ -5,7 +5,8 @@ import { getSupabase } from "../../lib/supabase";
 import { AdminScenarioPreview } from "./AdminScenarioPreview";
 import { parsePreviewJson, readSavedPreview, type PreviewIssue } from "./scenarioPreviewValidation";
 
-type ScenarioStatus = "draft" | "review" | "approved" | "published" | "archived";
+import { confirmedStatusResponse, scenarioErrorMessage, STATUS_LABEL, type ScenarioStatus } from "./scenarioStatus";
+import { ScenarioStatusDialog, type StatusChange } from "./ScenarioStatusDialog";
 
 interface ScenarioVersionRow {
   id: string;
@@ -37,14 +38,6 @@ interface UploadIssue {
   code?: string;
   message: string;
 }
-
-const STATUS_LABEL: Record<ScenarioStatus, string> = {
-  draft: "초안",
-  review: "검토",
-  approved: "승인",
-  published: "배포",
-  archived: "보관",
-};
 
 const NEXT_STATUS: Record<ScenarioStatus, ScenarioStatus[]> = {
   draft: ["review", "archived"],
@@ -78,6 +71,10 @@ export function AdminScenarioPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusPending, setStatusPending] = useState<string | null>(null);
+  const [statusChange, setStatusChange] = useState<StatusChange | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const statusLock = useRef(false);
+  const statusTrigger = useRef<HTMLButtonElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [playPreview, setPlayPreview] = useState<{ scenario: Scenario; sourceLabel: string; revision: number } | null>(null);
   const [previewIssues, setPreviewIssues] = useState<PreviewIssue[]>([]);
@@ -203,28 +200,33 @@ export function AdminScenarioPage() {
     }
   }
 
-  async function handleStatus(versionId: string, status: ScenarioStatus) {
-    try {
-      setStatusPending(versionId);
-      setError(null);
-      await invoke({
-        action: "set-status",
-        scenarioVersionId: versionId,
-        status,
-      });
-      await load();
-    } catch (cause) {
-      const message =
-        cause instanceof Error ? cause.message : "상태 변경에 실패했습니다.";
+  function closeStatusDialog() {
+    if (statusLock.current) return;
+    setStatusChange(null);
+    setStatusError(null);
+    window.requestAnimationFrame(() => {
+      const trigger = statusTrigger.current;
+      if (trigger?.isConnected && !trigger.disabled) trigger.focus();
+      else document.getElementById("scenario-admin-title")?.focus();
+    });
+  }
 
-      setError(
-        message.includes("scenario_incident_debrief_required")
-          ? "경쟁 시나리오를 배포하려면 익명화된 실사건 공개(사건유형·근본원인·기여요인·HU Tool 교훈)를 먼저 작성해야 합니다."
-          : message.includes("scenario_content_invalid")
-            ? "저장된 시나리오 내용이 현재 스키마와 맞지 않습니다. 새 버전으로 다시 업로드해주세요."
-            : message,
-      );
+  async function handleStatus() {
+    if (!statusChange || statusLock.current) return;
+    const change = statusChange;
+    statusLock.current = true;
+    setStatusPending(change.id);
+    setStatusError(null);
+    try {
+      const data = await invoke({ action: "set-status", scenarioVersionId: change.id, status: change.to });
+      if (!confirmedStatusResponse(data, change.id, change.to, change.version)) throw new Error("unconfirmed_status_response");
+      await load();
+      statusLock.current = false;
+      closeStatusDialog();
+    } catch (cause) {
+      setStatusError(await scenarioErrorMessage(cause));
     } finally {
+      statusLock.current = false;
       setStatusPending(null);
     }
   }
@@ -238,10 +240,11 @@ export function AdminScenarioPage() {
           <strong>시나리오</strong>
         </div>
         <p className="eyebrow">Scenario Studio</p>
-        <h2 id="scenario-admin-title">시나리오 관리</h2>
+        <h2 id="scenario-admin-title" tabIndex={-1}>시나리오 관리</h2>
         <p className="muted">
           JSON은 서버에서 스키마와 그래프 무결성을 다시 검증한 뒤 초안으로 저장됩니다.
         </p>
+        <button type="button" className="text-button" disabled={loading || saving || Boolean(statusPending)} onClick={() => void load()}>목록 새로고침</button>
       </header>
 
       {error ? (
@@ -331,6 +334,8 @@ export function AdminScenarioPage() {
       {previewIssues.length ? <section className="panel validation-box validation-box--error" role="alert"><strong>미리보기를 열 수 없습니다.</strong>{previewIssues.slice(0, 8).map((issue, index) => <p key={index}>{issue.path ? `${issue.path}: ` : ""}{issue.message}</p>)}</section> : null}
       {playPreview ? <AdminScenarioPreview key={playPreview.revision} scenario={playPreview.scenario} sourceLabel={playPreview.sourceLabel} onClose={() => closePreview()} /> : null}
 
+      {statusChange ? <ScenarioStatusDialog change={statusChange} pending={Boolean(statusPending)} error={statusError} onCancel={closeStatusDialog} onConfirm={() => void handleStatus()} /> : null}
+
       <section className="panel admin-section">
         <div className="section-heading">
           <div>
@@ -375,8 +380,8 @@ export function AdminScenarioPage() {
                         key={status}
                         type="button"
                         className={status === "published" ? "primary-button compact-button" : "secondary-button compact-button"}
-                        disabled={statusPending === row.id}
-                        onClick={() => void handleStatus(row.id, status)}
+                        disabled={Boolean(statusPending) || saving}
+                        onClick={event => { statusTrigger.current = event.currentTarget; setStatusError(null); setStatusChange({ id: row.id, title: scenario?.title ?? "시나리오", slug: scenario?.slug ?? "-", version: row.version, from: row.status, to: status }); }}
                       >
                         {STATUS_LABEL[status]}로
                       </button>
