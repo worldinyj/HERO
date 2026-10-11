@@ -1,0 +1,65 @@
+{
+  "pullRequest": 93,
+  "mergeCommit": "a820b668883625fc3ba8b73345922e1cab979c1b",
+  "deployment": {
+    "id": "5ae289a6-c58c-4502-aaf6-86d16663c05f",
+    "url": "https://5ae289a6.hero-dnr.pages.dev",
+    "environment": "production",
+    "commit": "a820b668883625fc3ba8b73345922e1cab979c1b",
+    "stage": {
+      "name": "deploy",
+      "started_on": null,
+      "ended_on": "2026-10-11T10:53:14.697826Z",
+      "status": "success"
+    },
+    "created_on": "2026-10-11T10:53:13.543699Z"
+  },
+  "productionAutoDeploy": false,
+  "assets": [
+    {
+      "asset": "index.html",
+      "bytes": 2328,
+      "match": true
+    },
+    {
+      "asset": "assets/index-BMQbMywG.js",
+      "bytes": 310331,
+      "match": true
+    },
+    {
+      "asset": "assets/index-2K6usiVx.css",
+      "bytes": 44078,
+      "match": true
+    },
+    {
+      "asset": "assets/AdminScenarioPage-OFJ-Lj1r.js",
+      "bytes": 26697,
+      "match": true
+    }
+  ],
+  "dateKst": "2026-10-11",
+  "ci": {
+    "quality": "pass",
+    "pgtap": "pass",
+    "mobile-flow": "pass",
+    "Cloudflare Pages": "pass"
+  },
+  "tests": {
+    "unit": 342,
+    "mobileComparison": 22,
+    "mobileExistingPreviewAndStatus": 18,
+    "comparisonAxeViolations": 0
+  },
+  "httpChecks": {
+    "passed": 34,
+    "total": 34
+  },
+  "backendChanged": false,
+  "productionUi": {
+    "authenticatedAdmin": true,
+    "comparisonSectionVisible": true,
+    "savedVersionCount": 0,
+    "actualSavedVersionComparison": "not performed; no saved versions",
+    "scenarioMutationPerformed": false
+  }
+}
