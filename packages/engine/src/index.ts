@@ -1,4 +1,4 @@
-export const HERO_PRODUCT_NAME = "HERO" as const;
+export { HERO_PRODUCT_NAME } from "./metadata.ts";
 
 export * from "./catalog.ts";
 export * from "./engine.ts";
