@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
+import { readIssuedInviteLink, readManagerReinviteLink, readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
 
 const good = {
   invitationId: "11111111-1111-4111-8111-111111111111",
@@ -71,5 +71,21 @@ describe("cancellation acknowledgment matches requested invitation", () => {
     expect(readCanceledInviteResult({ ...acknowledgment, canceled: false }, "11111111-1111-4111-8111-111111111111")).toBeNull();
     expect(readCanceledInviteResult({ ...acknowledgment, canceledAt: "broken" }, "11111111-1111-4111-8111-111111111111")).toBeNull();
     expect(readCanceledInviteResult(null, "11111111-1111-4111-8111-111111111111")).toBeNull();
+  });
+});
+
+// Existing-account reinvites must not accept a response for another manager.
+describe("manager re-entry link", () => {
+  it("checks the exact manager identity and issued URL contract", () => {
+    const response = {
+      reissued: true, managerProfileId: "manager-a",
+      invitationId: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      inviteUrl: "https://hero.example/i/opaque-token",
+      expiresAt: "2026-10-18T00:00:00Z", plantDisplayName: "Hanul",
+    };
+    expect(readManagerReinviteLink(response, "manager-a")).not.toBeNull();
+    expect(readManagerReinviteLink(response, "manager-b")).toBeNull();
+    expect(readManagerReinviteLink({ ...response, reissued: false }, "manager-a")).toBeNull();
+    expect(readManagerReinviteLink({ ...response, inviteUrl: "https://evil.example/i/token?extra=1" }, "manager-a")).toBeNull();
   });
 });

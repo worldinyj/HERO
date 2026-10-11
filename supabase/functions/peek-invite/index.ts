@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await admin
       .from("invitations")
-      .select("id, invitee_name, target_role, job_role, team_name, expires_at, canceled_at, accepted_at, plant_invitation_epoch, plants!inner(display_name, is_active, invitation_epoch)")
+      .select("id, invitee_name, target_role, target_profile_id, job_role, team_name, expires_at, canceled_at, accepted_at, plant_invitation_epoch, plants!inner(display_name, is_active, invitation_epoch)")
       .eq("token_hash", tokenHash)
       .maybeSingle();
 
@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
       invitationId: data.id,
       inviteeName: data.invitee_name,
       targetRole: data.target_role,
+      existingManager: data.target_profile_id != null,
       jobRole: data.job_role,
       teamName: data.team_name,
       plantDisplayName: plant.display_name,

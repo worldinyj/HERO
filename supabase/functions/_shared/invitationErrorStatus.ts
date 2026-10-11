@@ -33,6 +33,8 @@ const CLIENT_REJECTIONS: Readonly<Record<string, number>> = {
   plant_inactive: 403,
   inactive_or_missing_profile: 403,
   admin_required: 403,
+  invitation_account_mismatch: 403,
+  active_manager_required: 403,
 
   invitation_not_found: 404,
   player_not_found: 404,

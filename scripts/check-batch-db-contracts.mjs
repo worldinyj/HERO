@@ -9,7 +9,8 @@ const tests = [
 ["invitation_atomic_cancel",27],["invitation_atomic_creation",27],
 ["player_status_atomic",32],["nickname_force_reset_atomic",33],
 ["nickname_self_change_atomic",39],["admin_plant_atomic",34],
-["plant_deactivation_epoch",39],["session_completion_atomic",33]
+["plant_deactivation_epoch",39],["session_completion_atomic",33],
+["manager_reinvitation",31]
 ];
 const migrations = ["leaderboard_public_projection","atomic_invitation_reissue",
 "atomic_invitation_cancel","atomic_invitation_creation","atomic_player_status",
@@ -36,7 +37,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===328,"pgTAP declarations total 328 (NOT executed)");
+check(total===359,"pgTAP declarations total 359 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also
@@ -85,7 +86,7 @@ for (const name of testNames) {
   if(plan!==count) mismatchedPlans.push(name+": plan "+plan+" != "+count);
 }
 mismatchedPlans.forEach(m=>console.error("INVALID pgTAP DECLARATION "+m));
-check(testNames.length===17 && allAssertions===417 && mismatchedPlans.length===0,
+check(testNames.length===18 && allAssertions===448 && mismatchedPlans.length===0,
   testNames.length+" pgTAP suites: "+allAssertions+" total planned declarations (NOT executed)");
 
 // Each assertion must quote SQL with $$...$$ (or a valid named tag).
@@ -337,6 +338,14 @@ for(const [fn,forbidden] of [
 ["nickname-action","writeAuditLog("]]) {
   check(!read("supabase/functions/"+fn+"/index.ts").includes(forbidden),fn+": no split audit write");
 }
+const managerReinviteSql = read("supabase/migrations/202610110025_manager_reinvitation.sql");
+check(managerReinviteSql.includes("references public.profiles(id)") &&
+  managerReinviteSql.includes("'invitation_account_mismatch'") &&
+  managerReinviteSql.includes("'active_manager_required'") &&
+  managerReinviteSql.includes("from public, anon, authenticated;") &&
+  managerReinviteSql.includes("to service_role;") &&
+  adminUI.includes("readManagerReinviteLink(data, manager.id)"),
+  "manager re-entry: bound identity, permission checks and exact UI response");
 console.log(failures?"STATIC CONTRACT CHECK FAIL: "+failures:
 "STATIC CONTRACT CHECK PASS. PostgreSQL/pgTAP/E2E NOT RUN.");
 if(failures)process.exitCode=1;

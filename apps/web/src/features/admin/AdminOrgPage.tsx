@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
-import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult } from "../manager/inviteResponse";
+import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult, readManagerReinviteLink } from "../manager/inviteResponse";
 import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
@@ -36,6 +36,7 @@ interface InviteResult {
   inviteUrl: string;
   expiresAt: string;
   plantDisplayName: string;
+  existingManagerName?: string;
 }
 
 interface PendingManagerInviteRow {
@@ -102,6 +103,7 @@ export function AdminOrgPage() {
   const [inviteResult, setInviteResult] = useState<InviteResult | null>(null);
   const [copied, setCopied] = useState(false);
   const [managerInviteActionPending, setManagerInviteActionPending] = useState<string | null>(null);
+  const [managerReinviteReview, setManagerReinviteReview] = useState<ManagerRow | null>(null);
 
   async function load(preferredInvitePlantCode?: string): Promise<boolean> {
     const revision = rosterGate.current.begin();
@@ -347,9 +349,9 @@ export function AdminOrgPage() {
     setError(null);
   }
 
-  async function handleCreateManagerInvite() {
+  async function handleCreateManagerInvite(manager?: ManagerRow) {
     if (
-      creatingInvite || createOutcomeUnknown || adminRosterPending ||
+      creatingInvite || managerInviteActionPending || createOutcomeUnknown || adminRosterPending ||
       reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0
     ) return;
     // An issued URL exists only in this component: preserve it until the
@@ -358,7 +360,7 @@ export function AdminOrgPage() {
       setError("기존 담당자 초대 링크를 먼저 보관하고 '새 초대 작성'을 눌러주세요.");
       return;
     }
-    if (!invitePlantId || !inviteeName.trim()) {
+    if (!manager && (!invitePlantId || !inviteeName.trim())) {
       setError("발전소와 담당자 이름을 입력해주세요.");
       return;
     }
@@ -370,9 +372,9 @@ export function AdminOrgPage() {
 
       const supabase = getSupabase();
       const { data, error: invokeError } = await supabase.functions.invoke(
-        "create-invite",
+        manager ? "manager-user-action" : "create-invite",
         {
-          body: {
+          body: manager ? { action: "reinvite-manager", profileId: manager.id } : {
             plantId: invitePlantId,
             targetRole: "plant_manager",
             inviteeName: inviteeName.trim(),
@@ -387,14 +389,15 @@ export function AdminOrgPage() {
         throw invokeError;
       }
 
-      const result = readIssuedInviteLink(data);
+      const result = manager ? readManagerReinviteLink(data, manager.id) : readIssuedInviteLink(data);
       if (!result) {
         // HTTP 2xx with an invalid one-time link may follow a committed INSERT.
         throw new InviteCreationOutcomeUnknownError();
       }
 
-      setInviteResult(result);
-      setInviteeName("");
+      setInviteResult(manager ? { ...result, existingManagerName: manager.real_name } : result);
+      setManagerReinviteReview(null);
+      if (!manager) setInviteeName("");
       await load();
     } catch (cause) {
       if (cause instanceof InviteCreationOutcomeUnknownError) {
@@ -793,7 +796,7 @@ export function AdminOrgPage() {
               !invitePlantId || adminRosterPending ||
               reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0
             }
-            onClick={handleCreateManagerInvite}
+            onClick={() => void handleCreateManagerInvite()}
           >
             {creatingInvite ? "초대 생성 중…" : "담당자 초대 링크 생성"}
           </button>
@@ -828,9 +831,31 @@ export function AdminOrgPage() {
           </div>
         ) : null}
 
+        {managerReinviteReview ? (
+          <div className="invite-result-box" role="group" aria-label="담당자 초대링크 재생성 확인">
+            <strong>{managerReinviteReview.real_name} 담당자 초대링크 재생성</strong>
+            <p>{managerPlantLabel(managerReinviteReview)}</p>
+            <p className="muted">
+              기존에 가입한 동일한 카카오 계정으로만 사용할 수 있는 7일 유효 링크를 발급합니다.
+              닉네임·권한·학습기록은 유지되며, 이전에 재생성한 미사용 링크는 취소됩니다.
+            </p>
+            <div className="admin-row-actions">
+              <button type="button" className="primary-button"
+                disabled={creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||
+                  createOutcomeUnknown || adminRosterPending || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0}
+                onClick={() => void handleCreateManagerInvite(managerReinviteReview)}>
+                {creatingInvite ? "재생성 중…" : "초대링크 재생성 확정"}
+              </button>
+              <button type="button" className="text-button" disabled={creatingInvite}
+                onClick={() => setManagerReinviteReview(null)}>취소</button>
+            </div>
+          </div>
+        ) : null}
+
         {inviteResult ? (
           <div className="invite-result-box">
-            <strong>{inviteResult.plantDisplayName} 담당자 초대 링크</strong>
+            <strong>{inviteResult.existingManagerName ?? inviteResult.plantDisplayName} 담당자 초대 링크</strong>
+            {inviteResult.existingManagerName ? <p className="muted">이전에 가입한 동일한 카카오 계정으로 로그인해주세요. 유효기간은 7일입니다.</p> : null}
             <p className="muted mini-copy">
               보안을 위해 초대 토큰 원문은 서버에 저장하지 않습니다. 이 링크는 지금 복사해 전달해주세요.
             </p>
@@ -910,13 +935,24 @@ export function AdminOrgPage() {
                   <strong>{manager.real_name}</strong>
                   <span>{manager.nickname} · {managerPlantLabel(manager)}</span>
                 </div>
-                <span className={manager.is_active ? "status-pill status-pill--active" : "status-pill"}>
-                  {manager.is_active ? "활성" : "비활성"}
-                </span>
+                <div className="admin-row-actions">
+                  <span className={manager.is_active ? "status-pill status-pill--active" : "status-pill"}>
+                    {manager.is_active ? "활성" : "비활성"}
+                  </span>
+                  <button type="button" className="secondary-button compact-button"
+                    aria-label={`${manager.real_name} 담당자 초대링크 재생성`}
+                    disabled={!manager.is_active || !plants.some(p => p.id === manager.plant_id && p.is_active) ||
+                      creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||
+                      createOutcomeUnknown || adminRosterPending || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0}
+                    onClick={() => { setManagerReinviteReview(manager); setError(null); }}>
+                    초대링크 재생성
+                  </button>
+                </div>
               </article>
             ))
           )}
         </div>
+        <p className="muted mini-copy">활성은 계정 사용 허용 상태입니다. 재생성한 링크는 기존 담당자의 동일한 카카오 계정으로 사용해주세요.</p>
       </section>
     </section>
   );

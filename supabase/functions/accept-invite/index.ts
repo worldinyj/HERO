@@ -38,9 +38,26 @@ Deno.serve(async (req) => {
     const token = typeof body.token === "string" ? body.token.trim() : null;
     const nickname = typeof body.nickname === "string" ? body.nickname.trim() : null;
 
-    if (!token || !nickname) {
+    if (!token) {
       return json(req, { error: "invalid_request" }, 400);
     }
+
+    const tokenHash = await sha256Hex(token);
+    const { data: invitation, error: lookupError } = await admin.from("invitations")
+      .select("target_profile_id").eq("token_hash", tokenHash).maybeSingle();
+    if (lookupError) throw lookupError;
+    if (invitation?.target_profile_id) {
+      // PostgreSQL checks the bound Auth identity, active manager/plant,
+      // expiration and token epoch atomically. No profile data is rewritten.
+      const { data, error } = await admin.rpc("accept_invitation_atomic", {
+        p_token_hash: tokenHash, p_user_id: user.id, p_nickname: null,
+        p_terms_at: null, p_privacy_at: null,
+      });
+      if (error) throw error;
+      if (!data || data.profile_id !== user.id) throw new Error("invitation_accept_result_unknown");
+      return json(req, { accepted: true, profile: data });
+    }
+    if (!nickname) return json(req, { error: "invalid_request" }, 400);
 
     const nicknameValidation = await validateNickname(admin, nickname, user.id);
     if (!nicknameValidation.valid) {
@@ -51,7 +68,6 @@ Deno.serve(async (req) => {
       return json(req, { error: "consent_required" }, 400);
     }
 
-    const tokenHash = await sha256Hex(token);
     const acceptedAt = new Date().toISOString();
 
     const { data, error } = await admin.rpc("accept_invitation_atomic", {
