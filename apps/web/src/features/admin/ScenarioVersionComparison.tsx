@@ -89,8 +89,8 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
       ]);
       if (request !== revision.current) return;
       setResult({
-        beforeLabel: `${beforeRow.title} · v${beforeRow.version} · ${STATUS_LABEL[beforeRow.status]}`,
-        afterLabel: afterRow ? `${afterRow.title} · v${afterRow.version} · ${STATUS_LABEL[afterRow.status]}` : `입력 중인 JSON 사본 · v${after.version}`,
+        beforeLabel: `${before.title} · v${beforeRow.version} · ${STATUS_LABEL[beforeRow.status]}`,
+        afterLabel: afterRow ? `${after.title} · v${afterRow.version} · ${STATUS_LABEL[afterRow.status]}` : `입력 중인 JSON 사본 · v${after.version}`,
         changes: diffScenarios(before, after),
       });
     } catch {

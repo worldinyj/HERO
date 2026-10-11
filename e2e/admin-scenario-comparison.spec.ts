@@ -35,7 +35,7 @@ async function fixture(page: Page, options: { delay?: string; mismatch?: "id" | 
     else if (url.pathname === "/auth/v1/user") body = user;
     else if (url.pathname === "/functions/v1/admin-scenario") {
       const request = route.request().postDataJSON() as Record<string, unknown>; calls.push(request);
-      if (request.action === "list") body = { versions: options.empty ? [] : [beforeId, afterId, otherId].map((id, index) => ({ id, version: index === 1 ? 2 : 1, status: "draft", default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: index === 2 ? otherId : beforeId, slug: index === 2 ? "other_scenario" : tutorial.id, title: index === 2 ? "다른 시나리오" : tutorial.title, is_active: true, is_competitive: false } })) };
+      if (request.action === "list") body = { versions: options.empty ? [] : [beforeId, afterId, otherId].map((id, index) => ({ id, version: index === 1 ? 2 : 1, status: "draft", default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: index === 2 ? otherId : beforeId, slug: index === 2 ? "other_scenario" : tutorial.id, title: index === 2 ? "다른 시나리오" : "목록의 최신 제목", is_active: true, is_competitive: false } })) };
       else if (request.action === "preview") {
         if (request.scenarioVersionId === options.delay) await delayed;
         const scenario = request.scenarioVersionId === afterId ? editedScenario() : structuredClone(tutorial);
@@ -69,6 +69,9 @@ test("saved versions compare by stable action ID without mutating state", async 
   await page.getByRole("button", { name: "변경 사항 비교", exact: true }).click();
   const result = page.getByRole("region", { name: "비교 결과 · 3개 변경", exact: true });
   await expect(result).toBeVisible();
+  await expect(result).toContainText(`변경 전: ${tutorial.title} · v1`);
+  await expect(result).toContainText(`변경 후: ${tutorial.title} · v2`);
+  await expect(result).not.toContainText("목록의 최신 제목");
   const time = result.locator("details").filter({ hasText: "/nodes/decision_identify/choices/check_procedure/timeCostMin" });
   await time.locator("summary").click();
   await expect(time.locator("dd")).toHaveText(["2", "3"]);
