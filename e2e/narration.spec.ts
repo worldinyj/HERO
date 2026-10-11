@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import pack from "../assets/audio/prompts/NARRATION_S00_V1.json" with { type: "json" };
-async function fixture(page: Page, withAssets = true) {
+async function fixture(page: Page, withAssets = true, nativeAudio = false) {
   const user = { id: "f6100000-0000-0000-0000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
-  await page.addInitScript(({ user }) => {
+  await page.addInitScript(({ user, nativeAudio }) => {
     const expiresAt = Math.floor(Date.now() / 1000) + 3600;
     const token = `${btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))}.${btoa(JSON.stringify({ sub: user.id, exp: expiresAt }))}.fixture`;
     localStorage.setItem("sb-127-auth-token", JSON.stringify({ access_token: token, refresh_token: "fixture-refresh", expires_at: expiresAt, expires_in: 3600, token_type: "bearer", user }));
@@ -15,8 +15,15 @@ async function fixture(page: Page, withAssets = true) {
       async play() { this.paused = false; events.push({ event: "play", path: this.src }); }
       pause() { this.paused = true; events.push({ event: "pause", path: this.src }); }
     }
-    window.Audio = FakeAudio as unknown as typeof Audio;
-  }, { user });
+    if (nativeAudio) {
+      const NativeAudio = window.Audio;
+      window.Audio = function(src: string) {
+        const audio = new NativeAudio(src);
+        audio.addEventListener("playing", () => events.push({ event: "play", path: src }));
+        return audio;
+      } as unknown as typeof Audio;
+    } else window.Audio = FakeAudio as unknown as typeof Audio;
+  }, { user, nativeAudio });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route(/\/(?:rest|auth|functions)\/v1\//, async route => {
     const url = new URL(route.request().url());
@@ -31,7 +38,7 @@ async function fixture(page: Page, withAssets = true) {
     else if (url.pathname === "/functions/v1/nickname-action") await route.fulfill({ json: { canChange: false, resetRequired: false, changedThisSeason: false, seasonKey: null, nickname: "TESTPLAYER" } });
     else await route.fulfill({ json: [] });
   });
-  await page.route("**/audio/audio_manifest.json", route => route.fulfill({ json: { version: "test", project: "HERO", assets: withAssets ? pack.clips.map(c => ({ id: c.asset_id, kind: "narration", approved: true, path: `/audio/narration/${c.filename}`, narration: { scenarioId: pack.scenario_id, scenarioVersion: pack.scenario_version, nodeId: c.node_id, field: c.field, ...(c.action_id ? { actionId: c.action_id } : {}), text: c.text } })) : [] } }));
+  if (!nativeAudio) await page.route("**/audio/audio_manifest.json", route => route.fulfill({ json: { version: "test", project: "HERO", assets: withAssets ? pack.clips.map(c => ({ id: c.asset_id, kind: "narration", approved: true, path: `/audio/narration/${c.filename}`, narration: { scenarioId: pack.scenario_id, scenarioVersion: pack.scenario_version, nodeId: c.node_id, field: c.field, ...(c.action_id ? { actionId: c.action_id } : {}), text: c.text } })) : [] } }));
   await page.goto("/briefing/s00_tutorial");
   await page.getByRole("button", { name: "소리 켜고 시작", exact: true }).click();
   await page.getByRole("button", { name: /튜토리얼 시작/ }).click();
@@ -87,4 +94,31 @@ test("narration mute is independent, persists and prevents scene autoplay", asyn
   await page.getByRole("button", { name: "계속", exact: true }).click();
   await expect(page.getByRole("heading", { name: pack.clips[1]!.text })).toBeVisible();
   expect(await played(page)).toEqual([]);
+});
+
+
+test("registered narration MP3 files play and decode in the native browser audio element", async ({ page }) => {
+  await fixture(page, true, true);
+  await expect.poll(() => played(page)).toHaveLength(1);
+  expect((await played(page))[0]).toContain("nar_s00_intro_text_v1.mp3");
+  await page.getByRole("button", { name: "나레이션 중단", exact: true }).click();
+  const results = await page.evaluate(async () => {
+    const manifest = await (await fetch("/audio/audio_manifest.json")).json();
+    const values: Array<{ id: string; duration: number; played: boolean }> = [];
+    for (const asset of manifest.assets) {
+      if (asset.kind !== "narration") continue;
+      const audio = new Audio(asset.path);
+      await new Promise<void>((resolve, reject) => {
+        audio.addEventListener("loadedmetadata", () => resolve(), { once: true });
+        audio.addEventListener("error", () => reject(new Error(`Cannot decode ${asset.id}`)), { once: true });
+        audio.load();
+      });
+      await audio.play();
+      values.push({ id: asset.id, duration: audio.duration, played: !audio.paused });
+      audio.pause();
+    }
+    return values;
+  });
+  expect(results).toHaveLength(5);
+  expect(results.every(r => r.duration > 4 && r.duration < 8 && r.played)).toBe(true);
 });

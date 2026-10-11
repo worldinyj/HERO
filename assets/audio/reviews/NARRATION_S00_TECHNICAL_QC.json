@@ -1,0 +1,152 @@
+{
+  "reviewed_at": "2026-10-11",
+  "reviewer": "Codex",
+  "scope": "ffprobe format, FFmpeg full decode and sample peak; no independent listening or real-device review",
+  "files": [
+    {
+      "filename": "nar_s00_decision_identify_prompt_v1.mp3",
+      "sha256": "7389045ff340fba6493f65834f9c26ee948c9306cb711259a80c2ad62a2562eb",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 1,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "4.440813",
+          "size": "87991",
+          "bit_rate": "158513",
+          "tags": {
+            "encoder": "Lavf60.16.101"
+          }
+        }
+      },
+      "levels": {
+        "mean_volume": "-19.8 dB",
+        "max_volume": "-1.2 dB"
+      },
+      "decode_ok": true
+    },
+    {
+      "filename": "nar_s00_decision_identify_read_label_v1.mp3",
+      "sha256": "1d7003ef9fcdc3ec668c10da8e4b7e8776a387aeb100238ea71e82383446a1ef",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 1,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "4.519125",
+          "size": "89244",
+          "bit_rate": "157984",
+          "tags": {
+            "encoder": "Lavf60.16.101"
+          }
+        }
+      },
+      "levels": {
+        "mean_volume": "-20.3 dB",
+        "max_volume": "-1.9 dB"
+      },
+      "decode_ok": true
+    },
+    {
+      "filename": "nar_s00_intro_text_v1.mp3",
+      "sha256": "e27693dbddb51fe13359c50dda836d22c55725518fbaf883cac357f642c472b9",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 1,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "5.877500",
+          "size": "110978",
+          "bit_rate": "151054",
+          "tags": {
+            "encoder": "Lavf60.16.101"
+          }
+        }
+      },
+      "levels": {
+        "mean_volume": "-20.0 dB",
+        "max_volume": "-1.3 dB"
+      },
+      "decode_ok": true
+    },
+    {
+      "filename": "nar_s00_near_miss_end_summary_v1.mp3",
+      "sha256": "10e52beba33d9125e9c3013a3924bca4f07fbdd395f7ae009a90a300871563e4",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 1,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "6.922438",
+          "size": "127697",
+          "bit_rate": "147574",
+          "tags": {
+            "encoder": "Lavf60.16.101"
+          }
+        }
+      },
+      "levels": {
+        "mean_volume": "-19.6 dB",
+        "max_volume": "-3.7 dB"
+      },
+      "decode_ok": true
+    },
+    {
+      "filename": "nar_s00_safe_end_summary_v1.mp3",
+      "sha256": "19b0212c0d1f6cd8b46df61c9e490620972d9096e7b7e4c8714a7831e30adfef",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "44100",
+            "channels": 1,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "4.675875",
+          "size": "91752",
+          "bit_rate": "156979",
+          "tags": {
+            "encoder": "Lavf60.16.101"
+          }
+        }
+      },
+      "levels": {
+        "mean_volume": "-19.6 dB",
+        "max_volume": "-1.2 dB"
+      },
+      "decode_ok": true
+    }
+  ]
+}
