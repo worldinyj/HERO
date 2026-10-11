@@ -6,6 +6,7 @@ import { AdminScenarioPreview } from "./AdminScenarioPreview";
 import { parsePreviewJson, readSavedPreview, type PreviewIssue } from "./scenarioPreviewValidation";
 
 import { confirmedStatusResponse, scenarioErrorMessage, STATUS_LABEL, type ScenarioStatus } from "./scenarioStatus";
+import { ScenarioVersionComparison } from "./ScenarioVersionComparison";
 import { ScenarioStatusDialog, type StatusChange } from "./ScenarioStatusDialog";
 
 interface ScenarioVersionRow {
@@ -112,6 +113,11 @@ export function AdminScenarioPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  const comparisonVersions = useMemo(() => versions.flatMap(row => {
+    const scenario = scenarioInfo(row);
+    return scenario ? [{ id: row.id, version: row.version, status: row.status, slug: scenario.slug, title: scenario.title }] : [];
+  }), [versions]);
 
   const preview = useMemo(() => {
     if (!jsonText.trim()) return null;
@@ -333,6 +339,8 @@ export function AdminScenarioPage() {
       {previewLoadingId ? <section className="panel" role="status"><p>저장된 시나리오를 불러오고 있습니다…</p><button type="button" className="text-button" onClick={() => closePreview()}>불러오기 취소</button></section> : null}
       {previewIssues.length ? <section className="panel validation-box validation-box--error" role="alert"><strong>미리보기를 열 수 없습니다.</strong>{previewIssues.slice(0, 8).map((issue, index) => <p key={index}>{issue.path ? `${issue.path}: ` : ""}{issue.message}</p>)}</section> : null}
       {playPreview ? <AdminScenarioPreview key={playPreview.revision} scenario={playPreview.scenario} sourceLabel={playPreview.sourceLabel} onClose={() => closePreview()} /> : null}
+
+      <ScenarioVersionComparison versions={comparisonVersions} editor={preview?.scenario ?? null} readVersion={id => invoke({ action: "preview", scenarioVersionId: id })} />
 
       {statusChange ? <ScenarioStatusDialog change={statusChange} pending={Boolean(statusPending)} error={statusError} onCancel={closeStatusDialog} onConfirm={() => void handleStatus()} /> : null}
 
