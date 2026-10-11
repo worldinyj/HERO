@@ -1,0 +1,36 @@
+{
+  "dateKst": "2026-10-11",
+  "pullRequest": "https://github.com/worldinyj/HERO/pull/90",
+  "commit": "4349b8df564415fd354c22f6e17bf4d526548826",
+  "cloudflare": {
+    "project": "hero",
+    "productionAutomaticDeploymentsEnabled": false,
+    "deploymentId": "39a9f4b8-d3d4-4788-b98a-c851615db779",
+    "url": "https://39a9f4b8.hero-dnr.pages.dev",
+    "environment": "production",
+    "commit": "4349b8df564415fd354c22f6e17bf4d526548826",
+    "latestStage": {
+      "name": "deploy",
+      "started_on": null,
+      "ended_on": "2026-10-11T08:10:19.282572Z",
+      "status": "success"
+    },
+    "createdOn": "2026-10-11T08:10:18.117975Z"
+  },
+  "httpChecks": {
+    "passed": 34,
+    "total": 34
+  },
+  "productionAssetsMatch": [
+    "index.html",
+    "assets/index-DWaO3G6U.js",
+    "assets/AdminOrgPage-BOE_aVMY.js",
+    "assets/gamePersistence-DvFGlGH4.js"
+  ],
+  "initialJs": {
+    "decodedBytes": 534040,
+    "gzipBytes": 153606
+  },
+  "databaseOrEdgeDeploymentRequired": false,
+  "productionRealDeviceLcp": "NOT_MEASURED"
+}

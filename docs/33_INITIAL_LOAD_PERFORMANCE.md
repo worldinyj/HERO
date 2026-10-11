@@ -27,3 +27,11 @@ node scripts/measure-initial-load.mjs http://127.0.0.1:4175 /tmp/hero-initial-lo
 ```
 
 타입 검사·ESLint·빌드·engine 19/web 304 단위 테스트 통과. submit-session/admin-scenario Deno check도 통과했다. 실제 기기 검증과 운영 반영은 별도 상태로 관리한다. DB 마이그레이션이나 사용자·초대 정보 변경은 없다.
+
+## 운영 배포 확인 (2026-10-11 17:10 KST)
+
+사용자의 운영 배포 지시에 따라 PR #90의 quality·pgTAP·mobile-flow·Cloudflare Preview PASS를 확인하고 병합했다. 운영 코드 SHA는 `4349b8df564415fd354c22f6e17bf4d526548826`이다. DB·Edge 변경 없이 웹만 수동 배포했다.
+
+Cloudflare production deployment `39a9f4b8-d3d4-4788-b98a-c851615db779` 성공. 운영 URL `https://hero-dnr.pages.dev`의 HTTP 검사 34개 PASS, HTML·초기 앱 JS·관리자 JS·지연 게임 검증 JS가 해당 빌드와 바이트 단위로 일치했다. 초기 JS 크기 한도와 social metadata 검사도 PASS. 자동 운영 배포는 기존 비활성 상태를 유지한다.
+
+로컬 LCP 개선 수치는 통제된 로컬 비교이며 운영 실기기 LCP 실측으로 해석하지 않는다. 배포 확인 기록: `ops/initial-load-deployment-20261011.json`.
