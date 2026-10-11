@@ -48,3 +48,7 @@ export function preloadBriefingRoute(): void {
 export const loadAdminAuditPageModule = cachedLoader(
   () => import("../features/admin/AdminAuditPage"),
 );
+
+export const loadAdminOverviewPageModule = cachedLoader(
+  () => import("../features/admin/AdminOverviewPage"),
+);

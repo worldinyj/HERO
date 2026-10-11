@@ -12,6 +12,7 @@ import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
 import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
 import {
+  loadAdminOverviewPageModule,
   loadAdminAuditPageModule,
   loadAdminOrgPageModule,
   loadAdminScenarioPageModule,
@@ -59,6 +60,10 @@ const AdminScenarioPage = lazy(() =>
 
 const AdminAuditPage = lazy(() =>
   loadAdminAuditPageModule().then((module) => ({ default: module.AdminAuditPage })),
+);
+
+const AdminOverviewPage = lazy(() =>
+  loadAdminOverviewPageModule().then(module => ({ default: module.AdminOverviewPage })),
 );
 
 function RouteLoading() {
@@ -261,6 +266,10 @@ export function App() {
         <Route
           path="/admin"
           element={<AdminGate><AdminOrgPage /></AdminGate>}
+        />
+        <Route
+          path="/admin/overview"
+          element={<AdminGate><AdminOverviewPage /></AdminGate>}
         />
         <Route
           path="/admin/audit"

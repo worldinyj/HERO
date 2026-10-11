@@ -16,6 +16,7 @@ const expectedDynamicModules = [
   "src/features/manager/ManagerDashboardPage.tsx",
   "src/features/admin/AdminOrgPage.tsx",
   "src/features/admin/AdminAuditPage.tsx",
+  "src/features/admin/AdminOverviewPage.tsx",
   "src/features/admin/AdminScenarioPage.tsx",
 ];
 
