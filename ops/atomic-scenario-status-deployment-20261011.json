@@ -1,0 +1,94 @@
+{
+  "date": "2026-10-11",
+  "pullRequest": "https://github.com/worldinyj/HERO/pull/94",
+  "mainCommit": "4c1094dd5b33bfeb86f9ba31e42cd824cd30850a",
+  "ci": {
+    "quality": "PASS",
+    "pgtap": {
+      "files": 19,
+      "assertions": 483,
+      "status": "PASS"
+    },
+    "mobile": {
+      "tests": 68,
+      "status": "PASS"
+    },
+    "preview": "PASS"
+  },
+  "local": {
+    "unitTests": 343,
+    "mobileFixtureTests": 42,
+    "concurrentConnections": [
+      "different_versions_PASS",
+      "same_version_stale_PASS"
+    ],
+    "developmentMigrationsThrough": "202610110026",
+    "disposableTestDatabaseRemoved": true
+  },
+  "database": {
+    "migration": "202610110026",
+    "exactSourceVerified": true,
+    "exactFunctionBodyVerified": true,
+    "anonExecute": false,
+    "authenticatedExecute": false,
+    "serviceRoleExecute": true,
+    "index": "CREATE UNIQUE INDEX scenario_versions_one_published ON public.scenario_versions USING btree (scenario_id) WHERE (status = 'published'::scenario_status)",
+    "countsUnchanged": {
+      "audits": 3,
+      "profiles": 2,
+      "sessions": 0
+    },
+    "scenarioVersions": 0
+  },
+  "edge": {
+    "slug": "admin-scenario",
+    "status": "ACTIVE",
+    "version": 4,
+    "verify_jwt": true
+  },
+  "web": {
+    "pullRequest": 94,
+    "mergeCommit": "4c1094dd5b33bfeb86f9ba31e42cd824cd30850a",
+    "deployment": {
+      "id": "def5c216-d167-43e3-9c94-84bd0f7c4e34",
+      "url": "https://def5c216.hero-dnr.pages.dev",
+      "environment": "production",
+      "commit": "4c1094dd5b33bfeb86f9ba31e42cd824cd30850a",
+      "stage": {
+        "name": "deploy",
+        "started_on": null,
+        "ended_on": "2026-10-11T12:54:25.937044Z",
+        "status": "success"
+      },
+      "created_on": "2026-10-11T12:54:23.926968Z"
+    },
+    "productionAutoDeploy": false,
+    "assets": [
+      {
+        "asset": "index.html",
+        "bytes": 2328,
+        "match": true
+      },
+      {
+        "asset": "assets/index-BM-F9k7v.js",
+        "bytes": 310331,
+        "match": true
+      },
+      {
+        "asset": "assets/index-2K6usiVx.css",
+        "bytes": 44078,
+        "match": true
+      },
+      {
+        "asset": "assets/AdminScenarioPage-C2pRQogj.js",
+        "bytes": 27051,
+        "match": true
+      }
+    ]
+  },
+  "http": {
+    "verdict": "staging_http_ready",
+    "checks": 34
+  },
+  "liveAdminRead": "Authenticated scenario management screen loaded; saved versions empty; no production approval or publication performed"
+}
