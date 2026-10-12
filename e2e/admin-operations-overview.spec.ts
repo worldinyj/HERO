@@ -82,6 +82,19 @@ test("operations companion has finite motion and image failure preserves dashboa
   await expect(page.locator(".operations-metrics")).toContainText("9건");
 });
 
+test("a failed route module offers recovery and reload restores the operating page", async ({ page }) => {
+  const moduleUrl = "**/src/features/admin/AdminOverviewPage.tsx*";
+  await page.route(moduleUrl, route => route.abort());
+  await fixture(page);
+  await expect(page.getByRole("alert")).toContainText("화면을 불러오지 못했습니다");
+  await expect(page.getByRole("link", { name: "캠페인으로 이동", exact: true })).toBeVisible();
+  await page.unroute(moduleUrl);
+  await page.getByRole("button", { name: "화면 다시 불러오기", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "운영 현황", exact: true })).toBeVisible();
+  await expect(page.locator(".operations-metrics")).toContainText("9건");
+  await expect(page.getByRole("navigation", { name: "주요 메뉴", exact: true })).toBeVisible();
+});
+
 test("verified zero registration and no active season are shown distinctly", async ({ page }) => {
   await fixture(page, { zero: true });
   await expect(page.locator(".operations-metrics")).toContainText("0건");
