@@ -51,3 +51,16 @@ pnpm promote:scenario -- --scenario=s03_procedure_reality_gap
 최종 `promote:scenario --apply`는 기존 source/rights gate, 명시적 확인 플래그와 함께 **5개 사람 검토 영역의 current-SHA PASS**도 요구한다.
 
 > `evidenceRef`에는 추적 가능한 내부 참조만 기록한다. 비밀번호, API key, 개인 민감정보 원문을 저장하지 않는다.
+
+## 관리자 화면에서 작성한 검토 결과 파일
+
+관리자는 `/admin/scenarios`에서 검토 대상 내용을 확인하고 영역별 결과를 다운로드할 수 있다. 담당자가 실제 사람 검토와 근거를 확인한 뒤 가져오기 도구로 등록한다. 다운로드 자체는 승인 기록이 아니다.
+
+```bash
+pnpm import:scenario-review -- --file=./review-result.json
+pnpm import:scenario-review -- --file=./review-result.json --apply --confirm-human-review
+pnpm check:human-review-evidence
+pnpm build:scenario-review-status
+```
+
+파일은 같은 현재 콘텐츠 SHA·버전이어야 한다. 보완 필요에는 사유가 필요하고, 중복 결과는 다시 추가하지 않는다. 더 최근 검토보다 오래된 결과와 공식 승인 상태에 대한 새 기록은 적용을 차단한다. 세부 흐름과 적용 범위는 [44_SCENARIO_REVIEW_SUBMISSION.md](../../docs/44_SCENARIO_REVIEW_SUBMISSION.md)를 참조한다.
