@@ -4,7 +4,7 @@
   "createdAt": "2026-10-12",
   "generator": "built-in image_gen",
   "sourceConceptSha256": "7d0e860c5eebcab959e94ef9fb1b0e7d958eaabb5368715670dd616b806a17ff",
-  "status": "assets_ready_login_pilot_pending",
+  "status": "login_pilot_implemented_browser_qa_pending",
   "poses": [
     {
       "pose": "welcome",
