@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Scenario } from "@hero/schema";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
+import { ScenarioReviewPanel } from "./ScenarioReviewPanel";
 import { AdminScenarioPreview } from "./AdminScenarioPreview";
 import { parsePreviewJson, readSavedPreview, type PreviewIssue } from "./scenarioPreviewValidation";
 
@@ -270,6 +271,10 @@ export function AdminScenarioPage() {
           <p className="error-text" role="alert">{error}</p>
         </section>
       ) : null}
+
+      <ScenarioReviewPanel versions={comparisonVersions} editor={preview?.scenario ?? null}
+        readVersion={id => invoke({ action: "preview", scenarioVersionId: id })}
+        onPreview={(scenario, trigger) => { previewTrigger.current = trigger; closePreview(false); setPlayPreview({ scenario, sourceLabel: "S03 검토 대상과 내용 일치 확인", revision: previewRevision.current }); }} />
 
       <section className="panel admin-section">
         <div className="section-heading">

@@ -1,0 +1,31 @@
+{
+  "scenarioId": "s03_procedure_reality_gap",
+  "version": 4,
+  "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
+  "contentSha256": "f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87",
+  "previewSha256": "57bdf17074d472fc5d4c7f0af1fdff1d1d9a8c433d05a568782d866a52d5846e",
+  "sourceRightsComplete": true,
+  "approved": false,
+  "areas": [
+    {
+      "area": "hf_accuracy",
+      "decision": "pending"
+    },
+    {
+      "area": "operations_context",
+      "decision": "pending"
+    },
+    {
+      "area": "anonymization",
+      "decision": "pending"
+    },
+    {
+      "area": "just_culture",
+      "decision": "pending"
+    },
+    {
+      "area": "incident_debrief",
+      "decision": "pending"
+    }
+  ]
+}
