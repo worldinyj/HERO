@@ -527,8 +527,13 @@ export function ProfilePage() {
             <strong>{Number(data.current_season.hp_point).toLocaleString()} HP</strong>
           </div>
           <div className="profile-rank">
+            {Number(data.current_season.overall_rank) > 0 ? <>
             <strong>#{Number(data.current_season.overall_rank)}</strong>
             <span>상위 {Number(data.current_season.overall_top_percent)}%</span>
+            </> : <>
+              <strong>순위 미집계</strong>
+              <span>경쟁 플레이 기록이 없습니다</span>
+            </>}
           </div>
         </section>
       ) : null}
