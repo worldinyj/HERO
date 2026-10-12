@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "pnpm --dir apps/web dev",
-    "build": "pnpm --dir apps/web build",
+    "build": "pnpm check:scenario-review-status && pnpm --dir apps/web build",
     "typecheck": "pnpm --dir packages/schema typecheck && pnpm --dir packages/engine typecheck && pnpm --dir packages/content typecheck && pnpm --dir apps/web typecheck",
     "test": "pnpm --dir packages/engine test && pnpm --dir apps/web test",
     "lint": "pnpm --dir apps/web lint && eslint packages/engine/src packages/schema/src packages/content/src",
@@ -34,7 +34,9 @@
     "record:scenario-review": "tsx scripts/record-human-review.ts",
     "check:cause-traceability": "tsx scripts/check-cause-traceability.ts",
     "check:batch-db-contracts": "node scripts/check-batch-db-contracts.mjs",
-    "check:tasklist-progress": "node scripts/check-tasklist-progress.mjs"
+    "check:tasklist-progress": "node scripts/check-tasklist-progress.mjs",
+    "build:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts",
+    "check:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts --check"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

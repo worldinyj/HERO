@@ -46,6 +46,9 @@ jobs:
       - name: Check scenario human review evidence
         run: pnpm check:human-review-evidence
 
+      - name: Check deployed scenario review summary freshness
+        run: pnpm check:scenario-review-status
+
       - name: Preflight human review recorder
         run: |
           pnpm record:scenario-review -- \
