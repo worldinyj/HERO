@@ -347,6 +347,102 @@
         "sourceFileSha256": "d96e5916f59e999bb6e67b135f0ccc07232779b384f6761c55c0e56f5751dcf8",
         "processingReport": "assets/audio/reviews/BGM_SFX_FIRST_BATCH_PROCESSED_QC.json"
       }
+    },
+    {
+      "id": "BGM-05",
+      "kind": "bgm",
+      "path": "/audio/bgm/bgm_review_reflective_v1.mp3",
+      "approved": true,
+      "loop": true,
+      "defaultVolume": 0.8,
+      "preload": "none",
+      "provenance": {
+        "tool": "Flow Music",
+        "model": "unknown_user_does_not_know",
+        "promptHash": "0022923c89cbbdce3f56d4847e4d7415b24f611e18fafae15c32f7190dfe3afa",
+        "promptHashBasis": "documented_production_request; actual submitted prompt not independently confirmed",
+        "generatedAt": "2026-10-12",
+        "generatedAtBasis": "local_source_file_mtime_date_inferred; exact generation timestamp unavailable",
+        "licenseReviewedBy": "사용자 (2026-10-12 이전 대화에서 제작 음원 사용 권한 확인)",
+        "hfReviewedBy": "사용자 (2026-10-12 회고·엔딩 보정본 4개 청취 후 괜찮다고 확인)",
+        "technicalReviewedBy": "Codex (FFmpeg 전체 디코딩·음량·Chromium 모바일 검증; 독립 청취·실기기 검수 없음)",
+        "fileSha256": "cc0a2d048b00fd37f2535079459941f08d167adb039ebffa4a80531f2d44a2c7",
+        "sourceFileSha256": "4120211c86be4674a454c3dd95cdf827d3e569fe0635ec1dfb4192ffe36c7f1c",
+        "processingReport": "assets/audio/reviews/RESULT_AUDIO_PROCESSED_QC.json",
+        "modelBasis": "user confirmed tool only; model not identified"
+      }
+    },
+    {
+      "id": "BGM-06",
+      "kind": "stinger",
+      "path": "/audio/bgm/stinger_safe_stop_v1.mp3",
+      "approved": true,
+      "loop": false,
+      "defaultVolume": 0.8,
+      "preload": "none",
+      "provenance": {
+        "tool": "Flow Music",
+        "model": "unknown_user_does_not_know",
+        "promptHash": "ba4d11ba089a4e58d67ac1841fd746103d8ee07352c166454bfaf8ba77c6b64e",
+        "promptHashBasis": "documented_production_request; actual submitted prompt not independently confirmed",
+        "generatedAt": "2026-10-12",
+        "generatedAtBasis": "local_source_file_mtime_date_inferred; exact generation timestamp unavailable",
+        "licenseReviewedBy": "사용자 (2026-10-12 이전 대화에서 제작 음원 사용 권한 확인)",
+        "hfReviewedBy": "사용자 (2026-10-12 회고·엔딩 보정본 4개 청취 후 괜찮다고 확인)",
+        "technicalReviewedBy": "Codex (FFmpeg 전체 디코딩·음량·Chromium 모바일 검증; 독립 청취·실기기 검수 없음)",
+        "fileSha256": "3ec85cd0816617d6e9465ce01f19bd123d712b45247b3aa370ae4bdc7e02d52a",
+        "sourceFileSha256": "e0a6d33ca9ffbbc8aaacdfa3d282d31a3de2afc48e16d4ffe32fcfe1d1dc6609",
+        "processingReport": "assets/audio/reviews/RESULT_AUDIO_PROCESSED_QC.json",
+        "modelBasis": "user confirmed tool only; model not identified"
+      }
+    },
+    {
+      "id": "BGM-07",
+      "kind": "stinger",
+      "path": "/audio/bgm/stinger_near_miss_v1.mp3",
+      "approved": true,
+      "loop": false,
+      "defaultVolume": 0.8,
+      "preload": "none",
+      "provenance": {
+        "tool": "Flow Music",
+        "model": "unknown_user_does_not_know",
+        "promptHash": "51a0bb7a689376fc8335017c646449cb88f274d8f08dfa6f5c792631f35ecb7e",
+        "promptHashBasis": "documented_production_request; actual submitted prompt not independently confirmed",
+        "generatedAt": "2026-10-12",
+        "generatedAtBasis": "local_source_file_mtime_date_inferred; exact generation timestamp unavailable",
+        "licenseReviewedBy": "사용자 (2026-10-12 이전 대화에서 제작 음원 사용 권한 확인)",
+        "hfReviewedBy": "사용자 (2026-10-12 회고·엔딩 보정본 4개 청취 후 괜찮다고 확인)",
+        "technicalReviewedBy": "Codex (FFmpeg 전체 디코딩·음량·Chromium 모바일 검증; 독립 청취·실기기 검수 없음)",
+        "fileSha256": "dd22bafd7b22ff504c9eaeab0a897df2c0855f6e8ebaacb1bd304c1f1e22600b",
+        "sourceFileSha256": "c326d3d69fbc6b85d6544becaf8d75d6b3af8a7241d500eb40227dd644c61bbe",
+        "processingReport": "assets/audio/reviews/RESULT_AUDIO_PROCESSED_QC.json",
+        "modelBasis": "user confirmed tool only; model not identified"
+      }
+    },
+    {
+      "id": "BGM-08",
+      "kind": "stinger",
+      "path": "/audio/bgm/stinger_event_v1.mp3",
+      "approved": true,
+      "loop": false,
+      "defaultVolume": 0.8,
+      "preload": "none",
+      "provenance": {
+        "tool": "Flow Music",
+        "model": "unknown_user_does_not_know",
+        "promptHash": "8f7535d4b73247edb8a84ed27a128c13054692c43baad73d6b408e09395e3b1f",
+        "promptHashBasis": "documented_production_request; actual submitted prompt not independently confirmed",
+        "generatedAt": "2026-10-12",
+        "generatedAtBasis": "local_source_file_mtime_date_inferred; exact generation timestamp unavailable",
+        "licenseReviewedBy": "사용자 (2026-10-12 이전 대화에서 제작 음원 사용 권한 확인)",
+        "hfReviewedBy": "사용자 (2026-10-12 회고·엔딩 보정본 4개 청취 후 괜찮다고 확인)",
+        "technicalReviewedBy": "Codex (FFmpeg 전체 디코딩·음량·Chromium 모바일 검증; 독립 청취·실기기 검수 없음)",
+        "fileSha256": "b089d88355e102731aed17cbcec2a80e3199f5d3b16e2f7e143c67d7635949b7",
+        "sourceFileSha256": "ab00960abcdbc4b9c5b09d454582c27e1bc53ae93d63ab0786ff23d9415e48cc",
+        "processingReport": "assets/audio/reviews/RESULT_AUDIO_PROCESSED_QC.json",
+        "modelBasis": "user confirmed tool only; model not identified"
+      }
     }
   ]
 }

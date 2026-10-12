@@ -20,9 +20,12 @@ async function fixture(page: Page, withAssets = true, nativeAudio = false, brief
     }
     if (nativeAudio) {
       const NativeAudio = window.Audio;
+      const voices: Array<{ path: string; audio: HTMLAudioElement }> = [];
+      (window as unknown as { audioVoices: typeof voices }).audioVoices = voices;
       window.Audio = function(src: string) {
         const audio = new NativeAudio(src);
         audio.addEventListener("playing", () => events.push({ event: "play", path: src }));
+        voices.push({ path: src, audio });
         return audio;
       } as unknown as typeof Audio;
     } else window.Audio = FakeAudio as unknown as typeof Audio;
@@ -139,12 +142,14 @@ test("registered audio MP3 files play and decode in the native browser audio ele
     }
     return values;
   });
-  expect(results).toHaveLength(13);
+  expect(results).toHaveLength(17);
   expect(results.every(r => r.duration > 0 && Number.isFinite(r.duration) && r.played)).toBe(true);
   expect(results.filter(r => r.kind === "narration").every(r => r.duration > 4 && r.duration < 8)).toBe(true);
-  expect(results.filter(r => r.kind === "bgm")).toHaveLength(3);
+  expect(results.filter(r => r.kind === "bgm")).toHaveLength(4);
   expect(results.filter(r => r.kind === "bgm").every(r => r.duration > 44 && r.duration < 61)).toBe(true);
   expect(results.filter(r => r.kind === "sfx")).toHaveLength(5);
+  expect(results.filter(r => r.kind === "stinger")).toHaveLength(3);
+  expect(results.filter(r => r.kind === "stinger").every(r => r.duration > 4 && r.duration < 7)).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -210,7 +215,7 @@ for (const approved of [true, false]) {
   });
 }
 
-test("result candidates decode and play as native audio without registering them", async ({ page }) => {
+test("processed result audio copies decode and play as native audio", async ({ page }) => {
   const paths = resultQc.files.map(file => `/audio/candidate-review/${file.asset_id}.mp3`);
   for (const [index, file] of resultQc.files.entries()) {
     await page.route(`**${paths[index]}`, async route => route.fulfill({ contentType: "audio/mpeg", body: await readFile(file.processed_path) }));
@@ -257,3 +262,39 @@ test("competitive play switches to review music from the same game route", async
   await expect.poll(async () => (await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
   expect(page.url()).toContain("/play/e2e_competitive");
 });
+
+for (const [ending, stinger] of [
+  ["safe_stop", "stinger_safe_stop"], ["near_miss", "stinger_near_miss"], ["event", "stinger_event"],
+] as const) {
+  test(`registered ${ending} stinger and review BGM play once and stop on leaving ending`, async ({ page }) => {
+    await fixture(page, true, true);
+    await expect.poll(async () => (await played(page)).filter(p => p.includes("operation_base"))).toHaveLength(1);
+    const scenario = structuredClone(competitiveFixture);
+    for (const node of Object.values(scenario.nodes)) {
+      if (node.type === "ending" && "ending" in node) node.ending = ending;
+    }
+    await page.route("**/functions/v1/start-session", route => route.fulfill({ json: {
+      sessionId: "f6200000-0000-0000-0000-000000000001", seasonId: "f6300000-0000-0000-0000-000000000001", seasonKey: "2026-10",
+      scenarioVersionId: "f6400000-0000-0000-0000-000000000001", scenarioVersion: scenario.version,
+      simulationSeed: "audio-fixture", presentationSeed: "audio-fixture", perspectiveRole: "worker", startedAt: new Date().toISOString(), scenario,
+    } }));
+    await page.evaluate(() => {
+      history.pushState({}, "", "/play/e2e_competitive");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await page.getByRole("button", { name: "계속", exact: true }).click();
+    await page.getByRole("radio", { name: /절차와 표식을 다시 대조한다/ }).click();
+    await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+    await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeVisible();
+    await expect.poll(async () => (await played(page)).filter(p => p.includes(stinger))).toHaveLength(1);
+    await expect.poll(async () => (await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
+    expect((await played(page)).some(p => p.includes("stamp_result"))).toBe(false);
+    await page.getByRole("button", { name: "결과 돌아보기", exact: true }).click();
+    await expect.poll(() => page.evaluate(stinger => (window as unknown as { audioVoices: Array<{ path: string; audio: HTMLAudioElement }> }).audioVoices.filter(v => v.path.includes(stinger)).every(v => v.audio.paused && v.audio.getAttribute("src") === ""), stinger)).toBe(true);
+    await page.getByRole("radio").first().click();
+    await page.getByRole("button", { name: "내 생각 확인", exact: true }).click();
+    expect((await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
+    await page.goBack();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { audioVoices: Array<{ path: string; audio: HTMLAudioElement }> }).audioVoices.filter(v => v.path.includes("review_reflective")).every(v => v.audio.paused && v.audio.getAttribute("src") === ""))).toBe(true);
+  });
+}

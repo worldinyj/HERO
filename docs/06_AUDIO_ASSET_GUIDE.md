@@ -170,4 +170,4 @@ BGM/SFX와 별도로 [튜토리얼 나레이션 제작 패키지](../assets/audi
 
 ## BGM·SFX 우선 제작 순서
 
-[제작 패키지](../assets/audio/prompts/AUDIO_PRODUCTION_V1.md)에 현재 연결된 8개 큐의 제작 순서와 전체 20개 큐의 복사용 프롬프트를 정리했다. BGM-01/02/03과 SFX-02/04/05/07/10이 현재 연결되어 있다. BGM-04/05와 엔딩 stinger 및 나머지 SFX는 추가 연결이 필요하다. 검수 전 후보는 `assets/audio/candidates/`에 보관하고, 승인 후 공개 런타임 폴더와 manifest에 등록한다.
+[제작 패키지](../assets/audio/prompts/AUDIO_PRODUCTION_V1.md)에 현재 연결된 8개 큐의 제작 순서와 전체 20개 큐의 복사용 프롬프트를 정리했다. BGM-01/02/03과 SFX-02/04/05/07/10이 현재 연결되어 있다. 후속으로 BGM-05 회고 음악과 BGM-06/07/08 엔딩 stinger도 연결·검수·등록했다. 현재 승인 음원은 총 17개다. BGM-04와 나머지 SFX 7개는 추가 연결이 필요하다. 검수 전 후보는 `assets/audio/candidates/`에 보관하고, 승인 후 공개 런타임 폴더와 manifest에 등록한다.

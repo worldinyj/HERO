@@ -69,3 +69,7 @@ BGM-05/06/07/08을 원본 보존 상태에서 보정하고 플레이·결과 단
 - FFmpeg 전체 디코딩·해시·peak 확인. Chromium 390×844·360×800의 테스트 전용 경로에서 네 후보의 decode/play 확인.
 - 런타임은 승인된 엔딩 음원만 재생하고 없으면 기존 SFX-10 도장음으로 대체. 회고 BGM 미등록 상태에서는 결과 단계의 작업 BGM을 중단한다.
 - 상세: `RESULT_AUDIO_PROCESSED_QC.json`, `RESULT_AUDIO_PENDING_MANIFEST.json`, `docs/42_RESULT_AUDIO_FOLLOWUP.md`.
+
+### 후속 4개 사용자 청취 확인·등록
+
+2026-10-12 사용자가 제시한 네 보정본에 대해 “보정본 괜찮아요. 이어서 작업 진행”이라고 확인했다. 앞서 확인한 Flow Music·사용 권한과 함께 BGM-05/06/07/08을 승인 manifest에 등록했다. 나레이션 5개·루프 BGM 4개·SFX 5개·엔딩 stinger 3개로 총 17개다. 모델 미확인·원본 수정일 기반 생성일·요청문 기반 prompt hash·Codex 독립 청취 및 실기기 미검수 사실은 유지한다. `RESULT_AUDIO_PENDING_MANIFEST.json`은 실제 등록 후 제거했고 원본·보정본 해시 일치도 확인했다.

@@ -167,7 +167,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nReflective and neutral post-scenario music. Gentle resolution, learning-and-recovery tone, not sad or triumphant, seamless-loop-friendly, 60–90 seconds.",
       "prompt_sha256": "0022923c89cbbdce3f56d4847e4d7415b24f611e18fafae15c32f7190dfe3afa",
       "loop": true,
-      "status": "processed_candidate_listening_pending"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "BGM-06",
@@ -182,7 +182,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nAffirmative but restrained, neutral closure after a safe stop, 3–6 seconds. One-shot, no loop.",
       "prompt_sha256": "ba4d11ba089a4e58d67ac1841fd746103d8ee07352c166454bfaf8ba77c6b64e",
       "loop": false,
-      "status": "processed_candidate_listening_pending"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "BGM-07",
@@ -197,7 +197,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nBrief suspended resolution after a near miss, 3–6 seconds. Neutral and reflective, no blame or horror. One-shot, no loop.",
       "prompt_sha256": "51a0bb7a689376fc8335017c646449cb88f274d8f08dfa6f5c792631f35ecb7e",
       "loop": false,
-      "status": "processed_candidate_listening_pending"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "BGM-08",
@@ -212,7 +212,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nSober, neutral closure after an event, no disaster/cinematic alarm language, 3–6 seconds. One-shot, no loop.",
       "prompt_sha256": "8f7535d4b73247edb8a84ed27a128c13054692c43baad73d6b408e09395e3b1f",
       "loop": false,
-      "status": "processed_candidate_listening_pending"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "SFX-01",

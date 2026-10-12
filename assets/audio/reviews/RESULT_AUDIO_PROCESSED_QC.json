@@ -53,7 +53,8 @@
         },
         "note": "Same-track excerpt only; musical phrase and audible seam require human listening. MP3/native loop timing may add a gap."
       },
-      "approval": "human_review_pending"
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/bgm_review_reflective_v1.mp3"
     },
     {
       "asset_id": "BGM-06",
@@ -88,7 +89,8 @@
         "target_sample_peak_dbfs": -8,
         "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
       },
-      "approval": "human_review_pending"
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/stinger_safe_stop_v1.mp3"
     },
     {
       "asset_id": "BGM-07",
@@ -123,7 +125,8 @@
         "target_sample_peak_dbfs": -8,
         "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
       },
-      "approval": "human_review_pending"
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/stinger_near_miss_v1.mp3"
     },
     {
       "asset_id": "BGM-08",
@@ -158,8 +161,9 @@
         "target_sample_peak_dbfs": -8,
         "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
       },
-      "approval": "human_review_pending"
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/stinger_event_v1.mp3"
     }
   ],
-  "scope": "Technical preparation only. No independent listening or rights approval. Not registered or deployed."
+  "scope": "FFmpeg and Chromium technical checks passed. User confirmed the four processed result audio clips on 2026-10-12. Usage rights were confirmed in earlier conversation. No independent Codex listening or real-device review."
 }
