@@ -35,11 +35,19 @@ function setup(manifestDelay = false) {
     return { ok: true, json: async () => ({ assets }) };
   }));
   const manager = new HeroAudioManager(); manager.unlock(); manager.updateSettings({ initialized: true });
-  const flush = () => { for (const [key, callback] of [...frames]) { frames.delete(key); callback(performance.now() + 1000); } };
+  const flush = (time = performance.now() + 1000) => { for (const [key, callback] of [...frames]) { frames.delete(key); callback(time); } };
   return { manager, release, flush };
 }
 afterEach(() => vi.unstubAllGlobals());
 describe("BGM and SFX lifecycle", () => {
+  it("clamps a frame timestamp earlier than a newly started crossfade", async () => {
+    const { manager, flush } = setup(); await manager.playBgm("A"); flush();
+    const previousVolume = FakeAudio.instances[0]!.volume;
+    await manager.playBgm("B"); flush(-10000);
+    expect(FakeAudio.instances[0]!.volume).toBe(previousVolume);
+    expect(FakeAudio.instances[1]!.volume).toBe(0);
+    flush(); expect(FakeAudio.instances[1]!.volume).toBeGreaterThan(0);
+  });
   it("does not start a BGM lookup after its route was stopped", async () => {
     const { manager, release } = setup(true);
     const pending = manager.playBgm("A"); manager.stopBgm(); release();

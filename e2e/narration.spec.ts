@@ -113,16 +113,17 @@ test("narration mute is independent, persists and prevents scene autoplay", asyn
 });
 
 
-test("registered narration MP3 files play and decode in the native browser audio element", async ({ page }) => {
+test("registered audio MP3 files play and decode in the native browser audio element", async ({ page }) => {
+  const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
   await fixture(page, true, true);
-  await expect.poll(() => played(page)).toHaveLength(1);
-  expect((await played(page))[0]).toContain("nar_s00_intro_text_v1.mp3");
+  await expect.poll(async () => (await played(page)).filter(path => path.includes("/narration/"))).toHaveLength(1);
+  expect((await played(page)).some(path => path.includes("nar_s00_intro_text_v1.mp3"))).toBe(true);
+  await expect.poll(async () => (await played(page)).some(path => path.includes("bgm_operation_base_v1.mp3"))).toBe(true);
   await page.getByRole("button", { name: "나레이션 중단", exact: true }).click();
   const results = await page.evaluate(async () => {
     const manifest = await (await fetch("/audio/audio_manifest.json")).json();
-    const values: Array<{ id: string; duration: number; played: boolean }> = [];
+    const values: Array<{ id: string; kind: string; duration: number; played: boolean }> = [];
     for (const asset of manifest.assets) {
-      if (asset.kind !== "narration") continue;
       const audio = new Audio(asset.path);
       await new Promise<void>((resolve, reject) => {
         audio.addEventListener("loadedmetadata", () => resolve(), { once: true });
@@ -130,13 +131,18 @@ test("registered narration MP3 files play and decode in the native browser audio
         audio.load();
       });
       await audio.play();
-      values.push({ id: asset.id, duration: audio.duration, played: !audio.paused });
+      values.push({ id: asset.id, kind: asset.kind, duration: audio.duration, played: !audio.paused });
       audio.pause();
     }
     return values;
   });
-  expect(results).toHaveLength(5);
-  expect(results.every(r => r.duration > 4 && r.duration < 8 && r.played)).toBe(true);
+  expect(results).toHaveLength(13);
+  expect(results.every(r => r.duration > 0 && Number.isFinite(r.duration) && r.played)).toBe(true);
+  expect(results.filter(r => r.kind === "narration").every(r => r.duration > 4 && r.duration < 8)).toBe(true);
+  expect(results.filter(r => r.kind === "bgm")).toHaveLength(3);
+  expect(results.filter(r => r.kind === "bgm").every(r => r.duration > 44 && r.duration < 61)).toBe(true);
+  expect(results.filter(r => r.kind === "sfx")).toHaveLength(5);
+  expect(errors).toEqual([]);
 });
 
 test("missing learning companion images keep briefing and reflection playable", async ({ page }, testInfo) => {
@@ -151,4 +157,22 @@ test("missing learning companion images keep briefing and reflection playable", 
   await page.getByRole("button", { name: "내 생각 확인", exact: true }).click();
   await expect(page.getByRole("heading", { name: "방어막은 한 번에 무너지지 않습니다" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('missing-mascot-timeline.png'), fullPage: true });
+});
+
+test("registered music and effects follow play actions and muted settings", async ({ page }) => {
+  await fixture(page, true, true);
+  await page.getByRole("button", { name: "계속", exact: true }).click();
+  await page.getByRole("button", { name: /표식의 글자를 가까이서 확인한다/ }).click();
+  await expect.poll(async () => (await played(page)).some(path => path.includes("sfx_info_open_v1.mp3"))).toBe(true);
+  await page.getByRole("radio", { name: /절차와 표식을 다시 대조한다/ }).click();
+  await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+  await expect.poll(async () => (await played(page)).some(path => path.includes("sfx_choice_confirm_v1.mp3"))).toBe(true);
+  await expect.poll(async () => (await played(page)).some(path => path.includes("sfx_stamp_result_v1.mp3"))).toBe(true);
+  await page.goto("/me");
+  await page.getByLabel("BGM", { exact: true }).uncheck();
+  await page.getByLabel("효과음", { exact: true }).uncheck();
+  await page.goto("/briefing/s00_tutorial");
+  await page.getByRole("button", { name: /^이어하기$|튜토리얼 시작/ }).click();
+  await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeVisible();
+  expect((await played(page)).filter(path => path.includes("/bgm/") || path.includes("/sfx/"))).toEqual([]);
 });

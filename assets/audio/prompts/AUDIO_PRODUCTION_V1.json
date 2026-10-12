@@ -32,7 +32,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nFocused technical workplace tension. Subtle electronic pulse and muted percussion, 82 BPM, calm but alert, sparse arrangement, designed to loop under dialogue, 60–90 seconds.",
       "prompt_sha256": "96ebfdd32caf3878d9ccb21047ba112bf6674ad7f8afc1676472a6c8e0e6e643",
       "loop": true,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "BGM-02",
@@ -47,7 +47,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nTechnical anticipation before a maintenance task. Sparse instrumentation, 76 BPM, low cognitive load, neutral tension, seamless-loop-friendly, 45–60 seconds.",
       "prompt_sha256": "c3369e1d15b3661b766bfc02afeb5d89bcb8d934ba0fe5ae34ff150898257b45",
       "loop": true,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "BGM-01",
@@ -62,7 +62,7 @@
       "exact_prompt": "Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.\n\nCalm strategic mission-preparation background. 82 BPM, restrained hybrid acoustic/electronic texture, subtle pulse, confident but not heroic, seamless-loop-friendly, 60–90 seconds.",
       "prompt_sha256": "0853ece336e2cdcfff7e6ff624e6b5eacacb993670564dd344a1869c42e14575",
       "loop": true,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "SFX-02",
@@ -77,7 +77,7 @@
       "exact_prompt": "Short abstract UI sound effect for a training game. Soft transient, non-alarming, no siren, no bell pattern associated with real equipment, no voice, no realistic industrial alarm.\n\n0.25–0.5 s, neutral confirmation.",
       "prompt_sha256": "5b4e4544ee12b93612546d335e6e92743573223bee40f8aebf852c4a570010f1",
       "loop": false,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "SFX-05",
@@ -92,7 +92,7 @@
       "exact_prompt": "Short abstract UI sound effect for a training game. Soft transient, non-alarming, no siren, no bell pattern associated with real equipment, no voice, no realistic industrial alarm.\n\n0.2–0.5 s, subtle document reveal.",
       "prompt_sha256": "bd7fecbd571cc126e1cca0382de776d23a9b2a19c65a8e03b28639a15d74b519",
       "loop": false,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "SFX-04",
@@ -107,7 +107,7 @@
       "exact_prompt": "Short abstract UI sound effect for a training game. Soft transient, non-alarming, no siren, no bell pattern associated with real equipment, no voice, no realistic industrial alarm.\n\n0.4–0.9 s, restrained protective shimmer, no fantasy explosion.",
       "prompt_sha256": "c1f9834b0b7def54ebc3950927ff6ba163a7de683c2b2af9431be59cc6273616",
       "loop": false,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "SFX-07",
@@ -122,7 +122,7 @@
       "exact_prompt": "Short abstract UI sound effect for a training game. Soft transient, non-alarming, no siren, no bell pattern associated with real equipment, no voice, no realistic industrial alarm.\n\n0.3–0.8 s, abstract attention cue; explicitly not alarm-like.",
       "prompt_sha256": "be5813ae76bb64818aa884abcc76172755aafd954d6ed0461a870eda7b16155a",
       "loop": false,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "SFX-10",
@@ -137,7 +137,7 @@
       "exact_prompt": "Short abstract UI sound effect for a training game. Soft transient, non-alarming, no siren, no bell pattern associated with real equipment, no voice, no realistic industrial alarm.\n\n0.3–0.7 s, soft physical/digital stamp.",
       "prompt_sha256": "f1adbb9fc0eeaf36111a1ae28204e80ba9fa39eb0ef4615858184a9c5df3b73c",
       "loop": false,
-      "status": "not_generated"
+      "status": "registered_user_reviewed"
     },
     {
       "asset_id": "BGM-04",

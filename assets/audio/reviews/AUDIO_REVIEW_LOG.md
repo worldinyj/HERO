@@ -47,3 +47,15 @@
 파일 SHA-256·길이·측정 sample peak는 `NARRATION_S00_TECHNICAL_QC.json` 참조. 전 파일 sample peak는 -1.2~-3.7dBFS이며, 이것은 true peak·원본 합성 단계 clipping 여부를 보증하는 측정은 아니다. 생성일은 로컬 파일 수정일에서 추정한 2026-10-11이며 정확한 합성 시각은 미확인이다. promptHash는 문서화된 plain-text 대본의 UTF-8 SHA-256이다. 실제 생성 화면의 설정·추가 태그는 별도 보관되지 않았다.
 
 Chromium 모바일 viewport 재생·디코딩을 자동 검증한다. iOS Safari·Samsung Internet 실기기, 통화 복귀와 현장 인지부하 평가는 아직 별도 확인 대상이다. BGM·SFX는 이번 등록에 포함되지 않는다.
+
+## BGM·SFX 우선 8개 — 2026-10-12
+
+사용자가 생성 도구 Flow Music, 앱 사용 권한, 보정본 청취 확인(반복 경계·잡음·보컬·경보음 유사성)을 대화에서 확인했다. 모델명은 사용자가 모른다고 답하여 `unknown_user_does_not_know`로 기록한다. 실제 모델·합성 시각·입력 프롬프트를 추정해서 확정하지 않는다. 생성일은 파일 수정일의 한국 날짜 추정, 프롬프트 해시는 제작 요청 원문 기준이다.
+
+- 등록: BGM-01/02/03, SFX-02/04/05/07/10. 나레이션 5개와 함께 총 13개.
+- 원본 20개 보존. 보정 사본은 `assets/audio/candidates/processed-v1/`, 앱 사본은 공개 audio/bgm·sfx 아래에 저장한다.
+- BGM은 같은 트랙의 30초 이후 구간을 약 45·60초로 편집하고 0.25초 순환 crossfade·2-pass loudness 보정을 적용했다. MP3/native loop의 실제 실기기 무간격 반복을 보장하지 않는다.
+- SFX는 약 -8dBFS sample peak로 보정. HU Tool 증폭에 따른 잡음 여부는 사용자 청취 확인에 의존한다.
+- 원본 20개·보정 8개 SHA-256, FFmpeg 전체 디코딩·sample peak, Chromium native decode/play 진행 확인. Codex 독립 청취·실기기 검수 없음.
+- 상세: `BGM_SFX_V1_CANDIDATE_TECHNICAL_QC.json`, `BGM_SFX_FIRST_BATCH_PROCESSED_QC.json`.
+- 나머지 12개는 미등록·미연결. 짧은 SFX-08 등 다음 배치 보완 항목을 유지한다.

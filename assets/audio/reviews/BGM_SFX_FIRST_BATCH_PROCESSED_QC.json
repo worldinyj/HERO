@@ -1,0 +1,425 @@
+{
+  "date": "2026-10-12",
+  "originals_preserved": true,
+  "files": [
+    {
+      "asset_id": "BGM-03",
+      "kind": "bgm",
+      "source_path": "assets/audio/candidates/bgm_operation_base_v1.mp3",
+      "source_sha256": "1ede530d0ac95e7c3f4f08898155b7dddc7e1cc1c56052f7a768fe092c8277c7",
+      "processed_path": "assets/audio/candidates/processed-v1/bgm_operation_base_v1.mp3",
+      "file_sha256": "fffb9c74fd9153387a5bbd3dcb51c3d673dcd336b6d23d3d0fb113544f6edaab",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "59.750000",
+          "size": "957055"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -20.7,
+        "max_volume": -6.2
+      },
+      "decode_ok": true,
+      "processing": {
+        "source_excerpt_seconds": [
+          30,
+          90
+        ],
+        "circular_crossfade_seconds": 0.25,
+        "pcm_output_seconds": 59.75,
+        "target_lufs": -20,
+        "target_true_peak_dbfs": -2,
+        "loudness_measurement": {
+          "input_i": "-16.64",
+          "input_tp": "-2.34",
+          "input_lra": "3.00",
+          "input_thresh": "-26.97",
+          "output_i": "-20.03",
+          "output_tp": "-5.91",
+          "output_lra": "2.20",
+          "output_thresh": "-30.27",
+          "normalization_type": "dynamic",
+          "target_offset": "0.03"
+        },
+        "note": "Same-track excerpt only; musical phrase and audible seam require human listening. MP3/native loop timing may add a gap."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 59.749977324263035,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/bgm/bgm_operation_base_v1.mp3"
+    },
+    {
+      "asset_id": "BGM-02",
+      "kind": "bgm",
+      "source_path": "assets/audio/candidates/bgm_briefing_v1.mp3",
+      "source_sha256": "8e1fcab5e039e6c6a8eda56b3744765f9c647186d923f6c286eaaa9174e50f88",
+      "processed_path": "assets/audio/candidates/processed-v1/bgm_briefing_v1.mp3",
+      "file_sha256": "f8bc00bced4af081083a3afb4039e52ee6ac9ed8506a8901bdeeeb301cee996d",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "44.750000",
+          "size": "717048"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -20.8,
+        "max_volume": -5.2
+      },
+      "decode_ok": true,
+      "processing": {
+        "source_excerpt_seconds": [
+          30,
+          75
+        ],
+        "circular_crossfade_seconds": 0.25,
+        "pcm_output_seconds": 44.75,
+        "target_lufs": -20,
+        "target_true_peak_dbfs": -2,
+        "loudness_measurement": {
+          "input_i": "-16.35",
+          "input_tp": "-0.99",
+          "input_lra": "5.20",
+          "input_thresh": "-26.48",
+          "output_i": "-19.51",
+          "output_tp": "-3.87",
+          "output_lra": "5.10",
+          "output_thresh": "-29.60",
+          "normalization_type": "dynamic",
+          "target_offset": "-0.49"
+        },
+        "note": "Same-track excerpt only; musical phrase and audible seam require human listening. MP3/native loop timing may add a gap."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 44.749977324263035,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/bgm/bgm_briefing_v1.mp3"
+    },
+    {
+      "asset_id": "BGM-01",
+      "kind": "bgm",
+      "source_path": "assets/audio/candidates/bgm_campaign_map_v1.mp3",
+      "source_sha256": "f7dc0d7107f9e753249278ea2c70d63863d604d3199a7ea2a51dc74f41c7680f",
+      "processed_path": "assets/audio/candidates/processed-v1/bgm_campaign_map_v1.mp3",
+      "file_sha256": "0d26445a732193d69a9713af60f747189491cd6ac67e637feed3360e512e7f24",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "59.750000",
+          "size": "957051"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -21.4,
+        "max_volume": -6.6
+      },
+      "decode_ok": true,
+      "processing": {
+        "source_excerpt_seconds": [
+          30,
+          90
+        ],
+        "circular_crossfade_seconds": 0.25,
+        "pcm_output_seconds": 59.75,
+        "target_lufs": -20,
+        "target_true_peak_dbfs": -2,
+        "loudness_measurement": {
+          "input_i": "-15.39",
+          "input_tp": "-1.62",
+          "input_lra": "4.70",
+          "input_thresh": "-25.42",
+          "output_i": "-18.91",
+          "output_tp": "-4.41",
+          "output_lra": "2.40",
+          "output_thresh": "-28.92",
+          "normalization_type": "dynamic",
+          "target_offset": "-1.09"
+        },
+        "note": "Same-track excerpt only; musical phrase and audible seam require human listening. MP3/native loop timing may add a gap."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 59.749977324263035,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/bgm/bgm_campaign_map_v1.mp3"
+    },
+    {
+      "asset_id": "SFX-02",
+      "kind": "sfx",
+      "source_path": "assets/audio/candidates/sfx_choice_confirm_v1.mp3.mp3",
+      "source_sha256": "4abbbccf413e0954d9b214ca0557e96136bf5df74f8324778d56ac1f4d0b28d2",
+      "processed_path": "assets/audio/candidates/processed-v1/sfx_choice_confirm_v1.mp3",
+      "file_sha256": "2953bad89a70c13a44fa3220616dc6c86f7f443b0334f70ca3ac37d1145befc1",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "png"
+          }
+        ],
+        "format": {
+          "duration": "0.234667",
+          "size": "325523"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -25.4,
+        "max_volume": -8.4
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": -4.5,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 0.23464852607709752,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/sfx/sfx_choice_confirm_v1.mp3"
+    },
+    {
+      "asset_id": "SFX-05",
+      "kind": "sfx",
+      "source_path": "assets/audio/candidates/sfx_info_open_v1.mp3.mp3",
+      "source_sha256": "6e8dd3e33c165c8b60eee1f5719e3ef0ad36853dd053b5dbb1136906ec540acf",
+      "processed_path": "assets/audio/candidates/processed-v1/sfx_info_open_v1.mp3",
+      "file_sha256": "ea7e4385a5fb39b816d22c7a0b0c2b4b441a5c2712ea4f2bb0e77ab817a8aa08",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "png"
+          }
+        ],
+        "format": {
+          "duration": "0.512000",
+          "size": "131746"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -24,
+        "max_volume": -8.5
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 7.9,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 0.5119954648526077,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/sfx/sfx_info_open_v1.mp3"
+    },
+    {
+      "asset_id": "SFX-04",
+      "kind": "sfx",
+      "source_path": "assets/audio/candidates/sfx_card_use_v1.mp3.mp3",
+      "source_sha256": "f53c2bb1c0482c1fb344dd0ff6af04ad254a7dfdceddadc92086738963280a3d",
+      "processed_path": "assets/audio/candidates/processed-v1/sfx_card_use_v1.mp3",
+      "file_sha256": "f19ab103ac2ad0f4c034a988808592ea0dca979260740934f4db824dc7a5ee73",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "png"
+          }
+        ],
+        "format": {
+          "duration": "0.896000",
+          "size": "510035"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -20.4,
+        "max_volume": -8.3
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 26.7,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 0.8959863945578231,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/sfx/sfx_card_use_v1.mp3"
+    },
+    {
+      "asset_id": "SFX-07",
+      "kind": "sfx",
+      "source_path": "assets/audio/candidates/sfx_event_attention_v1.mp3.mp3",
+      "source_sha256": "2762be2c7d6d8f9717b7f446e7f687b7be4e6ee40893e57ea8163f6e1452950a",
+      "processed_path": "assets/audio/candidates/processed-v1/sfx_event_attention_v1.mp3",
+      "file_sha256": "0de7a2fb542e436dfbfe63ba9406414e310ddbd8b52c101949d35661682dbf8e",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "png"
+          }
+        ],
+        "format": {
+          "duration": "0.832000",
+          "size": "371999"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -22,
+        "max_volume": -8
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 5,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 0.8319954648526077,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/sfx/sfx_event_attention_v1.mp3"
+    },
+    {
+      "asset_id": "SFX-10",
+      "kind": "sfx",
+      "source_path": "assets/audio/candidates/sfx_stamp_result_v1.mp3",
+      "source_sha256": "d96e5916f59e999bb6e67b135f0ccc07232779b384f6761c55c0e56f5751dcf8",
+      "processed_path": "assets/audio/candidates/processed-v1/sfx_stamp_result_v1.mp3",
+      "file_sha256": "f07a5eb896b949cdd215b43ca3348cea5f0336a0546be031fdf56cf1f67e82e7",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "png"
+          }
+        ],
+        "format": {
+          "duration": "0.661333",
+          "size": "650229"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -23.3,
+        "max_volume": -8
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 4.6,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_listening_confirmed_2026-10-12",
+      "chromium": {
+        "httpStatus": 200,
+        "decodedDuration": 0.6613151927437642,
+        "channels": 2,
+        "sampleRate": 44100,
+        "playbackAdvanced": true
+      },
+      "runtime_path": "/audio/sfx/sfx_stamp_result_v1.mp3"
+    }
+  ],
+  "scope": "Technical processing and Chromium playback passed. User confirmed Flow Music, app usage rights and processed audio listening on 2026-10-12. Model unknown; no independent Codex listening or real-device review.",
+  "browserQc": {
+    "date": "2026-10-12",
+    "nativeDecodeAndPlaybackPassed": 8,
+    "scope": "Chromium headless decoding and short playback advancement; no audible or real-device review."
+  }
+}

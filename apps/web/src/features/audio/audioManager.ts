@@ -427,7 +427,7 @@ export class HeroAudioManager {
 
     const tick = (now: number) => {
       const progress =
-        durationMs <= 0 ? 1 : Math.min(1, (now - startedAt) / durationMs);
+        durationMs <= 0 ? 1 : Math.max(0, Math.min(1, (now - startedAt) / durationMs));
 
       if (previous) {
         previous.volume = previousStart * (1 - progress);
