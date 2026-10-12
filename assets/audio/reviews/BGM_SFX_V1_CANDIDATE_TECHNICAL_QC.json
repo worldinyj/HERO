@@ -1,0 +1,1393 @@
+{
+  "reviewed_at": "2026-10-12",
+  "reviewer": "Codex",
+  "scope": "File matching, SHA-256, ffprobe, full FFmpeg decode, decoded PCM duration/sample peak and -50 dBFS trailing silence. No listening, loop seam, true peak, rights or real-device approval. Original files unchanged; candidates not registered or deployed.",
+  "files": [
+    {
+      "asset_id": "BGM-03",
+      "label": "작업",
+      "kind": "bgm",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/bgm_operation_base_v1.mp3",
+      "expected_filename": "bgm_operation_base_v1.mp3",
+      "filename_matches": true,
+      "bytes": 2917262,
+      "sha256": "1ede530d0ac95e7c3f4f08898155b7dddc7e1cc1c56052f7a768fe092c8277c7",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "174.506667",
+          "size": "2917262",
+          "bit_rate": "133737"
+        }
+      },
+      "duration_seconds": 174.506667,
+      "prompt_duration_range_seconds": [
+        60.0,
+        90.0
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-17.2",
+        "max_volume": "-1.3"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 174.506667,
+      "silence_events_seconds": [
+        {
+          "event": "silence_start",
+          "seconds": 0.0839792
+        },
+        {
+          "event": "silence_end",
+          "seconds": 0.765312
+        },
+        {
+          "event": "silence_start",
+          "seconds": 0.792625
+        },
+        {
+          "event": "silence_end",
+          "seconds": 1.490542
+        },
+        {
+          "event": "silence_start",
+          "seconds": 1.518979
+        },
+        {
+          "event": "silence_end",
+          "seconds": 2.032312
+        },
+        {
+          "event": "silence_start",
+          "seconds": 2.057562
+        },
+        {
+          "event": "silence_end",
+          "seconds": 2.569229
+        },
+        {
+          "event": "silence_start",
+          "seconds": 2.596938
+        },
+        {
+          "event": "silence_end",
+          "seconds": 2.920208
+        },
+        {
+          "event": "silence_start",
+          "seconds": 3.077229
+        },
+        {
+          "event": "silence_end",
+          "seconds": 3.482625
+        },
+        {
+          "event": "silence_start",
+          "seconds": 5.150062
+        },
+        {
+          "event": "silence_end",
+          "seconds": 5.294646
+        },
+        {
+          "event": "silence_start",
+          "seconds": 5.351208
+        },
+        {
+          "event": "silence_end",
+          "seconds": 5.45125
+        },
+        {
+          "event": "silence_start",
+          "seconds": 5.511854
+        },
+        {
+          "event": "silence_end",
+          "seconds": 5.820333
+        },
+        {
+          "event": "silence_start",
+          "seconds": 5.967354
+        },
+        {
+          "event": "silence_end",
+          "seconds": 6.362521
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.029354
+        },
+        {
+          "event": "silence_end",
+          "seconds": 8.169917
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.375562
+        },
+        {
+          "event": "silence_end",
+          "seconds": 8.712292
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.870875
+        },
+        {
+          "event": "silence_end",
+          "seconds": 9.260042
+        },
+        {
+          "event": "silence_start",
+          "seconds": 10.928167
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.085021
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.136583
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.250021
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.2895
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.626521
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.645104
+        },
+        {
+          "event": "silence_end",
+          "seconds": 12.159812
+        },
+        {
+          "event": "silence_start",
+          "seconds": 13.120458
+        },
+        {
+          "event": "silence_end",
+          "seconds": 13.244458
+        },
+        {
+          "event": "silence_start",
+          "seconds": 13.457958
+        },
+        {
+          "event": "silence_end",
+          "seconds": 13.598583
+        },
+        {
+          "event": "silence_start",
+          "seconds": 13.809563
+        },
+        {
+          "event": "silence_end",
+          "seconds": 14.138
+        },
+        {
+          "event": "silence_start",
+          "seconds": 14.162
+        },
+        {
+          "event": "silence_end",
+          "seconds": 14.495354
+        },
+        {
+          "event": "silence_start",
+          "seconds": 168.156458
+        },
+        {
+          "event": "silence_end",
+          "seconds": 168.291521
+        },
+        {
+          "event": "silence_start",
+          "seconds": 168.679104
+        },
+        {
+          "event": "silence_end",
+          "seconds": 168.832875
+        },
+        {
+          "event": "silence_start",
+          "seconds": 169.214417
+        },
+        {
+          "event": "silence_end",
+          "seconds": 169.556167
+        },
+        {
+          "event": "silence_start",
+          "seconds": 169.588396
+        },
+        {
+          "event": "silence_end",
+          "seconds": 169.727438
+        },
+        {
+          "event": "silence_start",
+          "seconds": 169.923792
+        },
+        {
+          "event": "silence_end",
+          "seconds": 170.100542
+        },
+        {
+          "event": "silence_start",
+          "seconds": 170.169396
+        },
+        {
+          "event": "silence_end",
+          "seconds": 170.273896
+        },
+        {
+          "event": "silence_start",
+          "seconds": 170.416438
+        },
+        {
+          "event": "silence_end",
+          "seconds": 170.633208
+        },
+        {
+          "event": "silence_start",
+          "seconds": 170.884042
+        },
+        {
+          "event": "silence_end",
+          "seconds": 171.000583
+        },
+        {
+          "event": "silence_start",
+          "seconds": 171.004125
+        },
+        {
+          "event": "silence_end",
+          "seconds": 171.182167
+        },
+        {
+          "event": "silence_start",
+          "seconds": 171.412187
+        },
+        {
+          "event": "silence_end",
+          "seconds": 171.72225
+        },
+        {
+          "event": "silence_start",
+          "seconds": 171.984625
+        },
+        {
+          "event": "silence_end",
+          "seconds": 174.506667
+        }
+      ],
+      "loop_seam_review": "not_listened_or_approved",
+      "trailing_below_minus50db_seconds": 2.522042
+    },
+    {
+      "asset_id": "BGM-02",
+      "label": "브리핑",
+      "kind": "bgm",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/bgm_briefing_v1.mp3",
+      "expected_filename": "bgm_briefing_v1.mp3",
+      "filename_matches": true,
+      "bytes": 2906502,
+      "sha256": "8e1fcab5e039e6c6a8eda56b3744765f9c647186d923f6c286eaaa9174e50f88",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "174.826667",
+          "size": "2906502",
+          "bit_rate": "133000"
+        }
+      },
+      "duration_seconds": 174.826667,
+      "prompt_duration_range_seconds": [
+        45.0,
+        60.0
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-17.6",
+        "max_volume": "-0.6"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 174.826667,
+      "silence_events_seconds": [
+        {
+          "event": "silence_start",
+          "seconds": 5.75475
+        },
+        {
+          "event": "silence_end",
+          "seconds": 6.410792
+        },
+        {
+          "event": "silence_start",
+          "seconds": 6.628667
+        },
+        {
+          "event": "silence_end",
+          "seconds": 7.025375
+        },
+        {
+          "event": "silence_start",
+          "seconds": 7.322437
+        },
+        {
+          "event": "silence_end",
+          "seconds": 7.827229
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.014229
+        },
+        {
+          "event": "silence_end",
+          "seconds": 8.226854
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.247646
+        },
+        {
+          "event": "silence_end",
+          "seconds": 8.424146
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.626458
+        },
+        {
+          "event": "silence_end",
+          "seconds": 8.827375
+        },
+        {
+          "event": "silence_start",
+          "seconds": 8.9245
+        },
+        {
+          "event": "silence_end",
+          "seconds": 9.6255
+        },
+        {
+          "event": "silence_start",
+          "seconds": 9.826229
+        },
+        {
+          "event": "silence_end",
+          "seconds": 10.222979
+        },
+        {
+          "event": "silence_start",
+          "seconds": 10.517104
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.024167
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.228042
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.42775
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.484417
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.627062
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.812854
+        },
+        {
+          "event": "silence_end",
+          "seconds": 12.02725
+        },
+        {
+          "event": "silence_start",
+          "seconds": 12.427729
+        },
+        {
+          "event": "silence_end",
+          "seconds": 12.823062
+        },
+        {
+          "event": "silence_start",
+          "seconds": 169.885458
+        },
+        {
+          "event": "silence_end",
+          "seconds": 170.058312
+        },
+        {
+          "event": "silence_start",
+          "seconds": 170.058458
+        },
+        {
+          "event": "silence_end",
+          "seconds": 170.208542
+        },
+        {
+          "event": "silence_start",
+          "seconds": 170.606396
+        },
+        {
+          "event": "silence_end",
+          "seconds": 171.008688
+        },
+        {
+          "event": "silence_start",
+          "seconds": 171.228917
+        },
+        {
+          "event": "silence_end",
+          "seconds": 171.427417
+        },
+        {
+          "event": "silence_start",
+          "seconds": 171.483292
+        },
+        {
+          "event": "silence_end",
+          "seconds": 171.608792
+        },
+        {
+          "event": "silence_start",
+          "seconds": 171.84825
+        },
+        {
+          "event": "silence_end",
+          "seconds": 172.019083
+        },
+        {
+          "event": "silence_start",
+          "seconds": 172.121187
+        },
+        {
+          "event": "silence_end",
+          "seconds": 174.826667
+        }
+      ],
+      "loop_seam_review": "not_listened_or_approved",
+      "trailing_below_minus50db_seconds": 2.70548
+    },
+    {
+      "asset_id": "BGM-01",
+      "label": "캠페인",
+      "kind": "bgm",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/bgm_campaign_map_v1.mp3",
+      "expected_filename": "bgm_campaign_map_v1.mp3",
+      "filename_matches": true,
+      "bytes": 3001671,
+      "sha256": "f7dc0d7107f9e753249278ea2c70d63863d604d3199a7ea2a51dc74f41c7680f",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "176.362667",
+          "size": "3001671",
+          "bit_rate": "136159"
+        }
+      },
+      "duration_seconds": 176.362667,
+      "prompt_duration_range_seconds": [
+        60.0,
+        90.0
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-17.8",
+        "max_volume": "-0.6"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 176.362667,
+      "silence_events_seconds": [
+        {
+          "event": "silence_start",
+          "seconds": 0.0
+        },
+        {
+          "event": "silence_end",
+          "seconds": 0.116562
+        },
+        {
+          "event": "silence_start",
+          "seconds": 11.478646
+        },
+        {
+          "event": "silence_end",
+          "seconds": 11.607896
+        },
+        {
+          "event": "silence_start",
+          "seconds": 174.60875
+        },
+        {
+          "event": "silence_end",
+          "seconds": 176.362667
+        }
+      ],
+      "loop_seam_review": "not_listened_or_approved",
+      "trailing_below_minus50db_seconds": 1.753917
+    },
+    {
+      "asset_id": "SFX-02",
+      "label": "선택 확정",
+      "kind": "sfx",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/sfx_choice_confirm_v1.mp3.mp3",
+      "expected_filename": "sfx_choice_confirm_v1.mp3",
+      "filename_matches": false,
+      "bytes": 74114,
+      "sha256": "4abbbccf413e0954d9b214ca0557e96136bf5df74f8324778d56ac1f4d0b28d2",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.234667",
+          "size": "74114",
+          "bit_rate": "2526610"
+        }
+      },
+      "duration_seconds": 0.234667,
+      "prompt_duration_range_seconds": [
+        0.25,
+        0.5
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-20.4",
+        "max_volume": "-3.5"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.234667
+    },
+    {
+      "asset_id": "SFX-05",
+      "label": "정보 확인",
+      "kind": "sfx",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/sfx_info_open_v1.mp3.mp3",
+      "expected_filename": "sfx_info_open_v1.mp3",
+      "filename_matches": false,
+      "bytes": 48737,
+      "sha256": "6e8dd3e33c165c8b60eee1f5719e3ef0ad36853dd053b5dbb1136906ec540acf",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.512000",
+          "size": "48737",
+          "bit_rate": "761515"
+        }
+      },
+      "duration_seconds": 0.512,
+      "prompt_duration_range_seconds": [
+        0.2,
+        0.5
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-31.6",
+        "max_volume": "-15.9"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.512
+    },
+    {
+      "asset_id": "SFX-04",
+      "label": "HU Tool 사용",
+      "kind": "sfx",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/sfx_card_use_v1.mp3.mp3",
+      "expected_filename": "sfx_card_use_v1.mp3",
+      "filename_matches": false,
+      "bytes": 90301,
+      "sha256": "f53c2bb1c0482c1fb344dd0ff6af04ad254a7dfdceddadc92086738963280a3d",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.896000",
+          "size": "90301",
+          "bit_rate": "806258"
+        }
+      },
+      "duration_seconds": 0.896,
+      "prompt_duration_range_seconds": [
+        0.4,
+        0.9
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-46.7",
+        "max_volume": "-34.7"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.896
+    },
+    {
+      "asset_id": "SFX-07",
+      "label": "상황 변화",
+      "kind": "sfx",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/sfx_event_attention_v1.mp3.mp3",
+      "expected_filename": "sfx_event_attention_v1.mp3",
+      "filename_matches": false,
+      "bytes": 85389,
+      "sha256": "2762be2c7d6d8f9717b7f446e7f687b7be4e6ee40893e57ea8163f6e1452950a",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.832000",
+          "size": "85389",
+          "bit_rate": "821048"
+        }
+      },
+      "duration_seconds": 0.832,
+      "prompt_duration_range_seconds": [
+        0.3,
+        0.8
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-26.6",
+        "max_volume": "-13.0"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.832
+    },
+    {
+      "asset_id": "SFX-10",
+      "label": "결과 도장",
+      "kind": "sfx",
+      "runtime_connected": true,
+      "source_path": "assets/audio/candidates/sfx_stamp_result_v1.mp3",
+      "expected_filename": "sfx_stamp_result_v1.mp3",
+      "filename_matches": true,
+      "bytes": 111519,
+      "sha256": "d96e5916f59e999bb6e67b135f0ccc07232779b384f6761c55c0e56f5751dcf8",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.661333",
+          "size": "111519",
+          "bit_rate": "1349020"
+        }
+      },
+      "duration_seconds": 0.661333,
+      "prompt_duration_range_seconds": [
+        0.3,
+        0.7
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-27.4",
+        "max_volume": "-12.6"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.661333
+    },
+    {
+      "asset_id": "BGM-04",
+      "label": "긴장",
+      "kind": "bgm",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/bgm_operation_tension_v1.mp3",
+      "expected_filename": "bgm_operation_tension_v1.mp3",
+      "filename_matches": true,
+      "bytes": 2935124,
+      "sha256": "27bf5f774bce5811d4b9d453565f46e71d345976b18d280f330a21909b95a321",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "174.186667",
+          "size": "2935124",
+          "bit_rate": "134803"
+        }
+      },
+      "duration_seconds": 174.186667,
+      "prompt_duration_range_seconds": [
+        45.0,
+        60.0
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-17.9",
+        "max_volume": "-0.3"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 174.186667,
+      "silence_events_seconds": [
+        {
+          "event": "silence_start",
+          "seconds": 172.472333
+        },
+        {
+          "event": "silence_end",
+          "seconds": 172.744542
+        },
+        {
+          "event": "silence_start",
+          "seconds": 172.891229
+        },
+        {
+          "event": "silence_end",
+          "seconds": 174.186667
+        }
+      ],
+      "loop_seam_review": "not_listened_or_approved",
+      "trailing_below_minus50db_seconds": 1.295438
+    },
+    {
+      "asset_id": "BGM-05",
+      "label": "리뷰",
+      "kind": "bgm",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/bgm_review_reflective_v1.mp3",
+      "expected_filename": "bgm_review_reflective_v1.mp3",
+      "filename_matches": true,
+      "bytes": 3029698,
+      "sha256": "4120211c86be4674a454c3dd95cdf827d3e569fe0635ec1dfb4192ffe36c7f1c",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "179.904000",
+          "size": "3029698",
+          "bit_rate": "134725"
+        }
+      },
+      "duration_seconds": 179.904,
+      "prompt_duration_range_seconds": [
+        60.0,
+        90.0
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-17.6",
+        "max_volume": "-0.5"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 179.904,
+      "silence_events_seconds": [
+        {
+          "event": "silence_start",
+          "seconds": 177.346854
+        },
+        {
+          "event": "silence_end",
+          "seconds": 177.489563
+        },
+        {
+          "event": "silence_start",
+          "seconds": 177.490292
+        },
+        {
+          "event": "silence_end",
+          "seconds": 179.904
+        }
+      ],
+      "loop_seam_review": "not_listened_or_approved",
+      "trailing_below_minus50db_seconds": 2.413708
+    },
+    {
+      "asset_id": "BGM-06",
+      "label": "안전 정지",
+      "kind": "stinger",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/stinger_safe_stop_v1.mp3",
+      "expected_filename": "stinger_safe_stop_v1.mp3",
+      "filename_matches": true,
+      "bytes": 257887,
+      "sha256": "e0a6d33ca9ffbbc8aaacdfa3d282d31a3de2afc48e16d4ffe32fcfe1d1dc6609",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "5.994667",
+          "size": "257887",
+          "bit_rate": "344155"
+        }
+      },
+      "duration_seconds": 5.994667,
+      "prompt_duration_range_seconds": [
+        3.0,
+        6.0
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-32.4",
+        "max_volume": "-12.1"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 5.994667
+    },
+    {
+      "asset_id": "BGM-07",
+      "label": "근접오류",
+      "kind": "stinger",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/stinger_near_miss_v1.mp3",
+      "expected_filename": "stinger_near_miss_v1.mp3",
+      "filename_matches": true,
+      "bytes": 768504,
+      "sha256": "c326d3d69fbc6b85d6544becaf8d75d6b3af8a7241d500eb40227dd644c61bbe",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "5.994667",
+          "size": "768504",
+          "bit_rate": "1025583"
+        }
+      },
+      "duration_seconds": 5.994667,
+      "prompt_duration_range_seconds": [
+        3.0,
+        6.0
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-28.7",
+        "max_volume": "-13.4"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 5.994667
+    },
+    {
+      "asset_id": "BGM-08",
+      "label": "사건",
+      "kind": "stinger",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/stinger_event_v1.mp3",
+      "expected_filename": "stinger_event_v1.mp3",
+      "filename_matches": true,
+      "bytes": 162257,
+      "sha256": "ab00960abcdbc4b9c5b09d454582c27e1bc53ae93d63ab0786ff23d9415e48cc",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "4.394667",
+          "size": "162257",
+          "bit_rate": "295370"
+        }
+      },
+      "duration_seconds": 4.394667,
+      "prompt_duration_range_seconds": [
+        3.0,
+        6.0
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-38.4",
+        "max_volume": "-20.8"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 4.394667
+    },
+    {
+      "asset_id": "SFX-01",
+      "label": "일반 탭",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_ui_tap_v1.mp3",
+      "expected_filename": "sfx_ui_tap_v1.mp3",
+      "filename_matches": true,
+      "bytes": 41590,
+      "sha256": "a48b62cdd19bbf6afc75b992c0bad13b2bf1a61573981e581fab138a209cf3a6",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.234667",
+          "size": "41590",
+          "bit_rate": "1417838"
+        }
+      },
+      "duration_seconds": 0.234667,
+      "prompt_duration_range_seconds": [
+        0.15,
+        0.3
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-32.5",
+        "max_volume": "-10.7"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.234667
+    },
+    {
+      "asset_id": "SFX-03",
+      "label": "카드 노출",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_card_draw_v1.mp3",
+      "expected_filename": "sfx_card_draw_v1.mp3",
+      "filename_matches": true,
+      "bytes": 225904,
+      "sha256": "f920ea54cbecee1d4ba5bf005e88f5e821e43e7f92587c1a66e01ad3f4f14642",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.746667",
+          "size": "225904",
+          "bit_rate": "2420398"
+        }
+      },
+      "duration_seconds": 0.746667,
+      "prompt_duration_range_seconds": [
+        0.3,
+        0.8
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-38.3",
+        "max_volume": "-26.4"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.746667
+    },
+    {
+      "asset_id": "SFX-06",
+      "label": "시간 진행",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_time_advance_v1.mp3",
+      "expected_filename": "sfx_time_advance_v1.mp3",
+      "filename_matches": true,
+      "bytes": 78389,
+      "sha256": "a621647b5ad56e0264df34885d624e6d0934c86973ffbc62948a5dec67110b96",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.554667",
+          "size": "78389",
+          "bit_rate": "1130609"
+        }
+      },
+      "duration_seconds": 0.554667,
+      "prompt_duration_range_seconds": [
+        0.2,
+        0.6
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-32.5",
+        "max_volume": "-16.7"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.554667
+    },
+    {
+      "asset_id": "SFX-08",
+      "label": "방어막 약화",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_barrier_weaken_v1.mp3",
+      "expected_filename": "sfx_barrier_weaken_v1.mp3",
+      "filename_matches": true,
+      "bytes": 153850,
+      "sha256": "9502a6883e3caf194bb781fbbeb187323c2517212564322b8ed345a97f44708a",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.128000",
+          "size": "153850",
+          "bit_rate": "9615625"
+        }
+      },
+      "duration_seconds": 0.128,
+      "prompt_duration_range_seconds": [
+        0.4,
+        0.8
+      ],
+      "duration_in_requested_range": false,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-30.3",
+        "max_volume": "-15.6"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.128
+    },
+    {
+      "asset_id": "SFX-09",
+      "label": "방어막 강화",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_barrier_reinforce_v1.mp3",
+      "expected_filename": "sfx_barrier_reinforce_v1.mp3",
+      "filename_matches": true,
+      "bytes": 79914,
+      "sha256": "3b5231cc28e7c60dcaaf79ef42221199dfd1a9eab5424c41854364ecc4dcfd14",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.704000",
+          "size": "79914",
+          "bit_rate": "908113"
+        }
+      },
+      "duration_seconds": 0.704,
+      "prompt_duration_range_seconds": [
+        0.4,
+        0.8
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-26.1",
+        "max_volume": "-13.9"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.704
+    },
+    {
+      "asset_id": "SFX-11",
+      "label": "순위 갱신",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_rank_update_v1.mp3",
+      "expected_filename": "sfx_rank_update_v1.mp3",
+      "filename_matches": true,
+      "bytes": 125015,
+      "sha256": "c30eed2ce7a2d63aac66fb9efb32342c617029b9b89219fc662543de8bf80730",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.533333",
+          "size": "125015",
+          "bit_rate": "1875226"
+        }
+      },
+      "duration_seconds": 0.533333,
+      "prompt_duration_range_seconds": [
+        0.3,
+        0.6
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-19.9",
+        "max_volume": "-6.2"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.533333
+    },
+    {
+      "asset_id": "SFX-12",
+      "label": "장 해금",
+      "kind": "sfx",
+      "runtime_connected": false,
+      "source_path": "assets/audio/candidates/sfx_unlock_chapter_v1.mp3",
+      "expected_filename": "sfx_unlock_chapter_v1.mp3",
+      "filename_matches": true,
+      "bytes": 108316,
+      "sha256": "e4d2e6eabd49f42e4ef1e4db4ea5d75d7afa6b3ebca58ed41a5bc99cce6d4ea4",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          },
+          {
+            "codec_name": "mjpeg"
+          }
+        ],
+        "format": {
+          "duration": "0.960000",
+          "size": "108316",
+          "bit_rate": "902633"
+        }
+      },
+      "duration_seconds": 0.96,
+      "prompt_duration_range_seconds": [
+        0.5,
+        1.0
+      ],
+      "duration_in_requested_range": true,
+      "decode_ok": true,
+      "levels_dbfs": {
+        "mean_volume": "-12.6",
+        "max_volume": "-1.5"
+      },
+      "decode_error": null,
+      "decoded_duration_seconds": 0.96
+    }
+  ],
+  "duration_note": "Container duration includes MP3 frame padding/delay. Small boundary deviations alone do not establish an audible defect; decoded duration is also recorded.",
+  "summary": {
+    "matched_assets": 20,
+    "decode_passed": 20,
+    "duplicate_mp3_extensions": 4,
+    "bgm_duration_seconds_range": [
+      174.186667,
+      179.904
+    ],
+    "notable_low_level_asset": "SFX-04",
+    "notable_short_asset": "SFX-08",
+    "first_connected_batch_count": 8,
+    "candidate_total_bytes": 17201943
+  }
+}
