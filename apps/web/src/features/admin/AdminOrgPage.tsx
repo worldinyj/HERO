@@ -528,6 +528,7 @@ export function AdminOrgPage() {
     <section className="admin-page" aria-labelledby="admin-title">
       <header className="panel admin-header">
         <nav className="admin-subnav" aria-label="관리자 메뉴">
+          <Link className="admin-subnav-link" to="/admin/overview">운영 현황</Link>
           <Link className="admin-subnav-link admin-subnav-link--active" to="/admin">
             조직
           </Link>

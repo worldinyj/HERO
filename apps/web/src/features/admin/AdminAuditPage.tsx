@@ -50,6 +50,7 @@ export function AdminAuditPage() {
   return <section className="admin-page" aria-labelledby="audit-title">
     <header className="panel admin-header">
       <nav className="admin-subnav" aria-label="관리자 메뉴">
+          <Link className="admin-subnav-link" to="/admin/overview">운영 현황</Link>
         <Link className="admin-subnav-link" to="/admin">조직</Link>
         <Link className="admin-subnav-link" to="/admin/scenarios">시나리오</Link>
         <Link className="admin-subnav-link admin-subnav-link--active" to="/admin/audit" aria-current="page">감사 이력</Link>

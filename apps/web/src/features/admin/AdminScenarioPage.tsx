@@ -251,6 +251,7 @@ export function AdminScenarioPage() {
     <section className="admin-page" aria-labelledby="scenario-admin-title">
       <header className="panel admin-header">
         <div className="admin-breadcrumb">
+          <Link to="/admin/overview">운영 현황</Link>
           <Link to="/admin">조직 관리</Link>
           <span aria-hidden="true">/</span>
           <strong>시나리오</strong>
