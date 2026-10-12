@@ -163,7 +163,6 @@ export function App() {
   const { profile, session } = useAuth();
   const managerNav = profile?.role === "plant_manager";
   const adminNav = profile?.role === "admin";
-  const expandedNav = managerNav || adminNav;
   const publicRoute =
     location.pathname === "/login" ||
     location.pathname === "/terms" ||
@@ -294,7 +293,7 @@ export function App() {
 
       {!publicRoute && !immersiveRoute ? (
         <nav
-          className={expandedNav ? "bottom-nav bottom-nav--manager" : "bottom-nav"}
+          className="bottom-nav"
           aria-label="주요 메뉴"
         >
           <NavLink to="/" end>캠페인</NavLink>
