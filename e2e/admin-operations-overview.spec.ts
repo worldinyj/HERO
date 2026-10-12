@@ -82,6 +82,32 @@ test("operations companion has finite motion and image failure preserves dashboa
   await expect(page.locator(".operations-metrics")).toContainText("9건");
 });
 
+test("desktop operations use a wide workspace and preserve equal centered navigation", async ({ browser, baseURL }, testInfo) => {
+  const context = await browser.newContext({ baseURL, viewport: { width: 1280, height: 900 }, isMobile: false });
+  const page = await context.newPage();
+  try {
+    await fixture(page);
+    await expect(page.locator(".operations-metrics")).toContainText("9건");
+    const shell = await page.locator("main").boundingBox();
+    const nav = await page.getByRole("navigation", { name: "주요 메뉴", exact: true }).boundingBox();
+    expect(shell!.width).toBe(960);
+    expect(nav!.width).toBe(shell!.width);
+    expect(nav!.x).toBe(shell!.x);
+    const metrics = await page.locator(".operations-metrics > div").evaluateAll(items => items.map(item => item.getBoundingClientRect().y));
+    expect(new Set(metrics).size).toBe(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("desktop-operations-workspace.png"), fullPage: true });
+    await page.setViewportSize({ width: 767, height: 900 });
+    await expect(page.locator("main")).toHaveCSS("width", "480px");
+    await page.setViewportSize({ width: 768, height: 900 });
+    await expect(page.locator("main")).toHaveCSS("width", "768px");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  } finally {
+    await context.close();
+  }
+});
+
 test("a failed route module offers recovery and reload restores the operating page", async ({ page }) => {
   const moduleUrl = "**/src/features/admin/AdminOverviewPage.tsx*";
   await page.route(moduleUrl, route => route.abort());
