@@ -52,6 +52,34 @@ test("admin reads counts only and sees the current playable season binding", asy
   expect(requests.filter(r => r.method === "POST").every(r => r.path === "/functions/v1/admin-scenario")).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  const companion = page.locator(".learning-mascot-heading img");
+  await expect.poll(() => companion.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(companion).toHaveAttribute("src", "/images/mascot/suri-check-v1.webp");
+  expect(await companion.evaluate(image => getComputedStyle(image).animationName)).toBe("none");
+  const nav = page.getByRole("navigation", { name: "주요 메뉴", exact: true });
+  const widths = await nav.locator("a").evaluateAll(links => links.map(link => link.getBoundingClientRect().width));
+  expect(widths).toHaveLength(3);
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(1);
+});
+
+test("operations companion has finite motion and image failure preserves dashboard actions", async ({ page }, testInfo) => {
+  await fixture(page);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const companion = page.locator(".learning-mascot-heading img");
+  await expect.poll(() => companion.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  const motion = await companion.evaluate(image => {
+    const css = getComputedStyle(image);
+    return { name: css.animationName, duration: css.animationDuration, iterations: css.animationIterationCount };
+  });
+  expect(motion).toEqual({ name: "suri-arrive", duration: "0.65s", iterations: "1" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.screenshot({ path: testInfo.outputPath("operations-companion.png"), fullPage: true });
+  await page.route("**/images/mascot/**", route => route.abort());
+  await page.reload();
+  await expect(companion).toBeHidden();
+  await expect(page.getByRole("heading", { name: "운영 현황", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "현황 새로고침" })).toBeEnabled();
+  await expect(page.locator(".operations-metrics")).toContainText("9건");
 });
 
 test("verified zero registration and no active season are shown distinctly", async ({ page }) => {

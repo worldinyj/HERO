@@ -1,13 +1,4 @@
-type ModuleLoader<T> = () => Promise<T>;
-
-function cachedLoader<T>(loader: ModuleLoader<T>): ModuleLoader<T> {
-  let promise: Promise<T> | null = null;
-
-  return () => {
-    promise ??= loader();
-    return promise;
-  };
-}
+import { cachedLoader } from "../lib/cachedLoader";
 
 export const loadGamePageModule = cachedLoader(
   () => import("../features/play/GamePage"),
@@ -38,11 +29,15 @@ export const loadAdminScenarioPageModule = cachedLoader(
 );
 
 export function preloadGameRoute(): void {
-  void loadGamePageModule();
+  void loadGamePageModule().catch(() => {
+    // A speculative fetch must not break the current page. Retry on navigation.
+  });
 }
 
 export function preloadBriefingRoute(): void {
-  void loadBriefingPageModule();
+  void loadBriefingPageModule().catch(() => {
+    // A speculative fetch must not break the current page. Retry on navigation.
+  });
 }
 
 export const loadAdminAuditPageModule = cachedLoader(

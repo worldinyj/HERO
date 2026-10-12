@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CompanionHeading } from "../../components/CompanionHeading";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
@@ -462,8 +463,7 @@ export function ManagerDashboardPage() {
   return (
     <section className="manager-page" aria-labelledby="manager-title">
       <header className="panel manager-header">
-        <p className="eyebrow">Plant Manager</p>
-        <h2 id="manager-title">발전소 참여 현황</h2>
+        <CompanionHeading eyebrow="Plant Manager" title="발전소 참여 현황" titleId="manager-title" />
         <p className="muted">
           개인 HP·선택·엔딩·5대 학습행동 지표는 담당자 화면에 표시하지 않습니다.
         </p>

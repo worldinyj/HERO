@@ -29,7 +29,7 @@ export function LoginPage() {
         <p className="eyebrow">HERO Invitation Only</p>
         <KhnpBrand />
       </div>
-      <SuriIllustration eager />
+      <SuriIllustration eager priority="high" />
       <h2 id="login-title">함께 확인하고, 함께 배웁니다.</h2>
       <p className="muted">
         처음 이용하는 사용자는 HERO 담당자가 발급한 초대 링크로 접속해주세요.

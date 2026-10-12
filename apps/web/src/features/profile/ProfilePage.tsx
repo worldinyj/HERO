@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
 import { isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { canReconcileNickname, isValidMyRecordSummary, isValidNicknameStatus, matchesCheckedNickname } from "./nicknameReconciliation";
@@ -398,8 +399,7 @@ export function ProfilePage() {
   return (
     <section className="profile-page" aria-labelledby="profile-title">
       <header className="panel profile-header">
-        <p className="eyebrow">My HERO</p>
-        <h2 id="profile-title">{data.profile.nickname ?? "HERO 사용자"}</h2>
+        <CompanionHeading eyebrow="My HERO" title={data.profile.nickname ?? "HERO 사용자"} titleId="profile-title" pose="reflect" />
         <p className="muted">
           {data.profile.job_role
             ? JOB_LABEL[data.profile.job_role] ?? data.profile.job_role

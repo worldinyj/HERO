@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
@@ -529,7 +530,7 @@ export function AdminOrgPage() {
       <header className="panel admin-header">
         <nav className="admin-subnav" aria-label="관리자 메뉴">
           <Link className="admin-subnav-link" to="/admin/overview">운영 현황</Link>
-          <Link className="admin-subnav-link admin-subnav-link--active" to="/admin">
+          <Link className="admin-subnav-link admin-subnav-link--active" to="/admin" aria-current="page">
             조직
           </Link>
           <Link className="admin-subnav-link" to="/admin/scenarios">
@@ -537,8 +538,7 @@ export function AdminOrgPage() {
           </Link>
           <Link className="admin-subnav-link" to="/admin/audit">감사 이력</Link>
         </nav>
-        <p className="eyebrow">Super Admin</p>
-        <h2 id="admin-title">조직 관리</h2>
+        <CompanionHeading eyebrow="Super Admin" title="조직 관리" titleId="admin-title" />
         <p className="muted">
           발전소를 생성하고 각 발전소의 교육담당자 초대 링크를 발급합니다.
         </p>
