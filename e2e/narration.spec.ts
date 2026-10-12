@@ -92,6 +92,35 @@ test("narration follows displayed scene, info and reached ending; replay and sto
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('suri-reflection-desktop.png'), fullPage: true });
 });
+test("profile companion preserves the difference between an unranked and ranked season", async ({ page }, testInfo) => {
+  await fixture(page);
+  let ranked = false;
+  await page.route("**/rest/v1/rpc/my_record_summary", route => route.fulfill({ json: {
+    profile: { role: "player", nickname: "TESTPLAYER", real_name: "테스트", job_role: "worker" },
+    metrics: { safety: 0, awareness: 0, communication: 0, procedure: 0, challenge: 0, completed_sessions: ranked ? 1 : 0 },
+    scenario_records: [], season_history: [],
+    current_season: { season_key: "2026-10", season_title: "10월 시즌", hp_point: ranked ? 120 : 0,
+      scenario_count: ranked ? 1 : 0, overall_rank: ranked ? 1 : 0, overall_top_percent: ranked ? 10 : 0,
+      plant_rank: ranked ? 1 : 0, job_rank: ranked ? 1 : 0 },
+  } }));
+  await page.goto("/me");
+  const season = page.getByRole("region", { name: "현재 시즌" });
+  await expect(season).toContainText("순위 미집계");
+  await expect(season).not.toContainText("#0");
+  await expect(season).not.toContainText("상위 0%");
+  const companion = page.locator(".learning-mascot-heading img");
+  await expect(companion).toHaveAttribute("src", "/images/mascot/suri-reflect-v1.webp");
+  await expect.poll(() => companion.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: testInfo.outputPath("profile-companion.png"), fullPage: true });
+  ranked = true;
+  await page.reload();
+  await expect(season).toContainText("#1");
+  await expect(season).toContainText("상위 10%");
+  await expect(season).not.toContainText("순위 미집계");
+});
+
 test("empty manifest keeps tutorial playable without narration controls", async ({ page }) => {
   await fixture(page, false);
   await expect(page.getByRole("button", { name: "나레이션 다시 듣기" })).toHaveCount(0);

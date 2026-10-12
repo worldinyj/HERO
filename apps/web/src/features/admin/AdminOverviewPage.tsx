@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
+import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
 import { exactCount, isScenarioPlayable, operationalScenarioState, type OperationsCounts } from "./operationsOverview";
@@ -58,7 +59,7 @@ export function AdminOverviewPage() {
         <Link className="admin-subnav-link" to="/admin/scenarios">시나리오</Link>
         <Link className="admin-subnav-link" to="/admin/audit">감사 이력</Link>
       </nav>
-      <p className="eyebrow">Operations Overview</p><h2 id="operations-title">운영 현황</h2>
+      <CompanionHeading eyebrow="Operations Overview" title="운영 현황" titleId="operations-title" />
       <p className="muted">등록 현황과 이번 시즌의 경쟁 플레이 연결 상태를 확인합니다.</p>
       <button className="secondary-button" type="button" disabled={loading} onClick={() => void load()}>현황 새로고침</button>
       <p role="status" className="muted">{loading ? "운영 현황을 불러오고 있습니다…" :

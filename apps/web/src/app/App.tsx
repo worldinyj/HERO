@@ -3,6 +3,7 @@ import { SCENARIO_SCHEMA_VERSION } from "@hero/schema/version";
 import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { SuriIllustration } from "../components/SuriIllustration";
+import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { useAudio } from "../features/audio/AudioContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
@@ -241,6 +242,7 @@ export function App() {
         </header>
       ) : null}
 
+      <RouteErrorBoundary key={location.pathname}>
       <Suspense fallback={<RouteLoading />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -290,6 +292,7 @@ export function App() {
         />
       </Routes>
       </Suspense>
+      </RouteErrorBoundary>
 
       {!publicRoute && !immersiveRoute ? (
         <nav
