@@ -3009,3 +3009,21 @@ h3 {
 .scenario-review-areas p { margin-block: 0.35rem; }
 .scenario-review-panel select { display: block; width: 100%; margin-top: 0.4rem; }
 .scenario-review-hash { display: block; overflow-wrap: anywhere; margin-block: 0.75rem; }
+
+.scenario-review-form fieldset { border: 0; padding: 0; display: grid; gap: 0.8rem; min-width: 0; }
+.scenario-review-form label > input:not([type="checkbox"]), .scenario-review-form textarea { display: block; width: 100%; margin-top: 0.4rem; }
+.scenario-review-form textarea { min-height: 6rem; }
+.review-confirmation { display: flex; gap: 0.65rem; align-items: flex-start; }
+.review-confirmation input { flex-shrink: 0; margin-top: 0.3rem; }
+.scenario-review-form input:not([type="checkbox"]), .scenario-review-form select, .scenario-review-form textarea {
+  min-height: 48px;
+  border: 1px solid #7182a2;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--bg);
+  font: inherit;
+  color-scheme: dark;
+}
+.review-confirmation { min-height: 44px; }
+.review-confirmation input { width: 20px; height: 20px; accent-color: var(--accent); }

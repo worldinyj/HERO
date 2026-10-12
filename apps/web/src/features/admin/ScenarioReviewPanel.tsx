@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Scenario } from "@hero/schema";
+import { ScenarioReviewForm } from "./ScenarioReviewForm";
 import generated from "./scenarioReviewStatus.generated.json";
 import { matchesReviewTarget, type ReviewArea, type ReviewTarget } from "./scenarioReview";
 import { readSavedPreview } from "./scenarioPreviewValidation";
@@ -74,7 +75,7 @@ export function ScenarioReviewPanel({ versions, editor, readVersion, onPreview }
     <h4>검토할 내용 확인</h4>
     <p className="muted">저장된 버전이나 입력한 JSON이 이 검토 대상과 일치하는지 확인한 뒤 검토용 미리보기를 열 수 있습니다.</p>
     {candidates.length ? <label>저장된 S03 버전
-      <select value={selected} onChange={event => setSelected(event.target.value)}>
+      <select aria-label="저장된 S03 버전" value={selected} onChange={event => setSelected(event.target.value)}>
         <option value="">버전을 선택해주세요</option>
         {candidates.map(row => <option key={row.id} value={row.id}>v{row.version} · {STATUS_LABEL[row.status]}</option>)}
       </select>
@@ -87,6 +88,7 @@ export function ScenarioReviewPanel({ versions, editor, readVersion, onPreview }
     {message ? <p className="error-text" role="alert">{message}</p> : null}
     {checked ? <div className="validation-box"><p role="status">S03 v{target.version} 검토 대상과 내용이 일치합니다.</p><button type="button" className="secondary-button" onClick={event => onPreview(checked, event.currentTarget)}>S03 검토용 미리보기 열기</button></div> : null}
     <details><summary>검토 대상 식별 정보</summary><p className="muted">검토 기록을 남길 때 아래 파일 SHA-256을 사용합니다.</p><code className="scenario-review-hash">{target.contentSha256}</code></details>
+    <ScenarioReviewForm target={target} verified={Boolean(checked)} />
     <h4>검토 결과 반영 순서</h4>
     <p className="muted">검토자는 영역별 통과·보완 판정과 검토자·검토일·근거 문서를 확정합니다. 담당자가 해당 내용의 검토 기록을 등록하고 배포에 반영하면 진행 상태가 갱신됩니다.</p>
     <p className="review-note">버전 상태 변경과 시즌 배정은 별도 절차입니다. 이 화면의 내용 일치 확인이나 미리보기는 최종 콘텐츠 승인으로 기록되지 않습니다.</p>

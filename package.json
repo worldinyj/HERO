@@ -36,7 +36,8 @@
     "check:batch-db-contracts": "node scripts/check-batch-db-contracts.mjs",
     "check:tasklist-progress": "node scripts/check-tasklist-progress.mjs",
     "build:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts",
-    "check:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts --check"
+    "check:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts --check",
+    "import:scenario-review": "node --import tsx scripts/import-scenario-review.ts"
   },
   "devDependencies": {
     "eslint": "^9.0.0",
