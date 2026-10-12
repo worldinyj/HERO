@@ -172,6 +172,8 @@ export function App() {
   const playRoute = location.pathname.startsWith("/play/");
   const briefingRoute = location.pathname.startsWith("/briefing/");
   const immersiveRoute = playRoute || briefingRoute;
+  const workspaceRoute = location.pathname === "/manager" ||
+    location.pathname === "/admin" || location.pathname.startsWith("/admin/");
   const bgmSilent = audioSettings.bgmMuted || audioSettings.bgmVolume === 0;
 
   useEffect(() => {
@@ -231,7 +233,7 @@ export function App() {
         id="hero-main-content"
         ref={mainRef}
         tabIndex={-1}
-        className={immersiveRoute ? "app-shell app-shell--play" : "app-shell"}
+        className={`app-shell${immersiveRoute ? " app-shell--play" : ""}${workspaceRoute ? " app-shell--workspace" : ""}`}
       >
       {!immersiveRoute ? (
         <header className="hero-header">
@@ -296,7 +298,7 @@ export function App() {
 
       {!publicRoute && !immersiveRoute ? (
         <nav
-          className="bottom-nav"
+          className={`bottom-nav${workspaceRoute ? " bottom-nav--workspace" : ""}`}
           aria-label="주요 메뉴"
         >
           <NavLink to="/" end>캠페인</NavLink>

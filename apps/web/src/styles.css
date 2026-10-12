@@ -593,6 +593,14 @@ h3 {
   font-weight: 800;
 }
 
+@media (min-width: 768px) {
+  .app-shell--workspace,
+  .bottom-nav--workspace { width: min(100%, 960px); }
+  .app-shell--workspace .operations-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @media (min-width: 420px) {
   .info-grid,
   .card-tray {
