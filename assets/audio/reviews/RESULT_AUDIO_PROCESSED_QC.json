@@ -1,0 +1,169 @@
+{
+  "date": "2026-10-12",
+  "originals_preserved": true,
+  "files": [
+    {
+      "asset_id": "BGM-05",
+      "kind": "bgm",
+      "source_path": "assets/audio/candidates/bgm_review_reflective_v1.mp3",
+      "source_sha256": "4120211c86be4674a454c3dd95cdf827d3e569fe0635ec1dfb4192ffe36c7f1c",
+      "processed_path": "assets/audio/candidates/processed-v1/bgm_review_reflective_v1.mp3",
+      "file_sha256": "cc0a2d048b00fd37f2535079459941f08d167adb039ebffa4a80531f2d44a2c7",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "59.750000",
+          "size": "957050"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -21.6,
+        "max_volume": -5.8
+      },
+      "decode_ok": true,
+      "processing": {
+        "source_excerpt_seconds": [
+          30,
+          90
+        ],
+        "circular_crossfade_seconds": 0.25,
+        "pcm_output_seconds": 59.75,
+        "target_lufs": -20,
+        "target_true_peak_dbfs": -2,
+        "loudness_measurement": {
+          "input_i": "-14.83",
+          "input_tp": "-0.52",
+          "input_lra": "3.30",
+          "input_thresh": "-24.83",
+          "output_i": "-19.48",
+          "output_tp": "-5.39",
+          "output_lra": "3.00",
+          "output_thresh": "-29.48",
+          "normalization_type": "dynamic",
+          "target_offset": "-0.52"
+        },
+        "note": "Same-track excerpt only; musical phrase and audible seam require human listening. MP3/native loop timing may add a gap."
+      },
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/bgm_review_reflective_v1.mp3"
+    },
+    {
+      "asset_id": "BGM-06",
+      "kind": "stinger",
+      "source_path": "assets/audio/candidates/stinger_safe_stop_v1.mp3",
+      "source_sha256": "e0a6d33ca9ffbbc8aaacdfa3d282d31a3de2afc48e16d4ffe32fcfe1d1dc6609",
+      "processed_path": "assets/audio/candidates/processed-v1/stinger_safe_stop_v1.mp3",
+      "file_sha256": "3ec85cd0816617d6e9465ce01f19bd123d712b45247b3aa370ae4bdc7e02d52a",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "5.994667",
+          "size": "96813"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -28.8,
+        "max_volume": -8.5
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 4.1,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/stinger_safe_stop_v1.mp3"
+    },
+    {
+      "asset_id": "BGM-07",
+      "kind": "stinger",
+      "source_path": "assets/audio/candidates/stinger_near_miss_v1.mp3",
+      "source_sha256": "c326d3d69fbc6b85d6544becaf8d75d6b3af8a7241d500eb40227dd644c61bbe",
+      "processed_path": "assets/audio/candidates/processed-v1/stinger_near_miss_v1.mp3",
+      "file_sha256": "dd22bafd7b22ff504c9eaeab0a897df2c0855f6e8ebaacb1bd304c1f1e22600b",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "5.994667",
+          "size": "96813"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -23.7,
+        "max_volume": -8.4
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 5.4,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/stinger_near_miss_v1.mp3"
+    },
+    {
+      "asset_id": "BGM-08",
+      "kind": "stinger",
+      "source_path": "assets/audio/candidates/stinger_event_v1.mp3",
+      "source_sha256": "ab00960abcdbc4b9c5b09d454582c27e1bc53ae93d63ab0786ff23d9415e48cc",
+      "processed_path": "assets/audio/candidates/processed-v1/stinger_event_v1.mp3",
+      "file_sha256": "b089d88355e102731aed17cbcec2a80e3199f5d3b16e2f7e143c67d7635949b7",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "48000",
+            "channels": 2,
+            "bit_rate": "128000"
+          }
+        ],
+        "format": {
+          "duration": "4.394667",
+          "size": "71469"
+        }
+      },
+      "levels_dbfs": {
+        "mean_volume": -26.0,
+        "max_volume": -8.5
+      },
+      "decode_ok": true,
+      "processing": {
+        "gain_db": 12.8,
+        "target_sample_peak_dbfs": -8,
+        "note": "Peak normalization only; perceptual balance and noise require listening. Duration unchanged."
+      },
+      "approval": "user_rights_and_result_audio_listening_confirmed_2026-10-12",
+      "runtime_path": "/audio/bgm/stinger_event_v1.mp3"
+    }
+  ],
+  "scope": "FFmpeg and Chromium technical checks passed. User confirmed the four processed result audio clips on 2026-10-12. Usage rights were confirmed in earlier conversation. No independent Codex listening or real-device review."
+}

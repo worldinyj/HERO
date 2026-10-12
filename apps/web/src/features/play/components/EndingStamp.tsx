@@ -9,11 +9,23 @@ const ENDING_LABEL: Record<Ending, string> = {
   event: "사건",
 };
 
+const ENDING_SOUND: Record<Ending, string> = {
+  safe_complete: "SFX-10",
+  safe_stop: "BGM-06",
+  near_miss: "BGM-07",
+  event: "BGM-08",
+};
+
 export function EndingStamp({ ending }: { ending: Ending }) {
   const { manager: audioManager } = useAudio();
 
   useEffect(() => {
-    void audioManager.playSfx("SFX-10");
+    const controller = new AbortController();
+    void audioManager.playSfx(ENDING_SOUND[ending], {
+      fallbackAssetId: "SFX-10",
+      signal: controller.signal,
+    });
+    return () => controller.abort();
   }, [audioManager, ending]);
 
   return (

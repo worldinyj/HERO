@@ -59,3 +59,17 @@ Chromium 모바일 viewport 재생·디코딩을 자동 검증한다. iOS Safari
 - 원본 20개·보정 8개 SHA-256, FFmpeg 전체 디코딩·sample peak, Chromium native decode/play 진행 확인. Codex 독립 청취·실기기 검수 없음.
 - 상세: `BGM_SFX_V1_CANDIDATE_TECHNICAL_QC.json`, `BGM_SFX_FIRST_BATCH_PROCESSED_QC.json`.
 - 나머지 12개는 미등록·미연결. 짧은 SFX-08 등 다음 배치 보완 항목을 유지한다.
+
+## 회고·엔딩 후속 4개 — 2026-10-12
+
+BGM-05/06/07/08을 원본 보존 상태에서 보정하고 플레이·결과 단계 연결을 준비했다. 공개 런타임 manifest는 기존 승인 13개를 유지한다. 이번 보정본의 독립 청취·실기기·HF 검수는 수행하지 않았으며, 이전 8개 청취 확인을 이번 4개에 승계하지 않는다.
+
+- 회고 BGM: 같은 트랙 30~90초 구간, 0.25초 순환 crossfade, 2-pass loudness 보정. 약 59.75초.
+- 엔딩 stinger: 길이 유지, sample peak 약 -8dBFS, 오디오 스트림만 export하여 embedded artwork 제거. 약 4.39~5.99초.
+- FFmpeg 전체 디코딩·해시·peak 확인. Chromium 390×844·360×800의 테스트 전용 경로에서 네 후보의 decode/play 확인.
+- 런타임은 승인된 엔딩 음원만 재생하고 없으면 기존 SFX-10 도장음으로 대체. 회고 BGM 미등록 상태에서는 결과 단계의 작업 BGM을 중단한다.
+- 상세: `RESULT_AUDIO_PROCESSED_QC.json`, `RESULT_AUDIO_PENDING_MANIFEST.json`, `docs/42_RESULT_AUDIO_FOLLOWUP.md`.
+
+### 후속 4개 사용자 청취 확인·등록
+
+2026-10-12 사용자가 제시한 네 보정본에 대해 “보정본 괜찮아요. 이어서 작업 진행”이라고 확인했다. 앞서 확인한 Flow Music·사용 권한과 함께 BGM-05/06/07/08을 승인 manifest에 등록했다. 나레이션 5개·루프 BGM 4개·SFX 5개·엔딩 stinger 3개로 총 17개다. 모델 미확인·원본 수정일 기반 생성일·요청문 기반 prompt hash·Codex 독립 청취 및 실기기 미검수 사실은 유지한다. `RESULT_AUDIO_PENDING_MANIFEST.json`은 실제 등록 후 제거했고 원본·보정본 해시 일치도 확인했다.

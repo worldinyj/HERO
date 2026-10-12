@@ -193,6 +193,8 @@ export function App() {
   }, [audioManager, location.pathname]);
 
   useEffect(() => {
+    // GamePage selects music from the current play/review stage.
+    if (playRoute) return;
     if (!audioSettings.initialized || bgmSilent ||
         (!briefingRoute && !playRoute && location.pathname !== "/")) {
       audioManager.stopBgm();
@@ -201,9 +203,7 @@ export function App() {
 
     const cue = briefingRoute
       ? "BGM-02"
-      : playRoute
-        ? "BGM-03"
-        : "BGM-01";
+      : "BGM-01";
 
     void audioManager.playBgm(cue);
     return () => audioManager.stopBgm();

@@ -6,6 +6,8 @@ const assets: AudioManifestAsset[] = [
   { id: "B", kind: "bgm", approved: true, path: "/audio/bgm/b.mp3" },
   { id: "C", kind: "bgm", approved: true, path: "/audio/bgm/c.mp3" },
   { id: "S", kind: "sfx", approved: true, path: "/audio/sfx/s.mp3", defaultVolume: 0.25 },
+  { id: "ENDING", kind: "stinger", approved: true, path: "/audio/bgm/ending.mp3" },
+  { id: "PENDING", kind: "stinger", approved: false, path: "/audio/bgm/pending.mp3" },
 ];
 class FakeAudio {
   static instances: FakeAudio[] = [];
@@ -40,6 +42,32 @@ function setup(manifestDelay = false) {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe("BGM and SFX lifecycle", () => {
+  it("plays one approved stinger, or falls back when it is absent or unapproved", async () => {
+    const { manager } = setup();
+    await manager.playSfx("ENDING", { fallbackAssetId: "S" });
+    await manager.playSfx("PENDING", { fallbackAssetId: "S" });
+    await manager.playSfx("MISSING", { fallbackAssetId: "S" });
+    expect(FakeAudio.instances.map(a => a.src)).toEqual([
+      "/audio/bgm/ending.mp3", "/audio/sfx/s.mp3", "/audio/sfx/s.mp3",
+    ]);
+  });
+  it("cancels an ending lookup when its screen unmounts", async () => {
+    const { manager, release } = setup(true);
+    const controller = new AbortController();
+    const pending = manager.playSfx("ENDING", { fallbackAssetId: "S", signal: controller.signal });
+    controller.abort(); release(); await pending;
+    expect(FakeAudio.instances).toHaveLength(0);
+  });
+  it("stops an ending voice and a delayed native play when its screen unmounts", async () => {
+    const { manager } = setup(); FakeAudio.delayed = true;
+    const controller = new AbortController();
+    const pending = manager.playSfx("ENDING", { signal: controller.signal });
+    await vi.waitFor(() => expect(FakeAudio.instances).toHaveLength(1));
+    controller.abort();
+    expect(FakeAudio.instances[0]!.src).toBe("");
+    FakeAudio.instances[0]!.finish(); await pending;
+    expect(FakeAudio.instances[0]!.paused).toBe(true);
+  });
   it("clamps a frame timestamp earlier than a newly started crossfade", async () => {
     const { manager, flush } = setup(); await manager.playBgm("A"); flush();
     const previousVolume = FakeAudio.instances[0]!.volume;

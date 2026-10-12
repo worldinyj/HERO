@@ -1,7 +1,10 @@
+import { readFile } from "node:fs/promises";
+import resultQc from "../assets/audio/reviews/RESULT_AUDIO_PROCESSED_QC.json" with { type: "json" };
+import competitiveFixture from "./fixtures/e2e_competitive.json" with { type: "json" };
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import pack from "../assets/audio/prompts/NARRATION_S00_V1.json" with { type: "json" };
-async function fixture(page: Page, withAssets = true, nativeAudio = false, briefingCapture?: string) {
+async function fixture(page: Page, withAssets = true, nativeAudio = false, briefingCapture?: string, extraAssets: Array<{ id: string; kind: string; approved: boolean; path: string }> = []) {
   const user = { id: "f6100000-0000-0000-0000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
   await page.addInitScript(({ user, nativeAudio }) => {
     const expiresAt = Math.floor(Date.now() / 1000) + 3600;
@@ -17,9 +20,12 @@ async function fixture(page: Page, withAssets = true, nativeAudio = false, brief
     }
     if (nativeAudio) {
       const NativeAudio = window.Audio;
+      const voices: Array<{ path: string; audio: HTMLAudioElement }> = [];
+      (window as unknown as { audioVoices: typeof voices }).audioVoices = voices;
       window.Audio = function(src: string) {
         const audio = new NativeAudio(src);
         audio.addEventListener("playing", () => events.push({ event: "play", path: src }));
+        voices.push({ path: src, audio });
         return audio;
       } as unknown as typeof Audio;
     } else window.Audio = FakeAudio as unknown as typeof Audio;
@@ -38,7 +44,7 @@ async function fixture(page: Page, withAssets = true, nativeAudio = false, brief
     else if (url.pathname === "/functions/v1/nickname-action") await route.fulfill({ json: { canChange: false, resetRequired: false, changedThisSeason: false, seasonKey: null, nickname: "TESTPLAYER" } });
     else await route.fulfill({ json: [] });
   });
-  if (!nativeAudio) await page.route("**/audio/audio_manifest.json", route => route.fulfill({ json: { version: "test", project: "HERO", assets: withAssets ? pack.clips.map(c => ({ id: c.asset_id, kind: "narration", approved: true, path: `/audio/narration/${c.filename}`, narration: { scenarioId: pack.scenario_id, scenarioVersion: pack.scenario_version, nodeId: c.node_id, field: c.field, ...(c.action_id ? { actionId: c.action_id } : {}), text: c.text } })) : [] } }));
+  if (!nativeAudio) await page.route("**/audio/audio_manifest.json", route => route.fulfill({ json: { version: "test", project: "HERO", assets: withAssets ? [...extraAssets, ...pack.clips.map(c => ({ id: c.asset_id, kind: "narration", approved: true, path: `/audio/narration/${c.filename}`, narration: { scenarioId: pack.scenario_id, scenarioVersion: pack.scenario_version, nodeId: c.node_id, field: c.field, ...(c.action_id ? { actionId: c.action_id } : {}), text: c.text } }))] : [] } }));
   await page.goto("/briefing/s00_tutorial");
   await expect(page.locator('.learning-mascot-heading img')).toHaveAttribute('src', '/images/mascot/suri-check-v1.webp');
   if (briefingCapture) {
@@ -136,12 +142,14 @@ test("registered audio MP3 files play and decode in the native browser audio ele
     }
     return values;
   });
-  expect(results).toHaveLength(13);
+  expect(results).toHaveLength(17);
   expect(results.every(r => r.duration > 0 && Number.isFinite(r.duration) && r.played)).toBe(true);
   expect(results.filter(r => r.kind === "narration").every(r => r.duration > 4 && r.duration < 8)).toBe(true);
-  expect(results.filter(r => r.kind === "bgm")).toHaveLength(3);
+  expect(results.filter(r => r.kind === "bgm")).toHaveLength(4);
   expect(results.filter(r => r.kind === "bgm").every(r => r.duration > 44 && r.duration < 61)).toBe(true);
   expect(results.filter(r => r.kind === "sfx")).toHaveLength(5);
+  expect(results.filter(r => r.kind === "stinger")).toHaveLength(3);
+  expect(results.filter(r => r.kind === "stinger").every(r => r.duration > 4 && r.duration < 7)).toBe(true);
   expect(errors).toEqual([]);
 });
 
@@ -176,3 +184,117 @@ test("registered music and effects follow play actions and muted settings", asyn
   await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeVisible();
   expect((await played(page)).filter(path => path.includes("/bgm/") || path.includes("/sfx/"))).toEqual([]);
 });
+
+const resultAudio = [
+  { id: "BGM-03", kind: "bgm", approved: true, path: "/audio/bgm/bgm_operation_base_v1.mp3" },
+  { id: "BGM-05", kind: "bgm", approved: true, path: "/audio/bgm/bgm_review_reflective_v1.mp3" },
+  { id: "BGM-07", kind: "stinger", approved: true, path: "/audio/bgm/stinger_near_miss_v1.mp3" },
+  { id: "SFX-10", kind: "sfx", approved: true, path: "/audio/sfx/sfx_stamp_result_v1.mp3" },
+];
+for (const approved of [true, false]) {
+  test(`result music and ending cues respect approval=${approved}, review cleanup and replay`, async ({ page }) => {
+    await fixture(page, true, false, undefined, resultAudio.map(a => ({ ...a, approved: a.id === "BGM-05" || a.id === "BGM-07" ? approved : a.approved })));
+    await expect.poll(async () => (await played(page)).filter(p => p.includes("operation_base"))).toHaveLength(1);
+    await page.getByRole("button", { name: "계속", exact: true }).click();
+    await page.getByRole("radio", { name: /현재 정보로 판단해 바로 진행한다/ }).click();
+    await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+    await expect(page.getByRole("status", { name: "결과: 근접오류", exact: true })).toBeVisible();
+    const endingPath = approved ? "stinger_near_miss" : "sfx_stamp_result";
+    await expect.poll(async () => (await played(page)).filter(p => p.includes(endingPath))).toHaveLength(1);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { audioEvents: Array<{ event: string; path: string }> }).audioEvents.some(e => e.event === "pause" && e.path.includes("operation_base")))).toBe(true);
+    if (approved) await expect.poll(async () => (await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
+    else expect((await played(page)).some(p => p.includes("review_reflective") || p.includes("stinger_near_miss"))).toBe(false);
+    await page.getByRole("button", { name: "결과 돌아보기", exact: true }).click();
+    await expect.poll(() => page.evaluate(path => (window as unknown as { audioEvents: Array<{ event: string; path: string }> }).audioEvents.some(e => e.event === "pause" && e.path.includes(path)), endingPath)).toBe(true);
+    await page.getByRole("radio").first().click();
+    await page.getByRole("button", { name: "내 생각 확인", exact: true }).click();
+    await page.getByRole("button", { name: "이 지점부터 리플레이", exact: true }).click();
+    await expect.poll(async () => (await played(page)).filter(p => p.includes("operation_base"))).toHaveLength(2);
+    await page.goBack();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { audioEvents: Array<{ event: string; path: string }> }).audioEvents.filter(e => e.event === "pause" && e.path.includes("operation_base")).length)).toBe(2);
+  });
+}
+
+test("processed result audio copies decode and play as native audio", async ({ page }) => {
+  const paths = resultQc.files.map(file => `/audio/candidate-review/${file.asset_id}.mp3`);
+  for (const [index, file] of resultQc.files.entries()) {
+    await page.route(`**${paths[index]}`, async route => route.fulfill({ contentType: "audio/mpeg", body: await readFile(file.processed_path) }));
+  }
+  await fixture(page, true, true);
+  const result = await page.evaluate(async paths => {
+    const context = new AudioContext();
+    const values = [];
+    try {
+      for (const path of paths) {
+        const response = await fetch(path);
+        const decoded = await context.decodeAudioData(await response.arrayBuffer());
+        const voice = new Audio(path);
+        try {
+          await voice.play();
+          await new Promise<void>(resolve => setTimeout(resolve, 100));
+          values.push({ path, duration: decoded.duration, advancing: voice.currentTime > 0 && !voice.paused });
+        } finally { voice.pause(); voice.src = ""; }
+      }
+    } finally { await context.close(); }
+    return values;
+  }, paths);
+  expect(result).toHaveLength(4);
+  expect(result.every(r => r.duration > 4 && r.advancing)).toBe(true);
+});
+
+test("competitive play switches to review music from the same game route", async ({ page }) => {
+  await fixture(page, true, false, undefined, resultAudio);
+  await page.route("**/functions/v1/start-session", route => route.fulfill({ json: {
+    sessionId: "f6200000-0000-0000-0000-000000000001", seasonId: "f6300000-0000-0000-0000-000000000001", seasonKey: "2026-10",
+    scenarioVersionId: "f6400000-0000-0000-0000-000000000001", scenarioVersion: competitiveFixture.version,
+    simulationSeed: "audio-fixture", presentationSeed: "audio-fixture", perspectiveRole: "worker", startedAt: new Date().toISOString(), scenario: competitiveFixture,
+  } }));
+  await expect.poll(async () => (await played(page)).filter(p => p.includes("operation_base"))).toHaveLength(1);
+  await page.evaluate(() => {
+    history.pushState({}, "", "/play/e2e_competitive");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await expect.poll(async () => (await played(page)).filter(p => p.includes("operation_base"))).toHaveLength(2);
+  await page.getByRole("button", { name: "계속", exact: true }).click();
+  await page.getByRole("radio", { name: /절차와 표식을 다시 대조한다/ }).click();
+  await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+  await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeVisible();
+  await expect.poll(async () => (await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
+  expect(page.url()).toContain("/play/e2e_competitive");
+});
+
+for (const [ending, stinger] of [
+  ["safe_stop", "stinger_safe_stop"], ["near_miss", "stinger_near_miss"], ["event", "stinger_event"],
+] as const) {
+  test(`registered ${ending} stinger and review BGM play once and stop on leaving ending`, async ({ page }) => {
+    await fixture(page, true, true);
+    await expect.poll(async () => (await played(page)).filter(p => p.includes("operation_base"))).toHaveLength(1);
+    const scenario = structuredClone(competitiveFixture);
+    for (const node of Object.values(scenario.nodes)) {
+      if (node.type === "ending" && "ending" in node) node.ending = ending;
+    }
+    await page.route("**/functions/v1/start-session", route => route.fulfill({ json: {
+      sessionId: "f6200000-0000-0000-0000-000000000001", seasonId: "f6300000-0000-0000-0000-000000000001", seasonKey: "2026-10",
+      scenarioVersionId: "f6400000-0000-0000-0000-000000000001", scenarioVersion: scenario.version,
+      simulationSeed: "audio-fixture", presentationSeed: "audio-fixture", perspectiveRole: "worker", startedAt: new Date().toISOString(), scenario,
+    } }));
+    await page.evaluate(() => {
+      history.pushState({}, "", "/play/e2e_competitive");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await page.getByRole("button", { name: "계속", exact: true }).click();
+    await page.getByRole("radio", { name: /절차와 표식을 다시 대조한다/ }).click();
+    await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+    await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeVisible();
+    await expect.poll(async () => (await played(page)).filter(p => p.includes(stinger))).toHaveLength(1);
+    await expect.poll(async () => (await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
+    expect((await played(page)).some(p => p.includes("stamp_result"))).toBe(false);
+    await page.getByRole("button", { name: "결과 돌아보기", exact: true }).click();
+    await expect.poll(() => page.evaluate(stinger => (window as unknown as { audioVoices: Array<{ path: string; audio: HTMLAudioElement }> }).audioVoices.filter(v => v.path.includes(stinger)).every(v => v.audio.paused && v.audio.getAttribute("src") === ""), stinger)).toBe(true);
+    await page.getByRole("radio").first().click();
+    await page.getByRole("button", { name: "내 생각 확인", exact: true }).click();
+    expect((await played(page)).filter(p => p.includes("review_reflective"))).toHaveLength(1);
+    await page.goBack();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { audioVoices: Array<{ path: string; audio: HTMLAudioElement }> }).audioVoices.filter(v => v.path.includes("review_reflective")).every(v => v.audio.paused && v.audio.getAttribute("src") === ""))).toBe(true);
+  });
+}

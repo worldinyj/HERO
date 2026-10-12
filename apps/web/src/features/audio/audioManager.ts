@@ -198,12 +198,15 @@ export class HeroAudioManager {
     this.applyCurrentVolumes();
   }
 
-  async playSfx(assetId: string): Promise<() => void> {
+  async playSfx(assetId: string, options: { fallbackAssetId?: string; signal?: AbortSignal } = {}): Promise<() => void> {
     const ticket = this.sfxRequest;
-    if (!this.canPlay("sfx")) return () => {};
+    if (options.signal?.aborted || !this.canPlay("sfx")) return () => {};
 
-    const asset = await this.findAsset(assetId, ["sfx", "stinger"]);
-    if (!asset || ticket !== this.sfxRequest || !this.canPlay("sfx")) return () => {};
+    let asset = await this.findAsset(assetId, ["sfx", "stinger"]);
+    if (!asset && options.fallbackAssetId && !options.signal?.aborted && ticket === this.sfxRequest) {
+      asset = await this.findAsset(options.fallbackAssetId, ["sfx", "stinger"]);
+    }
+    if (!asset || options.signal?.aborted || ticket !== this.sfxRequest || !this.canPlay("sfx")) return () => {};
 
     const voiceLimit = this.settings.reducedSensory ? 2 : 4;
     while (this.sfxVoices.length >= voiceLimit) {
@@ -222,6 +225,7 @@ export class HeroAudioManager {
     this.sfxAssets.set(voice, asset);
 
     const cleanup = () => {
+      options.signal?.removeEventListener("abort", cleanup);
       const index = this.sfxVoices.indexOf(voice);
       if (index >= 0) this.sfxVoices.splice(index, 1);
       this.sfxAssets.delete(voice);
@@ -231,6 +235,7 @@ export class HeroAudioManager {
 
     voice.addEventListener("ended", cleanup, { once: true });
     voice.addEventListener("error", cleanup, { once: true });
+    options.signal?.addEventListener("abort", cleanup, { once: true });
 
     try {
       await voice.play();
@@ -239,7 +244,7 @@ export class HeroAudioManager {
       return () => {};
     }
 
-    if (ticket !== this.sfxRequest || !this.canPlay("sfx") || !this.sfxAssets.has(voice)) {
+    if (options.signal?.aborted || ticket !== this.sfxRequest || !this.canPlay("sfx") || !this.sfxAssets.has(voice)) {
       cleanup();
       return () => {};
     }

@@ -1,4 +1,5 @@
 import { NarrationControl } from "../audio/NarrationControl";
+import { useGameBgm } from "../audio/useGameBgm";
 import {
   act,
   createGame,
@@ -556,6 +557,9 @@ export function CompetitiveGamePage({
     if (reconnect) void submitFinishedGame();
   }, [online, submission.status]);
 
+  const finished = !!scenario && !!game && isFinished(scenario, game);
+  useGameBgm(profile?.role === "player" && !loading && !!scenario && !!server && !!game && !!view, finished);
+
   if (profile?.role !== "player") {
     return (
       <section className="panel">
@@ -608,7 +612,6 @@ export function CompetitiveGamePage({
   }
 
   const node = view.node;
-  const finished = isFinished(scenario, game);
 
   if (finished && node.type === "ending") {
     const localEvaluation = evaluate(scenario, game, {
