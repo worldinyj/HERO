@@ -2,6 +2,7 @@ import { HERO_PRODUCT_NAME } from "@hero/engine/metadata";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema/version";
 import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
+import { SuriIllustration } from "../components/SuriIllustration";
 import { useAudio } from "../features/audio/AudioContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
@@ -79,8 +80,13 @@ function RouteLoading() {
 function CampaignPage() {
   return (
     <section className="panel" aria-labelledby="campaign-title">
-      <p className="eyebrow">10월 시즌 · 개발 중</p>
-      <h2 id="campaign-title">캠페인</h2>
+      <header className="learning-mascot-heading">
+        <div>
+          <p className="eyebrow">10월 시즌 · 개발 중</p>
+          <h2 id="campaign-title">캠페인</h2>
+        </div>
+        <SuriIllustration pose="welcome" eager />
+      </header>
       <p className="muted">
         0장 튜토리얼은 실제 엔진으로 플레이할 수 있습니다. S01~S03은 서버 세션·콘텐츠 검수 후 순차 개방합니다.
       </p>
