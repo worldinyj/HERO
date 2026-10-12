@@ -4,7 +4,7 @@
   "createdAt": "2026-10-12",
   "generator": "built-in image_gen",
   "sourceConceptSha256": "7d0e860c5eebcab959e94ef9fb1b0e7d958eaabb5368715670dd616b806a17ff",
-  "status": "login_pilot_implemented_browser_qa_pending",
+  "status": "login_pilot_integrated_browser_qa_passed",
   "poses": [
     {
       "pose": "welcome",
@@ -90,5 +90,17 @@
     "bytes": 4319,
     "sha256": "e9b0f9f3f5a01a951e02a7c9694552125f858c4514979099110efed30e17ce0a",
     "usage": "separate_unmodified_official_logo"
+  },
+  "integrationVerification": {
+    "date": "2026-10-12",
+    "viewports": [
+      "360x800",
+      "390x844",
+      "1280x900"
+    ],
+    "localBrowserTests": 8,
+    "unitTests": 375,
+    "realKakaoOAuth": "not_executed",
+    "assetHashFiles": 7
   }
 }
