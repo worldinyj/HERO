@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "character": "baby_suri",
+  "createdAt": "2026-10-12",
+  "generator": "built-in image_gen",
+  "sourceConceptSha256": "7d0e860c5eebcab959e94ef9fb1b0e7d958eaabb5368715670dd616b806a17ff",
+  "status": "login_pilot_implemented_browser_qa_pending",
+  "poses": [
+    {
+      "pose": "welcome",
+      "master": "assets/mascot/suri/v1/suri-welcome-v1.png",
+      "web": "apps/web/public/images/mascot/suri-welcome-v1.webp",
+      "masterSize": [
+        1254,
+        1254
+      ],
+      "webSize": [
+        640,
+        640
+      ],
+      "masterBytes": 1529956,
+      "webBytes": 55942,
+      "masterSha256": "06bf958deb1407d59fb2b30ceaf689a6dc71919480ed638cdd9456c3c8d6daac",
+      "webSha256": "550850e0aaa809c1f867c650fe2c0aa12d1f6601a638051bc68acde3afe80952",
+      "masterGitBlob": "35e95cb74bf21681e150301ca32d7d8fa3c673af",
+      "webGitBlob": "999722bc64de41a16c69217e60d5f925b2e45a3d",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaCorner": 0
+    },
+    {
+      "pose": "check",
+      "master": "assets/mascot/suri/v1/suri-check-v1.png",
+      "web": "apps/web/public/images/mascot/suri-check-v1.webp",
+      "masterSize": [
+        1254,
+        1254
+      ],
+      "webSize": [
+        640,
+        640
+      ],
+      "masterBytes": 1411728,
+      "webBytes": 52130,
+      "masterSha256": "0f1626133f267569fb420242eb3f9d5272a67c561607665676e5afab24ec00b1",
+      "webSha256": "cc747b17216df75dfa19db13e496bcfe43a3dcc2d7f27bb2166418b26308161b",
+      "masterGitBlob": "cb80d54ee2f2ac78efa862d475204b1ad8a6c682",
+      "webGitBlob": "009de2390d613c62250f5449350c464d0ec88147",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaCorner": 0
+    },
+    {
+      "pose": "reflect",
+      "master": "assets/mascot/suri/v1/suri-reflect-v1.png",
+      "web": "apps/web/public/images/mascot/suri-reflect-v1.webp",
+      "masterSize": [
+        1254,
+        1254
+      ],
+      "webSize": [
+        640,
+        640
+      ],
+      "masterBytes": 1645589,
+      "webBytes": 58374,
+      "masterSha256": "518f7a13baabb47524e4659357fba20a4e6bb36089ed0ca985073d4a58a54de9",
+      "webSha256": "fe085debd4ac74046c7118d252426a7882a5af0cfc8a46e2c7206834a3932cb0",
+      "masterGitBlob": "87d8a1a10c01a2b92e5d95885d4bd745e04113b3",
+      "webGitBlob": "f4ee9f17445954259ffd38e6e3459dd48aaea0ed",
+      "alphaRange": [
+        0,
+        255
+      ],
+      "alphaCorner": 0
+    }
+  ],
+  "brand": {
+    "path": "apps/web/public/images/brand/khnp-signature.png",
+    "source": "https://www.khnp.co.kr/site/main/images/contents/cts86_img09.png",
+    "sourcePage": "https://www.khnp.co.kr/main/contents.do?key=2238",
+    "size": [
+      136,
+      29
+    ],
+    "bytes": 4319,
+    "sha256": "e9b0f9f3f5a01a951e02a7c9694552125f858c4514979099110efed30e17ce0a",
+    "usage": "separate_unmodified_official_logo"
+  }
+}

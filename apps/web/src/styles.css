@@ -133,6 +133,74 @@ h3 {
   gap: 14px;
 }
 
+.auth-panel--suri { gap: 12px; }
+
+.auth-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.auth-brand-row .eyebrow {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.045em;
+}
+
+.khnp-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.khnp-brand img {
+  display: block;
+  width: 108px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.suri-illustration {
+  width: 176px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.suri-illustration img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.suri-illustration img[hidden] { display: none; }
+
+.auth-panel--suri h2 {
+  margin: 0;
+  font-size: 1.13rem;
+  line-height: 1.5;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.auth-panel--suri > .muted {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+@media (min-width: 640px) {
+  .auth-panel--suri .suri-illustration { width: 220px; }
+}
+
 .kakao-button,
 .primary-button,
 .secondary-button {
