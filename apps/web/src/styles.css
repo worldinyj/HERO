@@ -552,7 +552,8 @@ h3 {
   left: 0;
   z-index: 10;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   width: min(100%, 480px);
   margin: 0 auto;
   padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
@@ -735,10 +736,6 @@ h3 {
   font-size: 1.05rem;
 }
 
-
-.bottom-nav--manager {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
 
 .manager-page {
   display: grid;
