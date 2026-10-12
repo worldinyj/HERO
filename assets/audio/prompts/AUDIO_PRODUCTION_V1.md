@@ -6,7 +6,7 @@
 
 ## 먼저 제작할 8개
 
-현재 앱의 재생 이벤트에 연결되어 있어 검수 후 등록하면 사용할 수 있는 큐다. 나머지 12개는 추가 이벤트 연결이 필요하다.
+현재 앱의 재생 이벤트에 연결되어 있어 검수 후 등록하면 사용할 수 있는 큐다. 후속 변경에서 회고 BGM·엔딩 stinger 4개 연결을 준비했다. 이 4개는 보정본 청취 대기이며 런타임 미등록이다. 나머지 8개는 추가 이벤트 연결이 필요하다.
 
 | 순서 | ID | 목적 | 파일명 |
 |---|---|---|---|
@@ -124,7 +124,7 @@ Subtle escalation without alarm language. Add texture and harmonic tension rathe
 
 ### BGM-05 — 리뷰
 
-파일명: `bgm_review_reflective_v1.mp3` · 연결: 추가 연결 필요
+파일명: `bgm_review_reflective_v1.mp3` · 연결: 후속 코드 연결 준비, 보정본 청취·런타임 등록 대기
 
 ```text
 Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.
@@ -134,7 +134,7 @@ Reflective and neutral post-scenario music. Gentle resolution, learning-and-reco
 
 ### BGM-06 — 안전 정지
 
-파일명: `stinger_safe_stop_v1.mp3` · 연결: 추가 연결 필요
+파일명: `stinger_safe_stop_v1.mp3` · 연결: 후속 코드 연결 준비, 보정본 청취·런타임 등록 대기
 
 ```text
 Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.
@@ -144,7 +144,7 @@ Affirmative but restrained, neutral closure after a safe stop, 3–6 seconds. On
 
 ### BGM-07 — 근접오류
 
-파일명: `stinger_near_miss_v1.mp3` · 연결: 추가 연결 필요
+파일명: `stinger_near_miss_v1.mp3` · 연결: 후속 코드 연결 준비, 보정본 청취·런타임 등록 대기
 
 ```text
 Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.
@@ -154,7 +154,7 @@ Brief suspended resolution after a near miss, 3–6 seconds. Neutral and reflect
 
 ### BGM-08 — 사건
 
-파일명: `stinger_event_v1.mp3` · 연결: 추가 연결 필요
+파일명: `stinger_event_v1.mp3` · 연결: 후속 코드 연결 준비, 보정본 청취·런타임 등록 대기
 
 ```text
 Instrumental only. Mobile game background music for a nuclear human-performance training simulation. Restrained tactical mood, clear midrange for text/dialogue readability, no vocals, no sirens, no alarms, no emergency broadcast tones, no imitation of industrial warning signals, moderate dynamics, no sudden peaks.

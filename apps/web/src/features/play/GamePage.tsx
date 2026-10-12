@@ -1,4 +1,5 @@
 import { NarrationControl } from "../audio/NarrationControl";
+import { useGameBgm } from "../audio/useGameBgm";
 import { getScenarioById } from "@hero/content";
 import {
   evaluate,
@@ -91,6 +92,9 @@ export function GamePage() {
     return getView(scenario, game);
   }, [game, scenario]);
 
+  const finished = !!scenario && !!game && isFinished(scenario, game);
+  useGameBgm(!!scenario && !!game && !!view, finished);
+
   function resetReviewState() {
     setReviewStage("ending");
     setReflectionSelection(null);
@@ -148,7 +152,6 @@ export function GamePage() {
   }
 
   const node = view.node;
-  const finished = isFinished(scenario, game);
 
   if (finished && node.type === "ending") {
     const evaluation = evaluate(scenario, game, {
