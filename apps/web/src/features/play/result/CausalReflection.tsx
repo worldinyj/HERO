@@ -1,3 +1,4 @@
+import { SuriIllustration } from "../../../components/SuriIllustration";
 import type { GameState } from "@hero/engine";
 import type { Scenario } from "@hero/schema";
 
@@ -58,8 +59,13 @@ export function CausalReflection({
 
   return (
     <article className="review-card">
-      <p className="eyebrow">Causal Reflection</p>
-      <h2>어느 시점부터 방어막이 약해졌을까요?</h2>
+      <header className="learning-mascot-heading">
+        <div>
+          <p className="eyebrow">Causal Reflection</p>
+          <h2>어느 시점부터 방어막이 약해졌을까요?</h2>
+        </div>
+        <SuriIllustration pose="reflect" />
+      </header>
       <p className="muted">
         정답을 고르는 문제가 아닙니다. 한 사람의 마지막 행동보다 조건과 방어막이
         어떻게 겹쳤는지 돌아보세요.
