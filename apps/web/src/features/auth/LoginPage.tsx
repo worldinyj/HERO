@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { signInWithKakao } from "../../lib/supabase";
 import { safeAppReturnPath } from "../../lib/safeReturnPath";
-
+import { KhnpBrand } from "../../components/KhnpBrand";
+import { SuriIllustration } from "../../components/SuriIllustration";
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -23,9 +24,13 @@ export function LoginPage() {
   }
 
   return (
-    <section className="panel auth-panel" aria-labelledby="login-title">
-      <p className="eyebrow">HERO Invitation Only</p>
-      <h2 id="login-title">카카오로 시작하기</h2>
+    <section className="panel auth-panel auth-panel--suri" aria-labelledby="login-title">
+      <div className="auth-brand-row">
+        <p className="eyebrow">HERO Invitation Only</p>
+        <KhnpBrand />
+      </div>
+      <SuriIllustration eager />
+      <h2 id="login-title">함께 확인하고, 함께 배웁니다.</h2>
       <p className="muted">
         처음 이용하는 사용자는 HERO 담당자가 발급한 초대 링크로 접속해주세요.
         플레이 결과와 순위는 인사평가와 무관합니다.
