@@ -1,3 +1,4 @@
+import { SuriIllustration } from "../../components/SuriIllustration";
 import { getScenarioById } from "@hero/content";
 import { BARRIER_CARDS } from "@hero/engine";
 import { ScenarioSchema, type JobRole, type Scenario } from "@hero/schema";
@@ -375,8 +376,13 @@ export function CompetitiveBriefingPage({
       ) : null}
 
       <article className="briefing-card">
-        <p className="eyebrow">Chapter Briefing · v{data.version}</p>
-        <h2 id="briefing-title">「{scenario.title}」</h2>
+        <header className="learning-mascot-heading">
+          <div>
+            <p className="eyebrow">Chapter Briefing · v{data.version}</p>
+            <h2 id="briefing-title">「{scenario.title}」</h2>
+          </div>
+          <SuriIllustration pose="check" />
+        </header>
 
         <div className="briefing-meta" aria-label="장 기본 정보">
           <span>이번 장의 관점: <strong>{perspective}</strong></span>

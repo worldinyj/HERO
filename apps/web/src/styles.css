@@ -2989,3 +2989,16 @@ h3 {
 .operations-metrics dd { margin: 8px 0 0; font-size: 1.5rem; font-weight: 700; overflow-wrap: anywhere; }
 .operations-scenario { padding-block: 12px; border-bottom: 1px solid rgba(138, 150, 173, 0.25); overflow-wrap: anywhere; }
 @media (max-width: 359px) { .operations-metrics { grid-template-columns: 1fr; } }
+
+/* Decorative learning companion: keep the text and controls independent. */
+.learning-mascot-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.learning-mascot-heading > div:first-child { flex: 1; min-width: 0; }
+.learning-mascot-heading h2 { word-break: keep-all; overflow-wrap: anywhere; }
+.learning-mascot-heading .suri-illustration { width: 80px; flex: 0 0 80px; margin: 0; }
+@media (min-width: 640px) {
+  .learning-mascot-heading .suri-illustration { width: 112px; flex-basis: 112px; }
+}
