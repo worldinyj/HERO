@@ -281,7 +281,8 @@ for (const entry of manifest.entries) {
     if (!alignment || alignment.type !== "decision") {
       fail(`${entry.scenarioId}: v4 state-alignment decision is required`);
     }
-    if (!alignment.choices.some((choice) => choice.next === "safe_no_action_end")) {
+    const noActionEntry = scenario.version >= 5 ? "event_no_action_basis" : "safe_no_action_end";
+    if (!alignment.choices.some((choice) => choice.next === noActionEntry)) {
       fail(
         `${entry.scenarioId}: v4 must offer a safe path that rechecks necessity and avoids the unneeded action`,
       );
@@ -289,9 +290,41 @@ for (const entry of manifest.entries) {
     if (
       !safeNoAction ||
       safeNoAction.type !== "ending" ||
-      safeNoAction.ending !== "safe_stop"
+      safeNoAction.ending !== (scenario.version >= 5 ? "safe_complete" : "safe_stop")
     ) {
-      fail(`${entry.scenarioId}: v4 safe_no_action_end must be a safe_stop ending`);
+      fail(`${entry.scenarioId}: no-action ending must match the versioned learning-completion contract`);
+    }
+
+    if (scenario.version >= 5) {
+      const basis = scenario.nodes.event_no_action_basis;
+      const handover = scenario.nodes.decision_no_action_handover;
+      if (!basis || basis.type !== "event" || basis.next !== "decision_no_action_handover" ||
+          !basis.text.includes("교육용 대안") ||
+          !handover || handover.type !== "decision" ||
+          !handover.choices.some((choice) => choice.next === "safe_no_action_end") ||
+          !handover.choices.some((choice) => choice.next === (scenario.version >= 6 ? "safe_no_action_hold_end" : "safe_stop_end"))) {
+        fail(`${entry.scenarioId}: v5 requires educational basis confirmation, documented handover, and an uncertainty hold path`);
+      }
+      if (scenario.version >= 6) {
+        const hold = scenario.nodes.safe_no_action_hold_end;
+        const setting = scenario.nodes.decision_setting_direction;
+        const necessity = setting?.type === "decision"
+          ? setting.choices.find((choice) => choice.actionId === "place_keep_and_recheck") : null;
+        if (!hold || hold.type !== "ending" || hold.ending !== "safe_stop" ||
+            !necessity || necessity.effects?.barrierDelta?.questioning !== 0.4 ||
+            necessity.effects?.barrierDelta?.place_keeping !== undefined) {
+          fail(`${entry.scenarioId}: v6 requires a separate pre-action hold ending and questioning-based necessity review`);
+        }
+      }
+      if (scenario.version >= 7) {
+        const hold = scenario.nodes.safe_handover_hold_end;
+        const complete = scenario.nodes.decision_complete;
+        if (!hold || hold.type !== "ending" || hold.ending !== "safe_stop" ||
+            !complete || complete.type !== "decision" ||
+            !complete.choices.some(choice => choice.actionId === "hold_due_remaining_uncertainty" && choice.next === "safe_handover_hold_end")) {
+          fail(`${entry.scenarioId}: v7 requires a separate handover hold after expected response`);
+        }
+      }
     }
 
     const absentBarrierLanguage = debrief.failedBarriers.filter((barrier) =>

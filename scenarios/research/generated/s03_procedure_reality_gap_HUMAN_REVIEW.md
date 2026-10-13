@@ -1,10 +1,14 @@
 # HERO Human Review Packet — 3장 · 절차와 실제 상황이 조금 다릅니다
 
-> **사람 검토용 패킷 / 자동 승인 문서가 아님**  
-> Scenario ID: `s03_procedure_reality_gap`  
-> Version: `4`  
-> Source file: `scenarios/drafts/S03_procedure_reality_v1.json`  
-> Review content SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
+> **사람 검토용 패킷 / 자동 승인 문서가 아님**
+>
+> Scenario ID: `s03_procedure_reality_gap`
+>
+> Version: `7`
+>
+> Source file: `scenarios/drafts/S03_procedure_reality_v1.json`
+>
+> Review content SHA-256: `8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38`
 
 ## 1. 현재 승격 상태
 
@@ -23,7 +27,7 @@
 
 - HF review of Direct/Root/Contributing cause classification and cause-to-action traceability
 - anonymization/operational-overexposure review
-- incidentDebrief final approval for v4 content hash
+- incidentDebrief final approval for v7 content hash
 
 ## 2. 시나리오 기본정보
 
@@ -54,9 +58,9 @@
 |---|---|
 | Schema parse | PASS |
 | Path exploration | COMPLETE |
-| explored states | 6,015 |
-| terminal paths | 3,519 |
-| HP min / mean / max | 182 / 236.1 / 246 |
+| explored states | 7,995 |
+| terminal paths | 4,509 |
+| HP min / mean / max | 182 / 237.8 / 247 |
 | dominant choice warning | 0 |
 | ending imbalance warning | 0 |
 
@@ -64,9 +68,9 @@
 
 | ending | paths | rate |
 |---|---:|---:|
-| safe_complete | 1896 | 54% |
-| safe_stop | 1503 | 43% |
-| near_miss | 96 | 3% |
+| safe_complete | 2886 | 64% |
+| safe_stop | 1503 | 33% |
+| near_miss | 96 | 2% |
 | event | 24 | <1% |
 
 ### 자동 경고
@@ -83,7 +87,7 @@
 - [ ] 발전소/호기/설비 Tag/실제 설정값·시험조건·복구절차를 역추적할 수 있는 정보가 과도하게 노출되지 않는다.
 - [ ] safe stop을 실패나 소극적 행동으로 묘사하지 않는다.
 - [ ] 게임용 PSF/Hazard Index가 규제기관 공식 원인분류·HEP·개인 능력지표처럼 읽히지 않는다.
-- [ ] incidentDebrief의 HERO 원인분류가 조사기관의 공식 원인분류와 명확히 구분되고, 인과사슬·실패방어막·관련 재발방지대책이 근거와 일치한다.
+- [ ] incidentDebrief의 HERO 원인분류가 조사기관의 공식 원인분류와 명확히 구분되고, 인과사슬·실패방벽·관련 재발방지대책이 근거와 일치한다.
 - [ ] 공식 출처의 기관·일자·링크·이용조건 표기가 실제 공개 화면과 일치한다.
 - [ ] 선택지에 도덕적 정답 단서가 과도하지 않고, 경로/엔딩 분포가 교육목적에 적절하다.
 - [ ] 이 SHA-256의 JSON을 직접 검토했으며, 승인 후 내용 변경 시 재검토가 필요함을 이해했다.
@@ -109,7 +113,7 @@
 - 사람 검토 증거 기록 가이드: `scenarios/research/HUMAN_REVIEW_EVIDENCE_GUIDE.md`
 - 공통 사람 검토 패킷: `scenarios/research/T3_HUMAN_REVIEW_PACKET_V1.md`
 - 시나리오별 AI 사전검토가 있는 경우: `scenarios/research/S03_AI_PRE_REVIEW_V1.md`
-- S03 원인-근거-방어막-재발방지대책 추적표: `scenarios/research/S03_CAUSE_TRACEABILITY_MATRIX_V1.md`
+- S03 원인-근거-방벽-재발방지대책 추적표: `scenarios/research/S03_CAUSE_TRACEABILITY_MATRIX_V1.md`
 - machine-readable cause traceability: `scenarios/research/cause-traceability.json`
 - source evidence: `scenarios/research/source-evidence.json`
 - promotion manifest: `scenarios/research/promotion-status.json`

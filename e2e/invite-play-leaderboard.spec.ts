@@ -440,7 +440,7 @@ test("invitation → play → replay offline queue → leaderboard", async ({
 
   await expect(
     page.getByRole("heading", {
-      name: "방어막은 한 번에 무너지지 않습니다",
+      name: "방벽은 한 번에 무너지지 않습니다",
     }),
   ).toBeVisible();
 

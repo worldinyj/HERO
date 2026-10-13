@@ -649,7 +649,7 @@ export function CompetitiveGamePage({
             <NarrationControl request={{ scenarioId: scenario.id, scenarioVersion: scenario.version,
               nodeId: view.nodeId, field: "summary", text: node.summary }} />
             <p className="review-note">
-              결과는 한 사람의 마지막 행동이 아니라 조건과 방어막의 누적을
+              결과는 한 사람의 마지막 행동이 아니라 조건과 방벽의 누적을
               중심으로 돌아봅니다. 회고가 끝나면 서버가 동일 seed와 행동 로그를
               재실행해 점수를 확정합니다.
             </p>

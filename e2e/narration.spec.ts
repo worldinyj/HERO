@@ -3,7 +3,7 @@ import resultQc from "../assets/audio/reviews/RESULT_AUDIO_PROCESSED_QC.json" wi
 import competitiveFixture from "./fixtures/e2e_competitive.json" with { type: "json" };
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import pack from "../assets/audio/prompts/NARRATION_S00_V1.json" with { type: "json" };
+import pack from "../assets/audio/prompts/NARRATION_S00_V2.json" with { type: "json" };
 async function fixture(page: Page, withAssets = true, nativeAudio = false, briefingCapture?: string, extraAssets: Array<{ id: string; kind: string; approved: boolean; path: string }> = []) {
   const user = { id: "f6100000-0000-0000-0000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
   await page.addInitScript(({ user, nativeAudio }) => {
@@ -44,7 +44,7 @@ async function fixture(page: Page, withAssets = true, nativeAudio = false, brief
     else if (url.pathname === "/functions/v1/nickname-action") await route.fulfill({ json: { canChange: false, resetRequired: false, changedThisSeason: false, seasonKey: null, nickname: "TESTPLAYER" } });
     else await route.fulfill({ json: [] });
   });
-  if (!nativeAudio) await page.route("**/audio/audio_manifest.json", route => route.fulfill({ json: { version: "test", project: "HERO", assets: withAssets ? [...extraAssets, ...pack.clips.map(c => ({ id: c.asset_id, kind: "narration", approved: true, path: `/audio/narration/${c.filename}`, narration: { scenarioId: pack.scenario_id, scenarioVersion: pack.scenario_version, nodeId: c.node_id, field: c.field, ...(c.action_id ? { actionId: c.action_id } : {}), text: c.text } }))] : [] } }));
+  if (!nativeAudio) await page.route("**/audio/audio_manifest.json", route => route.fulfill({ json: { version: "test", project: "HERO", assets: withAssets ? [...extraAssets, ...pack.clips.filter(c => c.status === "registered").map(c => ({ id: c.asset_id, kind: "narration", approved: true, path: `/audio/narration/${c.filename}`, narration: { scenarioId: pack.scenario_id, scenarioVersion: pack.scenario_version, nodeId: c.node_id, field: c.field, ...(c.action_id ? { actionId: c.action_id } : {}), text: c.text } }))] : [] } }));
   await page.goto("/briefing/s00_tutorial");
   await expect(page.locator('.learning-mascot-heading img')).toHaveAttribute('src', '/images/mascot/suri-check-v1.webp');
   if (briefingCapture) {
@@ -128,6 +128,17 @@ test("empty manifest keeps tutorial playable without narration controls", async 
   await expect(page.getByRole("heading", { name: pack.clips[1]!.text })).toBeVisible();
   expect(await played(page)).toEqual([]);
 });
+
+test("retired near-miss voice stays silent while the new barrier wording remains visible", async ({ page }) => {
+  await fixture(page);
+  await page.getByRole("button", { name: "계속", exact: true }).click();
+  await page.getByRole("radio", { name: /현재 정보로 판단해 바로 진행한다/ }).click();
+  await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+  await expect(page.getByText(pack.clips[4]!.text, { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "나레이션 다시 듣기", exact: true })).toHaveCount(0);
+  expect((await played(page)).some(path => path.includes("near_miss_end_summary"))).toBe(false);
+  await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeEnabled();
+});
 test("narration mute is independent, persists and prevents scene autoplay", async ({ page }) => {
   await fixture(page);
   await expect.poll(() => played(page)).toHaveLength(1);
@@ -171,7 +182,7 @@ test("registered audio MP3 files play and decode in the native browser audio ele
     }
     return values;
   });
-  expect(results).toHaveLength(17);
+  expect(results).toHaveLength(16);
   expect(results.every(r => r.duration > 0 && Number.isFinite(r.duration) && r.played)).toBe(true);
   expect(results.filter(r => r.kind === "narration").every(r => r.duration > 4 && r.duration < 8)).toBe(true);
   expect(results.filter(r => r.kind === "bgm")).toHaveLength(4);
@@ -192,7 +203,7 @@ test("missing learning companion images keep briefing and reflection playable", 
   await expect(page.locator('.learning-mascot-heading img')).toBeHidden();
   await page.getByRole("radio", { name: /상황이 시작되기 전부터/ }).click();
   await page.getByRole("button", { name: "내 생각 확인", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "방어막은 한 번에 무너지지 않습니다" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "방벽은 한 번에 무너지지 않습니다" })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('missing-mascot-timeline.png'), fullPage: true });
 });
 

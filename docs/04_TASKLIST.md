@@ -4,7 +4,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 버전 | **v1.4** (v1.3 + Direct/Root/Contributing 원인분류·방어막·재발방지대책 추적성 반영) |
+| 문서 버전 | **v1.4** (v1.3 + Direct/Root/Contributing 원인분류·방벽·재발방지대책 추적성 반영) |
 | 작성일 | 2026-10-07 |
 | 근거 | [01_PRD](01_PRD.md) · [02_TRD](02_TRD.md) · [03_UXUI](03_UXUI.md) · [05_TRACEABILITY](05_TRACEABILITY.md) |
 
@@ -107,7 +107,7 @@
 | T5-02 | Edge `start-session` (버전·시즌 확정, simulation/presentation seed 발급, 조직직무/관점 snapshot) | FORGE | M | T5-01 | 모든 참가자 동일 simulation seed 확인 |
 | T5-03 | Edge `submit-session` (엔진 재실행·검증·flag) | FORGE | M | T2-10, T5-02 | 위변조 로그 거부 테스트 |
 | T5-04 | 오프라인 제출 큐 | FORGE | S | T5-03 | 재접속 시 자동 제출 |
-| T5-05 | `CausalReflection` "어느 시점부터 방어막이 약해졌을까요?" | FORGE | S | T5-03 | UXUI §4.8, 정답/오답 비난 금지 |
+| T5-05 | `CausalReflection` "어느 시점부터 방벽이 약해졌을까요?" | FORGE | S | T5-03 | UXUI §4.8, 정답/오답 비난 금지 |
 | T5-06 | `SwissCheeseTimeline` (+ 지점별 리플레이 버튼) | FORGE | M | T2-07 | §4.9 |
 | T5-07 | HP 리뷰 (`HpRadar`, 위험요인, 핵심결정, HP 내역) + "학습행동 지표/인사평가 아님" 안내 | FORGE | M | T5-03 | UXUI §4.10 |
 | T5-08 | 실사건 공개 화면 | FORGE | S | T5-07 | §4.11 |
@@ -151,7 +151,7 @@
 | R2-01 | opis_reports 테이블·Storage 버킷·업로드 UI | FORGE | M |
 | R2-02 | 브라우저 pdf.js 텍스트 추출 (+스캔본 OCR 방안) | FORGE | M |
 | R2-03 | `ai-analyze` Edge (Timeline·Direct/Root/Contributing Cause·PSF·Barrier·Corrective Action 구조화 + 사실/HERO 해석 provenance + 익명화 후처리) | FORGE+SAGE | L |
-| R2-04 | `ai-draft-scenario` (분석 → 시나리오 JSON 초안, 원인-방어막-대책 추적성 및 공개정보 sanitization 스키마 강제) | FORGE+STORY | L |
+| R2-04 | `ai-draft-scenario` (분석 → 시나리오 JSON 초안, 원인-방벽-대책 추적성 및 공개정보 sanitization 스키마 강제) | FORGE+STORY | L |
 | R2-05 | 검토 체크리스트·서명 워크플로 | FORGE+GUARD | M |
 | R2-06 | 칭호·배지 시스템 | LOOP+FORGE | M |
 | R2-07 | 발전소 대항전 탭 | FORGE | M |

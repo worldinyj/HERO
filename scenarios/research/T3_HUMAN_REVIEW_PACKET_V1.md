@@ -16,7 +16,7 @@
 
 v2 핵심 정정:
 - IAEA 사건기록과 보고서에 따라 보호계전기 시험 중 인적오류 → 소외전원 상실(LOOP), 비상전원 가용성 문제와 기동 실패 → 전원상실(SBO)·정지냉각 상실의 **사건 개시·확대 물리사슬**을 구분
-- 시험 일정 변경, 자격인력 부족, 절차의 단계확인·사전조건, 감독 지시와 정보교환, 전원구성 통제 문제를 **근본·기여조건과 방어막**으로 구분해 단일 작업자 비난을 피함
+- 시험 일정 변경, 자격인력 부족, 절차의 단계확인·사전조건, 감독 지시와 정보교환, 전원구성 통제 문제를 **근본·기여조건과 방벽**으로 구분해 단일 작업자 비난을 피함
 - 공개 게임에서 발전소·호기·고유설비·시험번호·전원구성 상세는 일반화하고, 일정 변경 시 위험 재평가·hold point·Stop When Unsure를 교육 목표로 유지
 
 기술결과:
@@ -33,7 +33,7 @@ v2 핵심 정정:
 
 사람 검토:
 - [ ] 일정압박을 개인의 성격/태도 문제로 표현하지 않는다.
-- [ ] 일정변경·자격인력·절차·감독 방어막을 함께 보여준다.
+- [ ] 일정변경·자격인력·절차·감독 방벽을 함께 보여준다.
 - [ ] 실제 발전소/호기/전원구성/시험번호를 역추적 가능한 수준으로 노출하지 않는다.
 - [ ] 실제 복구절차를 재현할 수 있는 상세값이 없다.
 - [ ] safe stop을 실패로 묘사하지 않는다.
@@ -65,7 +65,7 @@ v2 핵심 정정:
 
 사람 검토:
 - [ ] “버튼을 잘못 누른 사람”을 단일 원인으로 만들지 않는다.
-- [ ] 잠재 회로상태와 대상 식별·확인 방어막을 함께 다룬다.
+- [ ] 잠재 회로상태와 대상 식별·확인 방벽을 함께 다룬다.
 - [ ] 실제 패널 형상·색상·회로번호·Tag를 추정해 재현하지 않는다.
 - [ ] 공식자료에 없는 감독자 위치/인원구성을 사실처럼 쓰지 않는다.
 - [ ] near_miss/event가 낮은 비율인 것이 교육적으로 적절한지 확인한다.
@@ -80,12 +80,14 @@ v2 핵심 정정:
 
 ## S03 — 절차와 실제 상황이 조금 다릅니다
 
-현재 상태: **REVIEW_READY — S03 v4 / HUMAN RE-REVIEW REQUIRED**
+현재 상태: **REVIEW_READY — S03 v7 / HUMAN RE-REVIEW REQUIRED**
 
 검토 추적:
 - GitHub Issue: `#76 S03 v4 human review — HF / operations / anonymization / Just Culture / debrief`
-- 현재 검토 대상 SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
+- 현재 검토 대상 SHA-256: `8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38`
 - AI 사전검토 전체 상태: ADVISORY HOLD — HUMAN RE-REVIEW REQUIRED. 일부 하위 항목의 PASS WITH HUMAN CONFIRMATION은 최종 승격 PASS가 아니다. 추가 경로·점수 검토: [S03_V4_ADVISORY_REVIEW_20261013.md](S03_V4_ADVISORY_REVIEW_20261013.md).
+
+v5 개정: 근거 확인·팀 공유·기록·인계를 갖춘 미조작은 학습 완료, 추가 불확실성은 안전 중지로 구분. 사용자 승인 범위는 [개정 기록](../../docs/S03_V5_LEARNING_COMPLETION_CHANGE.md) 참고.
 
 공식/권리:
 - 원안위 2026-09-04 공식 조사결과 확인
@@ -97,16 +99,16 @@ v2 핵심 정정:
 기술결과:
 - JSON/graph PASS
 - 전 경로 COMPLETE
-- 3,519 terminal paths
-- safe_complete 54% / safe_stop 43% / near_miss 3% / event <1%
+- 4,509 terminal paths
+- safe_complete 64% / safe_stop 33% / near_miss 2% / event <1%
 - dominant choice warning 0
 - ending imbalance warning 0
 
 사람 검토:
 - [ ] 설정값/시험출력/구체 기기명 등 실제 운전정보를 과도하게 노출하지 않는다.
 - [ ] 직접원인(설정치 입력 오류/물리적 트리거), HERO 근본원인 분류, 기여원인을 명확히 구분한다.
-- [ ] `S03_CAUSE_TRACEABILITY_MATRIX_V1.md`에서 각 원인·기여요인이 KINS 근거, 실패/약화 방어막, 관련 재발방지대책과 추적 가능하다.
-- [ ] 입력 오류만 강조하지 않고 미예정 운전행위 관리·운전모드 mental model·검증/감시 방어막을 함께 보여준다.
+- [ ] `S03_CAUSE_TRACEABILITY_MATRIX_V1.md`에서 각 원인·기여요인이 KINS 근거, 실패/약화 방벽, 관련 재발방지대책과 추적 가능하다.
+- [ ] 입력 오류만 강조하지 않고 미예정 운전행위 관리·운전모드 mental model·검증/감시 방벽을 함께 보여준다.
 - [ ] 게임 도입부가 해당 설정 변경을 필수 절차 단계로 오해하게 하지 않고, 필요성 재확인을 실제 선택지로 제공한다.
 - [ ] Questioning Attitude를 “절차를 무시하는 태도”로 오해하게 하지 않는다.
 - [ ] Peer Check·Place Keeping·Stop When Unsure의 역할이 사실과 교육목적에 맞는다.

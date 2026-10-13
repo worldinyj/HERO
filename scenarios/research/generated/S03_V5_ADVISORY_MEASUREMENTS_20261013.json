@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "s03_procedure_reality_gap",
+  "version": 5,
+  "sourceFile": "scenarios/drafts/S03_procedure_reality_v1.json",
+  "contentSha256": "e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079",
+  "scope": "Read-only engine simulation; no info/card actions in probes, first attempt, reflection+timeline=true; not human approval or actual event likelihood",
+  "probeSeedTemplate": "s03-advisory-{0..19}",
+  "simulationSeedScope": "simulateScenarioPaths default 3 fixed seeds; path counts are enumerated action histories, not event probabilities",
+  "simulation": {
+    "complete": true,
+    "exploredStates": 7995,
+    "terminalPaths": 4509,
+    "hp": {
+      "min": 182,
+      "max": 247,
+      "mean": 237.8
+    },
+    "endingCounts": {
+      "safe_complete": 2886,
+      "safe_stop": 1503,
+      "near_miss": 96,
+      "event": 24
+    },
+    "warnings": []
+  },
+  "probes": [
+    {
+      "id": "early_no_action",
+      "choices": [
+        "pause_compare_current_state",
+        "document_no_action_and_handover"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_no_action_end",
+          "ending": "safe_complete",
+          "hpPoint": 237,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 57,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 237
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "team_then_no_action",
+      "choices": [
+        "share_trend_with_peer",
+        "place_keep_and_recheck",
+        "brief_no_action_then_record"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_no_action_end",
+          "ending": "safe_complete",
+          "hpPoint": 237,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 57,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 237
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "team_peer_then_monitor",
+      "choices": [
+        "share_trend_with_peer",
+        "peer_check_setting_direction",
+        "monitor_before_handover"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_complete_end",
+          "ending": "safe_complete",
+          "hpPoint": 235,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 55,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 235
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "team_peer_then_handover",
+      "choices": [
+        "share_trend_with_peer",
+        "peer_check_setting_direction",
+        "document_and_handover_trend"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_complete_end",
+          "ending": "safe_complete",
+          "hpPoint": 236,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 56,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 236
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "continue_then_peer_monitor",
+      "choices": [
+        "continue_expected_sequence",
+        "peer_check_setting_direction",
+        "monitor_before_handover"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_complete_end",
+          "ending": "safe_complete",
+          "hpPoint": 233,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 53,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 233
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "no_action_pending_confirmation",
+      "choices": [
+        "pause_compare_current_state",
+        "hold_no_action_for_additional_confirmation"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_stop_end",
+          "ending": "safe_stop",
+          "hpPoint": 232,
+          "breakdown": {
+            "completion": 100,
+            "ending": 55,
+            "learningMetrics": 57,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 232
+          },
+          "seedCount": 20
+        }
+      ]
+    }
+  ]
+}

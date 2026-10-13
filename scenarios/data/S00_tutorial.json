@@ -1,13 +1,23 @@
 {
   "schemaVersion": "1.0.0",
   "id": "s00_tutorial",
-  "version": 1,
+  "version": 2,
   "title": "0장 · 확인하고 말하기",
   "defaultPerspectiveRole": "worker",
-  "audienceJobs": ["sro", "ro", "field_operator", "supervisor", "worker"],
+  "audienceJobs": [
+    "sro",
+    "ro",
+    "field_operator",
+    "supervisor",
+    "worker"
+  ],
   "estimatedMinutes": 3,
   "startNode": "intro",
-  "cards": ["self_check_star", "three_way_communication", "stop_when_unsure"],
+  "cards": [
+    "self_check_star",
+    "three_way_communication",
+    "stop_when_unsure"
+  ],
   "initialState": {
     "clockMin": 540,
     "deadlineMin": 600,
@@ -93,7 +103,11 @@
           }
         }
       ],
-      "allowedCards": ["self_check_star", "three_way_communication", "stop_when_unsure"]
+      "allowedCards": [
+        "self_check_star",
+        "three_way_communication",
+        "stop_when_unsure"
+      ]
     },
     "hazard_identity": {
       "type": "hazard",
@@ -113,7 +127,7 @@
       "type": "ending",
       "ending": "near_miss",
       "title": "멈춰서 다시 확인",
-      "summary": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방어막의 상태를 함께 돌아봅니다."
+      "summary": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방벽의 상태를 함께 돌아봅니다."
     }
   }
 }

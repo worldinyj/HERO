@@ -9,8 +9,8 @@ function actionLabel(
 
   if (entry.actionType === "hazard_check") {
     return entry.breached
-      ? "여러 방어막의 약화가 겹친 지점"
-      : "방어막이 기능한 확인 지점";
+      ? "여러 방벽의 약화가 겹친 지점"
+      : "방벽이 기능한 확인 지점";
   }
 
   if (!node || node.type !== "decision") {
@@ -68,7 +68,7 @@ export function SwissCheeseTimeline({
   return (
     <article className="review-card">
       <p className="eyebrow">Swiss Cheese Timeline</p>
-      <h2>방어막은 한 번에 무너지지 않습니다</h2>
+      <h2>방벽은 한 번에 무너지지 않습니다</h2>
       <p className="muted">
         선택·정보확인·HU Tool과 숨은 위험 판정을 시간 순서대로 겹쳐 봅니다.
       </p>
@@ -97,7 +97,7 @@ export function SwissCheeseTimeline({
                 {entry.actionType === "hazard_check" ? (
                   entry.breached ? (
                     <>
-                      <span>방어막 구멍이 같은 경로에서 겹쳤습니다.</span>
+                      <span>방벽 구멍이 같은 경로에서 겹쳤습니다.</span>
                       <div className="barrier-chip-list">
                         {(entry.weakBarriers ?? []).length > 0 ? (
                           (entry.weakBarriers ?? []).map((barrier) => (
@@ -111,7 +111,7 @@ export function SwissCheeseTimeline({
                       </div>
                     </>
                   ) : (
-                    <span>위험 조건이 있었지만 방어막이 결과를 바꾸었습니다.</span>
+                    <span>위험 조건이 있었지만 방벽이 결과를 바꾸었습니다.</span>
                   )
                 ) : (
                   <span>
@@ -136,7 +136,7 @@ export function SwissCheeseTimeline({
 
       <p className="review-note">
         이 화면은 특정 개인의 오류를 지목하지 않습니다. 절차·감독·정보·소통·작업
-        조건과 같은 여러 방어막의 조합을 학습하기 위한 화면입니다.
+        조건과 같은 여러 방벽의 조합을 학습하기 위한 화면입니다.
       </p>
 
       <button type="button" className="primary-button" onClick={onContinue}>

@@ -1,4 +1,4 @@
-// Read-only measurement for the fixed S03 v4 expert-review target.
+// Read-only measurement for the fixed S03 expert-review targets.
 // Run: node --import tsx scripts/review-s03-advisory.mjs
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -8,20 +8,34 @@ import { createGame, act } from "../packages/engine/src/engine.ts";
 import { evaluate } from "../packages/engine/src/score.ts";
 import { simulateScenarioPaths } from "../packages/engine/src/simulator.ts";
 
-const file = "scenarios/drafts/S03_procedure_reality_v1.json";
+const target = process.argv.includes("--target=v4") ? "v4"
+  : process.argv.includes("--target=v5") ? "v5"
+  : process.argv.includes("--target=v6") ? "v6" : "v7";
+const historical = target === "v4";
+const file = historical
+  ? "scenarios/research/generated/S03_V4_REVIEW_TARGET_20261013.json"
+  : target === "v5" ? "scenarios/research/generated/S03_V5_REVIEW_TARGET_20261013.json"
+  : target === "v6" ? "scenarios/research/generated/S03_V6_REVIEW_TARGET_20261013.json"
+  : "scenarios/drafts/S03_procedure_reality_v1.json";
 const content = readFileSync(resolve(import.meta.dirname, "..", file));
 const sha256 = createHash("sha256").update(content).digest("hex");
-const expected = "f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87";
+const expected = historical
+  ? "f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87"
+  : target === "v5" ? "e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079"
+  : target === "v6" ? "13e235bcc8e16a5ad4a70f57cbab63c7fc28c790fdd524253879e807d41c7e51"
+  : "8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38";
 if (sha256 !== expected) throw new Error("review_target_changed: create a new review measurement");
 const scenario = ScenarioSchema.parse(JSON.parse(content.toString("utf8")));
 const context = { reflectionAnswered: true, swissCheeseViewed: true };
 const definitions = [
-  { id: "early_no_action", choices: ["pause_compare_current_state"] },
-  { id: "team_then_no_action", choices: ["share_trend_with_peer", "place_keep_and_recheck"] },
+  { id: "early_no_action", choices: ["pause_compare_current_state", ...(historical ? [] : ["document_no_action_and_handover"])] },
+  { id: "team_then_no_action", choices: ["share_trend_with_peer", "place_keep_and_recheck", ...(historical ? [] : ["brief_no_action_then_record"])] },
   { id: "team_peer_then_monitor", choices: ["share_trend_with_peer", "peer_check_setting_direction", "monitor_before_handover"] },
   { id: "team_peer_then_handover", choices: ["share_trend_with_peer", "peer_check_setting_direction", "document_and_handover_trend"] },
   { id: "continue_then_peer_monitor", choices: ["continue_expected_sequence", "peer_check_setting_direction", "monitor_before_handover"] },
 ];
+if (!historical) definitions.push({ id: "no_action_pending_confirmation", choices: ["pause_compare_current_state", "hold_no_action_for_additional_confirmation"] });
+if (target === "v7") definitions.push({ id: "expected_response_pending_handover", choices: ["share_trend_with_peer", "peer_check_setting_direction", "hold_due_remaining_uncertainty"] });
 const probes = definitions.map((definition) => {
   const outcomes = new Map();
   for (let seedIndex = 0; seedIndex < 20; seedIndex++) {

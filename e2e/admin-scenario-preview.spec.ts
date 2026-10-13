@@ -28,7 +28,7 @@ async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: 
     else if (url.pathname === "/functions/v1/admin-scenario") {
       const request = route.request().postDataJSON() as Record<string, unknown>;
       calls.push(request);
-      if (request.action === "list") body = { versions: [{ id: versionId, version: 1, status: currentStatus, default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: tutorial.id, title: tutorial.title, is_active: true, is_competitive: false } }] };
+      if (request.action === "list") body = { versions: [{ id: versionId, version: tutorial.version, status: currentStatus, default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: tutorial.id, title: tutorial.title, is_active: true, is_competitive: false } }] };
       else if (request.action === "season-overview") body = { season: null, scenarios: [] };
       else if (request.action === "preview") {
         if (options.delayed) await pending;
@@ -46,14 +46,14 @@ async function fixture(page: Page, options: { wrongVersion?: boolean; delayed?: 
           return;
         }
         currentStatus = String(request.status);
-        body = { updated: true, version: { id: options.wrongStatusResponse ? adminId : versionId, version: 1, status: currentStatus } };
+        body = { updated: true, version: { id: options.wrongStatusResponse ? adminId : versionId, version: tutorial.version, status: currentStatus } };
       } else throw new Error(`Unexpected mutating admin action: ${request.action}`);
     } else throw new Error(`Preview tried to use another API: ${url.pathname}`);
     await route.fulfill({ json: body });
   });
   await page.goto("/admin/scenarios");
   await expect(page.getByRole("heading", { name: "시나리오 관리", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: `${tutorial.title} v1 미리보기`, exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: `${tutorial.title} v${tutorial.version} 미리보기`, exact: true })).toBeVisible();
   return { calls, release };
 }
 
@@ -99,7 +99,7 @@ test("invalid JSON and broken graph cannot open preview", async ({ page }) => {
 
 test("saved preview requests the exact version; canceled late responses stay closed", async ({ page }) => {
   const { calls, release } = await fixture(page, { delayed: true });
-  const button = page.getByRole("button", { name: `${tutorial.title} v1 미리보기`, exact: true });
+  const button = page.getByRole("button", { name: `${tutorial.title} v${tutorial.version} 미리보기`, exact: true });
   await button.click();
   await page.getByRole("button", { name: "불러오기 취소", exact: true }).click();
   const lateResponse = page.waitForResponse(response => response.url().endsWith("/functions/v1/admin-scenario") && response.request().postDataJSON().action === "preview");
@@ -116,7 +116,7 @@ test("saved preview requests the exact version; canceled late responses stay clo
 
 test("mismatched saved version responses cannot display content", async ({ page }) => {
   await fixture(page, { wrongVersion: true });
-  await page.getByRole("button", { name: `${tutorial.title} v1 미리보기`, exact: true }).click();
+  await page.getByRole("button", { name: `${tutorial.title} v${tutorial.version} 미리보기`, exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("요청한 버전과 미리보기 응답이 다릅니다.");
   await expect(page.getByRole("region", { name: `${tutorial.title} · 미리보기`, exact: true })).not.toBeVisible();
 });
@@ -140,7 +140,7 @@ test("status confirmation cancels by button and Escape without mutations; focus 
   const trigger = page.getByRole("button", { name: "검토로", exact: true });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "시나리오 상태 변경 확인", exact: true });
-  await expect(dialog).toContainText(`${tutorial.title} · v1`);
+  await expect(dialog).toContainText(`${tutorial.title} · v${tutorial.version}`);
   await expect(dialog).toContainText("초안 → 검토");
   await expect(dialog.getByRole("button", { name: "취소", exact: true })).toBeFocused();
   await page.keyboard.press("Tab");

@@ -1,0 +1,73 @@
+{
+  "version": 2,
+  "scenario_id": "s00_tutorial",
+  "scenario_version": 2,
+  "source_path": "scenarios/data/S00_tutorial.json",
+  "source_sha256": "e1630be79bf077f856413675b977e2aa6d0239b0e952fbfa57f187308d84fa57",
+  "voice_name": "Jin Geon Song - Neutral, Calm and Steady",
+  "voice_id": "BbsagRO6ohd8MKPS2Ob0",
+  "synthesis_model": "eleven_v4",
+  "generation_status": "four_unchanged_clips_reused; near_miss_pending_generation",
+  "runtime_status": "four_registered; near_miss_text_only",
+  "clips": [
+    {
+      "asset_id": "NAR-S00-01",
+      "node_id": "intro",
+      "field": "text",
+      "action_id": null,
+      "trigger": "시작 장면",
+      "text": "현장에 도착했습니다. 작업대 앞에는 비슷하게 생긴 두 개의 대상이 있습니다.",
+      "filename": "nar_s00_intro_text_v1.mp3",
+      "status": "registered",
+      "path": "/audio/narration/nar_s00_intro_text_v1.mp3"
+    },
+    {
+      "asset_id": "NAR-S00-02",
+      "node_id": "decision_identify",
+      "field": "prompt",
+      "action_id": null,
+      "trigger": "선택 질문",
+      "text": "작업 대상을 확신하기 어려운 상황입니다. 어떻게 하시겠습니까?",
+      "filename": "nar_s00_decision_identify_prompt_v1.mp3",
+      "status": "registered",
+      "path": "/audio/narration/nar_s00_decision_identify_prompt_v1.mp3"
+    },
+    {
+      "asset_id": "NAR-S00-03",
+      "node_id": "decision_identify",
+      "field": "revealText",
+      "action_id": "read_label",
+      "trigger": "표식 정보 확인 후",
+      "text": "두 대상의 명칭은 비슷하지만 마지막 식별 문자가 다릅니다.",
+      "filename": "nar_s00_decision_identify_read_label_v1.mp3",
+      "status": "registered",
+      "path": "/audio/narration/nar_s00_decision_identify_read_label_v1.mp3"
+    },
+    {
+      "asset_id": "NAR-S00-04",
+      "node_id": "safe_end",
+      "field": "summary",
+      "action_id": null,
+      "trigger": "확인 후 진행 엔딩",
+      "text": "추가 확인에 시간을 사용했지만 작업 대상을 명확히 확인했습니다.",
+      "filename": "nar_s00_safe_end_summary_v1.mp3",
+      "status": "registered",
+      "path": "/audio/narration/nar_s00_safe_end_summary_v1.mp3"
+    },
+    {
+      "asset_id": "NAR-S00-05",
+      "node_id": "near_miss_end",
+      "field": "summary",
+      "action_id": null,
+      "trigger": "멈춰서 다시 확인 엔딩",
+      "text": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방벽의 상태를 함께 돌아봅니다.",
+      "filename": "nar_s00_near_miss_end_summary_v2.mp3",
+      "status": "pending_generation",
+      "path": null
+    }
+  ],
+  "voice_selection_basis": "public_directory_description",
+  "voice_account_availability": "user_confirmed",
+  "voice_listening_review": "user_confirmed_2026-10-11",
+  "voice_source_url": "https://json2video.com/ai-voices/elevenlabs/voices/BbsagRO6ohd8MKPS2Ob0/"
+}

@@ -4,6 +4,8 @@
 > 자동검증 근거: PR #109 head `8176273d1d8b95b088173a5f9bfc2a82f80850c8`의 기존 성공 기록
 > **구현 진도 / 최종 DoD·실기기·출시 승인과 구분 / 정식 v1.0 RELEASE BLOCKED**
 
+> 후속 S03 v7 개정은 [개정 기록](S03_V5_LEARNING_COMPLETION_CHANGE.md)을 따른다. 아래 CI/배포·83.7%는 고정된 이전 소스 기준선의 근거이며 v5 전체 배포/실기기/최종 검증을 승계하지 않는다.
+
 ## 1. 현재 진척
 
 - MVP Phase 0~7: **86개**. 구현 **63**, 부분 **18**, 미착수·완료 증거 없음 **5**.
@@ -43,7 +45,7 @@
 - 수리3포즈·KHNP 로고와 웹 화면 적용은 완료. T3-10의 계획된 초상화/배경/카드/도장 전체 제작은 미완료이므로 부분이다.
 - 오디오 후보20개·등록17개가 존재하므로 T3-12/13은 미착수에서 부분으로 정정. 전체 계획 큐/큐별3안·모델 확인·정식 audioQc/실기기 검증은 남아 있다.
 - `audioPolicy=included`로 실제 등록·포함 범위를 반영하지만 `approvals.audioQc=pending`을 유지한다. 사용자 청취/권리 확인과 기술 QC의 범위는 원본 검수 기록을 따른다.
-- S01/S02는 SOURCE_HOLD, S03 v4는 REVIEW_READY·동일-SHA 사람 검토0/5. 경쟁 콘텐츠 승인0/3이다.
+- S01/S02는 SOURCE_HOLD, S03 v7는 REVIEW_READY·동일-SHA 사람 검토0/5. 경쟁 콘텐츠 승인0/3이다.
 - 별도 staging 구성·같은 SHA Staging Smoke/RC, 법무/개인정보, 실기기4종, 사내망/개인폰 정책, 30명 파일럿·v1.0 승인 증거는 남아 있다.
 - 실제 운영의 LCP/INP/CLS 및 LCP<2.5초는 측정하지 않았다. 번들 예산 통과를 LCP 개선으로 해석하지 않는다.
 - 조직/담당자/초대 전체 목록은 서버 검색·페이지 처리 후속 대상이다. 결과 확인은 선택 ID 기준으로 보장해야 한다.
@@ -117,7 +119,7 @@
 | T3-10 | 부분 | `docs/03_UXUI.md` | 수리 3포즈 PNG/WebP·KHNP 로고 제작 및 화면 적용; 계획된 초상화 18개·배경5·카드8·도장4 전체 제작은 미완료 |
 | T3-11 | 구현 | `assets/audio/prompts/AUDIO_PROMPTS_V1.md` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |
 | T3-12 | 부분 | `assets/audio/reviews/AUDIO_REVIEW_LOG.md` | Flow Music 후보20개와 provenance·보정본 존재; 큐별3안 전체 제작 및 실제 모델/제출 프롬프트 확정 미완료 |
-| T3-13 | 부분 | `assets/audio/reviews/AUDIO_REVIEW_LOG.md` | 승인 manifest17개·사용자 권리/청취 확인·기술 QC 기록; 전체 계획 큐·실기기·정식 출시 audioQc 승인 미완료 |
+| T3-13 | 부분 | `assets/audio/reviews/AUDIO_REVIEW_LOG.md` | 현재 승인 manifest16개·이전 나레이션1개 재제작 대기·사용자 권리/청취 확인·기술 QC 기록; 전체 계획 큐·실기기·정식 출시 audioQc 승인 미완료 |
 | T4-01 | 구현 | `apps/web/src/app/App.tsx` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |
 | T4-02 | 구현 | `apps/web/src/features/play/CompetitiveCampaignChapters.tsx` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |
 | T4-03 | 구현 | `apps/web/src/features/play/SceneStage.tsx` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |
@@ -156,3 +158,5 @@
 | T7-05 | 미착수/증거 없음 | `docs/10_MVP_READINESS.md` | 사내망·개인폰 접속 정책 승인 증거 없음 |
 | T7-06 | 미착수/증거 없음 | `ops/release-evidence.json` | 파일럿 30명 운영·사전사후 결과 없음 |
 | T7-07 | 미착수/증거 없음 | `docs/10_MVP_READINESS.md` | 파일럿 전·사람 승인 전이므로 v1.0 릴리스 불가 |
+
+현재 용어 보완 기준: 방벽을 사용한다. 이전 고정 CI 근거의 음원17개 중 NAR-S00-05는 옛 용어 발화 때문에 현재 manifest에서 제외했다. 현재 실행 음원16개와 재제작 대기1개를 구분하며, 기존 검수·해시 이력은 보존한다.

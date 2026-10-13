@@ -16,7 +16,7 @@ function reflectionOptions(
     {
       id: "initial_conditions",
       title: "상황이 시작되기 전부터",
-      detail: "시간압박·불확실성·준비상태 같은 조건이 이미 방어막에 영향을 주고 있었다.",
+      detail: "시간압박·불확실성·준비상태 같은 조건이 이미 방벽에 영향을 주고 있었다.",
     },
   ];
 
@@ -62,19 +62,19 @@ export function CausalReflection({
       <header className="learning-mascot-heading">
         <div>
           <p className="eyebrow">Causal Reflection</p>
-          <h2>어느 시점부터 방어막이 약해졌을까요?</h2>
+          <h2>어느 시점부터 방벽이 약해졌을까요?</h2>
         </div>
         <SuriIllustration pose="reflect" />
       </header>
       <p className="muted">
-        정답을 고르는 문제가 아닙니다. 한 사람의 마지막 행동보다 조건과 방어막이
+        정답을 고르는 문제가 아닙니다. 한 사람의 마지막 행동보다 조건과 방벽이
         어떻게 겹쳤는지 돌아보세요.
       </p>
 
       <div
         className="reflection-options"
         role="radiogroup"
-        aria-label="방어막 약화 시점 회고"
+        aria-label="방벽 약화 시점 회고"
       >
         {options.map((option, index) => {
           const checked = selected === option.id;
@@ -105,8 +105,8 @@ export function CausalReflection({
       </div>
 
       <p className="review-note">
-        같은 결과라도 서로 다른 시점에서 방어막 약화를 느낄 수 있습니다. 다음
-        화면에서 실제 엔진 로그의 방어막 상태를 확인합니다.
+        같은 결과라도 서로 다른 시점에서 방벽 약화를 느낄 수 있습니다. 다음
+        화면에서 실제 엔진 로그의 방벽 상태를 확인합니다.
       </p>
 
       <button

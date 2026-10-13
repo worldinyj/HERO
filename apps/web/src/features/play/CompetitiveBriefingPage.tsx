@@ -396,7 +396,7 @@ export function CompetitiveBriefingPage({
         </section>
 
         <section className="briefing-section">
-          <h3>지급 방어막 카드</h3>
+          <h3>지급 방벽 카드</h3>
           {cards.length > 0 ? (
             <div className="briefing-card-list">
               {cards.map((card) => (
@@ -407,7 +407,7 @@ export function CompetitiveBriefingPage({
             </div>
           ) : (
             <p className="muted mini-copy">
-              이 장에서는 별도 방어막 카드가 지급되지 않습니다.
+              이 장에서는 별도 방벽 카드가 지급되지 않습니다.
             </p>
           )}
         </section>

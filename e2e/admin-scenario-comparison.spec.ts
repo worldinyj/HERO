@@ -9,7 +9,7 @@ const otherId = "f7200000-0000-0000-0000-000000000003";
 
 function editedScenario() {
   const scenario = structuredClone(tutorial);
-  scenario.version = 2;
+  scenario.version = tutorial.version + 1;
   scenario.nodes.intro.text = "변경된 현장 안내";
   scenario.nodes.decision_identify.choices.reverse();
   scenario.nodes.decision_identify.choices.find(choice => choice.actionId === "check_procedure")!.timeCostMin = 3;
@@ -35,7 +35,7 @@ async function fixture(page: Page, options: { delay?: string; mismatch?: "id" | 
     else if (url.pathname === "/auth/v1/user") body = user;
     else if (url.pathname === "/functions/v1/admin-scenario") {
       const request = route.request().postDataJSON() as Record<string, unknown>; calls.push(request);
-      if (request.action === "list") body = { versions: options.empty ? [] : [beforeId, afterId, otherId].map((id, index) => ({ id, version: index === 1 ? 2 : 1, status: "draft", default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: index === 2 ? otherId : beforeId, slug: index === 2 ? "other_scenario" : tutorial.id, title: index === 2 ? "다른 시나리오" : "목록의 최신 제목", is_active: true, is_competitive: false } })) };
+      if (request.action === "list") body = { versions: options.empty ? [] : [beforeId, afterId, otherId].map((id, index) => ({ id, version: tutorial.version + (index === 1 ? 1 : 0), status: "draft", default_perspective_role: "worker", approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: index === 2 ? otherId : beforeId, slug: index === 2 ? "other_scenario" : tutorial.id, title: index === 2 ? "다른 시나리오" : "목록의 최신 제목", is_active: true, is_competitive: false } })) };
       else if (request.action === "season-overview") body = { season: null, scenarios: [] };
       else if (request.action === "preview") {
         if (request.scenarioVersionId === options.delay) await delayed;
@@ -65,13 +65,13 @@ test("saved versions compare by stable action ID without mutating state", async 
   const { calls } = await fixture(page);
   await page.getByLabel("변경 전 · 기준 버전", { exact: true }).selectOption(beforeId);
   const target = page.getByLabel("변경 후 · 비교 대상", { exact: true });
-  expect(await target.locator("option").allTextContents()).toEqual(["입력 중인 JSON", "v2 · 초안"]);
+  expect(await target.locator("option").allTextContents()).toEqual(["입력 중인 JSON", `v${tutorial.version + 1} · 초안`]);
   await target.selectOption(afterId);
   await page.getByRole("button", { name: "변경 사항 비교", exact: true }).click();
   const result = page.getByRole("region", { name: "비교 결과 · 3개 변경", exact: true });
   await expect(result).toBeVisible();
-  await expect(result).toContainText(`변경 전: ${tutorial.title} · v1`);
-  await expect(result).toContainText(`변경 후: ${tutorial.title} · v2`);
+  await expect(result).toContainText(`변경 전: ${tutorial.title} · v${tutorial.version}`);
+  await expect(result).toContainText(`변경 후: ${tutorial.title} · v${tutorial.version + 1}`);
   await expect(result).not.toContainText("목록의 최신 제목");
   const time = result.locator("details").filter({ hasText: "/nodes/decision_identify/choices/check_procedure/timeCostMin" });
   await time.locator("summary").click();
@@ -96,10 +96,10 @@ test("editor comparison validates identity and captures the clicked JSON snapsho
   for (const value of ["null", JSON.stringify({ ...tutorial, id: "other_scenario" })]) { await editor.fill(value); await expect(compare).toBeDisabled(); }
   await editor.fill(JSON.stringify(editedScenario()));
   await compare.click();
-  await editor.fill(JSON.stringify({ ...tutorial, version: 3, title: "나중에 편집한 제목" }));
+  await editor.fill(JSON.stringify({ ...tutorial, version: tutorial.version + 2, title: "나중에 편집한 제목" }));
   release();
   const result = page.getByRole("region", { name: "비교 결과 · 3개 변경", exact: true });
-  await expect(result).toContainText("입력 중인 JSON 사본 · v2");
+  await expect(result).toContainText(`입력 중인 JSON 사본 · v${tutorial.version + 1}`);
   await expect(result).not.toContainText("나중에 편집한 제목");
   expect(calls.filter(call => call.action === "preview")).toHaveLength(1);
 });
@@ -167,7 +167,7 @@ test("cancel returns to the comparison heading when edited JSON disables the tri
 test("a version-number-only editor change reports unchanged content", async ({ page }) => {
   const { calls } = await fixture(page);
   await page.getByLabel("변경 전 · 기준 버전", { exact: true }).selectOption(beforeId);
-  await page.getByRole("textbox", { name: "시나리오 JSON", exact: true }).fill(JSON.stringify({ ...tutorial, version: 2 }));
+  await page.getByRole("textbox", { name: "시나리오 JSON", exact: true }).fill(JSON.stringify({ ...tutorial, version: tutorial.version + 1 }));
   await page.getByRole("button", { name: "변경 사항 비교", exact: true }).click();
   await expect(page.getByRole("region", { name: "비교 결과 · 0개 변경", exact: true })).toContainText("버전 번호를 제외한 내용이 같습니다.");
   expect(calls.filter(call => call.action === "preview")).toHaveLength(1);

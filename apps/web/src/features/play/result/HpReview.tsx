@@ -156,9 +156,9 @@ export function HpReview({
       </section>
 
       <section className="review-section">
-        <h3>플레이 후 확인된 취약 방어막</h3>
+        <h3>플레이 후 확인된 취약 방벽</h3>
         {weakBarriers.length > 0 ? (
-          <div className="risk-factor-list" aria-label="학습용 취약 방어막">
+          <div className="risk-factor-list" aria-label="학습용 취약 방벽">
             {weakBarriers.map((barrier) => (
               <span key={barrier} className="risk-factor-chip">
                 ▲ {barrierLabel(barrier)}
@@ -167,7 +167,7 @@ export function HpReview({
           </div>
         ) : (
           <p className="muted mini-copy">
-            이번 경로에서는 사건·근접오류 구간에 별도 취약 방어막이 기록되지
+            이번 경로에서는 사건·근접오류 구간에 별도 취약 방벽이 기록되지
             않았습니다.
           </p>
         )}

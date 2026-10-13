@@ -20,7 +20,7 @@
 [측정 JSON](generated/S03_V4_ADVISORY_MEASUREMENTS_20261013.json)은 다음 명령으로 재현한다. 스크립트는 읽기 전용이며 대상 해시가 달라지면 중단한다.
 
 ```bash
-node --import tsx scripts/review-s03-advisory.mjs
+node --import tsx scripts/review-s03-advisory.mjs --target=v4
 ```
 
 전 경로 탐색: **6,015 states / 3,519 terminal paths / COMPLETE / 자동 경고 0**. 엔딩별 경로 수는 safe_complete=1,896, safe_stop=1,503, near_miss=96, event=24다. 이는 기본3개 고정 seed에서 정보행동/카드 순서까지 탐색한 경로 수이며 실제 사건 확률·사용자 행동 분포가 아니다.

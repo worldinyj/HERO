@@ -30,10 +30,10 @@ function fixture() {
       caseType: "공개 사건 일반화",
       overview: "공식 공개자료의 사실관계를 일반화한 사건 개요입니다.",
       directCauses: ["사건 직전의 직접적인 행위·설비 트리거"],
-      rootCauses: ["방어막 관점 교육 분석"],
+      rootCauses: ["방벽 관점 교육 분석"],
       contributingFactors: ["교육용 기여조건"],
       causalChain: ["직접 트리거 → 설비 반응 → 사건"],
-      failedBarriers: ["독립확인 방어막"],
+      failedBarriers: ["독립확인 방벽"],
       correctiveActions: ["입력 전 재확인 단계를 강화한다."],
       lessons: [
         {

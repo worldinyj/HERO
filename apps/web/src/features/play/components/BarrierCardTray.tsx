@@ -50,14 +50,14 @@ export function BarrierCardTray({
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <span>방어막 카드</span>
+        <span>방벽 카드</span>
         <strong>{cards.length}</strong>
         <small>{open ? "접기" : "펼치기"}</small>
       </button>
 
       {lastUsedCard ? (
         <p className="barrier-use-feedback" role="status">
-          {BARRIER_CARDS[lastUsedCard]?.label ?? lastUsedCard} 방어막을 적용했습니다.
+          {BARRIER_CARDS[lastUsedCard]?.label ?? lastUsedCard} 방벽을 적용했습니다.
         </p>
       ) : null}
 

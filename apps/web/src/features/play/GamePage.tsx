@@ -197,7 +197,7 @@ export function GamePage() {
 
             <p className="review-note">
               다음 화면부터는 결과의 책임을 한 사람에게 돌리지 않고, 어떤 조건과
-              방어막이 겹쳤는지 순서대로 돌아봅니다.
+              방벽이 겹쳤는지 순서대로 돌아봅니다.
             </p>
 
             <button
