@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "release": "1.0.0",
-  "updatedAt": "2026-10-07",
-  "audioPolicy": "deferred",
+  "updatedAt": "2026-10-13",
+  "audioPolicy": "included",
   "approvals": {
     "legalPrivacy": {
       "status": "pending",

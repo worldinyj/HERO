@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |---|---|
 | 상태 | 운영/승인 증거 기록용 |
-| 기준일 | 2026-10-07 |
+| 기준일 | 2026-10-13 |
 | 대상 | MVP Release 1 |
 | 기계 판독 파일 | `ops/release-evidence.json` |
 | 검사 | `pnpm check:release-evidence` |
@@ -26,6 +26,12 @@ HERO는 코드 CI 통과와 실제 출시 승인을 분리한다.
 - `included`: 승인 오디오를 릴리스에 포함. audio manifest의 승인 자산과 `audioQc` 사람 승인이 모두 필요
 
 따라서 “오디오는 별도 생성 예정” 상태는 개발 중에는 `deferred`로 유지할 수 있지만, 실제 v1.0 후보를 만들 때는 `excluded` 또는 `included`를 명시적으로 결정해야 한다.
+
+### 2026-10-13 실제 상태 정리
+
+`audioPolicy=included`로 현재 등록 음원17개의 포함 범위를 반영했다. 근거는 [PR #102](https://github.com/worldinyj/HERO/pull/102)·[PR #103](https://github.com/worldinyj/HERO/pull/103), `assets/audio/reviews/AUDIO_REVIEW_LOG.md`와 승인 manifest다. 모델/실제 제출 프롬프트 미확인 등 provenance 한계는 그대로 유지한다.
+
+`approvals.audioQc`를 비롯한 모든 정식 승인 항목은 기존 `pending` 상태다. 사용자 보정본 청취·권리 확인 및 자동 기술검수를 4종 실기기/정식 출시 승인으로 확대하지 않는다. `updatedAt=2026-10-13`은 범위 정정일이며 승인일이 아니다. 자동검증·배포 기록은 `ops/development-snapshot-20261013.json`에서 별도 확인한다.
 
 ## 3. 사람 승인 증거
 

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-13",
+  "timezone": "Asia/Seoul",
+  "baselineBranch": "main",
+  "baselineCommit": "5976d53020e96b92493d5bfc3f1b913360af0067",
+  "verifiedPullRequestHead": "8176273d1d8b95b088173a5f9bfc2a82f80850c8",
+  "evidenceScope": "Existing GitHub API results and repository files; no new CI, real-device, production DB, or OAuth execution",
+  "checks": [
+    {
+      "name": "CI",
+      "conclusion": "success",
+      "runId": 38311828886,
+      "url": "https://github.com/worldinyj/HERO/actions/runs/38311828886"
+    },
+    {
+      "name": "Database Policy Tests",
+      "conclusion": "success",
+      "runId": 38311828883,
+      "url": "https://github.com/worldinyj/HERO/actions/runs/38311828883"
+    },
+    {
+      "name": "E2E",
+      "conclusion": "success",
+      "runId": 38311828884,
+      "url": "https://github.com/worldinyj/HERO/actions/runs/38311828884"
+    }
+  ],
+  "deployment": {
+    "status": "reported_deployed",
+    "evidenceRef": "https://github.com/worldinyj/HERO/pull/109",
+    "url": "https://23ada2a3.hero-dnr.pages.dev",
+    "productionUrl": "https://hero-dnr.pages.dev",
+    "matchedFilesAndRoutes": 48,
+    "independentlyRecheckedThisSession": false
+  },
+  "browserTests": {
+    "reportedPassed": 168,
+    "evidenceRef": "https://github.com/worldinyj/HERO/pull/109",
+    "scope": "Automated Chromium mobile/desktop with local fixture/mock APIs; not real devices"
+  },
+  "audio": {
+    "approvedAssets": 17,
+    "countsByKind": {
+      "narration": 5,
+      "bgm": 4,
+      "sfx": 5,
+      "stinger": 3
+    },
+    "assetEvidenceRef": "assets/audio/reviews/AUDIO_REVIEW_LOG.md",
+    "releaseQcApproval": "pending",
+    "realDeviceQc": "pending"
+  },
+  "s03": {
+    "version": 4,
+    "contentSha256": "f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87",
+    "status": "review_ready",
+    "currentShaHumanPassAreas": 0,
+    "requiredAreas": 5,
+    "evidenceRef": "scenarios/research/human-review-evidence.json"
+  },
+  "formalReleaseVerdict": "not_release_ready"
+}
