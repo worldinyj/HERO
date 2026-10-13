@@ -4,7 +4,7 @@
   "entries": [
     {
       "scenarioId": "s03_procedure_reality_gap",
-      "scenarioVersion": 6,
+      "scenarioVersion": 7,
       "sourceDocument": {
         "authority": "한국원자력안전기술원(KINS)",
         "documentId": "제2026-03호(260811SU3)",
@@ -55,7 +55,7 @@
         {
           "id": "RC-01",
           "classification": "root",
-          "label": "미예정 중요 운전행위를 실행하기 전 목적·근거·방법·예상반응·방어막을 재검토하는 관리방어막 부족",
+          "label": "미예정 중요 운전행위를 실행하기 전 목적·근거·방법·예상반응·방벽을 재검토하는 관리방벽 부족",
           "provenance": "hero_classification_from_kins_findings",
           "evidenceAnchors": [
             "§3.2.2 본문 10-11쪽"
@@ -211,7 +211,7 @@
       "barriers": [
         {
           "id": "B-01",
-          "label": "미예정 운전행위 사전점검 방어막(사건 당시 부재/미작동)"
+          "label": "미예정 운전행위 사전점검 방벽(사건 당시 부재/미작동)"
         },
         {
           "id": "B-02",
@@ -223,7 +223,7 @@
         },
         {
           "id": "B-04",
-          "label": "중요 설정치의 별도 확인 / Peer Check / Independent Verification 방어막"
+          "label": "중요 설정치의 별도 확인 / Peer Check / Independent Verification 방벽"
         },
         {
           "id": "B-05",

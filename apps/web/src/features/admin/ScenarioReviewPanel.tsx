@@ -8,11 +8,11 @@ import { STATUS_LABEL, type ScenarioStatus } from "./scenarioStatus";
 
 const target = generated as ReviewTarget;
 const DETAILS: Record<ReviewArea, { title: string; description: string }> = {
-  hf_accuracy: { title: "HF 정확성", description: "직접·근본·기여 원인과 방어막·재발방지대책의 연결, HU Tool 적용 맥락을 확인합니다." },
+  hf_accuracy: { title: "HF 정확성", description: "직접·근본·기여 원인과 방벽·재발방지대책의 연결, HU Tool 적용 맥락을 확인합니다." },
   operations_context: { title: "운전·정비 맥락", description: "작업 필요성·절차·현장 조건과 공식 사건 사실이 일치하는지 확인합니다." },
   anonymization: { title: "익명화·정보 노출", description: "인물·발전소·설비를 역추적하거나 실제 운전 설정·복구 절차를 드러내는 내용이 없는지 확인합니다." },
-  just_culture: { title: "Just Culture", description: "특정 개인을 비난하지 않고 조직 조건과 방어막을 다루며, 안전 정지를 실패로 묘사하지 않는지 확인합니다." },
-  incident_debrief: { title: "실사건 회고", description: "공식 사실과 HERO 교육적 해석이 구분되고 인과사슬·방어막·관련 대책이 근거와 맞는지 확인합니다." },
+  just_culture: { title: "Just Culture", description: "특정 개인을 비난하지 않고 조직 조건과 방벽을 다루며, 안전 정지를 실패로 묘사하지 않는지 확인합니다." },
+  incident_debrief: { title: "실사건 회고", description: "공식 사실과 HERO 교육적 해석이 구분되고 인과사슬·방벽·관련 대책이 근거와 맞는지 확인합니다." },
 };
 const DECISION = { pending: "검토 대기", pass: "검토 통과", hold: "보완 필요" };
 type Version = { id: string; version: number; status: ScenarioStatus; slug: string; title: string };

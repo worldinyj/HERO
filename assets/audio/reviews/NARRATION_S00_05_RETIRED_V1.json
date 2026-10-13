@@ -1,0 +1,34 @@
+{
+  "retiredAt": "2026-10-13",
+  "reason": "사용자 요청으로 표시 용어를 방벽으로 변경. 이전 단어를 발화하는 음성은 현재 재생 목록에서 제외하고 새 음성 준비 전 화면 텍스트로 안내.",
+  "asset": {
+    "id": "NAR-S00-05",
+    "kind": "narration",
+    "path": "/audio/narration/nar_s00_near_miss_end_summary_v1.mp3",
+    "approved": true,
+    "loop": false,
+    "defaultVolume": 1.0,
+    "preload": "none",
+    "narration": {
+      "scenarioId": "s00_tutorial",
+      "scenarioVersion": 1,
+      "nodeId": "near_miss_end",
+      "field": "summary",
+      "text": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방어막의 상태를 함께 돌아봅니다."
+    },
+    "provenance": {
+      "tool": "ElevenLabs",
+      "model": "eleven_v4",
+      "voiceId": "BbsagRO6ohd8MKPS2Ob0",
+      "promptHash": "7919cdaa8c7afd9dfbbc33556cb2531d9dcea1ed38feaee8fa3515ef7dd443d3",
+      "promptHashBasis": "documented_plain_text_script; spoken content reviewed by user",
+      "generatedAt": "2026-10-11",
+      "generatedAtBasis": "local_file_mtime_date_inferred; exact synthesis timestamp unavailable",
+      "licenseReviewedBy": "사용자 (2026-10-11 대화에서 사용 권한 확인)",
+      "hfReviewedBy": "사용자 (2026-10-11 대본·발음·톤 청취 확인)",
+      "technicalReviewedBy": "Codex (파일 디코딩·샘플 peak·Chromium 재생 검증)",
+      "fileSha256": "10e52beba33d9125e9c3013a3924bca4f07fbdd395f7ae009a90a300871563e4"
+    }
+  },
+  "historicalSource": "assets/audio/reviews/S00_TUTORIAL_V1_SOURCE.json"
+}

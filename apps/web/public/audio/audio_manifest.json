@@ -20,7 +20,7 @@
       "preload": "none",
       "narration": {
         "scenarioId": "s00_tutorial",
-        "scenarioVersion": 1,
+        "scenarioVersion": 2,
         "nodeId": "intro",
         "field": "text",
         "text": "현장에 도착했습니다. 작업대 앞에는 비슷하게 생긴 두 개의 대상이 있습니다."
@@ -49,7 +49,7 @@
       "preload": "none",
       "narration": {
         "scenarioId": "s00_tutorial",
-        "scenarioVersion": 1,
+        "scenarioVersion": 2,
         "nodeId": "decision_identify",
         "field": "prompt",
         "text": "작업 대상을 확신하기 어려운 상황입니다. 어떻게 하시겠습니까?"
@@ -78,7 +78,7 @@
       "preload": "none",
       "narration": {
         "scenarioId": "s00_tutorial",
-        "scenarioVersion": 1,
+        "scenarioVersion": 2,
         "nodeId": "decision_identify",
         "field": "revealText",
         "text": "두 대상의 명칭은 비슷하지만 마지막 식별 문자가 다릅니다.",
@@ -108,7 +108,7 @@
       "preload": "none",
       "narration": {
         "scenarioId": "s00_tutorial",
-        "scenarioVersion": 1,
+        "scenarioVersion": 2,
         "nodeId": "safe_end",
         "field": "summary",
         "text": "추가 확인에 시간을 사용했지만 작업 대상을 명확히 확인했습니다."
@@ -125,35 +125,6 @@
         "hfReviewedBy": "사용자 (2026-10-11 대본·발음·톤 청취 확인)",
         "technicalReviewedBy": "Codex (파일 디코딩·샘플 peak·Chromium 재생 검증)",
         "fileSha256": "19b0212c0d1f6cd8b46df61c9e490620972d9096e7b7e4c8714a7831e30adfef"
-      }
-    },
-    {
-      "id": "NAR-S00-05",
-      "kind": "narration",
-      "path": "/audio/narration/nar_s00_near_miss_end_summary_v1.mp3",
-      "approved": true,
-      "loop": false,
-      "defaultVolume": 1.0,
-      "preload": "none",
-      "narration": {
-        "scenarioId": "s00_tutorial",
-        "scenarioVersion": 1,
-        "nodeId": "near_miss_end",
-        "field": "summary",
-        "text": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방어막의 상태를 함께 돌아봅니다."
-      },
-      "provenance": {
-        "tool": "ElevenLabs",
-        "model": "eleven_v4",
-        "voiceId": "BbsagRO6ohd8MKPS2Ob0",
-        "promptHash": "7919cdaa8c7afd9dfbbc33556cb2531d9dcea1ed38feaee8fa3515ef7dd443d3",
-        "promptHashBasis": "documented_plain_text_script; spoken content reviewed by user",
-        "generatedAt": "2026-10-11",
-        "generatedAtBasis": "local_file_mtime_date_inferred; exact synthesis timestamp unavailable",
-        "licenseReviewedBy": "사용자 (2026-10-11 대화에서 사용 권한 확인)",
-        "hfReviewedBy": "사용자 (2026-10-11 대본·발음·톤 청취 확인)",
-        "technicalReviewedBy": "Codex (파일 디코딩·샘플 peak·Chromium 재생 검증)",
-        "fileSha256": "10e52beba33d9125e9c3013a3924bca4f07fbdd395f7ae009a90a300871563e4"
       }
     },
     {

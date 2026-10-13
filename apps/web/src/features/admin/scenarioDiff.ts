@@ -78,14 +78,14 @@ export function diffLabel(path: string[]): string {
     timeCostMin: "소요 시간(분)", revealText: "확인 정보", threshold: "위험 판정 기준", jitter: "위험 변동 폭",
     clockMin: "시작 시각(분)", deadlineMin: "마감 시각(분)", baseHazard: "초기 위험", estimatedMinutes: "예상 플레이 시간(분)",
     type: "장면 유형", ending: "엔딩 유형", summary: "엔딩 요약", background: "배경", audioCue: "오디오",
-    defaultPerspectiveRole: "기본 관점", audienceJobs: "대상 직무", cards: "방어막 카드", allowedCards: "사용 가능한 카드",
+    defaultPerspectiveRole: "기본 관점", audienceJobs: "대상 직무", cards: "방벽 카드", allowedCards: "사용 가능한 카드",
     incidentDebrief: "실사건 회고", overview: "사건 개요", directCauses: "직접 원인", rootCauses: "근본 원인", contributingFactors: "기여 요인",
-    causalChain: "인과관계", failedBarriers: "약해진 방어막", correctiveActions: "재발 방지 대책", lessons: "교훈", sources: "출처",
+    causalChain: "인과관계", failedBarriers: "약해진 방벽", correctiveActions: "재발 방지 대책", lessons: "교훈", sources: "출처",
     "$order": "행동 작성 순서",
   };
   const key = path.at(-1) ?? "";
   const parent = path.at(-2) ?? "";
-  const contexts: Record<string, string> = { barrierDelta: "방어막 효과", metricsDelta: "학습 지표 효과", psfMultipliers: "위험 요인 효과", flags: "상태 표시", barriers: "초기 방어막", psf: "초기 위험 요인", metrics: "초기 학습 지표" };
+  const contexts: Record<string, string> = { barrierDelta: "방벽 효과", metricsDelta: "학습 지표 효과", psfMultipliers: "위험 요인 효과", flags: "상태 표시", barriers: "초기 방벽", psf: "초기 위험 요인", metrics: "초기 학습 지표" };
   if (Object.hasOwn(contexts, parent)) return `${contexts[parent]} · ${key}`;
   if (Object.hasOwn(fields, key)) return fields[key]!;
   if (path[0] === "nodes" && path.length === 2) return `장면 · ${key}`;

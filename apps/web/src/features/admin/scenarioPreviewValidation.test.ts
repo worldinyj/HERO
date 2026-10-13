@@ -20,12 +20,12 @@ describe("admin scenario preview validation", () => {
   });
   it("only accepts the requested saved version and a validated scenario", () => {
     const result = { preview: true, scenarioVersionId: "requested-version", scenario: tutorial };
-    expect(readSavedPreview(result, "requested-version", 1).scenario?.id).toBe("s00_tutorial");
-    expect(readSavedPreview(result, "different-version", 1).scenario).toBeNull();
-    expect(readSavedPreview(result, "requested-version", 2).scenario).toBeNull();
-    expect(readSavedPreview({ ...result, preview: false }, "requested-version", 1).scenario).toBeNull();
-    expect(readSavedPreview({ ...result, error: "failure" }, "requested-version", 1).scenario).toBeNull();
-    expect(readSavedPreview({ ...result, scenario: null }, "requested-version", 1).scenario).toBeNull();
-    expect(readSavedPreview(null, "requested-version", 1).scenario).toBeNull();
+    expect(readSavedPreview(result, "requested-version", tutorial.version).scenario?.id).toBe("s00_tutorial");
+    expect(readSavedPreview(result, "different-version", tutorial.version).scenario).toBeNull();
+    expect(readSavedPreview(result, "requested-version", tutorial.version + 1).scenario).toBeNull();
+    expect(readSavedPreview({ ...result, preview: false }, "requested-version", tutorial.version).scenario).toBeNull();
+    expect(readSavedPreview({ ...result, error: "failure" }, "requested-version", tutorial.version).scenario).toBeNull();
+    expect(readSavedPreview({ ...result, scenario: null }, "requested-version", tutorial.version).scenario).toBeNull();
+    expect(readSavedPreview(null, "requested-version", tutorial.version).scenario).toBeNull();
   });
 });

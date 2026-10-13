@@ -51,7 +51,7 @@ export function IncidentDebrief({
       <p className="incident-anonymization">
         사건 개요는 공개된 공식자료의 사실관계를 바탕으로 익명화·일반화했습니다.
         발전소명, 호기, 고유 설비 Tag, 세부 운전값, 개인 식별정보는 표시하지
-        않습니다. 아래 원인·기여조건 분석은 HERO의 교육용 방어막 관점
+        않습니다. 아래 원인·기여조건 분석은 HERO의 교육용 방벽 관점
         재구성이며 조사기관의 공식 근본원인 분류를 의미하지 않습니다.
         공식 출처 링크의 원문에는 발전소·호기 등 사건 식별정보가 포함될 수
         있습니다. 이 화면의 정보 최소화는 원문 사건의 완전한 비식별화를
@@ -81,7 +81,7 @@ export function IncidentDebrief({
         </ul>
         <p className="muted mini-copy">
           공식 조사자료의 사실과 HERO의 교육용 인과분류를 구분합니다. 근본원인은
-          사람의 마지막 행동에서 끝내지 않고 절차·감독·설계·조직조건과 방어막의
+          사람의 마지막 행동에서 끝내지 않고 절차·감독·설계·조직조건과 방벽의
           상호작용까지 추적합니다.
         </p>
       </section>
@@ -108,7 +108,7 @@ export function IncidentDebrief({
 
       {debrief.failedBarriers.length > 0 ? (
         <section className="incident-section">
-          <h3>약화·실패한 방어막</h3>
+          <h3>약화·실패한 방벽</h3>
           <ul className="incident-list incident-list--factors">
             {debrief.failedBarriers.map((item) => (
               <li key={item}>{item}</li>
@@ -156,7 +156,7 @@ export function IncidentDebrief({
           <h3>공식 출처</h3>
           <p className="muted mini-copy">
             아래 링크는 사건 개요의 사실관계 확인 및 출처표시를 위한 공식 자료입니다.
-            HERO의 방어막 관점 분석은 해당 기관의 공식 원인분류가 아닙니다.
+            HERO의 방벽 관점 분석은 해당 기관의 공식 원인분류가 아닙니다.
           </p>
           <ul className="incident-source-list">
             {debrief.sources.map((source) => (
@@ -206,7 +206,7 @@ export function IncidentDebrief({
 
       <p className="review-note">
         실사건 정보는 개인의 잘잘못을 판정하기 위한 것이 아니라, 같은 조건에서
-        방어막을 더 일찍 세울 수 있는 방법을 학습하기 위한 자료입니다.
+        방벽을 더 일찍 세울 수 있는 방법을 학습하기 위한 자료입니다.
       </p>
 
       <div className="ending-actions">

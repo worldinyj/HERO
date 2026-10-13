@@ -90,13 +90,13 @@ function scenarioFixture(): Scenario {
         type: "ending",
         ending: "safe_complete",
         title: "작업 완료",
-        summary: "방어막이 작동했습니다.",
+        summary: "방벽이 작동했습니다.",
       },
       event_end: {
         type: "ending",
         ending: "event",
         title: "사건 발생",
-        summary: "여러 방어막이 약해졌습니다.",
+        summary: "여러 방벽이 약해졌습니다.",
       },
     },
   });

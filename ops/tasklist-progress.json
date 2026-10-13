@@ -527,7 +527,7 @@
     {
       "id": "T5-05",
       "phase": 5,
-      "title": "`CausalReflection` \"어느 시점부터 방어막이 약해졌을까요?\"",
+      "title": "`CausalReflection` \"어느 시점부터 방벽이 약해졌을까요?\"",
       "status": "implemented",
       "evidence": "apps/web/src/features/play/result/CausalReflection.tsx",
       "note": "기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분"

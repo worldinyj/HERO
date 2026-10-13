@@ -316,6 +316,15 @@ for (const entry of manifest.entries) {
           fail(`${entry.scenarioId}: v6 requires a separate pre-action hold ending and questioning-based necessity review`);
         }
       }
+      if (scenario.version >= 7) {
+        const hold = scenario.nodes.safe_handover_hold_end;
+        const complete = scenario.nodes.decision_complete;
+        if (!hold || hold.type !== "ending" || hold.ending !== "safe_stop" ||
+            !complete || complete.type !== "decision" ||
+            !complete.choices.some(choice => choice.actionId === "hold_due_remaining_uncertainty" && choice.next === "safe_handover_hold_end")) {
+          fail(`${entry.scenarioId}: v7 requires a separate handover hold after expected response`);
+        }
+      }
     }
 
     const absentBarrierLanguage = debrief.failedBarriers.filter((barrier) =>

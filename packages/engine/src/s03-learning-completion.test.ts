@@ -25,7 +25,7 @@ function run(choices: string[], seed: string) {
   throw new Error("path did not finish");
 }
 
-describe("S03 v6 learning completion", () => {
+describe("S03 current learning completion", () => {
   it("requires evidence confirmation and handover before no-action completion", () => {
     let state = createGame(scenario, { simulationSeed: "s03-learning-0" });
     state = act(scenario, state, { type: "continue" });
@@ -68,6 +68,19 @@ describe("S03 v6 learning completion", () => {
     expect(choice.effects?.barrierDelta?.place_keeping).toBeUndefined();
     const preparation = scenario.nodes.event_prepare_setting;
     expect(preparation?.type === "event" ? preparation.text : "").toContain("수행 위치");
+  });
+
+  it("describes handover hold after expected response without claiming an abnormal response", () => {
+    const held = run(["share_trend_with_peer", "peer_check_setting_direction", "hold_due_remaining_uncertainty"], "s03-advisory-0");
+    expect(held.state.nodeId).toBe("safe_handover_hold_end");
+    expect(held.result.ending).toBe("safe_stop");
+    const node = scenario.nodes[held.state.nodeId]!;
+    const summary = node.type === "ending" ? node.summary : "";
+    expect(summary).toContain("예상 범위");
+    expect(summary).toContain("인계를 보류");
+    expect(summary).not.toContain("예상과 다른 반응");
+    expect(summary).not.toContain("복구");
+    expect(summary).toContain("방벽");
   });
 
   it("distinguishes the educational alternative and does not infer justified necessity from normal response", () => {

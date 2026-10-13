@@ -69,9 +69,9 @@
       "blockers": [
         "HF review of Direct/Root/Contributing cause classification and cause-to-action traceability",
         "anonymization/operational-overexposure review",
-        "incidentDebrief final approval for v6 content hash"
+        "incidentDebrief final approval for v7 content hash"
       ],
-      "notes": "S03 v6 applies the user's 2026-10-13 design-direction and two-follow-up-fix authorization, not final human approval. Evidence-based no-action learning completion retains documented handover. A separate pre-action hold ending avoids claiming a post-manipulation abnormal response or stabilization. Necessity review maps to questioning rather than Place Keeping, which remains procedure-position tracking. Global score rules and measured path scores are unchanged from v5. Human review of all five areas is required for the new v6 hash."
+      "notes": "S03 v7 applies the user-requested Korean barrier terminology (방벽) and separates handover hold after expected response from stopping after abnormal response. Learning completion, pre-action hold, questioning/Place Keeping distinction, global scoring and source boundaries remain unchanged. All five human review areas remain pending for the new v7 hash."
     }
   ]
 }

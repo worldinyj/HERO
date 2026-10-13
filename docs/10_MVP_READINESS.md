@@ -43,11 +43,11 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
 | S01 | **SOURCE_HOLD (v2)** | IAEA 직접 사건기록 기준 Direct Cause/물리 인과사슬(시험 중 인적오류→LOOP, 비상전원 가용성 문제→SBO/정지냉각 상실)과 HF 근본·기여조건을 분리. OPIS/NSIC 사건별 direct URL/식별번호/PDF, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
 | S02 | **SOURCE_HOLD (v2)** | 확보된 원안위 보도자료 전재 기준 Direct Cause/물리 인과사슬(잘못된 회로상태 + 조작부 오인→터빈·발전기 정지→원자로 정지)과 HERO 방어막 분석을 분리하고, 원문이 명시한 회로정비·인적오류 방지 설비개선만 corrective action으로 반영. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
-| S03 | **REVIEW_READY (v6)** | 승인된 개정 방향을 반영해 근거 확인·팀 공유/기록/인계 후 미조작을 학습 완료로 인정. 추가 불확실성은 safe_stop 유지. 새 해시의5개 영역 전문가 검토0/5; 최종 승인/게시 대기 |
+| S03 | **REVIEW_READY (v7)** | 승인된 개정 방향을 반영해 근거 확인·팀 공유/기록/인계 후 미조작을 학습 완료로 인정. 추가 불확실성은 safe_stop 유지. 새 해시의5개 영역 전문가 검토0/5; 최종 승인/게시 대기 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
 | 외부 배포 | **개발판 DEPLOYED / 정식 RELEASE BLOCKED** | PR #109 main `5976d53020` 운영 배포·48개 파일/경로 일치 기록. 분리 staging·동일 SHA Staging Smoke·RC 및 실기기·사내망·정식 승인 증거는 남음 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
-| 오디오 자산 | **17개 REGISTERED / 출시 QC BLOCKED** | 나레이션5·BGM4·SFX5·stinger3 등록. `audioPolicy=included`, 사용자 청취/권리·기술 QC는 자산 검수 기록 참조. `approvals.audioQc=pending` 및 실기기 QC 미완료 |
+| 오디오 자산 | **16개 REGISTERED / 출시 QC BLOCKED** | 나레이션4·BGM4·SFX5·stinger3 등록. 용어가 바뀐 튜토리얼 근접오류 음성1개는 이력 보존·재제작 대기. `audioPolicy=included`, 사용자 청취/권리·기술 QC는 자산 검수 기록 참조. `approvals.audioQc=pending` 및 실기기 QC 미완료 |
 | 실기기·사내망 | **BLOCKED** | 4종 실기기 확인 + 사내망/개인폰 정책 승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 | 파일럿 | **BLOCKED** | 30명 이상·Blocker 0·승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 
@@ -119,7 +119,7 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 5. 기존 PR CI·Cloudflare 미리보기 성공을 분리 staging 증거로 승계하지 않는다. 환경 준비 후 GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
 6. 최초 admin bootstrap은 완료되었다. 이어서 관리자→담당자→사용자 실제 초대 플로우를 별도 Kakao 계정으로 검증한다.
 7. 실기기/사내망 테스트를 수행한다.
-8. 등록 오디오17개는 기존 사용자 청취·권리 및 기술 QC 근거를 유지한다. 남은 실기기 QC와 정식 출시 audioQc 승인 증거를 확보한다.
+8. 등록 오디오16개는 기존 사용자 청취·권리 및 기술 QC 근거를 유지한다. 남은 실기기 QC와 정식 출시 audioQc 승인 증거를 확보한다.
 9. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
 10. 법무·외부배포·실기기·사내망·파일럿·audioQc의 실제 승인 증거를 `ops/release-evidence.json`에 기록한다. 오디오 범위는 등록·포함 상태에 맞게 `included`로 정리되어 있다.
 11. 릴리스 대상 `main` SHA를 staging에 배포하고 **Staging Smoke**를 PASS시킨다.
