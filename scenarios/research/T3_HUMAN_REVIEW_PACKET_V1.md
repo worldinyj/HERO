@@ -85,7 +85,7 @@ v2 핵심 정정:
 검토 추적:
 - GitHub Issue: `#76 S03 v4 human review — HF / operations / anonymization / Just Culture / debrief`
 - 현재 검토 대상 SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
-- AI 사전검토: PASS WITH HUMAN CONFIRMATION (사람 승인 대체 아님)
+- AI 사전검토 전체 상태: ADVISORY HOLD — HUMAN RE-REVIEW REQUIRED. 일부 하위 항목의 PASS WITH HUMAN CONFIRMATION은 최종 승격 PASS가 아니다. 추가 경로·점수 검토: [S03_V4_ADVISORY_REVIEW_20261013.md](S03_V4_ADVISORY_REVIEW_20261013.md).
 
 공식/권리:
 - 원안위 2026-09-04 공식 조사결과 확인

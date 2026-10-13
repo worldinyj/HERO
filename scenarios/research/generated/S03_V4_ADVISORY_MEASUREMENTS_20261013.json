@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "s03_procedure_reality_gap",
+  "version": 4,
+  "sourceFile": "scenarios/drafts/S03_procedure_reality_v1.json",
+  "contentSha256": "f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87",
+  "scope": "Read-only engine simulation; no info/card actions in probes, first attempt, reflection+timeline=true; not human approval or actual event likelihood",
+  "probeSeedTemplate": "s03-advisory-{0..19}",
+  "simulationSeedScope": "simulateScenarioPaths default 3 fixed seeds; path counts are enumerated action histories, not event probabilities",
+  "simulation": {
+    "complete": true,
+    "exploredStates": 6015,
+    "terminalPaths": 3519,
+    "hp": {
+      "min": 182,
+      "max": 246,
+      "mean": 236.1
+    },
+    "endingCounts": {
+      "safe_complete": 1896,
+      "safe_stop": 1503,
+      "near_miss": 96,
+      "event": 24
+    },
+    "warnings": []
+  },
+  "probes": [
+    {
+      "id": "early_no_action",
+      "choices": [
+        "pause_compare_current_state"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_no_action_end",
+          "ending": "safe_stop",
+          "hpPoint": 227,
+          "breakdown": {
+            "completion": 100,
+            "ending": 55,
+            "learningMetrics": 52,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 227
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "team_then_no_action",
+      "choices": [
+        "share_trend_with_peer",
+        "place_keep_and_recheck"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_no_action_end",
+          "ending": "safe_stop",
+          "hpPoint": 229,
+          "breakdown": {
+            "completion": 100,
+            "ending": 55,
+            "learningMetrics": 54,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 229
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "team_peer_then_monitor",
+      "choices": [
+        "share_trend_with_peer",
+        "peer_check_setting_direction",
+        "monitor_before_handover"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_complete_end",
+          "ending": "safe_complete",
+          "hpPoint": 235,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 55,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 235
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "team_peer_then_handover",
+      "choices": [
+        "share_trend_with_peer",
+        "peer_check_setting_direction",
+        "document_and_handover_trend"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_complete_end",
+          "ending": "safe_complete",
+          "hpPoint": 236,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 56,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 236
+          },
+          "seedCount": 20
+        }
+      ]
+    },
+    {
+      "id": "continue_then_peer_monitor",
+      "choices": [
+        "continue_expected_sequence",
+        "peer_check_setting_direction",
+        "monitor_before_handover"
+      ],
+      "seedCount": 20,
+      "outcomes": [
+        {
+          "endingNode": "safe_complete_end",
+          "ending": "safe_complete",
+          "hpPoint": 233,
+          "breakdown": {
+            "completion": 100,
+            "ending": 60,
+            "learningMetrics": 53,
+            "causalReflection": 20,
+            "replayImprovement": 0,
+            "total": 233
+          },
+          "seedCount": 20
+        }
+      ]
+    }
+  ]
+}

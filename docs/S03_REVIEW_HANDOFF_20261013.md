@@ -15,6 +15,8 @@
 
 파일명의 v1과 실제 JSON의 version=4를 혼동하지 않는다. 검토·판정은 위 콘텐츠 해시에 묶인다. 대상이 바뀌면 기존 판정을 승계하지 않는다.
 
+> 추가 사전검토: [S03 v4 경로·점수 비교 및 전문가 쟁점](../scenarios/research/S03_V4_ADVISORY_REVIEW_20261013.md). 미조작/계속조작의 점수 차이·필요성 확인·기준값과 입력방향의 관계를 먼저 검토한다. 실제 콘텐츠와 사람0/5 기록은 그대로 유지했다.
+
 ## 2. 읽을 자료와 판단할 내용
 
 검토자는 [자동 생성 패킷](../scenarios/research/generated/s03_procedure_reality_gap_HUMAN_REVIEW.md)과 위 JSON 원문을 함께 읽는다. 패킷의 기술검증은 사람의 사실/HF 승인이 아니다.
