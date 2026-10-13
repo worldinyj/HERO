@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "id": "s03_procedure_reality_gap",
-  "version": 5,
+  "version": 6,
   "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
   "defaultPerspectiveRole": "ro",
   "audienceJobs": [
@@ -207,7 +207,7 @@
     },
     "event_prepare_setting": {
       "type": "event",
-      "text": "추가 제한 설정 변경을 계속 진행하는 경우입니다. 사전 계획에 없던 조작이므로 값 자체뿐 아니라 현재 상태에서 필요한지, 어떤 기준과 방향으로 적용되는지 확인해야 합니다.",
+      "text": "추가 제한 설정 변경을 계속 진행하는 경우입니다. 사전 계획에 없던 조작이므로 값 자체뿐 아니라 현재 상태에서 필요한지, 어떤 기준과 방향으로 적용되는지 확인해야 합니다. Place Keeping은 절차의 수행 위치와 확인·보류 단계를 추적하는 기법입니다. 추가 조작의 필요성과 근거를 다시 판단하는 것은 질문하는 태도와 절차적 근거 확인의 역할이며, 단계 추적만으로 조작 필요성이 확인되는 것은 아닙니다.",
       "next": "decision_setting_direction",
       "tone": "attention"
     },
@@ -232,12 +232,12 @@
         },
         {
           "actionId": "place_keep_and_recheck",
-          "label": "현재 단계에서 이 추가 설정 변경이 실제로 필요한지 절차와 운전상태를 다시 확인한다.",
+          "label": "질문하는 태도로 현재 운전상태와 절차적 근거를 대조해 추가 조작의 필요성을 다시 판단한다.",
           "next": "event_no_action_basis",
           "timeCostMin": 2,
           "effects": {
             "barrierDelta": {
-              "place_keeping": 0.4
+              "questioning": 0.4
             },
             "metricsDelta": {
               "awareness": 3,
@@ -456,7 +456,7 @@
         {
           "actionId": "hold_no_action_for_additional_confirmation",
           "label": "판단 근거에 추가 확인이 필요하다고 보고 조작을 보류한 채 팀에 확인을 요청한다.",
-          "next": "safe_stop_end",
+          "next": "safe_no_action_hold_end",
           "timeCostMin": 2,
           "effects": {
             "metricsDelta": {
@@ -493,6 +493,12 @@
       "ending": "event",
       "title": "입력 방향과 재확인 방어막의 틈이 겹침",
       "summary": "상태전환의 복잡성, 입력 방향의 불확실성, 절차·팀 재확인 방어막의 취약이 겹쳐 자동정지 사건으로 이어졌습니다."
+    },
+    "safe_no_action_hold_end": {
+      "type": "ending",
+      "ending": "safe_stop",
+      "title": "추가 확인이 필요해 조작을 보류",
+      "summary": "판단 근거에 추가 확인이 필요하여 조작을 수행하지 않고 팀에 확인을 요청했습니다. 불확실성이 해소되기 전 실행을 보류하는 것도 중요한 방어행동입니다."
     },
     "safe_no_action_end": {
       "type": "ending",

@@ -69,9 +69,9 @@
       "blockers": [
         "HF review of Direct/Root/Contributing cause classification and cause-to-action traceability",
         "anonymization/operational-overexposure review",
-        "incidentDebrief final approval for v5 content hash"
+        "incidentDebrief final approval for v6 content hash"
       ],
-      "notes": "S03 v5 applies the user's 2026-10-13 design-direction approval, not final human approval. Verified avoidance of an unnecessary action now includes educational basis confirmation and documented team handover before learning completion; unresolved uncertainty retains safe stop. Current-mode reference values and expected response are distinguished from input direction. Global score rules remain unchanged; scenario learning effects and ending semantics are revised. Human review of all five areas is required for the new v5 hash."
+      "notes": "S03 v6 applies the user's 2026-10-13 design-direction and two-follow-up-fix authorization, not final human approval. Evidence-based no-action learning completion retains documented handover. A separate pre-action hold ending avoids claiming a post-manipulation abnormal response or stabilization. Necessity review maps to questioning rather than Place Keeping, which remains procedure-position tracking. Global score rules and measured path scores are unchanged from v5. Human review of all five areas is required for the new v6 hash."
     }
   ]
 }

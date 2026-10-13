@@ -302,8 +302,19 @@ for (const entry of manifest.entries) {
           !basis.text.includes("교육용 대안") ||
           !handover || handover.type !== "decision" ||
           !handover.choices.some((choice) => choice.next === "safe_no_action_end") ||
-          !handover.choices.some((choice) => choice.next === "safe_stop_end")) {
+          !handover.choices.some((choice) => choice.next === (scenario.version >= 6 ? "safe_no_action_hold_end" : "safe_stop_end"))) {
         fail(`${entry.scenarioId}: v5 requires educational basis confirmation, documented handover, and an uncertainty hold path`);
+      }
+      if (scenario.version >= 6) {
+        const hold = scenario.nodes.safe_no_action_hold_end;
+        const setting = scenario.nodes.decision_setting_direction;
+        const necessity = setting?.type === "decision"
+          ? setting.choices.find((choice) => choice.actionId === "place_keep_and_recheck") : null;
+        if (!hold || hold.type !== "ending" || hold.ending !== "safe_stop" ||
+            !necessity || necessity.effects?.barrierDelta?.questioning !== 0.4 ||
+            necessity.effects?.barrierDelta?.place_keeping !== undefined) {
+          fail(`${entry.scenarioId}: v6 requires a separate pre-action hold ending and questioning-based necessity review`);
+        }
       }
     }
 

@@ -4,11 +4,11 @@
 >
 > Scenario ID: `s03_procedure_reality_gap`
 >
-> Version: `5`
+> Version: `6`
 >
 > Source file: `scenarios/drafts/S03_procedure_reality_v1.json`
 >
-> Review content SHA-256: `e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079`
+> Review content SHA-256: `13e235bcc8e16a5ad4a70f57cbab63c7fc28c790fdd524253879e807d41c7e51`
 
 ## 1. 현재 승격 상태
 
@@ -27,7 +27,7 @@
 
 - HF review of Direct/Root/Contributing cause classification and cause-to-action traceability
 - anonymization/operational-overexposure review
-- incidentDebrief final approval for v5 content hash
+- incidentDebrief final approval for v6 content hash
 
 ## 2. 시나리오 기본정보
 

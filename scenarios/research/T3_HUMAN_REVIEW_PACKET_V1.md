@@ -80,11 +80,11 @@ v2 핵심 정정:
 
 ## S03 — 절차와 실제 상황이 조금 다릅니다
 
-현재 상태: **REVIEW_READY — S03 v5 / HUMAN RE-REVIEW REQUIRED**
+현재 상태: **REVIEW_READY — S03 v6 / HUMAN RE-REVIEW REQUIRED**
 
 검토 추적:
 - GitHub Issue: `#76 S03 v4 human review — HF / operations / anonymization / Just Culture / debrief`
-- 현재 검토 대상 SHA-256: `e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079`
+- 현재 검토 대상 SHA-256: `13e235bcc8e16a5ad4a70f57cbab63c7fc28c790fdd524253879e807d41c7e51`
 - AI 사전검토 전체 상태: ADVISORY HOLD — HUMAN RE-REVIEW REQUIRED. 일부 하위 항목의 PASS WITH HUMAN CONFIRMATION은 최종 승격 PASS가 아니다. 추가 경로·점수 검토: [S03_V4_ADVISORY_REVIEW_20261013.md](S03_V4_ADVISORY_REVIEW_20261013.md).
 
 v5 개정: 근거 확인·팀 공유·기록·인계를 갖춘 미조작은 학습 완료, 추가 불확실성은 안전 중지로 구분. 사용자 승인 범위는 [개정 기록](../../docs/S03_V5_LEARNING_COMPLETION_CHANGE.md) 참고.

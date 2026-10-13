@@ -25,7 +25,7 @@ function run(choices: string[], seed: string) {
   throw new Error("path did not finish");
 }
 
-describe("S03 v5 learning completion", () => {
+describe("S03 v6 learning completion", () => {
   it("requires evidence confirmation and handover before no-action completion", () => {
     let state = createGame(scenario, { simulationSeed: "s03-learning-0" });
     state = act(scenario, state, { type: "continue" });
@@ -52,8 +52,22 @@ describe("S03 v5 learning completion", () => {
 
   it("preserves safe stop for additional uncertainty instead of rewarding a bare pause as completion", () => {
     const held = run(["pause_compare_current_state", "hold_no_action_for_additional_confirmation"], "s03-advisory-0");
-    expect(held.state.nodeId).toBe("safe_stop_end");
+    expect(held.state.nodeId).toBe("safe_no_action_hold_end");
     expect(held.result.ending).toBe("safe_stop");
+    const node = scenario.nodes[held.state.nodeId]!;
+    expect(node.type === "ending" ? node.summary : "").toContain("조작을 수행하지 않고");
+    expect(node.type === "ending" ? node.summary : "").not.toContain("예상과 다른 반응");
+    expect(node.type === "ending" ? node.summary : "").not.toContain("상태를 안정");
+  });
+
+  it("maps necessity review to questioning rather than Place Keeping", () => {
+    const node = scenario.nodes.decision_setting_direction;
+    if (node?.type !== "decision") throw new Error("setting decision missing");
+    const choice = node.choices.find((item) => item.actionId === "place_keep_and_recheck")!;
+    expect(choice.effects?.barrierDelta?.questioning).toBe(0.4);
+    expect(choice.effects?.barrierDelta?.place_keeping).toBeUndefined();
+    const preparation = scenario.nodes.event_prepare_setting;
+    expect(preparation?.type === "event" ? preparation.text : "").toContain("수행 위치");
   });
 
   it("distinguishes the educational alternative and does not infer justified necessity from normal response", () => {
