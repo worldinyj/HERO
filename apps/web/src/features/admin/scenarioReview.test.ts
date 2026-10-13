@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { ScenarioSchema } from "@hero/schema";
-import draft from "../../../../../scenarios/drafts/S03_procedure_reality_v1.json";
+import draft from "../../../../../scenarios/data/S03_procedure_reality_v1.json";
 import generated from "./scenarioReviewStatus.generated.json";
 import { canonicalContent, matchesReviewTarget, type ReviewTarget } from "./scenarioReview";
 

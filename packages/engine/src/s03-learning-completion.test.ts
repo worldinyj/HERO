@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ScenarioSchema } from "@hero/schema";
-import draft from "../../../scenarios/drafts/S03_procedure_reality_v1.json";
+import draft from "../../../scenarios/data/S03_procedure_reality_v1.json";
 import { createGame, act, evaluate } from "./index";
 
 const scenario = ScenarioSchema.parse(draft);

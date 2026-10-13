@@ -45,14 +45,14 @@
 - 수리3포즈·KHNP 로고와 웹 화면 적용은 완료. T3-10의 계획된 초상화/배경/카드/도장 전체 제작은 미완료이므로 부분이다.
 - 오디오 후보20개·등록17개가 존재하므로 T3-12/13은 미착수에서 부분으로 정정. 전체 계획 큐/큐별3안·모델 확인·정식 audioQc/실기기 검증은 남아 있다.
 - `audioPolicy=included`로 실제 등록·포함 범위를 반영하지만 `approvals.audioQc=pending`을 유지한다. 사용자 청취/권리 확인과 기술 QC의 범위는 원본 검수 기록을 따른다.
-- S01/S02는 SOURCE_HOLD, S03 v7는 REVIEW_READY·동일-SHA 사람 검토0/5. 경쟁 콘텐츠 승인0/3이다.
+- S01/S02는 SOURCE_HOLD, S03 v7는 APPROVED·동일-SHA 사용자 승인5/5. 경쟁 콘텐츠 승인1/3이며 운영 게시·시즌 연결은 별도 진행한다.
 - 별도 staging 구성·같은 SHA Staging Smoke/RC, 법무/개인정보, 실기기4종, 사내망/개인폰 정책, 30명 파일럿·v1.0 승인 증거는 남아 있다.
 - 실제 운영의 LCP/INP/CLS 및 LCP<2.5초는 측정하지 않았다. 번들 예산 통과를 LCP 개선으로 해석하지 않는다.
 - 조직/담당자/초대 전체 목록은 서버 검색·페이지 처리 후속 대상이다. 결과 확인은 선택 ID 기준으로 보장해야 한다.
 
 ## 5. 다음 실행 순서
 
-1. [S03 검토 인계](S03_REVIEW_HANDOFF_20261013.md)에 따라 현재v4·SHA의5개 영역을 실제 전문가가 검토한다.
+1. [S03 검토 인계](S03_REVIEW_HANDOFF_20261013.md)에 따라 승인된 v7·SHA의 운영 게시·시즌 연결을 확인한다.
 2. 담당자가 결과 JSON을 preflight → 실제 근거 확인 후 가져오기 → 요약 갱신한다. 모든 동일-SHA PASS 후에만 최종 승격한다.
 3. S01/S02 직접 원문·개별 이용조건을 확보하고 콘텐츠 검토를 진행한다.
 4. 별도 staging·실기기·정책/법무·파일럿 증거를 수집하고 같은 SHA의 RC 게이트를 검증한다.
@@ -108,11 +108,11 @@
 | T2-09 | 구현 | `packages/engine/src/simulator.ts` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |
 | T2-10 | 구현 | `supabase/functions/start-session/index.ts` | PR #109 CI quality 성공: 실제 Deno check·공유 엔진/Edge 그래프 검사 포함 |
 | T3-01 | 부분 | `scenarios/research/T3_CANDIDATE_MATRIX_V1.md` | 후보 조사자료 존재; 원본·이용조건 추가 확인 필요 |
-| T3-02 | 부분 | `scenarios/research/T3_SOURCE_RIGHTS_REVIEW_V1.md` | S01/S02 SOURCE_HOLD, S03 사람 검토 대기 |
+| T3-02 | 부분 | `scenarios/research/T3_SOURCE_RIGHTS_REVIEW_V1.md` | S01/S02 SOURCE_HOLD, S03 v7 사용자 승인5/5·콘텐츠 승격 완료 |
 | T3-03 | 부분 | `scenarios/research/S01_HF_BRIEF_V1.md` | 3개 HF brief 작성, 분야별 사람 검토/승인 미완료 |
 | T3-04 | 부분 | `scenarios/drafts/S01_time_pressure_v1.json` | S01 JSON 초안 존재; 출처·사람 승인 대기 |
 | T3-05 | 부분 | `scenarios/drafts/S02_equipment_identity_v1.json` | S02 JSON 초안 존재; 출처·사람 승인 대기 |
-| T3-06 | 부분 | `scenarios/drafts/S03_procedure_reality_v1.json` | S03 JSON 초안 존재; HF·익명화 사람 승인 대기 |
+| T3-06 | 부분 | `scenarios/data/S03_procedure_reality_v1.json` | S03 v7 사용자 승인5/5·승인 해시 고정; 운영 게시·시즌 연결 후 확인 대기 |
 | T3-07 | 부분 | `scenarios/research/T3_BALANCE_REPORT_V1.md` | 밸런스 보고서 있으나 경쟁 콘텐츠 승인·실기 검증 남음 |
 | T3-08 | 구현 | `scenarios/data/S00_tutorial.json` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |
 | T3-09 | 부분 | `scenarios/research/T3_HF_REVIEW_CHECKLIST_V1.md` | 검토 패킷 존재; 검토자 서명·승인 미완료 |

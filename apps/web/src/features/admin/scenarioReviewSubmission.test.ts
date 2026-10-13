@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import draft from "../../../../../scenarios/drafts/S03_procedure_reality_v1.json";
+import draft from "../../../../../scenarios/data/S03_procedure_reality_v1.json";
 import target from "./scenarioReviewStatus.generated.json";
 import { reviewDateInSeoul, validateReviewSubmission } from "./scenarioReviewSubmission";
 const record = { area: "hf_accuracy", contentSha256: target.contentSha256, decision: "hold", reviewedBy: "검토 담당자", reviewedAt: "2026-10-11", evidenceRef: "review-ticket-1", note: "원인 분류의 근거를 보완" };

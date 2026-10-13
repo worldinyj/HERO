@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "s03_procedure_reality_gap",
+  "version": 7,
+  "contentSha256": "8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38",
+  "reviewedAt": "2026-10-13",
+  "reviewedBy": "사용자 (본 대화 직접 승인)",
+  "evidenceSource": "Current Codex conversation: full S03 v7 review followed by explicit user approval",
+  "approvalStatement": "오케 승인. 다음 진행",
+  "reviewedMaterial": [
+    "시작 상황",
+    "5개 판단 단계의 선택지와 추가 정보",
+    "7개 엔딩 설명",
+    "실사건 회고의 사건 개요·직접원인·시스템적 원인·기여조건·대책·HU Tool 연결",
+    "HF 정확성·운전정비 맥락·익명화·Just Culture·실사건 회고 관점 안내"
+  ],
+  "approvedAreas": [
+    "hf_accuracy",
+    "operations_context",
+    "anonymization",
+    "just_culture",
+    "incident_debrief"
+  ],
+  "scope": "Approval by the single human user after reviewing the disclosed v7 content and review criteria; no claim of five separate reviewers or independently verified professional credentials."
+}
