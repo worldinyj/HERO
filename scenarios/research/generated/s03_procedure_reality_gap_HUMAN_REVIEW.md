@@ -6,7 +6,7 @@
 >
 > Version: `7`
 >
-> Source file: `scenarios/drafts/S03_procedure_reality_v1.json`
+> Source file: `scenarios/data/S03_procedure_reality_v1.json`
 >
 > Review content SHA-256: `8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38`
 
@@ -14,20 +14,18 @@
 
 | 항목 | 값 |
 |---|---|
-| promotion status | **REVIEW_READY** |
+| promotion status | **APPROVED** |
 | sourceRightsComplete | `true` |
 | source verdict | `complete` |
 | rights verdict | `complete` |
-| HF review | `false` |
-| anonymization review | `false` |
-| human review | `pending` |
-| approved content SHA-256 | `not approved` |
+| HF review | `true` |
+| anonymization review | `true` |
+| human review | `approved` |
+| approved content SHA-256 | `8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38` |
 
 ### 현재 blocker
 
-- HF review of Direct/Root/Contributing cause classification and cause-to-action traceability
-- anonymization/operational-overexposure review
-- incidentDebrief final approval for v7 content hash
+- 없음
 
 ## 2. 시나리오 기본정보
 

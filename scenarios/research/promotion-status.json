@@ -56,22 +56,19 @@
     },
     {
       "scenarioId": "s03_procedure_reality_gap",
-      "file": "scenarios/drafts/S03_procedure_reality_v1.json",
-      "status": "review_ready",
+      "file": "scenarios/data/S03_procedure_reality_v1.json",
+      "status": "approved",
       "sourceRightsComplete": true,
-      "hfReviewComplete": false,
-      "anonymizationReviewComplete": false,
+      "hfReviewComplete": true,
+      "anonymizationReviewComplete": true,
       "humanReview": {
-        "status": "pending",
-        "approvedBy": null,
-        "approvedAt": null
+        "status": "approved",
+        "approvedBy": "사용자 (본 대화 직접 승인)",
+        "approvedAt": "2026-10-13"
       },
-      "blockers": [
-        "HF review of Direct/Root/Contributing cause classification and cause-to-action traceability",
-        "anonymization/operational-overexposure review",
-        "incidentDebrief final approval for v7 content hash"
-      ],
-      "notes": "S03 v7 applies the user-requested Korean barrier terminology (방벽) and separates handover hold after expected response from stopping after abnormal response. Learning completion, pre-action hold, questioning/Place Keeping distinction, global scoring and source boundaries remain unchanged. All five human review areas remain pending for the new v7 hash."
+      "blockers": [],
+      "notes": "S03 v7 applies the user-requested Korean barrier terminology (방벽) and separates handover hold after expected response from stopping after abnormal response. Learning completion, pre-action hold, questioning/Place Keeping distinction, global scoring and source boundaries remain unchanged. The user explicitly approved the disclosed v7 content and five review perspectives in this conversation; five area records refer to that single human approval, not five independent reviewers. Human promotion recorded 2026-10-13 by 사용자 (본 대화 직접 승인); HF, anonymization/operational-overexposure, and incidentDebrief confirmations were explicitly attested. Approved content SHA-256: 8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38.",
+      "approvedContentSha256": "8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38"
     }
   ]
 }

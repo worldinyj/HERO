@@ -3,7 +3,7 @@
 > **상태: REVIEW_READY — KINS 상세 사건조사보고서 반영 / HUMAN HF REVIEW·익명화·운전정보 과노출 검토 전 publish 금지**  
 > 내부 저작용 문서. 공개 게임에서는 발전소·호기·시험명·설정치·고유 제어기기명·정확한 시각을 일반화한다.
 
-> 2026-10-13 현재 게임은 **v7**다. 이 문서는 V3 분석 이력을 보존한다. §13의 V3 체크리스트는 현재 실행 상태의 단일 기준이 아니다. 현재 자동 패킷/기술 결과는 `generated/s03_procedure_reality_gap_HUMAN_REVIEW.md`, 추가 경로·점수 사전검토는 [S03_V4_ADVISORY_REVIEW_20261013.md](S03_V4_ADVISORY_REVIEW_20261013.md)를 따른다. 전문가 판정은 계속 대기다.
+> 2026-10-13 현재 게임은 **v7**다. 이 문서는 V3 분석 이력을 보존한다. §13의 V3 체크리스트는 현재 실행 상태의 단일 기준이 아니다. 현재 자동 패킷/기술 결과는 `generated/s03_procedure_reality_gap_HUMAN_REVIEW.md`, 추가 경로·점수 사전검토는 [S03_V4_ADVISORY_REVIEW_20261013.md](S03_V4_ADVISORY_REVIEW_20261013.md)를 따른다. v7 전체 내용과 검토 관점 공개 후 명시적 사용자 승인5/5가 기록됐으며, 승인 근거는 `approvals/S03_V7_USER_APPROVAL_20261013.json`을 따른다.
 
 ## 1. 이번 개정의 목적
 

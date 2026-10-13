@@ -16,7 +16,7 @@ const file = historical
   ? "scenarios/research/generated/S03_V4_REVIEW_TARGET_20261013.json"
   : target === "v5" ? "scenarios/research/generated/S03_V5_REVIEW_TARGET_20261013.json"
   : target === "v6" ? "scenarios/research/generated/S03_V6_REVIEW_TARGET_20261013.json"
-  : "scenarios/drafts/S03_procedure_reality_v1.json";
+  : JSON.parse(readFileSync(resolve(import.meta.dirname, "..", "scenarios/research/promotion-status.json"), "utf8")).entries.find(entry => entry.scenarioId === "s03_procedure_reality_gap").file;
 const content = readFileSync(resolve(import.meta.dirname, "..", file));
 const sha256 = createHash("sha256").update(content).digest("hex");
 const expected = historical

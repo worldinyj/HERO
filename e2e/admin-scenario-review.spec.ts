@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import reviewTarget from "../apps/web/src/features/admin/scenarioReviewStatus.generated.json" with { type: "json" };
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import draft from "../scenarios/drafts/S03_procedure_reality_v1.json" with { type: "json" };
+import draft from "../scenarios/data/S03_procedure_reality_v1.json" with { type: "json" };
 const versionId = "f6200000-0000-0000-0000-000000000001";
 async function fixture(page: Page, options: { delayed?: boolean; mismatch?: boolean; error?: boolean; empty?: boolean } = {}) {
   const user = { id: "f6100000-0000-0000-0000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
@@ -39,9 +39,9 @@ async function fixture(page: Page, options: { delayed?: boolean; mismatch?: bool
   if (!options.empty) await expect(panel.getByLabel("저장된 S03 버전", { exact: true })).toBeEnabled();
   return { panel, calls, release };
 }
-test("review areas show actual pending evidence and matched stored content opens a read-only preview", async ({ page }, info) => {
+test("review areas show actual recorded evidence and matched stored content opens a read-only preview", async ({ page }, info) => {
   const { panel, calls } = await fixture(page);
-  await expect(panel).toContainText("필수 검토 0/5 통과");
+  await expect(panel).toContainText(`필수 검토 ${reviewTarget.areas.filter(area => area.decision === "pass").length}/5 통과`);
   await expect(panel.locator("ol li")).toHaveCount(5);
   await panel.getByLabel("저장된 S03 버전", { exact: true }).selectOption(versionId);
   await panel.getByRole("button", { name: "저장된 검토 대상 확인", exact: true }).click();
@@ -117,7 +117,7 @@ test("a human-confirmed HOLD downloads a hash-bound file while progress and serv
   expect(packet.reviews).toHaveLength(1);
   expect(packet.reviews[0]).toMatchObject({ area: "hf_accuracy", decision: "hold", reviewedBy: "HF 검토 담당자", evidenceRef: "내부 검토 문서 001" });
   expect(packet).not.toHaveProperty("approved"); expect(packet).not.toHaveProperty("nodes");
-  await expect(panel).toContainText("필수 검토 0/5 통과");
+  await expect(panel).toContainText(`필수 검토 ${reviewTarget.areas.filter(area => area.decision === "pass").length}/5 통과`);
   expect(calls.every(c => ["list", "season-overview"].includes(String(c.action)))).toBe(true);
   expect(await page.evaluate(() => Object.keys(localStorage).some(key => key.includes("review")))).toBe(false);
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze()).violations).toEqual([]);
