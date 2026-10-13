@@ -2,20 +2,22 @@
 
 | 항목 | 상태 |
 |---|---|
-| 기준일 | 2026-10-07 |
+| 기준일 | 2026-10-13 / main `5976d53020` |
 | 코드 기준선 | `main` |
 | 대상 | MVP Release 1 |
-| 현재 판정 | **프로덕션 RELEASE BLOCKED / 내부 개발·통합 준비 완료에 가까움** |
+| 현재 판정 | **개발판 운영 배포 완료 / 정식 v1.0 RELEASE BLOCKED** |
 | 자동 확인 | `pnpm check:mvp-readiness` |
 | 사람 승인 증거 | `ops/release-evidence.json` / `pnpm check:release-evidence` |
 | 출시 강제 게이트 | `pnpm check:legal-release -- --strict
 pnpm check:mvp-readiness -- --strict` + GitHub **Release Candidate Gate** |
 
+> 최신 구현 진도는 [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md), 관측 근거는 `ops/development-snapshot-20261013.json`, 다음 콘텐츠 검토는 [S03_REVIEW_HANDOFF_20261013.md](S03_REVIEW_HANDOFF_20261013.md)를 따른다. PR #109 head의 기존 성공 기록과 병합 main을 구분하며 이번 문서 갱신이 새 CI·실기기·운영 DB 검증을 뜻하지 않는다.
+
 ## 1. 판정 원칙
 
 HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것**을 구분한다.
 
-자동 CI가 통과해도 다음 조건이 남아 있으면 Release 1을 공개하지 않는다.
+자동 CI가 통과해도 다음 조건이 남아 있으면 정식 Release 1을 승인하지 않는다. 개발판 웹의 운영 배포는 이미 완료됐으며 그 사실을 정식 출시 승인으로 바꾸지 않는다.
 
 - 경쟁 시나리오 3종의 source/rights/HF/익명화/사람 승인
 - 이용약관·개인정보 처리방침 실제 운영정보 확정 및 담당부서 검토
@@ -43,9 +45,9 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | S02 | **SOURCE_HOLD (v2)** | 확보된 원안위 보도자료 전재 기준 Direct Cause/물리 인과사슬(잘못된 회로상태 + 조작부 오인→터빈·발전기 정지→원자로 정지)과 HERO 방어막 분석을 분리하고, 원문이 명시한 회로정비·인적오류 방지 설비개선만 corrective action으로 반영. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
 | S03 | **REVIEW_READY (v4)** | KINS 상세보고서 기반 Direct/Root/Contributing + 인과사슬·방어막·재발방지대책 추적성 및 공개정보 일반화 완료. v4에서 미예정·비필수 설정 변경을 필수 절차단계처럼 보이게 하던 게임 전제를 수정하고 조작 필요성 재확인 safe-stop 경로를 추가. HF·운전맥락·익명화·incidentDebrief 사람 승인 남음 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
-| 외부 배포 | **CONNECTED / RELEASE BLOCKED** | Cloudflare Pages + Supabase + Kakao 실연동 및 최초 Admin bootstrap 확인. 동일 SHA Staging Smoke, 실기기·사내망·외부배포 승인 증거는 남음 |
+| 외부 배포 | **개발판 DEPLOYED / 정식 RELEASE BLOCKED** | PR #109 main `5976d53020` 운영 배포·48개 파일/경로 일치 기록. 분리 staging·동일 SHA Staging Smoke·RC 및 실기기·사내망·정식 승인 증거는 남음 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
-| 오디오 자산 | **DEFERRED** | `audioPolicy=deferred`. RC 전에 `excluded` 또는 `included`를 명시 결정. included면 승인 asset + audioQc 증거 필요 |
+| 오디오 자산 | **17개 REGISTERED / 출시 QC BLOCKED** | 나레이션5·BGM4·SFX5·stinger3 등록. `audioPolicy=included`, 사용자 청취/권리·기술 QC는 자산 검수 기록 참조. `approvals.audioQc=pending` 및 실기기 QC 미완료 |
 | 실기기·사내망 | **BLOCKED** | 4종 실기기 확인 + 사내망/개인폰 정책 승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 | 파일럿 | **BLOCKED** | 30명 이상·Blocker 0·승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 
@@ -114,12 +116,12 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 2. S01/S02의 남은 직접 원문·개별 이용조건·OPIS 레코드 식별을 확정하고 동일 사람 검토를 수행한다.
 3. 개인정보 운영주체·담당부서·보유기간·처리위탁/국외이전을 확정한다.
 4. staging Supabase + Cloudflare + Kakao 환경을 연결한다.
-5. GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
+5. 기존 PR CI·Cloudflare 미리보기 성공을 분리 staging 증거로 승계하지 않는다. 환경 준비 후 GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
 6. 최초 admin bootstrap은 완료되었다. 이어서 관리자→담당자→사용자 실제 초대 플로우를 별도 Kakao 계정으로 검증한다.
 7. 실기기/사내망 테스트를 수행한다.
-8. 오디오는 런타임 코드는 이미 준비되어 있으므로, 생성된 asset에 HF·권리·기술 QC를 수행한 뒤 `approved=true`로 manifest에 등록하고 실기기 QC를 수행한다.
+8. 등록 오디오17개는 기존 사용자 청취·권리 및 기술 QC 근거를 유지한다. 남은 실기기 QC와 정식 출시 audioQc 승인 증거를 확보한다.
 9. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
-10. 법무·외부배포·실기기·사내망·파일럿 승인 증거를 `ops/release-evidence.json`에 기록하고 오디오 정책을 `excluded` 또는 `included`로 확정한다.
+10. 법무·외부배포·실기기·사내망·파일럿·audioQc의 실제 승인 증거를 `ops/release-evidence.json`에 기록한다. 오디오 범위는 등록·포함 상태에 맞게 `included`로 정리되어 있다.
 11. 릴리스 대상 `main` SHA를 staging에 배포하고 **Staging Smoke**를 PASS시킨다.
 12. 같은 SHA에서 **Release Candidate Gate**를 실행해 Staging Smoke run ID와 모든 증거를 검증한다.
 13. RC evidence artifact를 최종 승인자료로 첨부하고 Blocker 0일 때 v1.0 프로덕션 릴리스를 승인한다.

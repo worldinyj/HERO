@@ -2,7 +2,9 @@
 
 원전 인적오류 예방 시뮬레이션 게임 **HERO : Human Error Risk Operations** 설계 문서입니다.
 
-**Baseline: v1.3 · 2026-10-07**
+**설계 Baseline: v1.3 · 2026-10-07 / 개발 현황: 2026-10-13**
+
+현재 진척은 [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md) (**83.7%, 구현관리 지표**), 출시 상태는 [10_MVP_READINESS.md](10_MVP_READINESS.md), 다음 S03 검토 절차는 [S03_REVIEW_HANDOFF_20261013.md](S03_REVIEW_HANDOFF_20261013.md)를 참고하세요.
 
 | 순서 | 문서 | 내용 |
 |---|---|---|
