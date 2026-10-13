@@ -1,21 +1,23 @@
-# S03 v4 전문가 검토 인계 — 2026-10-13
+# S03 v5 전문가 검토 인계 — 2026-10-13
 
 현재 상태는 **REVIEW_READY / 사람 검토 0/5 / 최종 승인 대기**다. 검토 화면과 결과 파일 작성·가져오기는 구현됐다. 이번 작업은 검토 자료 준비이며 전문가 판정·배포용 콘텐츠 승격은 포함하지 않는다.
+
+> v5 개정 및 사용자 승인 범위: [S03_V5_LEARNING_COMPLETION_CHANGE.md](S03_V5_LEARNING_COMPLETION_CHANGE.md). v4 사전검토는 역사적 근거이며 현재 판단은 v5 패킷과 새 점수 비교를 따른다.
 
 ## 1. 고정된 검토 대상
 
 | 항목 | 값 |
 |---|---|
-| 소스 기준 | main `5976d53020e96b92493d5bfc3f1b913360af0067` |
-| Scenario ID / Version | `s03_procedure_reality_gap` / `4` |
+| 소스 기준 | v5 개정 브랜치 (원래 main 기준선은 진척 감사 참고) |
+| Scenario ID / Version | `s03_procedure_reality_gap` / `5` |
 | JSON | `scenarios/drafts/S03_procedure_reality_v1.json` |
-| SHA-256 | `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87` |
+| SHA-256 | `e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079` |
 | 원문·권리 상태 | sourceRightsComplete=true; 실제 전문가 검토는 별도 |
 | 사람 검토 기록 | `scenarios/research/human-review-evidence.json`: reviews=[] |
 
-파일명의 v1과 실제 JSON의 version=4를 혼동하지 않는다. 검토·판정은 위 콘텐츠 해시에 묶인다. 대상이 바뀌면 기존 판정을 승계하지 않는다.
+파일명의 v1과 실제 JSON의 version=5를 혼동하지 않는다. 검토·판정은 위 콘텐츠 해시에 묶인다. 대상이 바뀌면 기존 판정을 승계하지 않는다.
 
-> 추가 사전검토: [S03 v4 경로·점수 비교 및 전문가 쟁점](../scenarios/research/S03_V4_ADVISORY_REVIEW_20261013.md). 미조작/계속조작의 점수 차이·필요성 확인·기준값과 입력방향의 관계를 먼저 검토한다. 실제 콘텐츠와 사람0/5 기록은 그대로 유지했다.
+> 추가 사전검토: [S03 v4 경로·점수 비교 및 전문가 쟁점](../scenarios/research/S03_V4_ADVISORY_REVIEW_20261013.md). 미조작/계속조작의 점수 차이·필요성 확인·기준값과 입력방향의 관계를 먼저 검토한다. 이 링크는 v4 역사적 검토다. 현재 콘텐츠는 v5로 개정됐으며 사람0/5 기록만 유지했다.
 
 ## 2. 읽을 자료와 판단할 내용
 

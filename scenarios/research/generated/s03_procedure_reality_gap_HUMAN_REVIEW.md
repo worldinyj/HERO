@@ -1,10 +1,14 @@
 # HERO Human Review Packet — 3장 · 절차와 실제 상황이 조금 다릅니다
 
-> **사람 검토용 패킷 / 자동 승인 문서가 아님**  
-> Scenario ID: `s03_procedure_reality_gap`  
-> Version: `4`  
-> Source file: `scenarios/drafts/S03_procedure_reality_v1.json`  
-> Review content SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
+> **사람 검토용 패킷 / 자동 승인 문서가 아님**
+>
+> Scenario ID: `s03_procedure_reality_gap`
+>
+> Version: `5`
+>
+> Source file: `scenarios/drafts/S03_procedure_reality_v1.json`
+>
+> Review content SHA-256: `e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079`
 
 ## 1. 현재 승격 상태
 
@@ -23,7 +27,7 @@
 
 - HF review of Direct/Root/Contributing cause classification and cause-to-action traceability
 - anonymization/operational-overexposure review
-- incidentDebrief final approval for v4 content hash
+- incidentDebrief final approval for v5 content hash
 
 ## 2. 시나리오 기본정보
 
@@ -54,9 +58,9 @@
 |---|---|
 | Schema parse | PASS |
 | Path exploration | COMPLETE |
-| explored states | 6,015 |
-| terminal paths | 3,519 |
-| HP min / mean / max | 182 / 236.1 / 246 |
+| explored states | 7,995 |
+| terminal paths | 4,509 |
+| HP min / mean / max | 182 / 237.8 / 247 |
 | dominant choice warning | 0 |
 | ending imbalance warning | 0 |
 
@@ -64,9 +68,9 @@
 
 | ending | paths | rate |
 |---|---:|---:|
-| safe_complete | 1896 | 54% |
-| safe_stop | 1503 | 43% |
-| near_miss | 96 | 3% |
+| safe_complete | 2886 | 64% |
+| safe_stop | 1503 | 33% |
+| near_miss | 96 | 2% |
 | event | 24 | <1% |
 
 ### 자동 경고

@@ -1,9 +1,9 @@
 {
   "scenarioId": "s03_procedure_reality_gap",
-  "version": 4,
+  "version": 5,
   "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
-  "contentSha256": "f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87",
-  "previewSha256": "57bdf17074d472fc5d4c7f0af1fdff1d1d9a8c433d05a568782d866a52d5846e",
+  "contentSha256": "e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079",
+  "previewSha256": "11525fa951945b7573a1841cefe2268ab1de8d1b0562eec6e19da8f9c604c606",
   "sourceRightsComplete": true,
   "approved": false,
   "areas": [

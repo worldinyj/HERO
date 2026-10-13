@@ -80,12 +80,14 @@ v2 핵심 정정:
 
 ## S03 — 절차와 실제 상황이 조금 다릅니다
 
-현재 상태: **REVIEW_READY — S03 v4 / HUMAN RE-REVIEW REQUIRED**
+현재 상태: **REVIEW_READY — S03 v5 / HUMAN RE-REVIEW REQUIRED**
 
 검토 추적:
 - GitHub Issue: `#76 S03 v4 human review — HF / operations / anonymization / Just Culture / debrief`
-- 현재 검토 대상 SHA-256: `f0560093b22ff77a2b9af30afc45ee575690da51b8882c5a8f9aff3a7cf7ee87`
+- 현재 검토 대상 SHA-256: `e5307496aaf0f5f70565a3aef872174f57f582148842b00f15b9eadc10239079`
 - AI 사전검토 전체 상태: ADVISORY HOLD — HUMAN RE-REVIEW REQUIRED. 일부 하위 항목의 PASS WITH HUMAN CONFIRMATION은 최종 승격 PASS가 아니다. 추가 경로·점수 검토: [S03_V4_ADVISORY_REVIEW_20261013.md](S03_V4_ADVISORY_REVIEW_20261013.md).
+
+v5 개정: 근거 확인·팀 공유·기록·인계를 갖춘 미조작은 학습 완료, 추가 불확실성은 안전 중지로 구분. 사용자 승인 범위는 [개정 기록](../../docs/S03_V5_LEARNING_COMPLETION_CHANGE.md) 참고.
 
 공식/권리:
 - 원안위 2026-09-04 공식 조사결과 확인
@@ -97,8 +99,8 @@ v2 핵심 정정:
 기술결과:
 - JSON/graph PASS
 - 전 경로 COMPLETE
-- 3,519 terminal paths
-- safe_complete 54% / safe_stop 43% / near_miss 3% / event <1%
+- 4,509 terminal paths
+- safe_complete 64% / safe_stop 33% / near_miss 2% / event <1%
 - dominant choice warning 0
 - ending imbalance warning 0
 

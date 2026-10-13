@@ -281,7 +281,8 @@ for (const entry of manifest.entries) {
     if (!alignment || alignment.type !== "decision") {
       fail(`${entry.scenarioId}: v4 state-alignment decision is required`);
     }
-    if (!alignment.choices.some((choice) => choice.next === "safe_no_action_end")) {
+    const noActionEntry = scenario.version >= 5 ? "event_no_action_basis" : "safe_no_action_end";
+    if (!alignment.choices.some((choice) => choice.next === noActionEntry)) {
       fail(
         `${entry.scenarioId}: v4 must offer a safe path that rechecks necessity and avoids the unneeded action`,
       );
@@ -289,9 +290,21 @@ for (const entry of manifest.entries) {
     if (
       !safeNoAction ||
       safeNoAction.type !== "ending" ||
-      safeNoAction.ending !== "safe_stop"
+      safeNoAction.ending !== (scenario.version >= 5 ? "safe_complete" : "safe_stop")
     ) {
-      fail(`${entry.scenarioId}: v4 safe_no_action_end must be a safe_stop ending`);
+      fail(`${entry.scenarioId}: no-action ending must match the versioned learning-completion contract`);
+    }
+
+    if (scenario.version >= 5) {
+      const basis = scenario.nodes.event_no_action_basis;
+      const handover = scenario.nodes.decision_no_action_handover;
+      if (!basis || basis.type !== "event" || basis.next !== "decision_no_action_handover" ||
+          !basis.text.includes("교육용 대안") ||
+          !handover || handover.type !== "decision" ||
+          !handover.choices.some((choice) => choice.next === "safe_no_action_end") ||
+          !handover.choices.some((choice) => choice.next === "safe_stop_end")) {
+        fail(`${entry.scenarioId}: v5 requires educational basis confirmation, documented handover, and an uncertainty hold path`);
+      }
     }
 
     const absentBarrierLanguage = debrief.failedBarriers.filter((barrier) =>

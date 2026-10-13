@@ -197,10 +197,14 @@ const promotionCommand = `pnpm promote:scenario -- \\\n  --scenario=${entry.scen
 
 const markdown = `# HERO Human Review Packet — ${scenario.title}
 
-> **사람 검토용 패킷 / 자동 승인 문서가 아님**  
-> Scenario ID: \`${entry.scenarioId}\`  
-> Version: \`${scenario.version}\`  
-> Source file: \`${entry.file}\`  
+> **사람 검토용 패킷 / 자동 승인 문서가 아님**
+>
+> Scenario ID: \`${entry.scenarioId}\`
+>
+> Version: \`${scenario.version}\`
+>
+> Source file: \`${entry.file}\`
+>
 > Review content SHA-256: \`${contentSha256}\`
 
 ## 1. 현재 승격 상태

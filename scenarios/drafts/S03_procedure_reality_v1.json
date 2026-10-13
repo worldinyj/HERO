@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0.0",
   "id": "s03_procedure_reality_gap",
-  "version": 4,
+  "version": 5,
   "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
   "defaultPerspectiveRole": "ro",
   "audienceJobs": [
@@ -72,7 +72,7 @@
       },
       {
         "title": "중요 설정치는 지시값을 그대로 입력하지 말고 현재 상태와 계산근거를 별도 경로로 확인한다.",
-        "detail": "현재 운전상태, 계산근거와 기대반응을 다른 경로로 대조해 단일 착각이나 지시 오류가 그대로 설비에 반영되지 않도록 한다.",
+        "detail": "현재 운전상태, 계산근거와 기대반응을 다른 경로로 대조해 단일 착각이나 지시 오류가 그대로 설비에 반영되지 않도록 한다. 동료확인과 독립검증은 같은 기법이 아니며 적용 목적과 수행 방식이 다르다. 여기의 독립검증 표시는 별도 확인 방어막을 교육용 HU Tool에 연결한 것이고, 실제 사건에서 공식 독립검증 제도요건을 위반했다는 판정이 아니다.",
         "toolId": "independent_verification"
       },
       {
@@ -98,7 +98,7 @@
       "부하상실시험 종료 후 소내부하운전·계통연결 준비",
       "필수적이지 않았던 미예정 제한 설정 변경 결정",
       "현재 운전상태에서 두 제어 기준값 사이의 편차를 인식하지 못하고 잘못된 기준값으로 설정치 계산",
-      "설정치 독립검증 없이 입력",
+      "지시 설정치의 적정성을 별도로 확인하지 않고 입력",
       "제한 설정이 실제 밸브개도 기준값보다 낮아져 터빈제어밸브 폐쇄",
       "터빈속도·발전기 주파수 감소",
       "원자로냉각재펌프 회전속도 감소",
@@ -139,7 +139,7 @@
         {
           "actionId": "pause_compare_current_state",
           "label": "현재 운전상태와 절차 근거를 확인해 추가 설정 변경이 필요한지 다시 판단한다.",
-          "next": "safe_no_action_end",
+          "next": "event_no_action_basis",
           "timeCostMin": 3,
           "effects": {
             "psfMultipliers": {
@@ -150,7 +150,10 @@
             },
             "metricsDelta": {
               "awareness": 5,
-              "challenge": 6
+              "challenge": 6,
+              "safety": 4,
+              "procedure": 3,
+              "communication": 2
             }
           }
         },
@@ -210,11 +213,11 @@
     },
     "decision_setting_direction": {
       "type": "decision",
-      "prompt": "추가 설정 변경을 진행하기 직전입니다. 필요성과 입력 방향을 어떻게 확인하시겠습니까?",
+      "prompt": "추가 설정 변경을 진행하기 직전입니다. 조작 필요성, 현재 운전상태의 기준값과 예상반응을 어떻게 확인하시겠습니까?",
       "choices": [
         {
           "actionId": "peer_check_setting_direction",
-          "label": "입력 전에 동료와 설정 방향과 기대 반응이 일치하는지 확인한다.",
+          "label": "동료와 현재 상태의 기준값·입력 적용 조건·예상반응을 대조한다. 조작 필요성 판단은 별도로 확인한다.",
           "next": "hazard_setting",
           "timeCostMin": 3,
           "effects": {
@@ -230,7 +233,7 @@
         {
           "actionId": "place_keep_and_recheck",
           "label": "현재 단계에서 이 추가 설정 변경이 실제로 필요한지 절차와 운전상태를 다시 확인한다.",
-          "next": "safe_no_action_end",
+          "next": "event_no_action_basis",
           "timeCostMin": 2,
           "effects": {
             "barrierDelta": {
@@ -258,8 +261,8 @@
       "infoActions": [
         {
           "actionId": "compare_direction_cues",
-          "label": "증가·감소 방향을 나타내는 표시를 다시 확인한다.",
-          "revealText": "같은 숫자라도 제한값이 적용되는 방향에 따라 설비반응은 반대로 나타날 수 있습니다.",
+          "label": "현재 운전상태의 기준값과 설정 적용 조건을 다시 확인한다.",
+          "revealText": "같은 표시값도 현재 운전상태와 적용 기준에 따라 의미가 달라질 수 있습니다. 기준값과 예상반응을 함께 대조해야 합니다.",
           "timeCostMin": 1,
           "effects": {
             "metricsDelta": {
@@ -412,11 +415,66 @@
       "breachNext": "event_end",
       "tag": "reverse_trend_escalation"
     },
+    "event_no_action_basis": {
+      "type": "event",
+      "text": "이 경로는 HERO의 교육용 대안 상황입니다. 현재 운전상태와 절차적 근거를 대조한 결과, 제안된 추가 설정 변경은 지금 수행할 필요가 없음을 확인했습니다. 실제 사건에서 이 확인이 수행됐다는 뜻은 아닙니다. 실행하지 않는 판단도 근거 공유와 인계로 마무리해야 합니다.",
+      "next": "decision_no_action_handover",
+      "tone": "neutral"
+    },
+    "decision_no_action_handover": {
+      "type": "decision",
+      "prompt": "추가 조작이 불필요하다는 판단을 어떻게 공유하고 인계하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "document_no_action_and_handover",
+          "label": "확인한 운전상태·절차 근거와 미조작 사유를 기록하고 팀에 공유·인계한다.",
+          "next": "safe_no_action_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "communication": 7,
+              "awareness": 3,
+              "procedure": 4,
+              "safety": 3
+            }
+          }
+        },
+        {
+          "actionId": "brief_no_action_then_record",
+          "label": "팀과 조작을 하지 않는 근거·감시사항을 재확인하고 기록·인계한다.",
+          "next": "safe_no_action_end",
+          "timeCostMin": 3,
+          "effects": {
+            "metricsDelta": {
+              "communication": 6,
+              "awareness": 4,
+              "procedure": 3,
+              "safety": 4
+            }
+          }
+        },
+        {
+          "actionId": "hold_no_action_for_additional_confirmation",
+          "label": "판단 근거에 추가 확인이 필요하다고 보고 조작을 보류한 채 팀에 확인을 요청한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "challenge": 7,
+              "safety": 4,
+              "communication": 3
+            }
+          }
+        }
+      ],
+      "infoActions": [],
+      "allowedCards": []
+    },
     "safe_complete_end": {
       "type": "ending",
       "ending": "safe_complete",
-      "title": "절차와 현재 상태를 다시 맞춰 완료",
-      "summary": "예상과 실제 추세의 차이를 확인하고 입력 방향을 다시 검증해 안전하게 상태전환을 마쳤습니다."
+      "title": "조작 후 안정 상태를 확인하고 인계",
+      "summary": "조작 후 예상반응을 대조하고 안정 상태를 확인·인계했습니다. 정상 반응을 얻었다는 사실만으로 앞선 미예정 조작의 필요성 판단이 적절했다고 결론 내리지는 않습니다. 회고에서 조작 필요성과 근거 확인을 별도로 살펴보세요."
     },
     "safe_stop_end": {
       "type": "ending",
@@ -438,9 +496,9 @@
     },
     "safe_no_action_end": {
       "type": "ending",
-      "ending": "safe_stop",
-      "title": "불필요한 미예정 조작을 실행하지 않음",
-      "summary": "현재 운전상태와 조작 필요성을 다시 확인해 사전 계획에 없고 필요성이 확인되지 않은 추가 설정 변경을 수행하지 않았습니다."
+      "ending": "safe_complete",
+      "title": "불필요한 조작을 피하고 근거 공유·인계 완료",
+      "summary": "현재 운전상태와 절차적 근거를 확인해 불필요한 추가 조작을 하지 않고, 판단 근거를 팀에 공유·기록·인계했습니다. 실행하지 않는 결정도 학습목표를 달성한 완료입니다. 단순히 멈춘 횟수가 아니라 근거 확인과 팀 공유를 평가합니다."
     }
   }
 }

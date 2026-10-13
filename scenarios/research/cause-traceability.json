@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-08",
+  "updatedAt": "2026-10-13",
   "entries": [
     {
       "scenarioId": "s03_procedure_reality_gap",
-      "scenarioVersion": 4,
+      "scenarioVersion": 5,
       "sourceDocument": {
         "authority": "한국원자력안전기술원(KINS)",
         "documentId": "제2026-03호(260811SU3)",
