@@ -3047,3 +3047,20 @@ h3 {
 }
 .review-confirmation { min-height: 44px; }
 .review-confirmation input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+.install-app { display: flex; gap: 10px; align-items: center; padding: 12px; margin-bottom: 18px; border: 1px solid #32415b; border-radius: 16px; background: var(--surface); }
+.install-app img { flex: 0 0 40px; border-radius: 10px; }
+.install-app > div { flex: 1; min-width: 0; }
+.install-app strong { font-size: .87rem; }
+.install-app p { margin: 4px 0 0; font-size: .75rem; color: #b8c4d8; }
+.install-app button { flex: 0 0 auto; min-height: 44px; padding: 8px 12px; font-size: .8rem; }
+.install-status { font-size: .85rem; }
+.install-dialog { margin: auto; width: min(460px, calc(100% - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto; color: var(--ink); }
+.install-dialog::backdrop { background: rgb(0 0 0 / .65); }
+.install-dialog h2 { font-size: 1.25rem; }
+.install-dialog li { margin-bottom: 12px; line-height: 1.65; }
+.install-dialog ul, .install-dialog ol { padding-left: 22px; }
+.install-dialog .muted { color: #b8c4d8; font-size: .85rem; line-height: 1.6; margin-top: 14px; }
+.install-device-options { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.install-device-options button { min-height: 44px; padding: 8px 12px; }
+.install-device-options button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }

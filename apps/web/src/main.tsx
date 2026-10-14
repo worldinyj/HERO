@@ -5,6 +5,7 @@ import { App } from "./app/App";
 import { AudioProvider } from "./features/audio/AudioContext";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { registerHeroServiceWorker } from "./lib/pwa";
+import { initializePwaInstall } from "./lib/pwaInstall";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -13,6 +14,7 @@ if (!root) {
   throw new Error("HERO root element is missing.");
 }
 
+initializePwaInstall();
 createRoot(root).render(
   <StrictMode>
     <BrowserRouter>

@@ -3,6 +3,7 @@ import { SCENARIO_SCHEMA_VERSION } from "@hero/schema/version";
 import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { SuriIllustration } from "../components/SuriIllustration";
+import { InstallApp } from "../features/install/InstallApp";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { useAudio } from "../features/audio/AudioContext";
 import { useAuth } from "../features/auth/AuthContext";
@@ -243,6 +244,8 @@ export function App() {
           <span className="build-badge">schema {SCENARIO_SCHEMA_VERSION}</span>
         </header>
       ) : null}
+
+      {!immersiveRoute && (location.pathname === "/" || location.pathname === "/login" || location.pathname === "/me") ? <InstallApp /> : null}
 
       <RouteErrorBoundary key={location.pathname}>
       <Suspense fallback={<RouteLoading />}>
