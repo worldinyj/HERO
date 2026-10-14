@@ -129,14 +129,18 @@ test("empty manifest keeps tutorial playable without narration controls", async 
   expect(await played(page)).toEqual([]);
 });
 
-test("retired near-miss voice stays silent while the new barrier wording remains visible", async ({ page }) => {
+test("approved near-miss v2 voice follows barrier wording and supports replay and stop", async ({ page }) => {
   await fixture(page);
   await page.getByRole("button", { name: "계속", exact: true }).click();
   await page.getByRole("radio", { name: /현재 정보로 판단해 바로 진행한다/ }).click();
   await page.getByRole("button", { name: "선택 확정", exact: true }).click();
   await expect(page.getByText(pack.clips[4]!.text, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "나레이션 다시 듣기", exact: true })).toHaveCount(0);
-  expect((await played(page)).some(path => path.includes("near_miss_end_summary"))).toBe(false);
+  await expect.poll(() => played(page)).toContain("/audio/narration/nar_s00_near_miss_end_summary_v2.mp3");
+  expect((await played(page)).some(path => path.includes("near_miss_end_summary_v1"))).toBe(false);
+  const plays = (await played(page)).length;
+  await page.getByRole("button", { name: "나레이션 다시 듣기", exact: true }).click();
+  await expect.poll(() => played(page)).toHaveLength(plays + 1);
+  await page.getByRole("button", { name: "나레이션 중단", exact: true }).click();
   await expect(page.getByRole("button", { name: "결과 돌아보기", exact: true })).toBeEnabled();
 });
 test("narration mute is independent, persists and prevents scene autoplay", async ({ page }) => {
@@ -182,7 +186,7 @@ test("registered audio MP3 files play and decode in the native browser audio ele
     }
     return values;
   });
-  expect(results).toHaveLength(16);
+  expect(results).toHaveLength(17);
   expect(results.every(r => r.duration > 0 && Number.isFinite(r.duration) && r.played)).toBe(true);
   expect(results.filter(r => r.kind === "narration").every(r => r.duration > 4 && r.duration < 8)).toBe(true);
   expect(results.filter(r => r.kind === "bgm")).toHaveLength(4);

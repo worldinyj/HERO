@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "project": "HERO",
-  "updatedAt": "2026-10-12",
+  "updatedAt": "2026-10-14",
   "policy": {
     "runtimeGeneration": false,
     "sourceOfTruth": "docs/06_AUDIO_ASSET_GUIDE.md",
@@ -125,6 +125,38 @@
         "hfReviewedBy": "사용자 (2026-10-11 대본·발음·톤 청취 확인)",
         "technicalReviewedBy": "Codex (파일 디코딩·샘플 peak·Chromium 재생 검증)",
         "fileSha256": "19b0212c0d1f6cd8b46df61c9e490620972d9096e7b7e4c8714a7831e30adfef"
+      }
+    },
+    {
+      "id": "NAR-S00-05",
+      "kind": "narration",
+      "path": "/audio/narration/nar_s00_near_miss_end_summary_v2.mp3",
+      "approved": true,
+      "loop": false,
+      "defaultVolume": 1.0,
+      "preload": "none",
+      "narration": {
+        "scenarioId": "s00_tutorial",
+        "scenarioVersion": 2,
+        "nodeId": "near_miss_end",
+        "field": "summary",
+        "text": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방벽의 상태를 함께 돌아봅니다."
+      },
+      "provenance": {
+        "tool": "ElevenLabs",
+        "model": "eleven_v4",
+        "modelBasis": "user_confirmed_2026-10-14",
+        "voiceId": "BbsagRO6ohd8MKPS2Ob0",
+        "voiceIdBasis": "UI_selection_verified_before_user_generation",
+        "promptHash": "4e73d0ef9832f9f45b852e90a6666ed835841da744bd5b0ea9fb49830794175e",
+        "promptHashBasis": "documented_script; user listening approval",
+        "generatedAt": "2026-10-14",
+        "generatedAtBasis": "user_reported_generation_in_conversation; exact timestamp unavailable",
+        "licenseReviewedBy": "사용자 (기존 서비스 사용 권한 확인 및 2026-10-14 새 음성 사이트 적용 지시)",
+        "hfReviewedBy": "사용자 (2026-10-14 새 음성 청취·발음·문장 끝·톤 승인)",
+        "technicalReviewedBy": "Codex (FFmpeg 전체 디코딩·샘플 peak 확인; 독립 청취·실기기 검수 없음)",
+        "fileSha256": "fc1c431b4ee1689bf2e3146e280e534779d2755e610747b1f117687f3c262d3b",
+        "reviewRecord": "assets/audio/reviews/NARRATION_S00_05_V2_CANDIDATE_TECHNICAL_QC.json"
       }
     },
     {
