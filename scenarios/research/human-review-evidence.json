@@ -7,7 +7,53 @@
     },
     {
       "scenarioId": "s02_equipment_identity",
-      "reviews": []
+      "reviews": [
+        {
+          "area": "hf_accuracy",
+          "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+          "decision": "pass",
+          "reviewedBy": "사용자 (본 대화 직접 승인)",
+          "reviewedAt": "2026-10-15",
+          "evidenceRef": "scenarios/research/approvals/S02_V4_USER_APPROVAL_20261015.json",
+          "note": "사용자의 명시적 S02 v4 승인. 안내된 다섯 관점에 대한 단일 사용자 승인으로 기록하며 별도 HTO 시안은 제외. 변경 내용은 새 버전에서 재검토."
+        },
+        {
+          "area": "operations_context",
+          "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+          "decision": "pass",
+          "reviewedBy": "사용자 (본 대화 직접 승인)",
+          "reviewedAt": "2026-10-15",
+          "evidenceRef": "scenarios/research/approvals/S02_V4_USER_APPROVAL_20261015.json",
+          "note": "사용자의 명시적 S02 v4 승인. 안내된 다섯 관점에 대한 단일 사용자 승인으로 기록하며 별도 HTO 시안은 제외. 변경 내용은 새 버전에서 재검토."
+        },
+        {
+          "area": "anonymization",
+          "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+          "decision": "pass",
+          "reviewedBy": "사용자 (본 대화 직접 승인)",
+          "reviewedAt": "2026-10-15",
+          "evidenceRef": "scenarios/research/approvals/S02_V4_USER_APPROVAL_20261015.json",
+          "note": "사용자의 명시적 S02 v4 승인. 안내된 다섯 관점에 대한 단일 사용자 승인으로 기록하며 별도 HTO 시안은 제외. 변경 내용은 새 버전에서 재검토."
+        },
+        {
+          "area": "just_culture",
+          "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+          "decision": "pass",
+          "reviewedBy": "사용자 (본 대화 직접 승인)",
+          "reviewedAt": "2026-10-15",
+          "evidenceRef": "scenarios/research/approvals/S02_V4_USER_APPROVAL_20261015.json",
+          "note": "사용자의 명시적 S02 v4 승인. 안내된 다섯 관점에 대한 단일 사용자 승인으로 기록하며 별도 HTO 시안은 제외. 변경 내용은 새 버전에서 재검토."
+        },
+        {
+          "area": "incident_debrief",
+          "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+          "decision": "pass",
+          "reviewedBy": "사용자 (본 대화 직접 승인)",
+          "reviewedAt": "2026-10-15",
+          "evidenceRef": "scenarios/research/approvals/S02_V4_USER_APPROVAL_20261015.json",
+          "note": "사용자의 명시적 S02 v4 승인. 안내된 다섯 관점에 대한 단일 사용자 승인으로 기록하며 별도 HTO 시안은 제외. 변경 내용은 새 버전에서 재검토."
+        }
+      ]
     },
     {
       "scenarioId": "s03_procedure_reality_gap",

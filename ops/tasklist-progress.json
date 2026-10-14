@@ -306,7 +306,7 @@
       "title": "후보 선별 (PRD §8.2: 의사결정·시스템적 학습성·공개적합성) → S01~S03 근거사건 확정 👤",
       "status": "partial",
       "evidence": "scenarios/research/T3_SOURCE_RIGHTS_REVIEW_V1.md",
-      "note": "S01/S02 SOURCE_HOLD, S03 v7 사용자 승인5/5·콘텐츠 승격 완료"
+      "note": "S01 원인·방벽·대책 추적성 보완 대기. S02 v4·S03 v7 사용자 승인5/5·콘텐츠 승격 완료"
     },
     {
       "id": "T3-03",
@@ -329,8 +329,8 @@
       "phase": 3,
       "title": "S02 \"아마 이 설비가\"",
       "status": "partial",
-      "evidence": "scenarios/drafts/S02_equipment_identity_v1.json",
-      "note": "S02 JSON 초안 존재; 출처·사람 승인 대기"
+      "evidence": "scenarios/data/S02_equipment_identity_v1.json",
+      "note": "S02 v4 사용자 승인5/5·콘텐츠 승격 완료. 운영 버전 게시와 시즌 연결은 별도."
     },
     {
       "id": "T3-06",

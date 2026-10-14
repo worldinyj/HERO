@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "s02_equipment_identity",
+  "version": 4,
+  "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+  "reviewedAt": "2026-10-15",
+  "reviewedBy": "사용자 (본 대화 직접 승인)",
+  "evidenceSource": "Current Codex conversation: explicit S02 v4 approval after review document and administrator preview instructions were provided",
+  "approvalStatement": "일단 S02 v4 승인합니다. 나중에 수정변경 가능하죠?",
+  "reviewMaterialProvided": [
+    "scenarios/research/S01_S02_REVIEW_CONTENT_20261014.md의 S02 v4 전체 내용",
+    "관리자 화면에서 저장된 S02 v4의 내용 일치 확인 및 검토용 미리보기 방법",
+    "HF 정확성·운전정비 맥락·익명화·Just Culture·실사건 회고의 다섯 검토 관점"
+  ],
+  "approvedAreas": [
+    "hf_accuracy",
+    "operations_context",
+    "anonymization",
+    "just_culture",
+    "incident_debrief"
+  ],
+  "scope": "Explicit approval of the exact S02 v4 scenario content by the single human user under the previously explained five review perspectives. No claim of five separate reviewers, independently verified professional credentials, or observed reading activity. Separate HTO draft feedback is excluded. Future content changes require a new version and renewed current-content review."
+}

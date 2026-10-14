@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import tutorial from "../scenarios/data/S00_tutorial.json" with { type: "json" };
-import s02 from "../scenarios/drafts/S02_equipment_identity_v1.json" with { type: "json" };
+import s02 from "../scenarios/data/S02_equipment_identity_v1.json" with { type: "json" };
 
 const adminId = "f6100000-0000-0000-0000-000000000001";
 const versionId = "f6200000-0000-0000-0000-000000000001";

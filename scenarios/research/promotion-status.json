@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-14",
+  "updatedAt": "2026-10-15",
   "entries": [
     {
       "scenarioId": "s00_tutorial",
@@ -36,20 +36,19 @@
     },
     {
       "scenarioId": "s02_equipment_identity",
-      "file": "scenarios/drafts/S02_equipment_identity_v1.json",
-      "status": "review_ready",
+      "file": "scenarios/data/S02_equipment_identity_v1.json",
+      "status": "approved",
       "sourceRightsComplete": true,
-      "hfReviewComplete": false,
-      "anonymizationReviewComplete": false,
+      "hfReviewComplete": true,
+      "anonymizationReviewComplete": true,
       "humanReview": {
-        "status": "pending",
-        "approvedBy": null,
-        "approvedAt": null
+        "status": "approved",
+        "approvedBy": "사용자 (본 대화 직접 승인)",
+        "approvedAt": "2026-10-15"
       },
-      "blockers": [
-        "HF/anonymization/current-content human review"
-      ],
-      "notes": "S02 v4 adds NSIC event 1006 (신한울1호기-2024-1), direct NSSC 2024 result and Policy Briefing 156625772. Public textual reuse basis is item-specific Policy Briefing KOGL1; NSSC host KOGL4 is recorded separately and not treated as derivative permission. No source art/PDF reproduced. Official drawing/supplier/HF causes and subcritical sequence are distinguished from HERO teaching conditions. Human review remains pending; not approved or published."
+      "blockers": [],
+      "notes": "S02 v4 adds NSIC event 1006 (신한울1호기-2024-1), direct NSSC 2024 result and Policy Briefing 156625772. Public textual reuse basis is item-specific Policy Briefing KOGL1; NSSC host KOGL4 is recorded separately and not treated as derivative permission. No source art/PDF reproduced. Official drawing/supplier/HF causes and subcritical sequence are distinguished from HERO teaching conditions. S02 v4 explicitly approved by the user on 2026-10-15 under the five previously explained perspectives. Single human approval; separate HTO draft is excluded. Repository content approval does not itself publish the database version or connect it to a season. Human promotion recorded 2026-10-15 by 사용자 (본 대화 직접 승인); HF, anonymization/operational-overexposure, and incidentDebrief confirmations were explicitly attested. Approved content SHA-256: 785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808.",
+      "approvedContentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808"
     },
     {
       "scenarioId": "s03_procedure_reality_gap",
