@@ -5,10 +5,8 @@
     {
       "scenarioId": "s01_time_pressure",
       "sourceVerdict": "complete",
-      "rightsVerdict": "partial",
-      "missing": [
-        "2012 KHNP mission notice/attachment item-specific rights marker (notice now redirects; related press notice marker not inherited)"
-      ],
+      "rightsVerdict": "complete",
+      "missing": [],
       "sources": [
         {
           "id": "s01-iaea-event",
@@ -33,14 +31,14 @@
           "url": "https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297",
           "eventSpecific": true,
           "purpose": [
-            "event_facts",
-            "hf_context"
+            "historical_research_locator_only"
           ],
           "rights": {
-            "status": "unverified",
+            "status": "not_used_for_reproduction",
             "license": null,
-            "evidenceUrl": "https://www.khnp.co.kr/main/contents.do?key=406"
-          }
+            "evidenceUrl": null
+          },
+          "retrievalNote": "기존 공지는 현재 홈으로 이동. 첨부의 이용허락은 확인하지 않았으며 현재 v4 공개 문안의 재사용 근거로 채택하지 않음."
         },
         {
           "id": "s01-nssc-statistics",
@@ -143,7 +141,8 @@
             "evidenceUrl": "https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384"
           }
         }
-      ]
+      ],
+      "rightsScope": "현재 S01 v4는 공식 사건 사실을 독립적으로 설명하고, 안전문화 맥락은 개별 공공누리 제1유형을 확인한 한수원 보도자료 본문에 근거한다. 기존 2012 미션 보고서 원문·표·그림·첨부는 재사용하지 않는다. 비상업 목적이라는 사용자 설명을 허락 증빙으로 대체하지 않는다. 사용하지 않는 첨부의 개별 이용조건은 현재 문안의 승격 장애로 두지 않는다."
     },
     {
       "scenarioId": "s02_equipment_identity",

@@ -19,8 +19,8 @@
     {
       "scenarioId": "s01_time_pressure",
       "file": "scenarios/drafts/S01_time_pressure_v1.json",
-      "status": "source_hold",
-      "sourceRightsComplete": false,
+      "status": "review_ready",
+      "sourceRightsComplete": true,
       "hfReviewComplete": false,
       "anonymizationReviewComplete": false,
       "humanReview": {
@@ -29,10 +29,9 @@
         "approvedAt": null
       },
       "blockers": [
-        "2012 KHNP mission notice/attachment item-specific rights marker",
         "HF/anonymization/current-content human review"
       ],
-      "notes": "S01 v4 adds the verified NSIC event identifier (832; 고리1호기-2012-4), separates HERO HF interpretation from official facts, and records related KHNP press-text KOGL1 without inheriting it to the historical mission-report attachment. Rights hold remains."
+      "notes": "S01 v4 retains its current content hash and official fact/HERO interpretation separation. Rights review is complete for the actual scope: independently written event facts and verified KHNP press-text KOGL1 context. The unused historical mission attachment is not claimed licensed and is not a publication blocker. Human review remains pending; not approved or published."
     },
     {
       "scenarioId": "s02_equipment_identity",

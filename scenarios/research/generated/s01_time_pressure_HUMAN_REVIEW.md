@@ -14,10 +14,10 @@
 
 | 항목 | 값 |
 |---|---|
-| promotion status | **SOURCE_HOLD** |
-| sourceRightsComplete | `false` |
+| promotion status | **REVIEW_READY** |
+| sourceRightsComplete | `true` |
 | source verdict | `complete` |
-| rights verdict | `partial` |
+| rights verdict | `complete` |
 | HF review | `false` |
 | anonymization review | `false` |
 | human review | `pending` |
@@ -25,7 +25,6 @@
 
 ### 현재 blocker
 
-- 2012 KHNP mission notice/attachment item-specific rights marker
 - HF/anonymization/current-content human review
 
 ## 2. 시나리오 기본정보
@@ -46,7 +45,7 @@
 | 기관 | source class | 범위 | 용도 | 권리 상태 | URL |
 |---|---|---|---|---|---|
 | IAEA | official_primary | 사건 직접근거 | event_identity, event_facts | not_used_for_reproduction | https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9 |
-| 한국수력원자력 | official_primary | 사건 직접근거 | event_facts, hf_context | unverified | https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297 |
+| 한국수력원자력 | official_primary | 사건 직접근거 | historical_research_locator_only | not_used_for_reproduction | https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297 |
 | 원자력안전위원회 | official_primary | 사건 직접근거 | event_identity, ines_classification | not_used_for_reproduction | https://ourplan.nssc.go.kr/boardDownload.es?bid=0004&list_no=837&seq=1 |
 | 원자력안전위원회/원자력안전정보공개센터 | official_locator | 탐색/보조 | direct_record_locator | not_applicable | https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient |
 | 원자력안전위원회 | official_primary | 사건 직접근거 | event_investigation, electrical_system_safety_review, corrective_action_context | not_used_for_reproduction | https://www.nssc.go.kr/ko/cms/FR_BBS_CON/BoardView.do?BBS_SEQ=3596&BOARD_SEQ=14&CONTENTS_NO=1&MENU_ID=170&SITE_NO=2 |
@@ -56,7 +55,7 @@
 
 ### 아직 부족한 근거
 
-- 2012 KHNP mission notice/attachment item-specific rights marker (notice now redirects; related press notice marker not inherited)
+- 없음
 
 ## 4. 자동 기술검증 스냅샷
 
