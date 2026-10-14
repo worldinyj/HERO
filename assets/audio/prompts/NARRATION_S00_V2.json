@@ -7,8 +7,8 @@
   "voice_name": "Jin Geon Song - Neutral, Calm and Steady",
   "voice_id": "BbsagRO6ohd8MKPS2Ob0",
   "synthesis_model": "eleven_v4",
-  "generation_status": "four_unchanged_clips_reused; near_miss_pending_generation",
-  "runtime_status": "four_registered; near_miss_text_only",
+  "generation_status": "five_clips_available; near_miss_v2_user_generated_and_reviewed",
+  "runtime_status": "five_registered",
   "clips": [
     {
       "asset_id": "NAR-S00-01",
@@ -62,8 +62,8 @@
       "trigger": "멈춰서 다시 확인 엔딩",
       "text": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방벽의 상태를 함께 돌아봅니다.",
       "filename": "nar_s00_near_miss_end_summary_v2.mp3",
-      "status": "pending_generation",
-      "path": null
+      "status": "registered",
+      "path": "/audio/narration/nar_s00_near_miss_end_summary_v2.mp3"
     }
   ],
   "voice_selection_basis": "public_directory_description",

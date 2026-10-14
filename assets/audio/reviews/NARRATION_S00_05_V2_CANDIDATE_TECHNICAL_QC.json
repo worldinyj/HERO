@@ -1,0 +1,58 @@
+{
+  "assetId": "NAR-S00-05",
+  "reviewedAt": "2026-10-14",
+  "candidatePath": "assets/audio/candidates/nar_s00_near_miss_end_summary_v2.mp3",
+  "fileSha256": "9cda7da9f2e061f36352668e1ad19cdc14fd446b68553daae5afd87442f52b09",
+  "script": "진행 직전 식별 차이를 발견했습니다. 한 번의 행동보다 여러 방벽의 상태를 함께 돌아봅니다.",
+  "scriptSha256": "4e73d0ef9832f9f45b852e90a6666ed835841da744bd5b0ea9fb49830794175e",
+  "generation": {
+    "provider": "ElevenLabs",
+    "performedBy": "user",
+    "reportedComplete": true,
+    "model": "eleven_v4",
+    "modelStatus": "user_confirmed_2026-10-14",
+    "voiceSelection": "Jin Geon Song - Neutral, Calm and Steady",
+    "voiceSelectionBasis": "user_screenshot_before_generation",
+    "exactGenerationTimestamp": null,
+    "settings": null
+  },
+  "technicalReview": {
+    "decoder": "ffmpeg",
+    "fullDecodePassed": true,
+    "codec": "mp3",
+    "sampleRateHz": 44100,
+    "channels": 1,
+    "streamBitrateBps": 128000,
+    "estimatedDurationSeconds": 7.235875,
+    "decodedDurationSecondsApprox": 7.23,
+    "sizeBytes": 132712,
+    "meanVolumeDb": -19.3,
+    "samplePeakDb": -2.3,
+    "peakLimit": "sample peak only; does not establish true peak or source clipping"
+  },
+  "listeningReview": {
+    "status": "approved",
+    "reviewedBy": "사용자",
+    "reviewedAt": "2026-10-14",
+    "basis": "사용자가 현재 저장된 후보 음성을 청취하고 적용 승인; 2026-10-14 대화"
+  },
+  "runtimeStatus": "registered",
+  "priorTechnicalObservation": {
+    "fileSha256": "fc1c431b4ee1689bf2e3146e280e534779d2755e610747b1f117687f3c262d3b",
+    "technicalReview": {
+      "decoder": "ffmpeg",
+      "fullDecodePassed": true,
+      "codec": "mp3",
+      "sampleRateHz": 44100,
+      "channels": 1,
+      "streamBitrateBps": 128000,
+      "estimatedDurationSeconds": 7.235875,
+      "decodedDurationSecondsApprox": 7.23,
+      "sizeBytes": 132712,
+      "meanVolumeDb": -19.3,
+      "samplePeakDb": -2.3,
+      "peakLimit": "sample peak only; does not establish true peak or source clipping"
+    },
+    "status": "superseded_candidate_observation"
+  }
+}
