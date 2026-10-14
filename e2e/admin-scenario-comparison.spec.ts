@@ -63,7 +63,8 @@ async function chooseSaved(page: Page) {
 
 test("saved versions compare by stable action ID without mutating state", async ({ page }, testInfo) => {
   const { calls } = await fixture(page);
-  await page.addStyleTag({ content: 'select[aria-label="검토할 시나리오"] { font-size: 22px; }' });
+  await page.addStyleTag({ content: 'select[aria-label="검토할 시나리오"] { font-size: 22px !important; }' });
+  await expect(page.getByLabel("검토할 시나리오", { exact: true })).toHaveCSS("font-size", "22px");
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
   expect(await page.evaluate(() => document.documentElement.clientWidth)).toBe(page.viewportSize()!.width);
   expect(await page.evaluate(() => visualViewport?.scale)).toBeCloseTo(1);
