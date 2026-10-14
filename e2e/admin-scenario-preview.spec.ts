@@ -70,7 +70,7 @@ test("S02 HTO draft compares interactions without saving reflections or mutating
   await page.getByRole("button", { name: "입력한 JSON 미리보기", exact: true }).click();
   const preview = page.getByRole("region", { name: `${s02.title} · 미리보기`, exact: true });
   const draft = preview.locator(".hto-review-draft");
-  await draft.locator("summary").click();
+  await draft.locator(":scope > summary").click();
   await expect(draft).toContainText("관리자 검토용 시안");
   await draft.getByRole("button", { name: "기술 ↔ 조직", exact: true }).click();
   await expect(draft.locator(".hto-connection")).toContainText("공급사가 확인하지 못해");
@@ -102,7 +102,7 @@ test("S02 HTO draft compares interactions without saving reflections or mutating
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect((await new AxeBuilder({ page }).include(".hto-review-draft").analyze()).violations).toEqual([]);
   await preview.getByRole("button", { name: "처음부터 다시 보기", exact: true }).click();
-  await draft.locator("summary").click();
+  await draft.locator(":scope > summary").click();
   await expect(draft.getByRole("textbox", { name: "HTO 회고 · 조직의 지원", exact: true })).toHaveValue("");
   expect(calls.every(call => ["list", "season-overview"].includes(String(call.action)))).toBe(true);
   expect(await page.evaluate(async () => (await indexedDB.databases()).length)).toBe(0);

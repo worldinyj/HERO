@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { ScenarioSchema } from "@hero/schema";
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { HtoDraftFeedback } from "./HtoDraftFeedback";
 import { matchesS02HtoInput } from "./s02HtoReview";
 
 function fixture() {
@@ -8,6 +11,11 @@ function fixture() {
 }
 
 describe("S02 HTO teaching input binding", () => {
+  it("shows a separate feedback form only for the bound scenario and version", () => {
+    expect(renderToStaticMarkup(createElement(HtoDraftFeedback, { scenario: fixture() }))).toContain("HTO 시안 의견 JSON 다운로드");
+    expect(renderToStaticMarkup(createElement(HtoDraftFeedback, { scenario: { ...fixture(), version: 5 } }))).not.toContain("HTO 시안 의견 JSON 다운로드");
+    expect(renderToStaticMarkup(createElement(HtoDraftFeedback, { scenario: { ...fixture(), id: "another_scenario" } }))).not.toContain("HTO 시안 의견 JSON 다운로드");
+  });
   it("accepts the current normalized v4 content", async () => {
     expect(await matchesS02HtoInput(fixture())).toBe(true);
     const reordered = JSON.parse(JSON.stringify(fixture(), (_key, value: unknown) => {

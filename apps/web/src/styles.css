@@ -3050,6 +3050,9 @@ h3 {
 }
 
 .scenario-review-summary { display: flex; flex-wrap: wrap; gap: 0.65rem 1rem; margin-block: 1rem; }
+.scenario-review-targets { min-width: 0; width: 100%; }
+.scenario-review-targets > label { display: grid; gap: 0.5rem; min-width: 0; }
+.scenario-review-targets > label > select { width: 100%; max-width: 100%; min-width: 0; min-height: 48px; border: 1px solid #7182a2; border-radius: 12px; padding: 10px 12px; color: var(--ink); background: var(--bg); font: inherit; color-scheme: dark; }
 .scenario-review-areas { display: grid; gap: 0.7rem; padding-left: 1.35rem; }
 .scenario-review-areas li > div { display: flex; align-items: center; flex-wrap: wrap; gap: 0.6rem; }
 .scenario-review-areas p { margin-block: 0.35rem; }
@@ -3057,6 +3060,8 @@ h3 {
 .scenario-review-hash { display: block; overflow-wrap: anywhere; margin-block: 0.75rem; }
 
 .scenario-review-form fieldset { border: 0; padding: 0; display: grid; gap: 0.8rem; min-width: 0; }
+.hto-feedback-form { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(138, 150, 173, 0.25); }
+.hto-feedback-form label:not(.review-confirmation) { display: grid; gap: 0.4rem; }
 .scenario-review-form label > input:not([type="checkbox"]), .scenario-review-form textarea { display: block; width: 100%; margin-top: 0.4rem; }
 .scenario-review-form textarea { min-height: 6rem; }
 .review-confirmation { display: flex; gap: 0.65rem; align-items: flex-start; }

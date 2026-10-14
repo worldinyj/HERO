@@ -1,0 +1,64 @@
+[
+  {
+    "scenarioId": "s02_equipment_identity",
+    "version": 4,
+    "title": "2장 · 아마 이 설비가 맞을 겁니다",
+    "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+    "previewSha256": "eba3dfb4ec719e79777c8796e0c639ab6529f2d2559e8a9d989694c27ccbc54c",
+    "sourceRightsComplete": true,
+    "approved": false,
+    "areas": [
+      {
+        "area": "hf_accuracy",
+        "decision": "pending"
+      },
+      {
+        "area": "operations_context",
+        "decision": "pending"
+      },
+      {
+        "area": "anonymization",
+        "decision": "pending"
+      },
+      {
+        "area": "just_culture",
+        "decision": "pending"
+      },
+      {
+        "area": "incident_debrief",
+        "decision": "pending"
+      }
+    ]
+  },
+  {
+    "scenarioId": "s03_procedure_reality_gap",
+    "version": 7,
+    "title": "3장 · 절차와 실제 상황이 조금 다릅니다",
+    "contentSha256": "8fae4052c214f8e930db88bd029c81debbf0529c931f5edc5f0dd193bd8c1d38",
+    "previewSha256": "6362947699def182b2e0b6e1be0a5924e1c84d2bc980970149d62d2dc66c0e94",
+    "sourceRightsComplete": true,
+    "approved": true,
+    "areas": [
+      {
+        "area": "hf_accuracy",
+        "decision": "pass"
+      },
+      {
+        "area": "operations_context",
+        "decision": "pass"
+      },
+      {
+        "area": "anonymization",
+        "decision": "pass"
+      },
+      {
+        "area": "just_culture",
+        "decision": "pass"
+      },
+      {
+        "area": "incident_debrief",
+        "decision": "pass"
+      }
+    ]
+  }
+]

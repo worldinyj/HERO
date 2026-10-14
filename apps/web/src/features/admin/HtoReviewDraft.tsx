@@ -2,6 +2,7 @@ import type { Scenario } from "@hero/schema";
 import { useEffect, useState } from "react";
 import { HTO_CONNECTIONS, matchesS02HtoInput } from "./s02HtoReview";
 import { HtoConditionComparison } from "./HtoConditionComparison";
+import { HtoDraftFeedback } from "./HtoDraftFeedback";
 
 /** Admin-only teaching proposal. No persistence, submissions or score changes. */
 export function HtoReviewDraft({ scenario }: { scenario: Scenario }) {
@@ -48,6 +49,7 @@ export function HtoReviewDraft({ scenario }: { scenario: Scenario }) {
         ].map(([id, label, prompt]) => <label key={id}><strong>{label}</strong><span>{prompt}</span><textarea rows={2} maxLength={1000} aria-label={`HTO 회고 · ${label}`} placeholder="생각을 적어보세요. 입력은 저장되지 않습니다." /></label>)}
       </fieldset>
       <HtoConditionComparison />
+      <HtoDraftFeedback scenario={scenario} />
       <p className="muted mini-copy">HTO 분류와 연결은 HERO의 교육용 해석입니다. IAEA의 인증·공식 사건분류 또는 개인·사업소 안전문화 평가를 의미하지 않습니다.</p>
       <p className="mini-copy"><a href="https://www-pub.iaea.org/MTCD/Publications/PDF/TE-1846web.pdf" target="_blank" rel="noopener noreferrer">개념 근거: IAEA-TECDOC-1846 §2.6</a> · 사건 사실은 S02 공식 출처를 참조합니다.</p>
     </details>

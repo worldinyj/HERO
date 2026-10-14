@@ -273,8 +273,9 @@ export function AdminScenarioPage() {
       ) : null}
 
       <ScenarioReviewPanel versions={comparisonVersions} editor={preview?.scenario ?? null}
+        onTargetChange={() => closePreview(false)}
         readVersion={id => invoke({ action: "preview", scenarioVersionId: id })}
-        onPreview={(scenario, trigger) => { previewTrigger.current = trigger; closePreview(false); setPlayPreview({ scenario, sourceLabel: "S03 검토 대상과 내용 일치 확인", revision: previewRevision.current }); }} />
+        onPreview={(scenario, trigger) => { previewTrigger.current = trigger; closePreview(false); setPlayPreview({ scenario, sourceLabel: `${scenario.id.slice(0, 3).toUpperCase()} 검토 대상과 내용 일치 확인`, revision: previewRevision.current }); }} />
 
       <section className="panel admin-section">
         <div className="section-heading">
