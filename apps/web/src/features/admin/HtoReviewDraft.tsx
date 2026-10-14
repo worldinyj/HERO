@@ -1,6 +1,7 @@
 import type { Scenario } from "@hero/schema";
 import { useEffect, useState } from "react";
 import { HTO_CONNECTIONS, matchesS02HtoInput } from "./s02HtoReview";
+import { HtoConditionComparison } from "./HtoConditionComparison";
 
 /** Admin-only teaching proposal. No persistence, submissions or score changes. */
 export function HtoReviewDraft({ scenario }: { scenario: Scenario }) {
@@ -46,7 +47,7 @@ export function HtoReviewDraft({ scenario }: { scenario: Scenario }) {
           ["organization", "조직의 지원", "확인 시간·절차·검증 역할에서 무엇을 지원해야 할까요?"],
         ].map(([id, label, prompt]) => <label key={id}><strong>{label}</strong><span>{prompt}</span><textarea rows={2} maxLength={1000} aria-label={`HTO 회고 · ${label}`} placeholder="생각을 적어보세요. 입력은 저장되지 않습니다." /></label>)}
       </fieldset>
-      <p className="muted mini-copy">다르게 해보기 제안: 표시가 명확한 조건, 확인 시간을 지원하는 조건을 같은 상황과 비교합니다. 이는 향후 교육용 가상 비교이며 현재 엔진 결과나 실제 사건의 재현 결과가 아닙니다.</p>
+      <HtoConditionComparison />
       <p className="muted mini-copy">HTO 분류와 연결은 HERO의 교육용 해석입니다. IAEA의 인증·공식 사건분류 또는 개인·사업소 안전문화 평가를 의미하지 않습니다.</p>
       <p className="mini-copy"><a href="https://www-pub.iaea.org/MTCD/Publications/PDF/TE-1846web.pdf" target="_blank" rel="noopener noreferrer">개념 근거: IAEA-TECDOC-1846 §2.6</a> · 사건 사실은 S02 공식 출처를 참조합니다.</p>
     </details>

@@ -2994,6 +2994,16 @@ h3 {
 .hto-questions label { display: grid; gap: 8px; }
 .hto-questions span { font-size: 0.85rem; line-height: 1.6; }
 .hto-questions textarea { width: 100%; max-width: 100%; min-width: 0; resize: vertical; padding: 10px; color: var(--ink); background: var(--surface); border: 1px solid rgba(138, 150, 173, 0.5); border-radius: 8px; font: inherit; }
+.hto-comparison { border-top: 1px solid rgba(138, 150, 173, 0.25); padding-top: 20px; }
+.hto-condition-controls { margin: 16px 0; padding: 14px; border: 1px solid rgba(138, 150, 173, 0.25); border-radius: 12px; min-width: 0; }
+.hto-condition-controls label { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; min-height: 44px; line-height: 1.6; cursor: pointer; }
+.hto-condition-controls input { flex: 0 0 auto; margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
+.hto-comparison-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.hto-comparison-actions button { flex: 1 1 160px; min-height: 44px; }
+.hto-comparison-result { margin-top: 20px; }
+.hto-comparison-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.hto-comparison-grid article { padding: 14px; border: 1px solid rgba(138, 150, 173, 0.25); border-radius: 12px; background: rgba(14, 22, 36, 0.45); }
+.hto-comparison-grid h6 { margin: 14px 0 0; font-size: 0.85rem; color: var(--accent); }
 
 .scenario-status-dialog { width: min(448px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 24px; overflow: auto; overflow-wrap: anywhere; color: var(--ink); background: var(--surface); }
 .scenario-status-dialog::backdrop { background: rgb(0 0 0 / 65%); }
