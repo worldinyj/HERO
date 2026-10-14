@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import tutorial from "../scenarios/data/S00_tutorial.json" with { type: "json" };
+import s02 from "../scenarios/drafts/S02_equipment_identity_v1.json" with { type: "json" };
 
 const adminId = "f6100000-0000-0000-0000-000000000001";
 const versionId = "f6200000-0000-0000-0000-000000000001";
@@ -62,6 +63,34 @@ async function editorPreview(page: Page) {
   await page.getByRole("button", { name: "입력한 JSON 미리보기", exact: true }).click();
   return page.getByRole("region", { name: `${tutorial.title} · 미리보기`, exact: true });
 }
+
+test("S02 HTO draft compares interactions without saving reflections or mutating records", async ({ page }, testInfo) => {
+  const { calls } = await fixture(page);
+  await page.getByRole("textbox", { name: "시나리오 JSON", exact: true }).fill(JSON.stringify(s02));
+  await page.getByRole("button", { name: "입력한 JSON 미리보기", exact: true }).click();
+  const preview = page.getByRole("region", { name: `${s02.title} · 미리보기`, exact: true });
+  const draft = preview.locator(".hto-review-draft");
+  await draft.locator("summary").click();
+  await expect(draft).toContainText("관리자 검토용 시안");
+  await draft.getByRole("button", { name: "기술 ↔ 조직", exact: true }).click();
+  await expect(draft.locator(".hto-connection")).toContainText("공급사가 확인하지 못해");
+  await draft.getByRole("button", { name: "조직 ↔ 사람", exact: true }).click();
+  await expect(draft.locator(".hto-connection")).toContainText("실제 사건에서 중지 권한이나 동료확인이 없었다는 판정은 아닙니다");
+  await draft.getByRole("textbox", { name: "HTO 회고 · 조직의 지원", exact: true }).fill("검토용 의견");
+  await draft.screenshot({ path: `/tmp/hero-hto-draft-${testInfo.project.name}.png` });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).include(".hto-review-draft").analyze()).violations).toEqual([]);
+  await preview.getByRole("button", { name: "처음부터 다시 보기", exact: true }).click();
+  await draft.locator("summary").click();
+  await expect(draft.getByRole("textbox", { name: "HTO 회고 · 조직의 지원", exact: true })).toHaveValue("");
+  expect(calls.every(call => ["list", "season-overview"].includes(String(call.action)))).toBe(true);
+  expect(await page.evaluate(async () => (await indexedDB.databases()).length)).toBe(0);
+  await preview.getByRole("button", { name: "미리보기 닫기", exact: true }).click();
+  await page.getByRole("textbox", { name: "시나리오 JSON", exact: true }).fill(JSON.stringify({ ...s02, title: "변경된 S02" }));
+  await page.getByRole("button", { name: "입력한 JSON 미리보기", exact: true }).click();
+  await expect(page.getByText("이 내용에는 S02 v4 HTO 시안을 연결할 수 없습니다.", { exact: false })).toBeVisible();
+  await expect(page.locator(".hto-review-draft")).toHaveCount(0);
+});
 
 test("local preview plays and restarts without creating sessions or records", async ({ page }, testInfo) => {
   const { calls } = await fixture(page);

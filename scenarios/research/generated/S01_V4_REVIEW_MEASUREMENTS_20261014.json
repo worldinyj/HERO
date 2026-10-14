@@ -1,0 +1,616 @@
+{
+  "measuredAt": "2026-10-14",
+  "sourcePath": "scenarios/drafts/S01_time_pressure_v1.json",
+  "contentSha256": "3d9c2474a478f1464b6f6f01cc9ee1a320b0a159a4f830d59bcb484d458387dc",
+  "interpretation": "전 경로 탐색의 행동 이력 집계. 실제 사건 확률이나 실제 참여자의 선택 분포가 아님.",
+  "report": {
+    "scenarioId": "s01_time_pressure",
+    "scenarioVersion": 4,
+    "simulationSeeds": [
+      "balance-seed-1",
+      "balance-seed-2",
+      "balance-seed-3"
+    ],
+    "complete": true,
+    "exploredStates": 12511,
+    "terminalPaths": 7176,
+    "endingCounts": {
+      "safe_complete": 4204,
+      "safe_stop": 2392,
+      "near_miss": 508,
+      "event": 72
+    },
+    "endingRates": {
+      "safe_complete": 0.5858,
+      "safe_stop": 0.3333,
+      "near_miss": 0.0708,
+      "event": 0.01
+    },
+    "hp": {
+      "min": 181,
+      "max": 246,
+      "mean": 235.8
+    },
+    "choices": [
+      {
+        "nodeId": "decision_schedule",
+        "actionId": "rebrief_changed_schedule",
+        "label": "변경된 순서와 위험요인을 반영해 짧게 재브리핑한다.",
+        "samples": 2160,
+        "meanHp": 239.2,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 1440,
+          "safe_stop": 720,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_schedule",
+        "actionId": "confirm_changed_boundary",
+        "label": "현재 작업경계와 가용조건을 문서와 다시 대조한다.",
+        "samples": 2304,
+        "meanHp": 237.5,
+        "favorableEndingRate": 0.9479,
+        "endingCounts": {
+          "safe_complete": 1416,
+          "safe_stop": 768,
+          "near_miss": 96,
+          "event": 24
+        }
+      },
+      {
+        "nodeId": "decision_schedule",
+        "actionId": "use_original_briefing",
+        "label": "기존 브리핑 내용이 있으므로 변경된 순서만 기억하고 시작한다.",
+        "samples": 2712,
+        "meanHp": 231.7,
+        "favorableEndingRate": 0.8304,
+        "endingCounts": {
+          "safe_complete": 1348,
+          "safe_stop": 904,
+          "near_miss": 412,
+          "event": 48
+        }
+      },
+      {
+        "nodeId": "decision_hold_point",
+        "actionId": "hold_and_verify_conditions",
+        "label": "현재 단계에 머물며 진행 조건이 충족됐는지 다시 확인한다.",
+        "samples": 2256,
+        "meanHp": 238.6,
+        "favorableEndingRate": 0.9645,
+        "endingCounts": {
+          "safe_complete": 1424,
+          "safe_stop": 752,
+          "near_miss": 80,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_hold_point",
+        "actionId": "repeat_back_hold_instruction",
+        "label": "중지 지시를 복창하고 다음 진행 조건을 감독자와 맞춘다.",
+        "samples": 2256,
+        "meanHp": 238.6,
+        "favorableEndingRate": 0.9645,
+        "endingCounts": {
+          "safe_complete": 1424,
+          "safe_stop": 752,
+          "near_miss": 80,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_hold_point",
+        "actionId": "advance_familiar_test_step",
+        "label": "익숙한 시험이고 시간이 촉박하므로 준비된 다음 단계까지 진행한다.",
+        "samples": 2664,
+        "meanHp": 231,
+        "favorableEndingRate": 0.8423,
+        "endingCounts": {
+          "safe_complete": 1356,
+          "safe_stop": 888,
+          "near_miss": 348,
+          "event": 72
+        }
+      },
+      {
+        "nodeId": "decision_closeout",
+        "actionId": "closeout_and_handover",
+        "label": "현재 상태와 남은 주의사항을 다음 작업팀에 인계한다.",
+        "samples": 2102,
+        "meanHp": 240.2,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 2102,
+          "safe_stop": 0,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_closeout",
+        "actionId": "verify_final_state",
+        "label": "최종 설비상태를 다시 확인한 뒤 작업을 종료한다.",
+        "samples": 2102,
+        "meanHp": 240.2,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 2102,
+          "safe_stop": 0,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_closeout",
+        "actionId": "pause_handover_due_uncertainty",
+        "label": "남은 불확실성이 있어 다음 작업 인계를 잠시 보류한다.",
+        "samples": 2102,
+        "meanHp": 235.4,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 2102,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_recovery",
+        "actionId": "stop_and_report_condition",
+        "label": "시험을 중지하고 상태를 보호한 뒤 즉시 보고한다.",
+        "samples": 290,
+        "meanHp": 233.1,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 290,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_recovery",
+        "actionId": "coordinate_limited_recovery",
+        "label": "팀과 상태를 확인한 뒤 승인된 범위 안에서 복구를 시도한다.",
+        "samples": 290,
+        "meanHp": 209.2,
+        "favorableEndingRate": 0,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 0,
+          "near_miss": 266,
+          "event": 24
+        }
+      },
+      {
+        "nodeId": "decision_recovery",
+        "actionId": "finish_step_then_report",
+        "label": "현재 시험 단계를 끝낸 뒤 상태를 정리해 보고한다.",
+        "samples": 290,
+        "meanHp": 203.6,
+        "favorableEndingRate": 0,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 0,
+          "near_miss": 242,
+          "event": 48
+        }
+      }
+    ],
+    "warnings": [],
+    "examples": [
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "hold_and_verify_conditions"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "closeout_and_handover"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "hold_and_verify_conditions"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "verify_final_state"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 231,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "hold_and_verify_conditions"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "pause_handover_due_uncertainty"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "repeat_back_hold_instruction"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "closeout_and_handover"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "repeat_back_hold_instruction"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "verify_final_state"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 231,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "repeat_back_hold_instruction"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "pause_handover_due_uncertainty"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 232,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "advance_familiar_test_step"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "closeout_and_handover"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 232,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "advance_familiar_test_step"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "verify_final_state"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 227,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "rebrief_changed_schedule"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "advance_familiar_test_step"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "pause_handover_due_uncertainty"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 236,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "confirm_changed_boundary"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "hold_and_verify_conditions"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "closeout_and_handover"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 236,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "confirm_changed_boundary"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "hold_and_verify_conditions"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "verify_final_state"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 231,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_schedule",
+            "actionType": "choice",
+            "actionId": "confirm_changed_boundary"
+          },
+          {
+            "nodeId": "event_hold_instruction",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_hold_point",
+            "actionType": "choice",
+            "actionId": "hold_and_verify_conditions"
+          },
+          {
+            "nodeId": "event_test_stable",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_closeout",
+            "actionType": "choice",
+            "actionId": "pause_handover_due_uncertainty"
+          }
+        ]
+      }
+    ]
+  }
+}

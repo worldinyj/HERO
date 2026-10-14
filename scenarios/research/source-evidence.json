@@ -1,15 +1,12 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-07",
+  "updatedAt": "2026-10-14",
   "entries": [
     {
       "scenarioId": "s01_time_pressure",
-      "sourceVerdict": "partial",
-      "rightsVerdict": "partial",
-      "missing": [
-        "OPIS/NSIC event-specific direct record URL, identifier, or PDF",
-        "2012 KHNP notice/attachment item-specific rights marker"
-      ],
+      "sourceVerdict": "complete",
+      "rightsVerdict": "complete",
+      "missing": [],
       "sources": [
         {
           "id": "s01-iaea-event",
@@ -34,14 +31,14 @@
           "url": "https://www.khnp.co.kr/main/selectBbsNttView.do?bbsNo=67&key=2288&nttNo=22297",
           "eventSpecific": true,
           "purpose": [
-            "event_facts",
-            "hf_context"
+            "historical_research_locator_only"
           ],
           "rights": {
-            "status": "unverified",
+            "status": "not_used_for_reproduction",
             "license": null,
-            "evidenceUrl": "https://www.khnp.co.kr/main/contents.do?key=406"
-          }
+            "evidenceUrl": null
+          },
+          "retrievalNote": "기존 공지는 현재 홈으로 이동. 첨부의 이용허락은 확인하지 않았으며 현재 v4 공개 문안의 재사용 근거로 채택하지 않음."
         },
         {
           "id": "s01-nssc-statistics",
@@ -106,18 +103,52 @@
             "license": null,
             "evidenceUrl": null
           }
+        },
+        {
+          "id": "s01-nsic-event-record",
+          "authority": "원자력안전정보공개센터 / KINS 사건조사",
+          "sourceClass": "official_primary",
+          "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
+          "eventSpecific": true,
+          "recordId": "832",
+          "managementNumber": "고리1호기-2012-4",
+          "accessedAt": "2026-10-14",
+          "retrieval": "원전 사고·고장 목록에서 사건제목 링크를 열어 상세 확인. 고유 관리번호 기록; 안정적인 별도 상세 URL 없음.",
+          "purpose": [
+            "event_identity",
+            "investigation_result",
+            "corrective_actions"
+          ],
+          "rights": {
+            "status": "not_used_for_reproduction",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s01-khnp-mission-press-20120611",
+          "authority": "한국수력원자력",
+          "sourceClass": "official_primary",
+          "url": "https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384",
+          "eventSpecific": true,
+          "purpose": [
+            "mission_context",
+            "leadership_safety_culture_context"
+          ],
+          "rights": {
+            "status": "verified",
+            "license": "공공누리 제1유형 (이 보도자료 본문에 한정; 기존 최종보고서 첨부에 상속하지 않음)",
+            "evidenceUrl": "https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384"
+          }
         }
-      ]
+      ],
+      "rightsScope": "현재 S01 v4는 공식 사건 사실을 독립적으로 설명하고, 안전문화 맥락은 개별 공공누리 제1유형을 확인한 한수원 보도자료 본문에 근거한다. 기존 2012 미션 보고서 원문·표·그림·첨부는 재사용하지 않는다. 비상업 목적이라는 사용자 설명을 허락 증빙으로 대체하지 않는다. 사용하지 않는 첨부의 개별 이용조건은 현재 문안의 승격 장애로 두지 않는다."
     },
     {
       "scenarioId": "s02_equipment_identity",
-      "sourceVerdict": "partial",
-      "rightsVerdict": "partial",
-      "missing": [
-        "NSSC direct-host or Policy Briefing event investigation/result page",
-        "OPIS/NSIC event-specific direct record URL, identifier, or PDF",
-        "item-specific text reuse marker for the direct official result"
-      ],
+      "sourceVerdict": "complete",
+      "rightsVerdict": "complete",
+      "missing": [],
       "sources": [
         {
           "id": "s02-khnp-chronology",
@@ -197,8 +228,63 @@
             "license": null,
             "evidenceUrl": null
           }
+        },
+        {
+          "id": "s02-nsic-event-record",
+          "authority": "원자력안전정보공개센터 / KINS 사건조사",
+          "sourceClass": "official_primary",
+          "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
+          "eventSpecific": true,
+          "recordId": "1006",
+          "managementNumber": "신한울1호기-2024-1",
+          "accessedAt": "2026-10-14",
+          "retrieval": "원전 사고·고장 목록에서 사건제목 링크를 열어 상세 확인. 고유 관리번호 기록; 안정적인 별도 상세 URL 없음.",
+          "purpose": [
+            "event_identity",
+            "investigation_result",
+            "corrective_actions"
+          ],
+          "rights": {
+            "status": "not_used_for_reproduction",
+            "license": null,
+            "evidenceUrl": null
+          }
+        },
+        {
+          "id": "s02-nssc-original-20240417",
+          "authority": "원자력안전위원회",
+          "sourceClass": "official_primary",
+          "url": "https://www.nssc.go.kr/ko/cms/FR_BBS_CON/BoardView.do?BBS_SEQ=46557&BOARD_SEQ=5&MENU_ID=190&SITE_NO=2",
+          "eventSpecific": true,
+          "purpose": [
+            "investigation_result_crosscheck",
+            "item_rights_comparison"
+          ],
+          "rights": {
+            "status": "verified",
+            "license": "공공누리 제4유형 (출처표시·상업적 이용금지·변경금지). 이 호스트 원문·이미지·첨부를 게임에 복제·각색하지 않음.",
+            "evidenceUrl": "https://www.nssc.go.kr/ko/cms/FR_BBS_CON/BoardView.do?BBS_SEQ=46557&BOARD_SEQ=5&MENU_ID=190&SITE_NO=2"
+          }
+        },
+        {
+          "id": "s02-policy-original-20240417",
+          "authority": "원자력안전위원회 / 대한민국 정책브리핑",
+          "sourceClass": "official_primary",
+          "url": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156625772",
+          "eventSpecific": true,
+          "purpose": [
+            "investigation_result",
+            "corrective_actions",
+            "text_reuse_basis"
+          ],
+          "rights": {
+            "status": "verified",
+            "license": "해당 정책브리핑 페이지 텍스트에 한하여 공공누리 제1유형 (출처표시). 사진·이미지·PDF 등 비텍스트 권리는 포함하지 않음.",
+            "evidenceUrl": "https://www.korea.kr/briefing/pressReleaseView.do?newsId=156625772"
+          }
         }
-      ]
+      ],
+      "rightsScope": "공개 해설은 정책브리핑 텍스트 이용조건에 따라 출처를 명시한 독립 작성 문안. NSIC 상세는 사실 확인에만 사용. 원안위 직접 호스트의 제4유형 표시를 제1유형으로 바꿔 해석하지 않으며 비텍스트 자료는 재사용하지 않음."
     },
     {
       "scenarioId": "s03_procedure_reality_gap",

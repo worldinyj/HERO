@@ -1,0 +1,616 @@
+{
+  "measuredAt": "2026-10-14",
+  "sourcePath": "scenarios/drafts/S02_equipment_identity_v1.json",
+  "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
+  "interpretation": "전 경로 탐색의 행동 이력 집계. 실제 사건 확률이나 실제 참여자의 선택 분포가 아님.",
+  "report": {
+    "scenarioId": "s02_equipment_identity",
+    "scenarioVersion": 4,
+    "simulationSeeds": [
+      "balance-seed-1",
+      "balance-seed-2",
+      "balance-seed-3"
+    ],
+    "complete": true,
+    "exploredStates": 11775,
+    "terminalPaths": 6624,
+    "endingCounts": {
+      "safe_complete": 4296,
+      "safe_stop": 2208,
+      "near_miss": 112,
+      "event": 8
+    },
+    "endingRates": {
+      "safe_complete": 0.6486,
+      "safe_stop": 0.3333,
+      "near_miss": 0.0169,
+      "event": 0.0012
+    },
+    "hp": {
+      "min": 184,
+      "max": 248,
+      "mean": 240.2
+    },
+    "choices": [
+      {
+        "nodeId": "decision_identify",
+        "actionId": "inspect_local_identification",
+        "label": "현장 표식과 조작부를 가까이서 다시 식별한다.",
+        "samples": 2160,
+        "meanHp": 241.6,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 1440,
+          "safe_stop": 720,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_identify",
+        "actionId": "compare_work_document",
+        "label": "작업 문서와 현장 상태를 한 항목씩 대조한다.",
+        "samples": 2160,
+        "meanHp": 241.8,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 1440,
+          "safe_stop": 720,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_identify",
+        "actionId": "proceed_from_context",
+        "label": "현재 위치와 작업 맥락을 근거로 대상이 맞다고 보고 진행한다.",
+        "samples": 2304,
+        "meanHp": 237.4,
+        "favorableEndingRate": 0.9479,
+        "endingCounts": {
+          "safe_complete": 1416,
+          "safe_stop": 768,
+          "near_miss": 112,
+          "event": 8
+        }
+      },
+      {
+        "nodeId": "decision_verify",
+        "actionId": "request_independent_check",
+        "label": "다른 근거와 사람을 이용해 독립확인을 요청한다.",
+        "samples": 2160,
+        "meanHp": 241,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 1440,
+          "safe_stop": 720,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_verify",
+        "actionId": "pause_and_contact_supervisor",
+        "label": "작업을 잠시 멈추고 감독자·동료와 상태를 다시 확인한다.",
+        "samples": 2160,
+        "meanHp": 241,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 1440,
+          "safe_stop": 720,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_verify",
+        "actionId": "self_check_then_proceed",
+        "label": "현재까지 모은 정보로 자기확인을 한 뒤 진행한다.",
+        "samples": 2304,
+        "meanHp": 238.6,
+        "favorableEndingRate": 0.9479,
+        "endingCounts": {
+          "safe_complete": 1416,
+          "safe_stop": 768,
+          "near_miss": 112,
+          "event": 8
+        }
+      },
+      {
+        "nodeId": "decision_complete",
+        "actionId": "complete_with_peer_confirmation",
+        "label": "확인 내용을 팀과 공유하고 작업을 완료한다.",
+        "samples": 2148,
+        "meanHp": 242.5,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 2148,
+          "safe_stop": 0,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_complete",
+        "actionId": "complete_after_final_self_check",
+        "label": "마지막 자기확인 후 작업을 완료한다.",
+        "samples": 2148,
+        "meanHp": 242.1,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 2148,
+          "safe_stop": 0,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_complete",
+        "actionId": "stop_for_residual_uncertainty",
+        "label": "남아 있는 불확실성을 이유로 작업을 중지하고 추가 확인을 요청한다.",
+        "samples": 2148,
+        "meanHp": 237.9,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 2148,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_recovery",
+        "actionId": "stop_report_and_protect",
+        "label": "즉시 작업을 중지하고 상태를 보호한 뒤 보고한다.",
+        "samples": 60,
+        "meanHp": 233.8,
+        "favorableEndingRate": 1,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 60,
+          "near_miss": 0,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_recovery",
+        "actionId": "verify_state_before_recovery",
+        "label": "표시와 문서, 팀의 확인과 허용범위를 대조한 뒤 승인된 범위에서 복구를 시도한다.",
+        "samples": 60,
+        "meanHp": 212.3,
+        "favorableEndingRate": 0,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 0,
+          "near_miss": 60,
+          "event": 0
+        }
+      },
+      {
+        "nodeId": "decision_recovery",
+        "actionId": "continue_and_monitor",
+        "label": "일시적인 반응일 수 있다고 보고 작업을 계속하면서 변화를 관찰한다.",
+        "samples": 60,
+        "meanHp": 205.1,
+        "favorableEndingRate": 0,
+        "endingCounts": {
+          "safe_complete": 0,
+          "safe_stop": 0,
+          "near_miss": 52,
+          "event": 8
+        }
+      }
+    ],
+    "warnings": [],
+    "examples": [
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 236,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "request_independent_check"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_with_peer_confirmation"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "request_independent_check"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_after_final_self_check"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 231,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "request_independent_check"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "stop_for_residual_uncertainty"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 236,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "pause_and_contact_supervisor"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_with_peer_confirmation"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "pause_and_contact_supervisor"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_after_final_self_check"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 231,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "pause_and_contact_supervisor"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "stop_for_residual_uncertainty"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "self_check_then_proceed"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_with_peer_confirmation"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 235,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "self_check_then_proceed"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_after_final_self_check"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 230,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "inspect_local_identification"
+          },
+          {
+            "nodeId": "scene_after_identification",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "self_check_then_proceed"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "stop_for_residual_uncertainty"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 236,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "compare_work_document"
+          },
+          {
+            "nodeId": "scene_after_document",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "request_independent_check"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_with_peer_confirmation"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_complete",
+        "hpPoint": 236,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "compare_work_document"
+          },
+          {
+            "nodeId": "scene_after_document",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "request_independent_check"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "complete_after_final_self_check"
+          }
+        ]
+      },
+      {
+        "simulationSeed": "balance-seed-1",
+        "ending": "safe_stop",
+        "hpPoint": 231,
+        "actions": [
+          {
+            "nodeId": "intro",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_identify",
+            "actionType": "choice",
+            "actionId": "compare_work_document"
+          },
+          {
+            "nodeId": "scene_after_document",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_verify",
+            "actionType": "choice",
+            "actionId": "request_independent_check"
+          },
+          {
+            "nodeId": "event_target_confirmed",
+            "actionType": "continue"
+          },
+          {
+            "nodeId": "decision_complete",
+            "actionType": "choice",
+            "actionId": "stop_for_residual_uncertainty"
+          }
+        ]
+      }
+    ]
+  }
+}
