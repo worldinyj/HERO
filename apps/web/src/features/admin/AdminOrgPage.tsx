@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
@@ -6,6 +6,8 @@ import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult, readManagerReinviteLink } from "../manager/inviteResponse";
 import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
+import { AdminManagerRoster } from "./AdminManagerRoster";
+import { exactManagerCount, isCurrentManager, readPlantManagerCounts, type ManagerRow } from "./adminManagerRoster";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
 import { groupedPlantSuggestions, khnpGroupLabel, KHNP_PLANT_CATALOG } from "./khnpPlantCatalog";
@@ -18,18 +20,6 @@ interface PlantRow {
   is_active: boolean;
   invitation_epoch: number;
   created_at: string;
-}
-
-interface ManagerRow {
-  id: string;
-  plant_id: string | null;
-  real_name: string;
-  nickname: string;
-  is_active: boolean;
-  plants:
-    | { display_name: string; code: string }
-    | Array<{ display_name: string; code: string }>
-    | null;
 }
 
 interface InviteResult {
@@ -74,7 +64,8 @@ function managerPlantLabel(row: ManagerRow): string {
 export function AdminOrgPage() {
   const rosterGate = useRef(new ReadRequestGate());
   const [plants, setPlants] = useState<PlantRow[]>([]);
-  const [managers, setManagers] = useState<ManagerRow[]>([]);
+  const [activeManagerCount, setActiveManagerCount] = useState(0);
+  const [managerCountByPlant, setManagerCountByPlant] = useState(new Map<string, number>());
   const [pendingManagerInvites, setPendingManagerInvites] = useState<PendingManagerInviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,13 +109,15 @@ export function AdminOrgPage() {
       const [plantResult, managerResult, inviteResult] = await Promise.all([
         supabase
           .from("plants")
-          .select("id, code, name, display_name, is_active, invitation_epoch, created_at")
+          .select("id, code, name, display_name, is_active, invitation_epoch, created_at, profiles(count)")
+          .eq("profiles.role", "plant_manager")
+          .eq("profiles.is_active", true)
           .order("display_name", { ascending: true }),
         supabase
           .from("profiles")
-          .select("id, plant_id, real_name, nickname, is_active, plants(display_name, code)")
+          .select("id", { count: "exact", head: true })
           .eq("role", "plant_manager")
-          .order("real_name", { ascending: true }),
+          .eq("is_active", true),
         supabase
           .from("invitations")
           .select("id, plant_id, invitee_name, plant_invitation_epoch, expires_at, created_at, plants(display_name, code)")
@@ -140,12 +133,15 @@ export function AdminOrgPage() {
       if (plantResult.error) throw plantResult.error;
       if (managerResult.error) throw managerResult.error;
       if (inviteResult.error) throw inviteResult.error;
-      if (!isValidAdminOrgLists(plantResult.data, managerResult.data, inviteResult.data)) {
+      if (!isValidAdminOrgLists(plantResult.data, [], inviteResult.data)) {
         throw new Error("admin_org_result_invalid");
       }
 
+      const counts = readPlantManagerCounts(plantResult.data);
+      const activeCount = exactManagerCount(managerResult.count);
       setPlants(plantResult.data as PlantRow[]);
-      setManagers(managerResult.data as unknown as ManagerRow[]);
+      setManagerCountByPlant(counts);
+      setActiveManagerCount(activeCount);
       setPendingManagerInvites(currentPendingInvitations(
         plantResult.data as PlantRow[],
         inviteResult.data as unknown as PendingManagerInviteRow[],
@@ -178,15 +174,6 @@ export function AdminOrgPage() {
     return () => rosterGate.current.invalidate();
     // Mount-scoped read; mutations start independent revisions.
   }, []);
-
-  const managerCountByPlant = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const manager of managers) {
-      if (!manager.plant_id || !manager.is_active) continue;
-      counts.set(manager.plant_id, (counts.get(manager.plant_id) ?? 0) + 1);
-    }
-    return counts;
-  }, [managers]);
 
   async function reconcilePlantMutations() {
     if (creatingPlant || plantActionPending || plantRosterPending) return;
@@ -372,6 +359,10 @@ export function AdminOrgPage() {
       setCopied(false);
 
       const supabase = getSupabase();
+      if (manager && !await isCurrentManager(supabase, manager)) {
+        setManagerReinviteReview(null);
+        throw new Error("선택한 담당자의 현재 정보를 확인하지 못했습니다. 담당자 목록을 다시 검색한 뒤 확인해주세요.");
+      }
       const { data, error: invokeError } = await supabase.functions.invoke(
         manager ? "manager-user-action" : "create-invite",
         {
@@ -761,7 +752,7 @@ export function AdminOrgPage() {
             <p className="eyebrow">Plant Manager</p>
             <h3>담당자 초대</h3>
           </div>
-          <span className="count-badge">{managers.filter((row) => row.is_active).length}</span>
+          <span className="count-badge">{activeManagerCount}</span>
         </div>
 
         <div className="admin-form-grid">
@@ -927,33 +918,11 @@ export function AdminOrgPage() {
           </div>
         ) : null}
 
-        <div className="admin-list">
-          {managers.length === 0 ? (
-            <p className="muted">등록된 발전소담당자가 없습니다.</p>
-          ) : (
-            managers.map((manager) => (
-              <article key={manager.id} className="admin-row">
-                <div>
-                  <strong>{manager.real_name}</strong>
-                  <span>{manager.nickname} · {managerPlantLabel(manager)}</span>
-                </div>
-                <div className="admin-row-actions">
-                  <span className={manager.is_active ? "status-pill status-pill--active" : "status-pill"}>
-                    {manager.is_active ? "활성" : "비활성"}
-                  </span>
-                  <button type="button" className="secondary-button compact-button"
-                    aria-label={`${manager.real_name} 담당자 초대링크 재생성`}
-                    disabled={!manager.is_active || !plants.some(p => p.id === manager.plant_id && p.is_active) ||
-                      creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||
-                      createOutcomeUnknown || adminRosterPending || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0}
-                    onClick={() => { setManagerReinviteReview(manager); setError(null); }}>
-                    초대링크 재생성
-                  </button>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
+        <AdminManagerRoster plants={plants}
+          disabled={creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||
+            createOutcomeUnknown || adminRosterPending || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0}
+          onSelect={manager => { setManagerReinviteReview(manager); setError(null); }}
+          onQueryChange={() => setManagerReinviteReview(null)} />
         <p className="muted mini-copy">활성은 계정 사용 허용 상태입니다. 재생성한 링크는 기존 담당자의 동일한 카카오 계정으로 사용해주세요.</p>
       </section>
     </section>

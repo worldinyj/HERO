@@ -6,7 +6,7 @@ const plantId = "f5200000-0000-0000-0000-000000000001";
 const inviteId = "f5300000-0000-0000-0000-000000000001";
 
 // Intercept every Supabase call: UI checks cannot mutate local or remote data.
-async function fixture(page: Page, failure = false, managerSession = false) {
+async function fixture(page: Page, failure = false, managerSession = false, roster = false) {
   const calls: unknown[] = [];
   const userId = managerSession ? managerId : adminId;
   const user = { id: userId, aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
@@ -20,10 +20,20 @@ async function fixture(page: Page, failure = false, managerSession = false) {
     if (url.hostname !== "127.0.0.1") throw new Error("Fixture requires loopback Supabase");
     let body: unknown;
     let status = 200;
+    let total = 1;
     if (url.pathname === "/rest/v1/profiles") {
-      body = url.searchParams.has("role") ? [{ id: managerId, plant_id: plantId, real_name: "테스트 담당자", nickname: "TESTLEAD", is_active: true, plants: { display_name: "테스트 발전소", code: "TEST" } }] : { id: userId, plant_id: managerSession ? plantId : null, role: managerSession ? "plant_manager" : "admin", real_name: "테스트 계정", nickname: "TESTUSER", is_active: true, nickname_reset_required: false, job_role: null };
+      if (!url.searchParams.has("role")) {
+        body = { id: userId, plant_id: managerSession ? plantId : null, role: managerSession ? "plant_manager" : "admin", real_name: "테스트 계정", nickname: "TESTUSER", is_active: true, nickname_reset_required: false, job_role: null };
+      } else {
+        const managers = Array.from({ length: roster ? 21 : 1 }, (_, i) => ({ id: i === 0 ? managerId : `f5100000-0000-0000-0000-${String(i + 2).padStart(12, "0")}`, plant_id: plantId, real_name: i === 0 ? "테스트 담당자" : `담당자 ${String(i).padStart(2, "0")}`, nickname: `LEAD${i}`, is_active: true, plants: { display_name: "테스트 발전소", code: "TEST" } }));
+        const name = url.searchParams.get("real_name");
+        const filtered = name ? managers.filter(m => m.real_name.includes(name.replace(/^ilike\.%|%$/gu, ""))) : managers;
+        total = filtered.length;
+        const offset = Number(url.searchParams.get("offset") ?? 0);
+        body = url.searchParams.has("id") ? managers[0] : filtered.slice(offset, offset + Number(url.searchParams.get("limit") ?? 20));
+      }
     } else if (url.pathname === "/rest/v1/plants") {
-      body = [{ id: plantId, code: "TEST", name: "테스트 발전소", display_name: "테스트 발전소", is_active: true, invitation_epoch: 0, created_at: new Date().toISOString() }];
+      body = [{ id: plantId, code: "TEST", name: "테스트 발전소", display_name: "테스트 발전소", is_active: true, invitation_epoch: 0, profiles: [{ count: roster ? 21 : 1 }], created_at: new Date().toISOString() }];
     } else if (url.pathname === "/rest/v1/invitations") body = [];
     else if (url.pathname === "/auth/v1/user") body = user;
     else if (url.pathname === "/functions/v1/manager-user-action") {
@@ -37,7 +47,7 @@ async function fixture(page: Page, failure = false, managerSession = false) {
       status = 403;
       body = { error: "invitation_account_mismatch" };
     } else throw new Error(`Unexpected fixture request: ${url.pathname}`);
-    await route.fulfill({ status, json: body });
+    await route.fulfill({ status, json: body, headers: { "content-range": `0-19/${total}` } });
   });
   return calls;
 }
@@ -83,4 +93,64 @@ test("bound invitation omits signup fields and explains account mismatch", async
   await button.click();
   await expect(page.getByText("현재 로그인한 계정은 이 링크의 대상이 아닙니다.", { exact: false })).toBeVisible();
   expect(calls).toEqual([{ token: "fixture-token" }]);
+});
+
+
+test("manager search and pages preserve global counts and clear a previous invitation review", async ({ page }) => {
+  const calls = await fixture(page, false, false, true);
+  await page.goto("/admin");
+  const roster = page.getByRole("region", { name: "담당자 목록 검색", exact: true });
+  await expect(roster).toContainText("검색 결과 21명");
+  await expect(roster.locator("article")).toHaveCount(20);
+  await roster.getByRole("button", { name: "테스트 담당자 담당자 초대링크 재생성", exact: true }).click();
+  const review = page.getByRole("group", { name: "담당자 초대링크 재생성 확인" });
+  await expect(review).toBeVisible();
+  await roster.getByRole("button", { name: "다음 담당자 페이지" }).click();
+  await expect(review).not.toBeVisible();
+  await expect(roster).toContainText("2 / 2페이지");
+  await expect(roster.locator("article")).toHaveCount(1);
+  await roster.getByRole("textbox", { name: "담당자 이름 검색" }).fill("테스트");
+  await roster.getByRole("button", { name: "담당자 검색", exact: true }).click();
+  await expect(roster).toContainText("검색 결과 1명");
+  await expect(roster).toContainText("1 / 1페이지");
+  await expect(page.getByText("담당자 21명", { exact: true })).toBeVisible();
+  expect(calls).toEqual([]);
+});
+
+test("manager read failure hides stale rows and can be retried without releasing invite locks", async ({ page }) => {
+  const calls = await fixture(page);
+  let denied = true;
+  await page.route("**/rest/v1/profiles?**", async route => {
+    const url = new URL(route.request().url());
+    if (denied && url.searchParams.has("real_name")) {
+      await route.fulfill({ status: 403, json: { message: "denied" } });
+    } else await route.fallback();
+  });
+  await page.goto("/admin");
+  const roster = page.getByRole("region", { name: "담당자 목록 검색", exact: true });
+  await expect(roster.locator("article")).toHaveCount(1);
+  await roster.getByRole("textbox", { name: "담당자 이름 검색" }).fill("테스트");
+  await roster.getByRole("button", { name: "담당자 검색", exact: true }).click();
+  await expect(roster.getByRole("alert")).toBeVisible();
+  await expect(roster.locator("article")).toHaveCount(0);
+  denied = false;
+  await roster.getByRole("button", { name: "담당자 목록 다시 조회" }).click();
+  await expect(roster).toContainText("검색 결과 1명");
+  expect(calls).toEqual([]);
+});
+
+test("manager ID recheck failure prevents issuing a link", async ({ page }) => {
+  const calls = await fixture(page);
+  await page.route("**/rest/v1/profiles?**", async route => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.has("role") && url.searchParams.has("id")) {
+      await route.fulfill({ status: 403, json: { message: "denied" } });
+    } else await route.fallback();
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "테스트 담당자 담당자 초대링크 재생성", exact: true }).click();
+  await page.getByRole("button", { name: "초대링크 재생성 확정", exact: true }).click();
+  await expect(page.getByText("선택한 담당자의 현재 정보를 확인하지 못했습니다.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("group", { name: "담당자 초대링크 재생성 확인" })).not.toBeVisible();
+  expect(calls).toEqual([]);
 });
