@@ -155,7 +155,7 @@
         "licenseReviewedBy": "사용자 (기존 서비스 사용 권한 확인 및 2026-10-14 새 음성 사이트 적용 지시)",
         "hfReviewedBy": "사용자 (2026-10-14 새 음성 청취·발음·문장 끝·톤 승인)",
         "technicalReviewedBy": "Codex (FFmpeg 전체 디코딩·샘플 peak 확인; 독립 청취·실기기 검수 없음)",
-        "fileSha256": "fc1c431b4ee1689bf2e3146e280e534779d2755e610747b1f117687f3c262d3b",
+        "fileSha256": "9cda7da9f2e061f36352668e1ad19cdc14fd446b68553daae5afd87442f52b09",
         "reviewRecord": "assets/audio/reviews/NARRATION_S00_05_V2_CANDIDATE_TECHNICAL_QC.json"
       }
     },

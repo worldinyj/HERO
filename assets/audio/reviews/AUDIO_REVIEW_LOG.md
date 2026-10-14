@@ -82,4 +82,4 @@ BGM-05/06/07/08을 원본 보존 상태에서 보정하고 플레이·결과 단
 
 사용자가 ElevenLabs에서 새 음성을 생성해 후보 폴더에 저장했고, Eleven v4 사용과 새 파일의 발음·문장 끝·톤을 청취 승인한 뒤 사이트 적용을 지시했다. 같은 Jin Geon Song 보이스 선택은 생성 전 화면에서 확인했다. 설정값과 정확한 합성 시각은 확보하지 못했으므로 추정하지 않는다.
 
-MP3 전체 디코딩 PASS, 44.1kHz·모노·128kbps, 약 7.08초, sample peak -3.1dB다. 검수 기록은 `NARRATION_S00_05_V2_CANDIDATE_TECHNICAL_QC.json`이다. S00 v2의 `near_miss_end.summary`에 새 파일을 연결해 실행 음원은 17개(나레이션 5/BGM 4/SFX 5/stinger 3)가 된다. 이전 v1 파일과 승인 이력은 보존한다.
+MP3 전체 디코딩 PASS, 44.1kHz·모노·128kbps, 약 7.24초, sample peak -2.3dB다. 검수 기록은 `NARRATION_S00_05_V2_CANDIDATE_TECHNICAL_QC.json`이다. S00 v2의 `near_miss_end.summary`에 새 파일을 연결해 실행 음원은 17개(나레이션 5/BGM 4/SFX 5/stinger 3)가 된다. 이전 v1 파일과 승인 이력은 보존한다.
