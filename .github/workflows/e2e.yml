@@ -101,7 +101,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run mobile E2E flow
-        run: pnpm e2e
+        run: pnpm exec playwright test --max-failures=1
 
       - name: Collect Edge Function log
         if: failure()

@@ -28,7 +28,7 @@ export function ScenarioReviewPanel(props: PanelProps) {
   const [id, setId] = useState("s03_procedure_reality_gap");
   const target = targets.find(target => target.scenarioId === id) ?? targets[0];
   if (!target) return null;
-  return <div>
+  return <div className="scenario-review-targets">
     <label>검토할 시나리오<select aria-label="검토할 시나리오" value={target.scenarioId} onChange={event => { props.onTargetChange?.(); setId(event.target.value); }}>
       {targets.map(item => <option key={item.scenarioId} value={item.scenarioId}>{item.scenarioId.slice(0, 3).toUpperCase()} · {item.title} · v{item.version}</option>)}
     </select></label>
