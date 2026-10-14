@@ -10,6 +10,12 @@ function fixture() {
 describe("S02 HTO teaching input binding", () => {
   it("accepts the current normalized v4 content", async () => {
     expect(await matchesS02HtoInput(fixture())).toBe(true);
+    const reordered = JSON.parse(JSON.stringify(fixture(), (_key, value: unknown) => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+      const record = value as Record<string, unknown>;
+      return Object.fromEntries(Object.keys(record).reverse().map(key => [key, record[key]]));
+    }));
+    expect(await matchesS02HtoInput(ScenarioSchema.parse(reordered))).toBe(true);
   });
   it("does not attach the teaching draft to another version or altered content", async () => {
     const source = fixture();

@@ -1,12 +1,17 @@
 import type { Scenario } from "@hero/schema";
 
-// Hash of JSON.stringify(ScenarioSchema.parse(S02 v4)), not the approval hash
-// of the source file. This binds this separate teaching draft to its exact input.
-export const S02_HTO_INPUT_SHA256 = "1b97d3f7d6baffd661c8413e120fdf6f0c7adb45b7b97945325a66f981e334e1";
+// Hash of recursively key-sorted ScenarioSchema.parse(S02 v4), not the
+// source-file approval hash. JSONB transport may change object key order.
+export const S02_HTO_INPUT_SHA256 = "eba3dfb4ec719e79777c8796e0c639ab6529f2d2559e8a9d989694c27ccbc54c";
 
 export async function matchesS02HtoInput(scenario: Scenario): Promise<boolean> {
   if (scenario.id !== "s02_equipment_identity" || scenario.version !== 4) return false;
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(scenario)));
+  const content = JSON.stringify(scenario, (_key, value: unknown) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(Object.keys(record).sort().map(key => [key, record[key]]));
+  });
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(content));
   return Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, "0")).join("") === S02_HTO_INPUT_SHA256;
 }
 
