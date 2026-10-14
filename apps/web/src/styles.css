@@ -3057,6 +3057,8 @@ h3 {
 .scenario-review-hash { display: block; overflow-wrap: anywhere; margin-block: 0.75rem; }
 
 .scenario-review-form fieldset { border: 0; padding: 0; display: grid; gap: 0.8rem; min-width: 0; }
+.hto-feedback-form { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(138, 150, 173, 0.25); }
+.hto-feedback-form label:not(.review-confirmation) { display: grid; gap: 0.4rem; }
 .scenario-review-form label > input:not([type="checkbox"]), .scenario-review-form textarea { display: block; width: 100%; margin-top: 0.4rem; }
 .scenario-review-form textarea { min-height: 6rem; }
 .review-confirmation { display: flex; gap: 0.65rem; align-items: flex-start; }
