@@ -6,7 +6,7 @@
 >
 > Version: `4`
 >
-> Source file: `scenarios/drafts/S02_equipment_identity_v1.json`
+> Source file: `scenarios/data/S02_equipment_identity_v1.json`
 >
 > Review content SHA-256: `785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808`
 
@@ -14,18 +14,18 @@
 
 | 항목 | 값 |
 |---|---|
-| promotion status | **REVIEW_READY** |
+| promotion status | **APPROVED** |
 | sourceRightsComplete | `true` |
 | source verdict | `complete` |
 | rights verdict | `complete` |
-| HF review | `false` |
-| anonymization review | `false` |
-| human review | `pending` |
-| approved content SHA-256 | `not approved` |
+| HF review | `true` |
+| anonymization review | `true` |
+| human review | `approved` |
+| approved content SHA-256 | `785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808` |
 
 ### 현재 blocker
 
-- HF/anonymization/current-content human review
+- 없음
 
 ## 2. 시나리오 기본정보
 

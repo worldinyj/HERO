@@ -111,7 +111,7 @@
 | T3-02 | 부분 | `scenarios/research/T3_SOURCE_RIGHTS_REVIEW_V1.md` | S01/S02 SOURCE_HOLD, S03 v7 사용자 승인5/5·콘텐츠 승격 완료 |
 | T3-03 | 부분 | `scenarios/research/S01_HF_BRIEF_V1.md` | 3개 HF brief 작성, 분야별 사람 검토/승인 미완료 |
 | T3-04 | 부분 | `scenarios/drafts/S01_time_pressure_v1.json` | S01 JSON 초안 존재; 출처·사람 승인 대기 |
-| T3-05 | 부분 | `scenarios/drafts/S02_equipment_identity_v1.json` | S02 JSON 초안 존재; 출처·사람 승인 대기 |
+| T3-05 | 부분 | `scenarios/data/S02_equipment_identity_v1.json` | S02 v4 사용자 승인5/5·콘텐츠 승격 완료; 운영 게시·시즌 연결은 별도 |
 | T3-06 | 부분 | `scenarios/data/S03_procedure_reality_v1.json` | S03 v7 사용자 승인5/5·승인 해시 고정; 운영 게시·시즌 연결 후 확인 대기 |
 | T3-07 | 부분 | `scenarios/research/T3_BALANCE_REPORT_V1.md` | 밸런스 보고서 있으나 경쟁 콘텐츠 승인·실기 검증 남음 |
 | T3-08 | 구현 | `scenarios/data/S00_tutorial.json` | 기준선 main 소스 확인; PR #109 CI quality·pgTAP·E2E 성공 근거 참조. 항목별 실기기/사람 승인·최종 DoD 완료와 구분 |

@@ -6,27 +6,27 @@
     "contentSha256": "785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808",
     "previewSha256": "eba3dfb4ec719e79777c8796e0c639ab6529f2d2559e8a9d989694c27ccbc54c",
     "sourceRightsComplete": true,
-    "approved": false,
+    "approved": true,
     "areas": [
       {
         "area": "hf_accuracy",
-        "decision": "pending"
+        "decision": "pass"
       },
       {
         "area": "operations_context",
-        "decision": "pending"
+        "decision": "pass"
       },
       {
         "area": "anonymization",
-        "decision": "pending"
+        "decision": "pass"
       },
       {
         "area": "just_culture",
-        "decision": "pending"
+        "decision": "pass"
       },
       {
         "area": "incident_debrief",
-        "decision": "pending"
+        "decision": "pass"
       }
     ]
   },

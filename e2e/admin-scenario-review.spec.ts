@@ -3,7 +3,7 @@ import reviewTarget from "../apps/web/src/features/admin/scenarioReviewStatus.ge
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import draft from "../scenarios/data/S03_procedure_reality_v1.json" with { type: "json" };
-import s02 from "../scenarios/drafts/S02_equipment_identity_v1.json" with { type: "json" };
+import s02 from "../scenarios/data/S02_equipment_identity_v1.json" with { type: "json" };
 import targets from "../apps/web/src/features/admin/scenarioReviewTargets.generated.json" with { type: "json" };
 import htoTarget from "../apps/web/src/features/admin/htoReviewTarget.generated.json" with { type: "json" };
 import { validateReviewSubmission } from "../apps/web/src/features/admin/scenarioReviewSubmission";
@@ -149,12 +149,12 @@ test("editing a confirmed result or changing the target locks download while ret
 });
 
 
-test("S02 review selection binds its own content hash and cannot inherit S03 approval", async ({ page }) => {
+test("S02 approved review selection binds its own content hash and downloads cannot change approval", async ({ page }) => {
   const { calls } = await fixture(page, { s02: true });
   await page.getByLabel("검토할 시나리오", { exact: true }).selectOption(s02.id);
   const panel = page.getByRole("region", { name: "S02 검토 및 승인 진행", exact: true });
-  await expect(panel).toContainText("필수 검토 0/5 통과");
-  await expect(panel).toContainText("최종 콘텐츠 승인: 대기");
+  await expect(panel).toContainText("필수 검토 5/5 통과");
+  await expect(panel).toContainText("최종 콘텐츠 승인: 기록 확인");
   await panel.getByLabel("저장된 S02 버전", { exact: true }).selectOption(versionId);
   await panel.getByRole("button", { name: "저장된 검토 대상 확인", exact: true }).click();
   const form = panel.getByRole("region", { name: "검토 결과 작성·다운로드", exact: true });
@@ -175,7 +175,7 @@ test("S02 review selection binds its own content hash and cannot inherit S03 app
   expect(packet).not.toHaveProperty("artifactSha256");
   await panel.getByRole("button", { name: "S02 검토용 미리보기 열기", exact: true }).click();
   await expect(page.locator(".admin-preview-player")).toContainText("S02 검토 대상과 내용 일치 확인");
-  await expect(panel).toContainText("필수 검토 0/5 통과");
+  await expect(panel).toContainText("필수 검토 5/5 통과");
   await page.getByLabel("검토할 시나리오", { exact: true }).selectOption(draft.id);
   await expect(page.locator(".admin-preview-player")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "S03 검토 및 승인 진행", exact: true })).toContainText("필수 검토 5/5 통과");

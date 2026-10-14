@@ -301,6 +301,6 @@ HF와 HU Tool 정확성, 원자력 운전·정비 맥락, 익명화·운전정�
 
 전 경로 탐색은 완료됐고 네 엔딩 모두 도달 가능하다. 종결 행동 이력은 6,624개, HP 범위는 184~248, 경고는 0개다. 경로 수와 비율은 실제 사건 확률이나 참여자 행동 분포가 아니다.
 
-원본: `scenarios/drafts/S02_equipment_identity_v1.json`
+원본: `scenarios/data/S02_equipment_identity_v1.json`
 검토 SHA256: `785f0306628d4f336675d61a94060b461165e3760d6296091694aa748570c808`
 

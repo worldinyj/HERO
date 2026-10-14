@@ -85,7 +85,7 @@ Draft 검증:
 ```bash
 pnpm validate:scenario scenarios/drafts
 pnpm simulate:scenario -- --scenario=scenarios/drafts/S01_time_pressure_v1.json
-pnpm simulate:scenario -- --scenario=scenarios/drafts/S02_equipment_identity_v1.json
+pnpm simulate:scenario -- --scenario=scenarios/data/S02_equipment_identity_v1.json
 pnpm simulate:scenario -- --scenario=scenarios/drafts/S03_procedure_reality_v1.json
 ```
 

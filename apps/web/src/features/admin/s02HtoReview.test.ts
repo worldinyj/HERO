@@ -7,7 +7,7 @@ import { HtoDraftFeedback } from "./HtoDraftFeedback";
 import { matchesS02HtoInput } from "./s02HtoReview";
 
 function fixture() {
-  return ScenarioSchema.parse(JSON.parse(readFileSync(new URL("../../../../../scenarios/drafts/S02_equipment_identity_v1.json", import.meta.url), "utf8")));
+  return ScenarioSchema.parse(JSON.parse(readFileSync(new URL("../../../../../scenarios/data/S02_equipment_identity_v1.json", import.meta.url), "utf8")));
 }
 
 describe("S02 HTO teaching input binding", () => {
