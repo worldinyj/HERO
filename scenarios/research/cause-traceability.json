@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-13",
+  "updatedAt": "2026-10-14",
   "entries": [
     {
       "scenarioId": "s03_procedure_reality_gap",
@@ -314,6 +314,206 @@
           "SW02B",
           "127R",
           "127P"
+        ]
+      }
+    },
+    {
+      "scenarioId": "s02_equipment_identity",
+      "scenarioVersion": 4,
+      "sourceDocument": {
+        "authority": "원자력안전정보공개센터 / 한국원자력안전기술원(KINS)",
+        "documentId": "신한울1호기-2024-1; NSIC 화면 식별자 1006",
+        "title": "신한울1호기 여자기 교류차단기 개방에 따른 터빈정지 및 원자로출력 감소 후 제논축적에 의한 원자로정지",
+        "usage": "internal_factual_hf_analysis",
+        "publicAsset": false
+      },
+      "causes": [
+        {
+          "id": "direct-01",
+          "classification": "direct",
+          "label": "발전기 여자기 전류 공급과 관련된 차단기 회로가 의도와 다른 상태로 구성되어 있었다.",
+          "provenance": "nsic_explicit_fact",
+          "evidenceAnchors": [
+            "NSIC 신한울1호기-2024-1 상세 사건조사결과·사건경위 문단"
+          ],
+          "barriers": [
+            "B-01"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-03"
+          ]
+        },
+        {
+          "id": "direct-02",
+          "classification": "direct",
+          "label": "정비원이 차단기 조작부를 상태표시 요소로 오인해 조작하면서 터빈·발전기 정지가 발생했다.",
+          "provenance": "nsic_explicit_fact",
+          "evidenceAnchors": [
+            "NSIC 신한울1호기-2024-1 상세 사건조사결과·사건경위 문단"
+          ],
+          "barriers": [
+            "B-02"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-04"
+          ]
+        },
+        {
+          "id": "root-01",
+          "classification": "root",
+          "label": "공식 사건조사에서는 제작사의 도면 개정 오류를 공급사가 확인하지 못해 잘못된 회로 구성이 남은 것으로 확인했다.",
+          "provenance": "hero_classification_of_nsic_confirmed_causes",
+          "evidenceAnchors": [
+            "NSIC 신한울1호기-2024-1 상세 사건조사결과·사건경위 문단"
+          ],
+          "barriers": [
+            "B-01"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-03"
+          ]
+        },
+        {
+          "id": "root-02",
+          "classification": "root",
+          "label": "공식 사건조사에서는 현장패널 조작기기의 정보가 충분하지 않아 정비원의 식별 오인을 유발한 것으로 확인했다.",
+          "provenance": "hero_classification_of_nsic_confirmed_causes",
+          "evidenceAnchors": [
+            "NSIC 신한울1호기-2024-1 상세 사건조사결과·사건경위 문단"
+          ],
+          "barriers": [
+            "B-02"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-04"
+          ]
+        },
+        {
+          "id": "contributing-01",
+          "classification": "contributing",
+          "label": "공식 근거: 조작 요소와 상태표시 요소를 혼동할 수 있는 현장패널 정보 부족",
+          "provenance": "nsic_explicit_fact",
+          "evidenceAnchors": [
+            "NSIC 신한울1호기-2024-1 상세 사건조사결과·사건경위 문단"
+          ],
+          "barriers": [
+            "B-02"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-04"
+          ]
+        },
+        {
+          "id": "contributing-02",
+          "classification": "contributing",
+          "label": "공식 근거: 잠재적인 잘못된 회로 구성과 현장 조작이 결합",
+          "provenance": "nsic_explicit_fact",
+          "evidenceAnchors": [
+            "NSIC 신한울1호기-2024-1 상세 사건조사결과·사건경위 문단"
+          ],
+          "barriers": [
+            "B-01"
+          ],
+          "correctiveActions": [
+            "CA-01",
+            "CA-03"
+          ]
+        },
+        {
+          "id": "contributing-03",
+          "classification": "contributing",
+          "label": "HERO 교육용 추가 조건: 진행 속도를 높이고 싶은 압박과 불확실한 작업 문서·현장 상태의 대조",
+          "provenance": "hero_educational_addition_not_an_official_finding",
+          "evidenceAnchors": [
+            "S02 v4 decision_identify/decision_verify 교육용 문안"
+          ],
+          "barriers": [
+            "B-03",
+            "B-04"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-04"
+          ]
+        },
+        {
+          "id": "contributing-04",
+          "classification": "contributing",
+          "label": "HERO 교육용 확인 지점: 독립확인·동료확인·감독자 소통. 실제 사건에서 각 확인 절차가 없었다고 단정하지 않음",
+          "provenance": "hero_educational_addition_not_an_official_finding",
+          "evidenceAnchors": [
+            "S02 v4 decision_identify/decision_verify 교육용 문안"
+          ],
+          "barriers": [
+            "B-03",
+            "B-04"
+          ],
+          "correctiveActions": [
+            "CA-02",
+            "CA-04"
+          ]
+        }
+      ],
+      "barriers": [
+        {
+          "id": "B-01",
+          "label": "공식 근거: 도면 변경과 공급품 확인의 품질관리"
+        },
+        {
+          "id": "B-02",
+          "label": "공식 근거: 조작기기 정보와 식별을 지원하는 인간공학 설계"
+        },
+        {
+          "id": "B-03",
+          "label": "HERO 교육용 방벽: Self Check·Peer Check·독립확인"
+        },
+        {
+          "id": "B-04",
+          "label": "HERO 교육용 방벽: 불확실한 상태에서 중지·보고하고 추가 확인"
+        }
+      ],
+      "correctiveActions": [
+        {
+          "id": "CA-01",
+          "label": "잘못된 도면과 현장 회로 구성을 수정하고 유사 부위를 점검한다.",
+          "evidenceAnchor": "NSIC 1006 상세 재발방지대책 문단 (기술적 수치·결선·절차는 공개하지 않음)"
+        },
+        {
+          "id": "CA-02",
+          "label": "인간공학 평가를 반영해 패널 정보·명패와 조작부를 개선한다.",
+          "evidenceAnchor": "NSIC 1006 상세 재발방지대책 문단 (기술적 수치·결선·절차는 공개하지 않음)"
+        },
+        {
+          "id": "CA-03",
+          "label": "공급사 품질관리와 시운전 시험의 확인 기능을 보강한다.",
+          "evidenceAnchor": "NSIC 1006 상세 재발방지대책 문단 (기술적 수치·결선·절차는 공개하지 않음)"
+        },
+        {
+          "id": "CA-04",
+          "label": "예방점검 절차·교육과 관련 비정상절차를 개선한다.",
+          "evidenceAnchor": "NSIC 1006 상세 재발방지대책 문단 (기술적 수치·결선·절차는 공개하지 않음)"
+        }
+      ],
+      "recoveryBoundary": {
+        "separateFromInitiatingCause": true,
+        "topics": [
+          "HERO의 중지·상태 보호·보고 및 승인 범위 내 복구 선택은 교육용 대안이며 실제 사건의 복구 행동을 재현하지 않음"
+        ]
+      },
+      "publicSanitization": {
+        "required": true,
+        "forbiddenTerms": [
+          "19:39",
+          "10:42",
+          "약 30%",
+          "고온대기",
+          "02-397-7302",
+          "신호준"
         ]
       }
     }

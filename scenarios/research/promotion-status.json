@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-13",
+  "updatedAt": "2026-10-14",
   "entries": [
     {
       "scenarioId": "s00_tutorial",
@@ -29,17 +29,16 @@
         "approvedAt": null
       },
       "blockers": [
-        "OPIS direct record URL/identifier",
-        "2012 KHNP item-specific rights marker",
-        "HF/anonymization review"
+        "2012 KHNP mission notice/attachment item-specific rights marker",
+        "HF/anonymization/current-content human review"
       ],
-      "notes": "S01 v2 now separates the IAEA-confirmed direct physical event chain (protective-relay test human error → LOOP; one emergency source unavailable for maintenance; the available EDG failed to start → SBO/shutdown-cooling loss) from HERO root/contributing HF conditions such as schedule change, configuration control, procedure, supervision and communication. Source/rights blockers remain unchanged."
+      "notes": "S01 v4 adds the verified NSIC event identifier (832; 고리1호기-2012-4), separates HERO HF interpretation from official facts, and records related KHNP press-text KOGL1 without inheriting it to the historical mission-report attachment. Rights hold remains."
     },
     {
       "scenarioId": "s02_equipment_identity",
       "file": "scenarios/drafts/S02_equipment_identity_v1.json",
-      "status": "source_hold",
-      "sourceRightsComplete": false,
+      "status": "review_ready",
+      "sourceRightsComplete": true,
       "hfReviewComplete": false,
       "anonymizationReviewComplete": false,
       "humanReview": {
@@ -48,11 +47,9 @@
         "approvedAt": null
       },
       "blockers": [
-        "NSSC direct-host or Policy Briefing 2024 original investigation URL + item-specific rights marker",
-        "OPIS/NSIC event-specific direct record URL/identifier/PDF",
-        "HF/anonymization review"
+        "HF/anonymization/current-content human review"
       ],
-      "notes": "S02 v2 now separates the source-supported direct conditions (incorrect breaker circuit state + control-button misidentification/operation → turbine-generator stop → reactor shutdown sequence) from HERO barrier/root-cause analysis, and includes only the high-level corrective actions supported by the 2024 NSSC government-relay text. Direct official result URL/item rights and OPIS/NSIC event record are still unresolved."
+      "notes": "S02 v4 adds NSIC event 1006 (신한울1호기-2024-1), direct NSSC 2024 result and Policy Briefing 156625772. Public textual reuse basis is item-specific Policy Briefing KOGL1; NSSC host KOGL4 is recorded separately and not treated as derivative permission. No source art/PDF reproduced. Official drawing/supplier/HF causes and subcritical sequence are distinguished from HERO teaching conditions. Human review remains pending; not approved or published."
     },
     {
       "scenarioId": "s03_procedure_reality_gap",
