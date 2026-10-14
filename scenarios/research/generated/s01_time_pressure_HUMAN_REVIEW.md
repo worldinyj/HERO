@@ -14,7 +14,7 @@
 
 | 항목 | 값 |
 |---|---|
-| promotion status | **REVIEW_READY** |
+| promotion status | **SOURCE_HOLD** |
 | sourceRightsComplete | `true` |
 | source verdict | `complete` |
 | rights verdict | `complete` |
@@ -25,6 +25,7 @@
 
 ### 현재 blocker
 
+- Cause/barrier/corrective-action traceability for the current content
 - HF/anonymization/current-content human review
 
 ## 2. 시나리오 기본정보

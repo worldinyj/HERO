@@ -5,6 +5,7 @@ import { GameClock } from "../play/GameClock";
 import { PlayNodeStage } from "../play/components/PlayNodeStage";
 import { EndingStamp } from "../play/components/EndingStamp";
 import { IncidentDebrief } from "../play/result/IncidentDebrief";
+import { HtoReviewDraft } from "./HtoReviewDraft";
 
 function initialGame(scenario: Scenario) {
   return createGame(scenario, {
@@ -58,6 +59,7 @@ function PreviewPlayer({ scenario, sourceLabel, onClose }: PreviewProps) {
         <button type="button" className="text-button" onClick={onClose}>미리보기 닫기</button>
       </div>
       {error ? <p className="error-text" role="alert">{error}</p> : null}
+      <HtoReviewDraft key={`${scenario.id}:${scenario.version}:${playthrough}`} scenario={scenario} />
       {result ? (
         <>
           <EndingStamp ending={result.ending} />

@@ -19,7 +19,7 @@
     {
       "scenarioId": "s01_time_pressure",
       "file": "scenarios/drafts/S01_time_pressure_v1.json",
-      "status": "review_ready",
+      "status": "source_hold",
       "sourceRightsComplete": true,
       "hfReviewComplete": false,
       "anonymizationReviewComplete": false,
@@ -29,9 +29,10 @@
         "approvedAt": null
       },
       "blockers": [
+        "Cause/barrier/corrective-action traceability for the current content",
         "HF/anonymization/current-content human review"
       ],
-      "notes": "S01 v4 retains its current content hash and official fact/HERO interpretation separation. Rights review is complete for the actual scope: independently written event facts and verified KHNP press-text KOGL1 context. The unused historical mission attachment is not claimed licensed and is not a publication blocker. Human review remains pending; not approved or published."
+      "notes": "S01 v4 retains its current content hash and official fact/HERO interpretation separation. Rights review is complete for the actual scope: independently written event facts and verified KHNP press-text KOGL1 context. The unused historical mission attachment is not claimed licensed and is not a publication blocker. Human review remains pending; not approved or published. Source rights are complete for actual usage, but formal review_ready also requires cause/barrier/corrective-action traceability. S01 v4 does not yet have the correctiveActions needed by that contract; retain source_hold until a separately reviewed content revision supplies this evidence. This is not a rights hold."
     },
     {
       "scenarioId": "s02_equipment_identity",
