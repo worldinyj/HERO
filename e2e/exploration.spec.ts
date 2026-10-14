@@ -1,0 +1,97 @@
+import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+async function fixture(page: Page) {
+  const writes: string[] = [];
+  const user = { id: "f7100000-0000-0000-0000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
+  await page.addInitScript(({ user }) => {
+    const exp = Math.floor(Date.now() / 1000) + 3600;
+    const token = `${btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }))}.${btoa(JSON.stringify({ sub: user.id, exp }))}.fixture`;
+    localStorage.setItem("sb-127-auth-token", JSON.stringify({ access_token: token, refresh_token: "fixture-refresh", expires_at: exp, expires_in: 3600, token_type: "bearer", user }));
+  }, { user });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route(/\/(?:rest|auth|functions)\/v1\//, async route => {
+    const url = new URL(route.request().url());
+    if (url.hostname !== "127.0.0.1") throw new Error("Fixture requires loopback Supabase");
+    if (route.request().method() !== "GET") writes.push(url.pathname);
+    const body = url.pathname === "/auth/v1/user" ? user : url.pathname === "/rest/v1/profiles" ? { id: user.id, plant_id: null, role: "admin", real_name: "테스트 관리자", nickname: "TESTADMIN", is_active: true, nickname_reset_required: false, job_role: null } : [];
+    await route.fulfill({ json: body });
+  });
+  await page.goto("/experience/s02-exploration");
+  await expect(page.getByRole("button", { name: "현장 탐색 시작", exact: true })).toBeVisible();
+  return writes;
+}
+async function choose(page: Page, label: string) {
+  await page.getByRole("button", { name: "다음 행동 결정", exact: true }).click();
+  await page.getByRole("radio", { name: new RegExp(label) }).click();
+  await page.getByRole("button", { name: "선택 확정", exact: true }).click();
+}
+test("free exploration, one-time information and original card costs lead to an unsaved two-decision debrief", async ({ page }) => {
+  const writes = await fixture(page);
+  await page.getByRole("button", { name: "현장 탐색 시작", exact: true }).click();
+  const clock = page.locator(".game-clock__value");
+  for (const name of ["현장 패널", "작업 문서", "동료", "연락 수단"]) {
+    await page.getByRole("button", { name: `${name} 열어 살펴보기`, exact: true }).click();
+    await expect(clock).toHaveText("09:30");
+  }
+  await page.getByRole("button", { name: "현장 패널 열어 살펴보기", exact: true }).click();
+  await page.getByRole("button", { name: "표시와 조작 요소의 구분 단서를 확인한다. · 1분", exact: true }).click();
+  await expect(clock).toHaveText("09:31");
+  await expect(page.getByRole("button", { name: "확인 완료 · 다시 읽기 무료", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "현장으로 돌아가기", exact: true }).click();
+  await page.getByRole("button", { name: "현장 패널 열어 살펴보기", exact: true }).click();
+  await expect(clock).toHaveText("09:31");
+  await page.getByRole("button", { name: "멈추고 자기확인하기 · STAR · 1분", exact: true }).click();
+  await expect(clock).toHaveText("09:32");
+  await expect(page.getByRole("button", { name: /STAR.*사용 완료/ })).toBeDisabled();
+  await choose(page, "현장 표식과 조작부를 가까이서 다시 식별한다");
+  await expect(clock).toHaveText("09:34");
+  await page.getByRole("button", { name: "다음 확인으로", exact: true }).click();
+  await page.getByRole("button", { name: "작업 문서 열어 살펴보기", exact: true }).click();
+  await page.getByRole("button", { name: "작업경계와 현재 대상의 식별정보를 다시 읽는다. · 1분", exact: true }).click();
+  await expect(clock).toHaveText("09:35");
+  await page.getByRole("button", { name: "동료 열어 살펴보기", exact: true }).click();
+  await expect(clock).toHaveText("09:35");
+  await page.getByRole("button", { name: "별도 근거로 독립확인 요청하기 · 5분", exact: true }).click();
+  await expect(clock).toHaveText("09:40");
+  await expect(page.getByRole("button", { name: /독립확인.*사용 완료/ })).toBeDisabled();
+  await choose(page, "다른 근거와 사람을 이용해 독립확인을 요청한다");
+  await expect(clock).toHaveText("09:44");
+  await expect(page.getByRole("heading", { name: "확인과 판단 돌아보기", exact: true })).toBeVisible();
+  await expect(page.getByText("실제 조작 요소의 상태는 별도 확인이 필요합니다.", { exact: false })).toBeVisible();
+  await expect(page.locator(".exploration-page ol")).toContainText("독립확인 요청하기");
+  await expect(page.locator(".exploration-page")).not.toContainText("회고 전 HP");
+  await page.getByLabel("현장에서 직접 조사한다는 느낌이 들었나요?", { exact: true }).fill("테스트 의견");
+  expect(writes).toEqual([]);
+  expect(await page.evaluate(() => Object.keys(localStorage).filter(key => /game|explor|session.*queue/i.test(key)))).toEqual([]);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.getByRole("button", { name: "다시 해보기", exact: true }).click();
+  await expect(clock).toHaveText("09:30");
+  await page.getByRole("button", { name: "현장 탐색 시작", exact: true }).click();
+  await expect(page.getByRole("complementary")).toContainText("확인 행동으로 확보한 단서가 여기에 모입니다");
+});
+test("decisions stay available without checking every target and keyboard returns to the hotspot", async ({ page }, info) => {
+  const writes = await fixture(page);
+  await page.getByRole("button", { name: "현장 탐색 시작", exact: true }).click();
+  await page.getByRole("button", { name: "동료 열어 살펴보기", exact: true }).click();
+  await page.getByRole("heading", { name: "동료", exact: true }).press("Escape");
+  await expect(page.getByRole("button", { name: "동료 열어 살펴보기", exact: true })).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await page.screenshot({ path: `/tmp/hero-exploration-room-${info.project.name}.png`, fullPage: true });
+  await choose(page, "현재 위치와 작업 맥락");
+  await page.getByRole("button", { name: "다음 확인으로", exact: true }).click();
+  await choose(page, "현재까지 모은 정보로 자기확인을 한 뒤 진행한다");
+  await expect(page.getByRole("heading", { name: "확인과 판단 돌아보기", exact: true })).toBeVisible();
+  await expect(page.getByText("추가 정보 확인으로 확보한 단서는 없습니다.", { exact: false })).toBeVisible();
+  expect(writes).toEqual([]);
+});
+
+test("campaign exposes a separate exploration entry", async ({ page }) => {
+  await fixture(page);
+  await page.goto("/");
+  const entry = page.getByRole("link", { name: /탐색형 체험.*약 5분/ });
+  await expect(entry).toHaveAttribute("href", "/experience/s02-exploration");
+  await entry.click();
+  await expect(page.getByRole("button", { name: "현장 탐색 시작", exact: true })).toBeVisible();
+});

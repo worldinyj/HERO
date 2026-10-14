@@ -28,6 +28,7 @@ import {
 } from "./routeModules";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
+const ExplorationPage = lazy(() => import("../features/exploration/ExplorationPage").then(module => ({ default: module.ExplorationPage })));
 
 const GamePage = lazy(() =>
   loadGamePageModule().then((module) => ({ default: module.GamePage })),
@@ -113,6 +114,13 @@ function CampaignPage() {
           </article>
         </Link>
 
+        <Link className="chapter-link" to="/experience/s02-exploration" aria-label="탐색형 체험 · 약 5분 · 현장 조사 시험판 · 순위 미반영">
+          <article className="chapter-card chapter-card--ready">
+            <span className="chapter-index">체험</span>
+            <div><strong>탐색형 체험 · 아마 이 설비가 맞을 겁니다</strong><p>약 5분 · 현장 조사 시험판 · 순위 미반영</p></div>
+            <span className="chapter-action" aria-hidden="true">▶</span>
+          </article>
+        </Link>
         <CompetitiveCampaignChapters />
       </div>
     </section>
@@ -255,6 +263,7 @@ export function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/i/:token" element={<InvitationPage />} />
         <Route path="/" element={<ActiveUserGate><CampaignPage /></ActiveUserGate>} />
+        <Route path="/experience/s02-exploration" element={<ActiveUserGate><ExplorationPage /></ActiveUserGate>} />
         <Route
           path="/briefing/:scenarioId"
           element={

@@ -1,0 +1,23 @@
+.exploration-page { min-width: 0; }
+.exploration-toolbar { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin:1.5rem 0; flex-wrap:wrap; }
+.exploration-room { position:relative; border:1px solid #73899c; border-radius:1rem; overflow:hidden; margin:1.25rem 0; background:#192c41; }
+.exploration-room > svg { display:block; width:100%; height:auto; }
+.exploration-hotspot { position:absolute; display:grid; gap:.2rem; min-height:48px; padding:.5rem; border:1px solid #d6b06d; border-radius:.6rem; background:#122035f2; color:#fff; font:inherit; font-weight:700; text-align:center; }
+.exploration-hotspot small { font-size:.7rem; font-weight:400; }
+.exploration-hotspot--panel { left:4%; top:57%; width:29%; }
+.exploration-hotspot--document { left:35%; top:65%; width:25%; }
+.exploration-hotspot--colleague { left:63%; top:57%; width:24%; }
+.exploration-hotspot--contact { right:3%; top:8%; width:20%; }
+.exploration-hotspot[aria-expanded="true"] { border:2px solid #ffce79; background:#354b62; }
+.exploration-detail,.exploration-notes { border:1px solid #73899c; border-radius:1rem; padding:1.25rem; margin:1.25rem 0; background:#152439; }
+.exploration-detail > button { margin:.4rem 0; }
+.exploration-detail .secondary-button { display:block; width:100%; white-space:normal; margin:1rem 0; }
+.exploration-closeup { display:grid; place-items:center; min-height:150px; font-size:1.6rem; border:1px solid #9ab0c4; border-radius:.7rem; margin:1rem 0; background:linear-gradient(135deg,#334f68,#1c3048); color:#f2e4c8; }
+.exploration-feedback { display:grid; gap:1rem; margin:1.5rem 0; }
+.exploration-feedback label { display:grid; gap:.5rem; }
+.exploration-feedback textarea { width:100%; min-height:90px; box-sizing:border-box; }
+.exploration-page li { margin:.7rem 0; overflow-wrap:anywhere; }
+@media(max-width:480px) { .exploration-room > svg { margin-bottom:116px; } .exploration-hotspot { top:auto; bottom:62px; width:calc(50% - 12px); left:8px; right:auto; } .exploration-hotspot--document { left:auto; right:8px; } .exploration-hotspot--colleague { bottom:8px; } .exploration-hotspot--contact { bottom:8px; left:auto; right:8px; } .exploration-detail,.exploration-notes { padding:1rem; } }
+
+.exploration-closeup svg { display:block; height:180px; max-width:100%; margin:1rem auto; }
+@media(max-width:480px) { .exploration-room > svg { margin-bottom:132px; } .exploration-hotspot { height:54px; box-sizing:border-box; } .exploration-hotspot--panel,.exploration-hotspot--document { bottom:70px; } }
