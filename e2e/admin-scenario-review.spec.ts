@@ -3,8 +3,13 @@ import reviewTarget from "../apps/web/src/features/admin/scenarioReviewStatus.ge
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import draft from "../scenarios/data/S03_procedure_reality_v1.json" with { type: "json" };
+import s02 from "../scenarios/drafts/S02_equipment_identity_v1.json" with { type: "json" };
+import targets from "../apps/web/src/features/admin/scenarioReviewTargets.generated.json" with { type: "json" };
+import htoTarget from "../apps/web/src/features/admin/htoReviewTarget.generated.json" with { type: "json" };
+import { validateReviewSubmission } from "../apps/web/src/features/admin/scenarioReviewSubmission";
 const versionId = "f6200000-0000-0000-0000-000000000001";
-async function fixture(page: Page, options: { delayed?: boolean; mismatch?: boolean; error?: boolean; empty?: boolean } = {}) {
+async function fixture(page: Page, options: { delayed?: boolean; mismatch?: boolean; error?: boolean; empty?: boolean; s02?: boolean } = {}) {
+  const stored = options.s02 ? s02 : draft;
   const user = { id: "f6100000-0000-0000-0000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
   const calls: Array<Record<string, unknown>> = [];
   let release: () => void = () => {};
@@ -23,12 +28,12 @@ async function fixture(page: Page, options: { delayed?: boolean; mismatch?: bool
     else if (url.pathname === "/rest/v1/profiles") body = { id: user.id, plant_id: null, role: "admin", real_name: "테스트", nickname: "TESTADMIN", is_active: true, nickname_reset_required: false, job_role: null };
     else if (url.pathname === "/functions/v1/admin-scenario") {
       const request = route.request().postDataJSON(); calls.push(request);
-      if (request.action === "list") body = { versions: options.empty ? [] : [{ id: versionId, version: draft.version, status: "review", default_perspective_role: draft.defaultPerspectiveRole, approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: draft.id, title: draft.title, is_active: true, is_competitive: true } }] };
+      if (request.action === "list") body = { versions: options.empty ? [] : [{ id: versionId, version: stored.version, status: "review", default_perspective_role: stored.defaultPerspectiveRole, approved_at: null, published_at: null, created_at: new Date().toISOString(), scenarios: { id: "f6300000-0000-0000-0000-000000000001", slug: stored.id, title: stored.title, is_active: true, is_competitive: true } }] };
       else if (request.action === "season-overview") body = { season: null, scenarios: [] };
       else if (request.action === "preview") {
         if (options.delayed) await pending;
         if (options.error) { await route.fulfill({ status: 500, json: { error: "scenario_preview_unavailable" } }); return; }
-        body = { preview: true, scenarioVersionId: versionId, scenario: options.mismatch ? { ...draft, title: "변경된 내용" } : draft };
+        body = { preview: true, scenarioVersionId: versionId, scenario: options.mismatch ? { ...stored, title: "변경된 내용" } : stored };
       } else throw new Error(`Review made a mutating request: ${request.action}`);
     } else throw new Error(`Unexpected API: ${url.pathname}`);
     await route.fulfill({ json: body });
@@ -36,7 +41,7 @@ async function fixture(page: Page, options: { delayed?: boolean; mismatch?: bool
   await page.goto("/admin/scenarios");
   const panel = page.getByRole("region", { name: "S03 검토 및 승인 진행", exact: true });
   await expect(panel).toBeVisible();
-  if (!options.empty) await expect(panel.getByLabel("저장된 S03 버전", { exact: true })).toBeEnabled();
+  if (!options.empty && !options.s02) await expect(panel.getByLabel("저장된 S03 버전", { exact: true })).toBeEnabled();
   return { panel, calls, release };
 }
 test("review areas show actual recorded evidence and matched stored content opens a read-only preview", async ({ page }, info) => {
@@ -141,4 +146,82 @@ test("editing a confirmed result or changing the target locks download while ret
   await panel.getByRole("button", { name: "입력한 S03 내용 확인", exact: true }).click();
   await expect(form.getByLabel("검토 영역", { exact: true })).toBeEnabled();
   await expect(download).toBeDisabled(); await expect(form.getByRole("checkbox")).not.toBeChecked();
+});
+
+
+test("S02 review selection binds its own content hash and cannot inherit S03 approval", async ({ page }) => {
+  const { calls } = await fixture(page, { s02: true });
+  await page.getByLabel("검토할 시나리오", { exact: true }).selectOption(s02.id);
+  const panel = page.getByRole("region", { name: "S02 검토 및 승인 진행", exact: true });
+  await expect(panel).toContainText("필수 검토 0/5 통과");
+  await expect(panel).toContainText("최종 콘텐츠 승인: 대기");
+  await panel.getByLabel("저장된 S02 버전", { exact: true }).selectOption(versionId);
+  await panel.getByRole("button", { name: "저장된 검토 대상 확인", exact: true }).click();
+  const form = panel.getByRole("region", { name: "검토 결과 작성·다운로드", exact: true });
+  await form.getByLabel("검토 영역", { exact: true }).selectOption("just_culture");
+  await form.getByLabel("검토 판정", { exact: true }).selectOption("hold");
+  await form.getByLabel("검토자 성명 또는 공식 역할", { exact: true }).fill("테스트 검토자");
+  await form.getByLabel("근거 문서·결재·티켓 참조", { exact: true }).fill("fixture-s02-review");
+  await form.getByLabel("보완할 내용 (필수)", { exact: true }).fill("교육 조건의 경계를 확인해주세요.");
+  await form.getByRole("checkbox").check();
+  const pending = page.waitForEvent("download");
+  await form.getByRole("button", { name: "검토 결과 JSON 다운로드", exact: true }).click();
+  const file = await pending;
+  const packet = JSON.parse(await readFile((await file.path())!, "utf8"));
+  const target = targets.find(target => target.scenarioId === s02.id)!;
+  expect(packet.scenarioId).toBe(s02.id);
+  expect(packet.contentSha256).toBe(target.contentSha256);
+  expect(validateReviewSubmission(packet, target).error).toBeNull();
+  expect(packet).not.toHaveProperty("artifactSha256");
+  await panel.getByRole("button", { name: "S02 검토용 미리보기 열기", exact: true }).click();
+  await expect(page.locator(".admin-preview-player")).toContainText("S02 검토 대상과 내용 일치 확인");
+  await expect(panel).toContainText("필수 검토 0/5 통과");
+  await page.getByLabel("검토할 시나리오", { exact: true }).selectOption(draft.id);
+  await expect(page.locator(".admin-preview-player")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "S03 검토 및 승인 진행", exact: true })).toContainText("필수 검토 5/5 통과");
+  await page.getByLabel("검토할 시나리오", { exact: true }).selectOption(s02.id);
+  await expect(form.getByLabel("검토자 성명 또는 공식 역할", { exact: true })).toHaveValue("");
+  await expect(form.getByRole("button", { name: "검토 결과 JSON 다운로드", exact: true })).toBeDisabled();
+  expect(calls.every(call => ["list", "season-overview", "preview"].includes(String(call.action)))).toBe(true);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+});
+
+test("switching scenario cancels a late verification response", async ({ page }) => {
+  const { panel, release } = await fixture(page, { delayed: true });
+  await panel.getByLabel("저장된 S03 버전", { exact: true }).selectOption(versionId);
+  await panel.getByRole("button", { name: "저장된 검토 대상 확인", exact: true }).click();
+  await page.getByLabel("검토할 시나리오", { exact: true }).selectOption(s02.id);
+  release();
+  const current = page.getByRole("region", { name: "S02 검토 및 승인 진행", exact: true });
+  await expect(current.getByRole("button", { name: "S02 검토용 미리보기 열기", exact: true })).toHaveCount(0);
+  await expect(current.getByLabel("검토 영역", { exact: true })).toBeDisabled();
+});
+
+test("HTO feedback downloads separately and cannot be imported as scenario approval", async ({ page }, info) => {
+  const { calls } = await fixture(page, { s02: true });
+  await page.getByRole("button", { name: `${s02.title} v4 미리보기`, exact: true }).click();
+  const preview = page.locator(".admin-preview-player");
+  await expect(preview).toHaveAttribute("aria-labelledby", "admin-preview-title");
+  await expect(preview.getByRole("heading", { name: `${s02.title} · 미리보기`, exact: true })).toBeVisible();
+  await preview.locator(".hto-review-draft > summary").click();
+  const form = preview.locator(".scenario-review-form");
+  await expect(form).toHaveAttribute("aria-labelledby", "hto-feedback-title");
+  await expect(form.getByRole("heading", { name: "HTO 시안 의견 작성", exact: true })).toBeVisible();
+  const download = form.getByRole("button", { name: "HTO 시안 의견 JSON 다운로드", exact: true });
+  await expect(download).toBeDisabled();
+  await form.getByLabel("HTO 시안 의견 판정", { exact: true }).selectOption("needs_revision");
+  await form.getByLabel("HTO 의견 작성자", { exact: true }).fill("테스트 검토자");
+  await form.getByLabel("HTO 검토 의견 (필수)", { exact: true }).fill("조직 지원의 가상 조건을 더 쉽게 설명해주세요.");
+  await form.getByRole("checkbox").check();
+  const pending = page.waitForEvent("download"); await download.click();
+  const packet = JSON.parse(await readFile((await (await pending).path())!, "utf8"));
+  expect(packet).toMatchObject({ kind: "hto_draft_feedback", scenarioId: s02.id, contentSha256: htoTarget.contentSha256, artifactSha256: htoTarget.artifactSha256 });
+  expect(packet).not.toHaveProperty("approved");
+  expect(validateReviewSubmission(packet, htoTarget).submission).toBeNull();
+  await form.getByLabel("HTO 검토 의견 (필수)", { exact: true }).fill("수정한 의견");
+  await expect(download).toBeDisabled(); await expect(form.getByRole("checkbox")).not.toBeChecked();
+  await form.screenshot({ path: `/tmp/hero-hto-feedback-${info.project.name}.png` });
+  expect(calls.every(call => ["list", "season-overview", "preview"].includes(String(call.action)))).toBe(true);
+  expect(await page.evaluate(() => Object.keys(localStorage).some(key => key.includes("review")))).toBe(false);
+  expect((await new AxeBuilder({ page }).include(".hto-review-draft").analyze()).violations).toEqual([]);
 });
