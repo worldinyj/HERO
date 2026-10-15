@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
+import { readWithDeadline, ReadTimeoutError } from "../../lib/readWithDeadline";
 import { isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { canReconcileNickname, isValidMyRecordSummary, isValidNicknameStatus, matchesCheckedNickname } from "./nicknameReconciliation";
 import { AudioSettings } from "../audio/AudioSettings";
@@ -121,6 +122,7 @@ export function ProfilePage() {
   const [nicknameOutcomeUnknown, setNicknameOutcomeUnknown] = useState(false);
   const [nicknameMessage, setNicknameMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [signOutPending, setSignOutPending] = useState(false);
 
@@ -143,14 +145,16 @@ export function ProfilePage() {
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
 
     async function load() {
       try {
         setLoading(true);
         setError(null);
         const supabase = getSupabase();
-        const { data: result, error: rpcError } = await supabase.rpc(
-          "my_record_summary",
+        const { data: result, error: rpcError } = await readWithDeadline(
+          signal => supabase.rpc("my_record_summary").abortSignal(signal),
+          controller.signal,
         );
 
         if (rpcError) throw rpcError;
@@ -159,7 +163,9 @@ export function ProfilePage() {
       } catch (cause) {
         if (active) {
           setError(
-            cause instanceof Error
+            cause instanceof ReadTimeoutError
+              ? "조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 불러와주세요."
+              : cause instanceof Error
               ? cause.message
               : "내 기록을 불러오지 못했습니다.",
           );
@@ -173,8 +179,9 @@ export function ProfilePage() {
 
     return () => {
       active = false;
+      controller.abort();
     };
-  }, []);
+  }, [loadAttempt]);
 
   useEffect(() => {
     void loadNicknameStatus().catch((cause) => {
@@ -369,7 +376,7 @@ export function ProfilePage() {
   if (loading) {
     return (
       <section className="panel">
-        <p className="muted">내 학습 기록을 불러오고 있습니다…</p>
+        <p className="muted" role="status">내 학습 기록을 불러오고 있습니다…</p>
       </section>
     );
   }
@@ -379,10 +386,11 @@ export function ProfilePage() {
       <section className="panel">
         <p className="eyebrow">My Record</p>
         <h2>내 기록을 불러오지 못했습니다</h2>
-        <p className="error-text">{error ?? "데이터가 없습니다."}</p>
+        <p className="error-text" role="alert">{error ?? "데이터가 없습니다."}</p>
         <p className="muted mini-copy">
           기록 조회 오류와 관계없이 계정에서는 안전하게 로그아웃할 수 있습니다.
         </p>
+        <button type="button" className="secondary-button" onClick={() => setLoadAttempt(attempt => attempt + 1)}>기록 다시 불러오기</button>
         <button
           type="button"
           className="secondary-button"
