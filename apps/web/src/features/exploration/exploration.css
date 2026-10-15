@@ -21,3 +21,7 @@
 
 .exploration-closeup svg { display:block; height:180px; max-width:100%; margin:1rem auto; }
 @media(max-width:480px) { .exploration-room > svg { margin-bottom:132px; } .exploration-hotspot { height:54px; box-sizing:border-box; } .exploration-hotspot--panel,.exploration-hotspot--document { bottom:70px; } }
+
+.exploration-feedback-field { display:grid; gap:.5rem; }
+.exploration-feedback .secondary-button { width:100%; white-space:normal; }
+.exploration-feedback details { overflow-wrap:anywhere; }

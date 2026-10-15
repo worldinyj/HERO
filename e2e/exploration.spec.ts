@@ -1,5 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { readFile } from "node:fs/promises";
+import targets from "../apps/web/src/features/admin/scenarioReviewTargets.generated.json" with { type: "json" };
+import { validateReviewSubmission } from "../apps/web/src/features/admin/scenarioReviewSubmission";
 
 async function fixture(page: Page) {
   const writes: string[] = [];
@@ -61,7 +64,32 @@ test("free exploration, one-time information and original card costs lead to an 
   await expect(page.getByText("실제 조작 요소의 상태는 별도 확인이 필요합니다.", { exact: false })).toBeVisible();
   await expect(page.locator(".exploration-page ol")).toContainText("독립확인 요청하기");
   await expect(page.locator(".exploration-page")).not.toContainText("회고 전 HP");
-  await page.getByLabel("현장에서 직접 조사한다는 느낌이 들었나요?", { exact: true }).fill("테스트 의견");
+  const download = page.getByRole("button", { name: "체험 의견과 판단 기록 내려받기", exact: true });
+  await expect(download).toBeDisabled();
+  await page.getByLabel("어떤 근거와 불확실성으로 판단했나요? (선택)", { exact: true }).fill("표시의 혼동과 상태의 불확실성을 이유로 추가 확인 요청");
+  await page.getByLabel("현장에서 직접 조사한다는 느낌이 들었나요?", { exact: true }).fill("직접 살펴볼 수 있었음");
+  await expect(download).toBeDisabled();
+  await page.getByLabel("발견한 정보 때문에 처음 생각을 바꿨나요?", { exact: true }).fill(" ");
+  await page.getByLabel("다른 순서나 방법으로 다시 확인해 보고 싶나요?", { exact: true }).fill("문서부터 다시 확인하고 싶음");
+  await expect(download).toBeDisabled();
+  await page.getByLabel("발견한 정보 때문에 처음 생각을 바꿨나요?", { exact: true }).fill("추가 정보로 독립확인이 필요하다고 생각했음");
+  const pending = page.waitForEvent("download");
+  await download.click();
+  const file = await pending;
+  const packet = JSON.parse(await readFile((await file.path())!, "utf8"));
+  const target = targets.find(target => target.scenarioId === "s02_equipment_identity")!;
+  expect(packet).toMatchObject({ kind: "exploration_usability_feedback", experienceVersion: 2, scenarioId: target.scenarioId, scenarioVersion: 4, sourceContentSha256: target.contentSha256 });
+  expect(Object.keys(packet).sort()).toEqual(["schemaVersion", "kind", "experienceId", "experienceVersion", "scenarioId", "scenarioVersion", "sourceContentSha256", "createdAt", "scope", "notes", "actions", "judgmentBasis", "feedback"].sort());
+  expect(packet.actions).toHaveLength(6);
+  expect(packet.actions.map((action: { minutes: number }) => action.minutes)).toEqual([1, 1, 2, 1, 5, 4]);
+  for (const action of packet.actions) expect(Object.keys(action).sort()).toEqual(["step", "nodeId", "actionType", "actionId", "label", "minutes"].sort());
+  expect(packet.notes).toHaveLength(2);
+  expect(packet.feedback).toHaveLength(3);
+  expect(packet.judgmentBasis).toContain("불확실성");
+  expect(validateReviewSubmission(packet, target).error).not.toBeNull();
+  await expect(page.getByText("다운로드를 요청했습니다. 받은 파일은 직접 공유해주세요.", { exact: true })).toBeVisible();
+  await page.getByLabel("현장에서 직접 조사한다는 느낌이 들었나요?", { exact: true }).fill("수정된 의견");
+  await expect(page.getByText("다운로드를 요청했습니다. 받은 파일은 직접 공유해주세요.", { exact: true })).toHaveCount(0);
   expect(writes).toEqual([]);
   expect(await page.evaluate(() => Object.keys(localStorage).filter(key => /game|explor|session.*queue/i.test(key)))).toEqual([]);
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);

@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import raw from "../../../../../scenarios/data/S02_equipment_identity_v1.json";
 import { ChoiceSheet } from "../play/ChoiceSheet";
 import { GameClock } from "../play/GameClock";
+import { ExplorationFeedback, type ExplorationHistoryItem } from "./ExplorationFeedback";
 import "./exploration.css";
 
 const scenario = ScenarioSchema.parse(raw);
@@ -13,7 +14,7 @@ type Target = "panel" | "document" | "colleague" | "contact" | "decision";
 const labels: Record<Target, string> = { panel: "현장 패널", document: "작업 문서", colleague: "동료", contact: "연락 수단", decision: "다음 행동 결정" };
 const cardAt: Record<string, Target> = { self_check_star: "panel", independent_verification: "colleague", stop_when_unsure: "contact" };
 const cardLabel: Record<string, string> = { self_check_star: "멈추고 자기확인하기 · STAR", independent_verification: "별도 근거로 독립확인 요청하기", stop_when_unsure: "작업 중지 후 확인 요청하기" };
-const questions = ["현장에서 직접 조사한다는 느낌이 들었나요?", "발견한 정보 때문에 처음 생각을 바꿨나요?", "다른 순서나 방법으로 다시 확인해 보고 싶나요?"];
+
 function startGame() {
   return createGame(scenario, { simulationSeed: "s02-exploration-v4", presentationSeed: "s02-exploration-v4" });
 }
@@ -25,13 +26,13 @@ function notes(game: GameState) {
     return info ? [{ id: `${entry.nodeId}:${info.actionId}`, text: info.revealText }] : [];
   });
 }
-function history(game: GameState) {
+function history(game: GameState): ExplorationHistoryItem[] {
   return game.log.flatMap(entry => {
     const node = scenario.nodes[entry.nodeId];
     const label = entry.actionType === "card" ? cardLabel[entry.actionId ?? ""]
       : node?.type === "decision" && entry.actionType === "choice" ? node.choices.find(choice => choice.actionId === entry.actionId)?.label
       : node?.type === "decision" && entry.actionType === "info" ? node.infoActions.find(info => info.actionId === entry.actionId)?.label : null;
-    return label ? [{ step: entry.step, label, minutes: entry.clockAfter - entry.clockBefore }] : [];
+    return label && entry.actionId && (entry.actionType === "info" || entry.actionType === "card" || entry.actionType === "choice") ? [{ step: entry.step, nodeId: entry.nodeId, actionType: entry.actionType, actionId: entry.actionId, label, minutes: entry.clockAfter - entry.clockBefore }] : [];
   });
 }
 
@@ -57,7 +58,6 @@ export function ExplorationPage() {
   const [target, setTarget] = useState<Target | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [responses, setResponses] = useState(["", "", ""]);
   const detailHeading = useRef<HTMLHeadingElement>(null);
   const pageHeading = useRef<HTMLHeadingElement>(null);
   const targetRefs = useRef<Partial<Record<Target, HTMLButtonElement | null>>>({});
@@ -78,11 +78,11 @@ export function ExplorationPage() {
       }
     } catch { setError("현재 사용할 수 없는 행동입니다. 다른 확인 행동을 살펴보세요."); }
   }
-  function restart() { setGame(startGame()); setDone(false); setTarget(null); setSelectedChoice(null); setResponses(["", "", ""]); setError(null); }
+  function restart() { setGame(startGame()); setDone(false); setTarget(null); setSelectedChoice(null); setError(null); }
   return <section className="panel exploration-page" aria-labelledby="exploration-title">
     <p className="eyebrow">Field exploration · S02 v4</p>
     <h2 id="exploration-title" ref={pageHeading} tabIndex={-1}>{done ? "확인과 판단 돌아보기" : "탐색형 체험 · 아마 이 설비가 맞을 겁니다"}</h2>
-    <p className="notice">약 5분 · S02의 식별·확인 구간을 발췌한 별도 체험입니다. HP·순위·학습기록에 반영되지 않습니다. 입력과 진행은 저장되지 않으며 새로고침하면 초기화됩니다.</p>
+    <p className="notice">약 5분 · S02의 식별·확인 구간을 발췌한 별도 체험입니다. HP·순위·학습기록에 반영되지 않습니다. 진행은 자동 저장되지 않으며 새로고침하면 초기화됩니다. 회고에서 의견과 판단 기록을 직접 내려받을 수 있습니다.</p>
     {error ? <p role="alert" className="error-text">{error}</p> : null}
     <div className="exploration-toolbar"><GameClock clockMin={view.clockMin} deadlineMin={view.deadlineMin} /><Link className="text-link" to="/">캠페인으로</Link></div>
     {done ? <>
@@ -92,7 +92,7 @@ export function ExplorationPage() {
       <h3>나의 확인과 판단 순서</h3>
       <ol>{history(game).map(item => <li key={item.step}>{item.label} <small>· {item.minutes}분</small></li>)}</ol>
       <p className="notice">표시·설계가 식별을 도왔는지, 별도의 확인 근거와 조직의 지원이 있었는지 함께 살펴보세요. 동료에게 대상을 여는 것만으로 독립확인이 이루어지지는 않습니다.</p>
-      <div className="exploration-feedback"><h3>체험을 돌아보기</h3><p className="muted">답변은 이 화면에서만 작성하며 전송·저장되지 않습니다.</p>{questions.map((question, index) => <label key={question}>{question}<textarea maxLength={1000} value={responses[index]} onChange={event => setResponses(current => current.map((value, at) => at === index ? event.target.value : value))} /></label>)}</div>
+      <ExplorationFeedback notes={memo} history={history(game)} />
       <button className="primary-button" onClick={restart}>다시 해보기</button>
     </> : node.type === "scene" ? <article className="review-card"><h3>{game.nodeId === "intro" ? "짧은 브리핑" : "확인 후의 상황"}</h3><p>{node.text}</p><p className="muted">화면 속 대상을 여는 것은 무료입니다. 시간을 표시한 행동을 실행할 때만 게임 시간이 흐릅니다.</p><button className="primary-button" onClick={() => dispatch({ type: "continue" })}>{game.nodeId === "intro" ? "현장 탐색 시작" : "다음 확인으로"}</button></article>
     : node.type === "decision" ? <>
