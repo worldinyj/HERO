@@ -320,9 +320,9 @@
       "id": "T3-04",
       "phase": 3,
       "title": "S01 \"오늘 오전까지\" 시나리오 작성 (scene·대사·익명화)",
-      "status": "partial",
-      "evidence": "scenarios/drafts/S01_time_pressure_v1.json",
-      "note": "S01 JSON 초안 존재; 출처·사람 승인 대기"
+      "status": "implemented",
+      "evidence": "scenarios/data/S01_time_pressure_v1.json",
+      "note": "2026-10-15 S01 v5 사용자 직접 승인5/5·동일 해시 콘텐츠 승격·운영 배포·10월 시즌 연결 완료. 감사 #25–29, docs/80_S01_V5_SEASON_RELEASE.md. 실제 참여자 완료 확인과 별개."
     },
     {
       "id": "T3-05",
