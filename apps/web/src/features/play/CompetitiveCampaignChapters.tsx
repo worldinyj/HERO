@@ -11,32 +11,20 @@ interface CompetitiveChapter {
   perspectiveRole: string;
 }
 
-const PLANNED_CHAPTERS = [
-  {
-    index: "01",
-    title: "오늘 오전까지 끝내야 합니다",
-    detail: "시간압박 · 단독작업 · 감독부족 · 준비중",
-  },
-  {
-    index: "02",
-    title: "아마 이 설비가 맞을 겁니다",
-    detail: "설비 오인 · Self/Peer Check · 준비중",
-  },
-  {
-    index: "03",
-    title: "절차와 실제 상황이 조금 다릅니다",
-    detail: "Questioning Attitude · Stop When Unsure · 준비중",
-  },
-] as const;
+const ROLE_LABEL: Record<string, string> = {
+  sro: "SRO", ro: "RO", field_operator: "현장운전원", supervisor: "감독자", worker: "작업자",
+};
 
 export function CompetitiveCampaignChapters() {
   const { profile } = useAuth();
   const [chapters, setChapters] = useState<CompetitiveChapter[]>([]);
   const [loading, setLoading] = useState(profile?.role === "player");
   const [error, setError] = useState<string | null>(null);
+  const [seasonTitle, setSeasonTitle] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (profile?.role !== "player") {
+    if (profile?.role !== "player" || profile.is_active !== true) {
       setChapters([]);
       setLoading(false);
       return;
@@ -47,6 +35,8 @@ export function CompetitiveCampaignChapters() {
     void (async () => {
       setLoading(true);
       setError(null);
+      setChapters([]);
+      setSeasonTitle(null);
 
       try {
         const supabase = getSupabase();
@@ -54,7 +44,7 @@ export function CompetitiveCampaignChapters() {
 
         const { data: season, error: seasonError } = await supabase
           .from("seasons")
-          .select("id")
+          .select("id, title")
           .eq("status", "open")
           .lte("starts_at", now)
           .gt("ends_at", now)
@@ -67,6 +57,7 @@ export function CompetitiveCampaignChapters() {
           if (active) setChapters([]);
           return;
         }
+        if (active) setSeasonTitle(season.title || "현재 시즌");
 
         const { data: bindings, error: bindingError } = await supabase
           .from("season_scenarios")
@@ -153,27 +144,23 @@ export function CompetitiveCampaignChapters() {
     return () => {
       active = false;
     };
-  }, [profile?.role]);
+  }, [profile?.id, profile?.is_active, profile?.role, attempt]);
 
   if (profile?.role !== "player") {
     return (
-      <>
-        {PLANNED_CHAPTERS.map((chapter) => (
-          <article key={chapter.index} className="chapter-card chapter-card--locked">
-            <span className="chapter-index">{chapter.index}</span>
-            <div>
-              <strong>{chapter.title}</strong>
-              <p>{chapter.detail}</p>
-            </div>
-          </article>
-        ))}
-      </>
+      <article className="notice">
+        <h3>교육 운영 계정 안내</h3>
+        <p>경쟁 플레이와 순위 참여는 참여자 계정에서 이용할 수 있습니다. 이 계정에서는 튜토리얼과 탐색형 체험을 이용할 수 있습니다.</p>
+        <Link className="text-link" to={profile?.role === "admin" ? "/admin/overview" : "/manager"}>
+          {profile?.role === "admin" ? "운영 현황 확인" : "사업소 교육 관리"}
+        </Link>
+      </article>
     );
   }
 
   if (loading) {
     return (
-      <article className="chapter-card chapter-card--locked">
+      <article className="chapter-card" role="status">
         <span className="chapter-index">··</span>
         <div>
           <strong>현재 시즌 확인 중</strong>
@@ -183,26 +170,35 @@ export function CompetitiveCampaignChapters() {
     );
   }
 
+  if (error) {
+    return <article className="notice">
+      <p className="error-text" role="alert">경쟁 시나리오를 불러오지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해주세요.</p>
+      <button className="secondary-button" type="button" onClick={() => { setLoading(true); setAttempt(value => value + 1); }}>경쟁 시나리오 다시 확인</button>
+    </article>;
+  }
+
   if (chapters.length > 0) {
     return (
       <>
-        {chapters.map((chapter, index) => (
+        <p className="muted">{seasonTitle} · 경쟁 플레이</p>
+        {chapters.map((chapter) => (
           <Link
             key={chapter.slug}
             className="chapter-link"
             to={`/briefing/${chapter.slug}`}
+            aria-label={`${chapter.title} · ${ROLE_LABEL[chapter.perspectiveRole] ?? "참여자"} 관점 · v${chapter.version}`}
             onPointerEnter={preloadBriefingRoute}
             onPointerDown={preloadBriefingRoute}
             onFocus={preloadBriefingRoute}
           >
             <article className="chapter-card chapter-card--ready">
               <span className="chapter-index">
-                {String(index + 1).padStart(2, "0")}
+                경쟁
               </span>
               <div>
                 <strong>{chapter.title}</strong>
                 <p>
-                  경쟁 시나리오 · {chapter.perspectiveRole} 관점 · v{chapter.version}
+                  {ROLE_LABEL[chapter.perspectiveRole] ?? "참여자"} 관점 · v{chapter.version}
                 </p>
               </div>
               <span className="chapter-action" aria-hidden="true">▶</span>
@@ -214,22 +210,10 @@ export function CompetitiveCampaignChapters() {
   }
 
   return (
-    <>
-      {error ? (
-        <p className="error-text" role="status">
-          경쟁 시나리오 조회 실패 · 준비중 장만 표시합니다.
-        </p>
-      ) : null}
-
-      {PLANNED_CHAPTERS.map((chapter) => (
-        <article key={chapter.index} className="chapter-card chapter-card--locked">
-          <span className="chapter-index">{chapter.index}</span>
-          <div>
-            <strong>{chapter.title}</strong>
-            <p>{chapter.detail}</p>
-          </div>
-        </article>
-      ))}
-    </>
+    <article className="notice">
+      <h3>{seasonTitle ? "현재 시즌에 플레이할 수 있는 경쟁 시나리오가 없습니다" : "현재 진행 중인 경쟁 시즌이 없습니다"}</h3>
+      {seasonTitle ? <p>{seasonTitle}</p> : null}
+      <p>튜토리얼과 탐색형 체험은 위에서 계속 이용할 수 있습니다.</p>
+    </article>
   );
 }
