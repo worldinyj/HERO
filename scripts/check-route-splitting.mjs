@@ -9,6 +9,8 @@ const manifestPath = resolve(
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
 const expectedDynamicModules = [
+  "src/features/invite/InvitationPage.tsx",
+  "src/features/legal/LegalPage.tsx",
   "src/features/exploration/ExplorationPage.tsx",
   "src/features/play/GamePage.tsx",
   "src/features/play/CompetitiveBriefingPage.tsx",
