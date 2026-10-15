@@ -34,6 +34,7 @@
     "record:scenario-review": "tsx scripts/record-human-review.ts",
     "check:cause-traceability": "tsx scripts/check-cause-traceability.ts",
     "check:batch-db-contracts": "node scripts/check-batch-db-contracts.mjs",
+    "check:admin-manager-roster-local": "node --import tsx scripts/check-admin-manager-roster-local.ts",
     "check:tasklist-progress": "node scripts/check-tasklist-progress.mjs",
     "build:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts",
     "check:scenario-review-status": "node --import tsx scripts/build-scenario-review-status.ts --check",
