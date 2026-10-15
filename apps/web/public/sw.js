@@ -6,10 +6,21 @@ const SHELL_URLS = [
   "/pwa-icon.svg",
 ];
 
+function hasExpectedAssetType(request, response) {
+  const path = new URL(typeof request === "string" ? request : request.url, self.location.origin).pathname;
+  const destination = typeof request === "string" ? "" : request.destination;
+  const mime = (response.headers.get("content-type") || "").split(";", 1)[0].trim().toLowerCase();
+  if (destination === "script" || /\.m?js$/.test(path)) {
+    return /^(?:text|application)\/(?:javascript|ecmascript)$/.test(mime);
+  }
+  if (destination === "style" || /\.css$/.test(path)) return mime === "text/css";
+  return true;
+}
+
 async function addIfAvailable(cache, url) {
   try {
     const response = await fetch(url, { cache: "no-store" });
-    if (response.ok) {
+    if (response.ok && hasExpectedAssetType(url, response)) {
       await cache.put(url, response);
     }
   } catch {
@@ -66,6 +77,10 @@ async function cacheSuccessfulResponse(request, response) {
     return response;
   }
 
+  // SPA fallbacks may return HTTP 200 HTML for a missing JS/CSS asset.
+  // Never save that response under the asset URL or serve it as executable code.
+  if (!hasExpectedAssetType(request, response)) return Response.error();
+
   const cache = await caches.open(CACHE_NAME);
   await cache.put(request, response.clone());
   return response;
@@ -84,14 +99,15 @@ async function networkFirstNavigation(request) {
   }
 }
 
-async function staleWhileRevalidate(request) {
-  const cached = await caches.match(request);
+async function staleWhileRevalidate(request, event) {
   const network = fetch(request)
     .then((response) => cacheSuccessfulResponse(request, response))
     .catch(() => null);
+  // Keep the worker alive until the refreshed response has reached the cache.
+  event.waitUntil(network.then(() => undefined));
+  const cached = await caches.match(request);
 
-  if (cached) {
-    void network;
+  if (cached && hasExpectedAssetType(request, cached)) {
     return cached;
   }
 
@@ -130,6 +146,6 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/audio/")
   ) {
-    event.respondWith(staleWhileRevalidate(request));
+    event.respondWith(staleWhileRevalidate(request, event));
   }
 });
