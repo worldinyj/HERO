@@ -148,6 +148,7 @@ jobs:
 
       - name: Verify PWA shell
         run: |
+          node --test scripts/service-worker-cache.test.mjs
           test -f apps/web/dist/manifest.webmanifest
           test -f apps/web/dist/sw.js
           test -f apps/web/dist/offline.html
