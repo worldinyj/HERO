@@ -18,20 +18,19 @@
     },
     {
       "scenarioId": "s01_time_pressure",
-      "file": "scenarios/drafts/S01_time_pressure_v1.json",
-      "status": "review_ready",
+      "file": "scenarios/data/S01_time_pressure_v1.json",
+      "status": "approved",
       "sourceRightsComplete": true,
-      "hfReviewComplete": false,
-      "anonymizationReviewComplete": false,
+      "hfReviewComplete": true,
+      "anonymizationReviewComplete": true,
       "humanReview": {
-        "status": "pending",
-        "approvedBy": null,
-        "approvedAt": null
+        "status": "approved",
+        "approvedBy": "사용자 (본 대화 직접 승인)",
+        "approvedAt": "2026-10-15"
       },
-      "blockers": [
-        "S01 v5 current-content human review in all five areas (HF, operations, anonymization, Just Culture, incident debrief)"
-      ],
-      "notes": "S01 v5 supplies cause/barrier/corrective-action traceability using the official KINS July 2012 integrated safety review and IAEA NEWS event facts. Official findings, completed measures, plans at the time, and HERO educational additions remain distinct. Gameplay nodes, initial state and scoring are unchanged from v4. Actual-use source/rights review is complete for independently written facts; no source PDF/text/art is reproduced. Human review is pending for v5; not approved, uploaded, published or season-bound."
+      "blockers": [],
+      "notes": "S01 v5 approved by the single human user in the current conversation on 2026-10-15 after the complete review document was provided; the user explicitly requested publication. Source/cause/barrier/action traceability is complete. Official findings, completed measures, historical plans and HERO educational additions are distinct. Gameplay/scoring unchanged from v4. Operational DB publication and season linkage are tracked separately in docs/80_S01_V5_SEASON_RELEASE.md. Future content changes require renewed review.",
+      "approvedContentSha256": "0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525"
     },
     {
       "scenarioId": "s02_equipment_identity",
