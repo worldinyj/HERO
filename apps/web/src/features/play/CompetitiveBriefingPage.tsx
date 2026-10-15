@@ -293,9 +293,9 @@ export function CompetitiveBriefingPage({
 
   useEffect(() => {
     if (data) {
-      preloadGameRoute();
+      preloadGameRoute(scenarioId);
     }
-  }, [data]);
+  }, [data, scenarioId]);
 
   const localScenario = getScenarioById(scenarioId);
 

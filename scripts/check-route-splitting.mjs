@@ -13,6 +13,8 @@ const expectedDynamicModules = [
   "src/features/legal/LegalPage.tsx",
   "src/features/exploration/ExplorationPage.tsx",
   "src/features/play/GamePage.tsx",
+  "src/features/play/TutorialGamePage.tsx",
+  "src/features/play/CompetitiveGamePage.tsx",
   "src/features/play/CompetitiveBriefingPage.tsx",
   "src/features/leaderboard/LeaderboardPage.tsx",
   "src/features/profile/ProfilePage.tsx",
@@ -61,3 +63,18 @@ if (jsChunks.length < expectedDynamicModules.length + 1) {
 }
 
 console.log(`ROUTE_SPLIT_PASS chunks=${jsChunks.length}`);
+
+function staticClosure(key, seen = new Set()) {
+  if (seen.has(key)) return seen;
+  seen.add(key);
+  for (const dependency of manifest[key]?.imports ?? []) staticClosure(dependency, seen);
+  return seen;
+}
+const tutorial = "src/features/play/TutorialGamePage.tsx";
+const competitive = "src/features/play/CompetitiveGamePage.tsx";
+const initial = staticClosure("index.html");
+if (initial.has(tutorial) || initial.has(competitive) ||
+    staticClosure(tutorial).has(competitive) || staticClosure(competitive).has(tutorial)) {
+  throw new Error("Play modes must remain outside the initial static graph and independent of each other");
+}
+console.log("PLAY_MODE_SPLIT_PASS tutorial and competitive load independently");
