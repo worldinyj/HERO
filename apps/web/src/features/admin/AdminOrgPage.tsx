@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
+import { readWithDeadline, ReadTimeoutError } from "../../lib/readWithDeadline";
 import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult, readManagerReinviteLink } from "../manager/inviteResponse";
 import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
+import { AdminManagerRoster } from "./AdminManagerRoster";
+import { exactManagerCount, isCurrentManager, readPlantManagerCounts, type ManagerRow } from "./managerRosterQueries";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
 import { canConfirmPlantTransition } from "./plantTransitionConfirmation";
 import { groupedPlantSuggestions, khnpGroupLabel, KHNP_PLANT_CATALOG } from "./khnpPlantCatalog";
@@ -18,18 +21,6 @@ interface PlantRow {
   is_active: boolean;
   invitation_epoch: number;
   created_at: string;
-}
-
-interface ManagerRow {
-  id: string;
-  plant_id: string | null;
-  real_name: string;
-  nickname: string;
-  is_active: boolean;
-  plants:
-    | { display_name: string; code: string }
-    | Array<{ display_name: string; code: string }>
-    | null;
 }
 
 interface InviteResult {
@@ -73,8 +64,11 @@ function managerPlantLabel(row: ManagerRow): string {
 
 export function AdminOrgPage() {
   const rosterGate = useRef(new ReadRequestGate());
+  const rosterController = useRef<AbortController | null>(null);
+  const managerCheckController = useRef<AbortController | null>(null);
   const [plants, setPlants] = useState<PlantRow[]>([]);
-  const [managers, setManagers] = useState<ManagerRow[]>([]);
+  const [activeManagerCount, setActiveManagerCount] = useState(0);
+  const [managerCountByPlant, setManagerCountByPlant] = useState(new Map<string, number>());
   const [pendingManagerInvites, setPendingManagerInvites] = useState<PendingManagerInviteRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +102,12 @@ export function AdminOrgPage() {
 
   async function load(preferredInvitePlantCode?: string): Promise<boolean> {
     const revision = rosterGate.current.begin();
+    rosterController.current?.abort();
+    const controller = new AbortController();
+    rosterController.current = controller;
+    // A new read supersedes any earlier operator reconciliation snapshot.
+    setAdminRosterReady(false);
+    setPlantRosterReady(false);
     setLoading(true);
     setError(null);
 
@@ -115,16 +115,18 @@ export function AdminOrgPage() {
       const supabase = getSupabase();
 
       const now = new Date().toISOString();
-      const [plantResult, managerResult, inviteResult] = await Promise.all([
+      const [plantResult, managerResult, inviteResult] = await readWithDeadline(signal => Promise.all([
         supabase
           .from("plants")
-          .select("id, code, name, display_name, is_active, invitation_epoch, created_at")
-          .order("display_name", { ascending: true }),
+          .select("id, code, name, display_name, is_active, invitation_epoch, created_at, profiles(count)")
+          .eq("profiles.role", "plant_manager")
+          .eq("profiles.is_active", true)
+          .order("display_name", { ascending: true }).abortSignal(signal),
         supabase
           .from("profiles")
-          .select("id, plant_id, real_name, nickname, is_active, plants(display_name, code)")
+          .select("id", { count: "exact", head: true })
           .eq("role", "plant_manager")
-          .order("real_name", { ascending: true }),
+          .eq("is_active", true).abortSignal(signal),
         supabase
           .from("invitations")
           .select("id, plant_id, invitee_name, plant_invitation_epoch, expires_at, created_at, plants(display_name, code)")
@@ -132,20 +134,23 @@ export function AdminOrgPage() {
           .is("accepted_at", null)
           .is("canceled_at", null)
           .gt("expires_at", now)
-          .order("created_at", { ascending: false }),
-      ]);
+          .order("created_at", { ascending: false }).abortSignal(signal),
+      ]), controller.signal);
 
       // A later refresh supersedes this snapshot, including on success.
       if (!rosterGate.current.isCurrent(revision)) return false;
       if (plantResult.error) throw plantResult.error;
       if (managerResult.error) throw managerResult.error;
       if (inviteResult.error) throw inviteResult.error;
-      if (!isValidAdminOrgLists(plantResult.data, managerResult.data, inviteResult.data)) {
+      if (!isValidAdminOrgLists(plantResult.data, [], inviteResult.data)) {
         throw new Error("admin_org_result_invalid");
       }
 
+      const counts = readPlantManagerCounts(plantResult.data);
+      const activeCount = exactManagerCount(managerResult.count);
       setPlants(plantResult.data as PlantRow[]);
-      setManagers(managerResult.data as unknown as ManagerRow[]);
+      setManagerCountByPlant(counts);
+      setActiveManagerCount(activeCount);
       setPendingManagerInvites(currentPendingInvitations(
         plantResult.data as PlantRow[],
         inviteResult.data as unknown as PendingManagerInviteRow[],
@@ -164,29 +169,27 @@ export function AdminOrgPage() {
     } catch (cause) {
       if (rosterGate.current.isCurrent(revision)) {
         setError(
-          cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
+          cause instanceof ReadTimeoutError
+            ? "조직 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 불러와주세요."
+            : cause instanceof Error ? cause.message : "관리자 조직 정보를 불러오지 못했습니다.",
         );
       }
       return false;
     } finally {
       if (rosterGate.current.isCurrent(revision)) setLoading(false);
+      if (rosterController.current === controller) rosterController.current = null;
     }
   }
 
   useEffect(() => {
     void load();
-    return () => rosterGate.current.invalidate();
+    return () => {
+      rosterGate.current.invalidate();
+      rosterController.current?.abort();
+      managerCheckController.current?.abort();
+    };
     // Mount-scoped read; mutations start independent revisions.
   }, []);
-
-  const managerCountByPlant = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const manager of managers) {
-      if (!manager.plant_id || !manager.is_active) continue;
-      counts.set(manager.plant_id, (counts.get(manager.plant_id) ?? 0) + 1);
-    }
-    return counts;
-  }, [managers]);
 
   async function reconcilePlantMutations() {
     if (creatingPlant || plantActionPending || plantRosterPending) return;
@@ -378,6 +381,14 @@ export function AdminOrgPage() {
       setCopied(false);
 
       const supabase = getSupabase();
+      if (manager) {
+        const controller = new AbortController();
+        managerCheckController.current = controller;
+        if (!await isCurrentManager(supabase, manager, controller.signal)) {
+          setManagerReinviteReview(null);
+          throw new Error("선택한 담당자의 현재 정보를 확인하지 못했습니다. 담당자 목록을 다시 검색한 뒤 확인해주세요.");
+        }
+      }
       const { data, error: invokeError } = await supabase.functions.invoke(
         manager ? "manager-user-action" : "create-invite",
         {
@@ -414,11 +425,15 @@ export function AdminOrgPage() {
           "담당자 초대가 생성되었을 수도 있습니다. 새로 발급하기 전에 수락 대기 목록을 확인하고 중복 초대를 정리해주세요.",
         );
       } else {
+        if (cause instanceof ReadTimeoutError) setManagerReinviteReview(null);
         setError(
-          cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
+          cause instanceof ReadTimeoutError
+            ? "담당자 현재 정보 조회 응답이 지연되어 발급하지 않았습니다. 목록을 다시 확인해주세요."
+            : cause instanceof Error ? cause.message : "담당자 초대를 생성하지 못했습니다.",
         );
       }
     } finally {
+      managerCheckController.current = null;
       setCreatingInvite(false);
     }
   }
@@ -553,6 +568,9 @@ export function AdminOrgPage() {
       {error ? (
         <section className="panel">
           <p className="error-text" role="alert">{error}</p>
+          <button type="button" className="secondary-button"
+            disabled={creatingPlant || plantActionPending || creatingInvite || Boolean(managerInviteActionPending) || plantRosterPending || adminRosterPending}
+            onClick={() => void load()}>조직 정보 다시 불러오기</button>
         </section>
       ) : null}
 
@@ -767,7 +785,7 @@ export function AdminOrgPage() {
             <p className="eyebrow">Plant Manager</p>
             <h3>담당자 초대</h3>
           </div>
-          <span className="count-badge">{managers.filter((row) => row.is_active).length}</span>
+          <span className="count-badge">{activeManagerCount}</span>
         </div>
 
         <div className="admin-form-grid">
@@ -939,33 +957,11 @@ export function AdminOrgPage() {
           </div>
         ) : null}
 
-        <div className="admin-list">
-          {managers.length === 0 ? (
-            <p className="muted">등록된 발전소담당자가 없습니다.</p>
-          ) : (
-            managers.map((manager) => (
-              <article key={manager.id} className="admin-row">
-                <div>
-                  <strong>{manager.real_name}</strong>
-                  <span>{manager.nickname} · {managerPlantLabel(manager)}</span>
-                </div>
-                <div className="admin-row-actions">
-                  <span className={manager.is_active ? "status-pill status-pill--active" : "status-pill"}>
-                    {manager.is_active ? "활성" : "비활성"}
-                  </span>
-                  <button type="button" className="secondary-button compact-button"
-                    aria-label={`${manager.real_name} 담당자 초대링크 재생성`}
-                    disabled={!manager.is_active || !plants.some(p => p.id === manager.plant_id && p.is_active) ||
-                      creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||
-                      createOutcomeUnknown || adminRosterPending || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0}
-                    onClick={() => { setManagerReinviteReview(manager); setError(null); }}>
-                    초대링크 재생성
-                  </button>
-                </div>
-              </article>
-            ))
-          )}
-        </div>
+        <AdminManagerRoster plants={plants}
+          disabled={creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||
+            createOutcomeUnknown || adminRosterPending || reissueUnknownIds.length > 0 || cancelUnknownIds.length > 0}
+          onSelect={manager => { setManagerReinviteReview(manager); setError(null); }}
+          onQueryChange={() => setManagerReinviteReview(null)} />
         <p className="muted mini-copy">활성은 계정 사용 허용 상태입니다. 재생성한 링크는 기존 담당자의 동일한 카카오 계정으로 사용해주세요.</p>
       </section>
     </section>
