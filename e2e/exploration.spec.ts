@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { readFile } from "node:fs/promises";
 import targets from "../apps/web/src/features/admin/scenarioReviewTargets.generated.json" with { type: "json" };
+import { EXPLORATION_QUESTIONS } from "../apps/web/src/features/exploration/feedbackContract";
+import { parseExplorationFeedback } from "../apps/web/src/features/admin/explorationFeedbackValidation";
 import { validateReviewSubmission } from "../apps/web/src/features/admin/scenarioReviewSubmission";
 
 async function fixture(page: Page) {
@@ -16,8 +18,8 @@ async function fixture(page: Page) {
   await page.route(/\/(?:rest|auth|functions)\/v1\//, async route => {
     const url = new URL(route.request().url());
     if (url.hostname !== "127.0.0.1") throw new Error("Fixture requires loopback Supabase");
-    if (route.request().method() !== "GET") writes.push(url.pathname);
-    const body = url.pathname === "/auth/v1/user" ? user : url.pathname === "/rest/v1/profiles" ? { id: user.id, plant_id: null, role: "admin", real_name: "테스트 관리자", nickname: "TESTADMIN", is_active: true, nickname_reset_required: false, job_role: null } : [];
+    if (route.request().method() !== "GET" && !["list", "season-overview"].includes(String(route.request().postDataJSON()?.action))) writes.push(url.pathname);
+    const body = url.pathname === "/functions/v1/admin-scenario" ? { versions: [], season: null, scenarios: [] } : url.pathname === "/auth/v1/user" ? user : url.pathname === "/rest/v1/profiles" ? { id: user.id, plant_id: null, role: "admin", real_name: "테스트 관리자", nickname: "TESTADMIN", is_active: true, nickname_reset_required: false, job_role: null } : [];
     await route.fulfill({ json: body });
   });
   await page.goto("/experience/s02-exploration");
@@ -85,6 +87,7 @@ test("free exploration, one-time information and original card costs lead to an 
   for (const action of packet.actions) expect(Object.keys(action).sort()).toEqual(["step", "nodeId", "actionType", "actionId", "label", "minutes"].sort());
   expect(packet.notes).toHaveLength(2);
   expect(packet.feedback).toHaveLength(3);
+  expect(parseExplorationFeedback(JSON.stringify(packet)).error).toBeNull();
   expect(packet.judgmentBasis).toContain("불확실성");
   expect(validateReviewSubmission(packet, target).error).not.toBeNull();
   await expect(page.getByText("다운로드를 요청했습니다. 받은 파일은 직접 공유해주세요.", { exact: true })).toBeVisible();
@@ -122,4 +125,35 @@ test("campaign exposes a separate exploration entry", async ({ page }) => {
   await expect(entry).toHaveAttribute("href", "/experience/s02-exploration");
   await entry.click();
   await expect(page.getByRole("button", { name: "현장 탐색 시작", exact: true })).toBeVisible();
+});
+
+test("administrator reviews local opinions, rejects altered files and clears old results without server writes", async ({ page }) => {
+  const writes = await fixture(page);
+  await page.goto("/admin/scenarios");
+  await page.getByRole("button", { name: "체험 의견 파일 검토 열기", exact: true }).click();
+  const input = page.getByLabel("체험 의견 JSON 파일 선택", { exact: true });
+  const packet = {
+    schemaVersion: 1, kind: "exploration_usability_feedback", experienceId: "s02_field_exploration", experienceVersion: 2,
+    scenarioId: "s02_equipment_identity", scenarioVersion: 4, sourceContentSha256: targets.find(target => target.scenarioId === "s02_equipment_identity")!.contentSha256,
+    createdAt: "2026-10-15T01:00:00.000Z", scope: "테스트", notes: [],
+    actions: [
+      { step: 1, nodeId: "decision_identify", actionType: "choice", actionId: "compare_work_document", label: "작업 문서와 현장 상태를 한 항목씩 대조한다.", minutes: 3 },
+      { step: 3, nodeId: "decision_verify", actionType: "choice", actionId: "request_independent_check", label: "다른 근거와 사람을 이용해 독립확인을 요청한다.", minutes: 4 },
+    ], judgmentBasis: "검증용 판단 근거", feedback: EXPLORATION_QUESTIONS.map(question => ({ question, response: "검증용 사용성 의견" })),
+  };
+  await input.setInputFiles({ name: "feedback.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(packet)) });
+  const review = page.getByRole("region", { name: "체험 의견 파일 검토", exact: true });
+  await expect(review).toContainText("S02 v4 대상·파일 구조·행동 순서·시간 비용 일치 확인");
+  await expect(review).toContainText("검증용 판단 근거");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  packet.actions[0]!.minutes = 0;
+  await input.setInputFiles({ name: "changed.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(packet)) });
+  await expect(review.getByRole("alert")).toContainText("시간 비용");
+  await expect(review).not.toContainText("검증용 판단 근거");
+  await input.setInputFiles({ name: "oversized.json", mimeType: "application/json", buffer: Buffer.from(" ".repeat(65537)) });
+  await expect(review.getByRole("alert")).toContainText("64KB");
+  await review.getByRole("button", { name: "검토 파일 닫기", exact: true }).click();
+  await expect(review.getByRole("alert")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "S03 검토 및 승인 진행", exact: true })).toContainText("필수 검토 5/5 통과");
+  expect(writes).toEqual([]);
 });

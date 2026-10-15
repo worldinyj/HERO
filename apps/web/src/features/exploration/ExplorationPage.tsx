@@ -5,7 +5,8 @@ import { Link } from "react-router";
 import raw from "../../../../../scenarios/data/S02_equipment_identity_v1.json";
 import { ChoiceSheet } from "../play/ChoiceSheet";
 import { GameClock } from "../play/GameClock";
-import { ExplorationFeedback, type ExplorationHistoryItem } from "./ExplorationFeedback";
+import { ExplorationFeedback } from "./ExplorationFeedback";
+import { EXPLORATION_CARD_LABELS as cardLabel, type ExplorationHistoryItem } from "./feedbackContract";
 import "./exploration.css";
 
 const scenario = ScenarioSchema.parse(raw);
@@ -13,7 +14,7 @@ if (scenario.id !== "s02_equipment_identity" || scenario.version !== 4) throw ne
 type Target = "panel" | "document" | "colleague" | "contact" | "decision";
 const labels: Record<Target, string> = { panel: "현장 패널", document: "작업 문서", colleague: "동료", contact: "연락 수단", decision: "다음 행동 결정" };
 const cardAt: Record<string, Target> = { self_check_star: "panel", independent_verification: "colleague", stop_when_unsure: "contact" };
-const cardLabel: Record<string, string> = { self_check_star: "멈추고 자기확인하기 · STAR", independent_verification: "별도 근거로 독립확인 요청하기", stop_when_unsure: "작업 중지 후 확인 요청하기" };
+
 
 function startGame() {
   return createGame(scenario, { simulationSeed: "s02-exploration-v4", presentationSeed: "s02-exploration-v4" });

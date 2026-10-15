@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { Scenario } from "@hero/schema";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
@@ -10,6 +10,8 @@ import { confirmedStatusResponse, scenarioErrorMessage, STATUS_LABEL, type Scena
 import { SeasonScenarioPanel } from "./SeasonScenarioPanel";
 import { ScenarioVersionComparison } from "./ScenarioVersionComparison";
 import { ScenarioStatusDialog, type StatusChange } from "./ScenarioStatusDialog";
+
+const ExplorationFeedbackReview = lazy(() => import("./ExplorationFeedbackReview").then(module => ({ default: module.ExplorationFeedbackReview })));
 
 interface ScenarioVersionRow {
   id: string;
@@ -66,6 +68,7 @@ function formatDate(value: string | null): string {
 }
 
 export function AdminScenarioPage() {
+  const [feedbackReviewOpen, setFeedbackReviewOpen] = useState(false);
   const [versions, setVersions] = useState<ScenarioVersionRow[]>([]);
   const [jsonText, setJsonText] = useState("");
   const [fileName, setFileName] = useState("");
@@ -359,6 +362,9 @@ export function AdminScenarioPage() {
       {playPreview ? <AdminScenarioPreview key={playPreview.revision} scenario={playPreview.scenario} sourceLabel={playPreview.sourceLabel} onClose={() => closePreview()} /> : null}
 
       <SeasonScenarioPanel invoke={invoke} refreshKey={versions} disabled={saving || Boolean(statusPending)} onBusy={setSeasonBusy} />
+
+      <section className="review-card"><h3>탐색형 체험 의견</h3><p>사용성 의견을 콘텐츠 승인과 구분해 검토합니다.</p><button type="button" className="secondary-button" aria-expanded={feedbackReviewOpen} onClick={() => setFeedbackReviewOpen(open => !open)}>{feedbackReviewOpen ? "체험 의견 검토 접기" : "체험 의견 파일 검토 열기"}</button>
+      {feedbackReviewOpen ? <Suspense fallback={<p role="status">체험 의견 검토 화면을 준비하고 있습니다…</p>}><ExplorationFeedbackReview /></Suspense> : null}</section>
 
       <ScenarioVersionComparison versions={comparisonVersions} editor={preview?.scenario ?? null} readVersion={id => invoke({ action: "preview", scenarioVersionId: id })} />
 

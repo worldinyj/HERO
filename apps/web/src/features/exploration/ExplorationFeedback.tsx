@@ -1,22 +1,9 @@
+import { EXPLORATION_QUESTIONS as questions, type ExplorationHistoryItem } from "./feedbackContract";
 import { useState } from "react";
 import targets from "../admin/scenarioReviewTargets.generated.json";
 
 const source = targets.find(target => target.scenarioId === "s02_equipment_identity" && target.version === 4 && target.approved);
 if (!source) throw new Error("exploration_feedback_requires_approved_s02_v4");
-const questions = [
-  "현장에서 직접 조사한다는 느낌이 들었나요?",
-  "발견한 정보 때문에 처음 생각을 바꿨나요?",
-  "다른 순서나 방법으로 다시 확인해 보고 싶나요?",
-];
-export interface ExplorationHistoryItem {
-  step: number;
-  nodeId: string;
-  actionType: "info" | "card" | "choice";
-  actionId: string;
-  label: string;
-  minutes: number;
-}
-
 /** Only deliberate file download. No account identifiers, hidden engine values or submission API. */
 export function ExplorationFeedback({ notes, history }: {
   notes: Array<{ id: string; text: string }>;
