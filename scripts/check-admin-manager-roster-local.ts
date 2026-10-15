@@ -3,6 +3,8 @@ import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { EMPTY_MANAGER_FILTERS, ManagerPageOutOfRangeError, readManagerPage, readPlantManagerCounts } from "../apps/web/src/features/admin/managerRosterQueries.ts";
 
+import { readOrgListSnapshot } from "../apps/web/src/features/admin/orgListSnapshot.ts";
+
 async function main() {
   const config = JSON.parse(execFileSync("supabase", ["status", "--output", "json"], { stdio: ["ignore", "pipe", "pipe"] }).toString());
   if (config.API_URL !== "http://127.0.0.1:55321" || (new URL(config.DB_URL).port !== "55322" || !["127.0.0.1", "localhost"].includes(new URL(config.DB_URL).hostname))) throw Error("wrong_local_target");
@@ -36,6 +38,15 @@ async function main() {
     const check = await service.from("profiles").select("id", { count: "exact", head: true }).eq("role", "plant_manager").eq("plant_id", id).eq("is_active", true);
     if (check.error || check.count !== count) throw Error("plant_embedded_count_mismatch");
   }
+  const plantSnapshot = await readOrgListSnapshot((from, to) => admin.from("plants")
+    .select("id", { count: "exact" }).order("display_name").order("id").range(from, to));
+  const nowIso = new Date().toISOString();
+  const pendingSnapshot = await readOrgListSnapshot((from, to) => admin.from("invitations")
+    .select("id", { count: "exact" }).eq("target_role", "plant_manager").is("accepted_at", null)
+    .is("canceled_at", null).gt("expires_at", nowIso).order("created_at", { ascending: false }).order("id").range(from, to));
+  const pendingCount = await service.from("invitations").select("id", { count: "exact", head: true })
+    .eq("target_role", "plant_manager").is("accepted_at", null).is("canceled_at", null).gt("expires_at", nowIso);
+  if (plantSnapshot.length !== counts.size || pendingCount.error || pendingCount.count !== pendingSnapshot.length) throw Error("org_snapshot_count_mismatch");
   const page = await readManagerPage(admin, EMPTY_MANAGER_FILTERS, 0);
   let filterChecks = 0;
   for (const plantId of counts.keys()) for (const status of ["active", "inactive"] as const) {
@@ -52,6 +63,6 @@ async function main() {
     }
     if (!outOfRangeVerified) throw Error("postgrest_range_error_missing");
   }
-  console.log(JSON.stringify({ outOfRangeVerified, result: "PASS", target: "127.0.0.1:55321", authenticatedAdminRls: true, activeManagers: total.count, checkedPlantCounts: counts.size, firstPageRows: page.rows.length, totalManagers: page.total, filterChecks, writes: 0 }));
+  console.log(JSON.stringify({ outOfRangeVerified, plantSnapshotRows: plantSnapshot.length, pendingSnapshotRows: pendingSnapshot.length, result: "PASS", target: "127.0.0.1:55321", authenticatedAdminRls: true, activeManagers: total.count, checkedPlantCounts: counts.size, firstPageRows: page.rows.length, totalManagers: page.total, filterChecks, writes: 0 }));
 }
 main().catch(error => { console.error(error instanceof Error && /^[a-z_]+(?::[A-Z0-9]+)?$/.test(error.message) ? error.message : "local_read_verification_failed"); process.exitCode = 1; });

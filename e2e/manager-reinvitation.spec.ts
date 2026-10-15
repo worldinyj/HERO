@@ -7,7 +7,7 @@ const plantId = "f5200000-0000-0000-0000-000000000001";
 const inviteId = "f5300000-0000-0000-0000-000000000001";
 
 // Intercept every Supabase call: UI checks cannot mutate local or remote data.
-async function fixture(page: Page, failure = false, managerSession = false, plantActive = true, roster = false) {
+async function fixture(page: Page, failure = false, managerSession = false, plantActive = true, roster = false, orgRoster = false) {
   const calls: unknown[] = [];
   const userId = managerSession ? managerId : adminId;
   const user = { id: userId, aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
@@ -34,8 +34,16 @@ async function fixture(page: Page, failure = false, managerSession = false, plan
         body = url.searchParams.has("id") ? managers[0] : filtered.slice(offset, offset + Number(url.searchParams.get("limit") ?? 20));
       }
     } else if (url.pathname === "/rest/v1/plants") {
-      body = [{ id: plantId, code: "TEST", name: "테스트 발전소", display_name: "테스트 발전소", is_active: plantActive, invitation_epoch: 0, profiles: [{ count: roster ? 21 : 1 }], created_at: new Date().toISOString() }];
-    } else if (url.pathname === "/rest/v1/invitations") body = [];
+      const plants = Array.from({ length: orgRoster ? 201 : 1 }, (_, i) => ({ id: i ? `plant-${i}` : plantId, code: i ? `TEST${i}` : "TEST", name: `테스트 발전소 ${i}`, display_name: `테스트 발전소 ${i}`, is_active: plantActive, invitation_epoch: 0, profiles: [{ count: i ? 0 : roster ? 21 : 1 }], created_at: new Date().toISOString() }));
+      total = plants.length;
+      const offset = Number(url.searchParams.get("offset") ?? 0);
+      body = plants.slice(offset, offset + Number(url.searchParams.get("limit") ?? 200));
+    } else if (url.pathname === "/rest/v1/invitations") {
+      const invites = Array.from({ length: orgRoster ? 203 : 0 }, (_, i) => ({ id: `invite-${i}`, plant_id: plantId, invitee_name: `초대 담당자 ${i}`, plant_invitation_epoch: i < 201 ? 0 : 1, expires_at: new Date(Date.now() + 604800000).toISOString(), created_at: new Date().toISOString(), plants: { display_name: "테스트 발전소", code: "TEST" } }));
+      total = invites.length;
+      const offset = Number(url.searchParams.get("offset") ?? 0);
+      body = invites.slice(offset, offset + Number(url.searchParams.get("limit") ?? 200));
+    }
     else if (url.pathname === "/auth/v1/user") body = user;
     else if (url.pathname === "/functions/v1/manager-user-action") {
       calls.push(route.request().postDataJSON());
@@ -362,4 +370,55 @@ test("a later failed organization refresh revokes an earlier reconciliation snap
   await expect(confirm).toBeDisabled();
   await expect(button).toBeDisabled();
   expect(calls).toEqual([{ action: "reinvite-manager", profileId: managerId }]);
+});
+
+
+test("organization pages retain complete catalogs, epoch counts and one-time URLs", async ({ page }, testInfo) => {
+  const calls = await fixture(page, false, false, true, false, true);
+  await page.goto("/admin");
+  await expect(page.getByRole("status").filter({ hasText: "발전소 전체 201건" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "수락 대기 초대 전체 201건" })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "담당자 초대 발전소" }).getByRole("option")).toHaveCount(202);
+  const invites = page.getByLabel("수락 대기 중인 담당자 초대", { exact: true });
+  await expect(invites.locator("article")).toHaveCount(20);
+  await page.getByRole("button", { name: "다음 발전소 페이지", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "발전소 전체 201건 · 2 / 11페이지" })).toBeVisible();
+  await page.getByRole("button", { name: "다음 수락 대기 초대 페이지", exact: true }).click();
+  await expect(invites).toContainText("초대 담당자 20");
+  await expect(invites).not.toContainText("초대 담당자 0");
+  await page.getByRole("textbox", { name: "담당자 이름", exact: true }).fill("새 담당자");
+  await page.getByRole("button", { name: "담당자 초대 링크 생성", exact: true }).click();
+  const link = page.locator("code").filter({ hasText: "/i/new-fixture-token" });
+  await expect(link).toBeVisible();
+  await page.getByRole("button", { name: "다음 수락 대기 초대 페이지", exact: true }).click();
+  await expect(link).toBeVisible();
+  await expect(page.getByRole("button", { name: "담당자 초대 링크 생성", exact: true })).toBeDisabled();
+  expect(calls).toHaveLength(1);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("navigation", { name: "수락 대기 초대 페이지", exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("organization-pages.png") });
+});
+
+test("off-page uncertain invitation keeps its lock through navigation and requires explicit full reconciliation", async ({ page }) => {
+  await fixture(page, false, false, true, false, true);
+  let mutations = 0;
+  await page.route("**/functions/v1/manager-user-action", route => {
+    mutations++;
+    return route.fulfill({ status: 503, json: { error: "internal_error" } });
+  });
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "다음 수락 대기 초대 페이지", exact: true }).click();
+  await page.getByLabel("수락 대기 중인 담당자 초대", { exact: true }).getByRole("button", { name: "초대 취소", exact: true }).first().click();
+  const confirm = page.getByRole("button", { name: "2. 결과 확인 완료 · 잠금 해제", exact: true });
+  await expect(confirm).toBeDisabled();
+  await page.getByRole("button", { name: "이전 수락 대기 초대 페이지", exact: true }).click();
+  await expect(confirm).toBeDisabled();
+  await expect(page.getByRole("button", { name: "담당자 초대 링크 생성", exact: true })).toBeDisabled();
+  await page.getByRole("button", { name: "1. 담당자 초대 명단 다시 조회", exact: true }).click();
+  await expect(confirm).toBeEnabled();
+  expect(mutations).toBe(1);
+  await confirm.click();
+  await expect(confirm).not.toBeVisible();
+  expect(mutations).toBe(1);
 });
