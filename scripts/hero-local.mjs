@@ -238,7 +238,8 @@ export function qaSteps({ withDb = false, deep = false, withDeno = false } = {})
     // Do not auto-approve scenarios or enforce release-only --strict gates here.
     steps.push(
       ["pnpm", ["validate:scenario"]],
-      ["pnpm", ["validate:scenario", "scenarios/drafts"]],
+      ...(readdirSync(join(ROOT, "scenarios/drafts")).some(name => name.endsWith(".json"))
+        ? [["pnpm", ["validate:scenario", "scenarios/drafts"]]] : []),
       ["pnpm", ["check:source-evidence"]],
       ["pnpm", ["check:cause-traceability"]],
       ["pnpm", ["check:scenario-promotion"]],
