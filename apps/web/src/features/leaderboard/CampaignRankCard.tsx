@@ -84,11 +84,11 @@ export function CampaignRankCard() {
       <div className="campaign-rank-card">
         <div>
           <span className="campaign-rank-label">이번 시즌</span>
-          <strong>{error ? "순위를 불러오지 못했습니다" : "아직 순위가 없습니다"}</strong>
+          <strong>{error ? "순위를 불러오지 못했습니다" : "진행 중인 시즌이 없습니다"}</strong>
           <small>
             {error
               ? "리더보드 화면에서 다시 확인할 수 있습니다."
-              : "첫 경쟁 장을 완료하면 최고 기록이 순위에 반영됩니다."}
+              : "시즌이 열리면 내 순위와 기록을 여기에서 확인할 수 있습니다."}
           </small>
         </div>
         <Link

@@ -87,13 +87,13 @@ function CampaignPage() {
     <section className="panel" aria-labelledby="campaign-title">
       <header className="learning-mascot-heading">
         <div>
-          <p className="eyebrow">10월 시즌 · 개발 중</p>
+          <p className="eyebrow">HERO 학습</p>
           <h2 id="campaign-title">캠페인</h2>
         </div>
         <SuriIllustration pose="welcome" eager />
       </header>
       <p className="muted">
-        0장 튜토리얼은 실제 엔진으로 플레이할 수 있습니다. S01~S03은 서버 세션·콘텐츠 검수 후 순차 개방합니다.
+        튜토리얼과 탐색형 체험으로 확인과 판단을 연습해보세요. 참여자 계정에는 현재 시즌에 공개된 경쟁 시나리오가 표시됩니다.
       </p>
 
       <CampaignRankCard />
@@ -102,6 +102,7 @@ function CampaignPage() {
         <Link
           className="chapter-link"
           to="/briefing/s00_tutorial"
+          aria-label="튜토리얼 · 확인하고 말하기 · 약 3분 · 순위 미반영"
           onPointerEnter={preloadBriefingRoute}
           onPointerDown={preloadBriefingRoute}
           onFocus={preloadBriefingRoute}
