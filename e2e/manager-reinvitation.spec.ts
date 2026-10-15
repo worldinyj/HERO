@@ -345,3 +345,21 @@ test("PostgREST range error after rows disappear reloads the first page", async 
   await expect(roster.getByRole("alert")).toHaveCount(0);
   expect(calls).toEqual([]);
 });
+
+test("a later failed organization refresh revokes an earlier reconciliation snapshot", async ({ page }) => {
+  const calls = await fixture(page, true);
+  await page.goto("/admin");
+  const button = page.getByRole("button", { name: "테스트 담당자 담당자 초대링크 재생성", exact: true });
+  await button.click();
+  await page.getByRole("button", { name: "초대링크 재생성 확정", exact: true }).click();
+  await expect(page.getByText("담당자 초대가 생성되었을 수도 있습니다.", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "1. 담당자 초대 명단 다시 조회", exact: true }).click();
+  const confirm = page.getByRole("button", { name: "2. 결과 확인 완료 · 잠금 해제", exact: true });
+  await expect(confirm).toBeEnabled();
+  await page.route("**/rest/v1/plants?**", route => route.fulfill({ status: 403, json: { message: "denied" } }));
+  await page.getByRole("button", { name: "조직 정보 다시 불러오기", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "관리자 조직 정보를 불러오지 못했습니다." })).toBeVisible();
+  await expect(confirm).toBeDisabled();
+  await expect(button).toBeDisabled();
+  expect(calls).toEqual([{ action: "reinvite-manager", profileId: managerId }]);
+});

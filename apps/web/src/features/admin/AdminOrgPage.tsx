@@ -105,6 +105,9 @@ export function AdminOrgPage() {
     rosterController.current?.abort();
     const controller = new AbortController();
     rosterController.current = controller;
+    // A new read supersedes any earlier operator reconciliation snapshot.
+    setAdminRosterReady(false);
+    setPlantRosterReady(false);
     setLoading(true);
     setError(null);
 
