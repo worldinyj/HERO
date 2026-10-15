@@ -3,6 +3,7 @@ import { SCENARIO_SCHEMA_VERSION } from "@hero/schema/version";
 import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { SuriIllustration } from "../components/SuriIllustration";
+import { FeedbackLink } from "../components/FeedbackLink";
 import { InstallApp } from "../features/install/InstallApp";
 import { RouteErrorBoundary } from "./RouteErrorBoundary";
 import { useAudio } from "../features/audio/AudioContext";
@@ -307,6 +308,8 @@ export function App() {
       </Routes>
       </Suspense>
       </RouteErrorBoundary>
+
+      {!immersiveRoute ? <footer className="app-feedback"><FeedbackLink /></footer> : null}
 
       {!publicRoute && !immersiveRoute ? (
         <nav

@@ -5,6 +5,7 @@ import targets from "../apps/web/src/features/admin/scenarioReviewTargets.genera
 import { EXPLORATION_QUESTIONS } from "../apps/web/src/features/exploration/feedbackContract";
 import { parseExplorationFeedback } from "../apps/web/src/features/admin/explorationFeedbackValidation";
 import { validateReviewSubmission } from "../apps/web/src/features/admin/scenarioReviewSubmission";
+import { HERO_FEEDBACK_FORM_URL } from "../apps/web/src/components/FeedbackLink";
 
 async function fixture(page: Page) {
   const writes: string[] = [];
@@ -63,6 +64,11 @@ test("free exploration, one-time information and original card costs lead to an 
   await choose(page, "다른 근거와 사람을 이용해 독립확인을 요청한다");
   await expect(clock).toHaveText("09:44");
   await expect(page.getByRole("heading", { name: "확인과 판단 돌아보기", exact: true })).toBeVisible();
+  const feedbackLink = page.locator(".exploration-feedback").getByRole("link", { name: /사용자 의견 남기기/ });
+  await expect(feedbackLink).toHaveAttribute("href", HERO_FEEDBACK_FORM_URL);
+  await expect(feedbackLink).toHaveAttribute("target", "_blank");
+  await expect(feedbackLink).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(page.locator(".exploration-feedback")).toContainText("아래 입력과 판단 기록은 자동으로 옮겨지지 않습니다.");
   await expect(page.getByText("실제 조작 요소의 상태는 별도 확인이 필요합니다.", { exact: false })).toBeVisible();
   await expect(page.locator(".exploration-page ol")).toContainText("독립확인 요청하기");
   await expect(page.locator(".exploration-page")).not.toContainText("회고 전 HP");
@@ -121,6 +127,7 @@ test("decisions stay available without checking every target and keyboard return
 test("campaign exposes a separate exploration entry", async ({ page }) => {
   await fixture(page);
   await page.goto("/");
+  await expect(page.locator(".app-feedback").getByRole("link", { name: /사용자 의견 남기기/ })).toHaveAttribute("href", HERO_FEEDBACK_FORM_URL);
   const entry = page.getByRole("link", { name: /탐색형 체험.*약 5분/ });
   await expect(entry).toHaveAttribute("href", "/experience/s02-exploration");
   await entry.click();
