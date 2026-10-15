@@ -21,6 +21,7 @@ export interface SessionSubmissionBody {
   actions: SessionSubmissionAction[];
   reflectionAnswered: boolean;
   swissCheeseViewed: boolean;
+  reflectionSelection?: string;
 }
 
 export interface QueueableSessionSubmission {

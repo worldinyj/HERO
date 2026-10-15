@@ -2,7 +2,7 @@
 -- This test intentionally does NOT claim to simulate two simultaneous PG clients.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(35);
 
 insert into auth.users (id, email) values
 ('e1a00000-0000-0000-0000-000000000001','completion-primary@hero.test'),
@@ -78,7 +78,7 @@ select is((public.complete_play_session_atomic(
 'e6a00000-0000-0000-0000-000000000001',
 'e1a00000-0000-0000-0000-000000000001',
 'safe_complete','{"safety":90}'::jsonb,245,'v1',
-'{"ending":"safe_complete","hpPoint":245}'::jsonb,
+'{"ending":"safe_complete","hpPoint":245,"reflectionSelection":"decision"}'::jsonb,
 '[{"seq":0,"node_id":"start","action_type":"continue","action_id":"","clock_before":0,"clock_after":1},{"seq":1,"node_id":"decision","action_type":"choice","action_id":"verify","clock_before":1,"clock_after":2}]'::jsonb
 )->>'already_completed')::boolean,false,'first completion is not a replay receipt');
 select is((select status::text from public.play_sessions
@@ -97,6 +97,9 @@ where session_id='e6a00000-0000-0000-0000-000000000001' and seq=1),
 select is((select metrics->>'safety' from public.play_sessions
 where id='e6a00000-0000-0000-0000-000000000001'),
 '90','authoritative metrics saved');
+select is((select evaluation->>'reflectionSelection' from public.play_sessions
+where id='e6a00000-0000-0000-0000-000000000001'),
+'decision','reflection selection saved with authoritative evaluation');
 
 -- A malicious/stale duplicate with different scores and decisions may only
 -- read the first committed result; it cannot overwrite anything.
@@ -104,7 +107,7 @@ select is((public.complete_play_session_atomic(
 'e6a00000-0000-0000-0000-000000000001',
 'e1a00000-0000-0000-0000-000000000001',
 'event','{"safety":1}'::jsonb,1,'forged',
-'{"ending":"event","hpPoint":1}'::jsonb,
+'{"ending":"event","hpPoint":1,"reflectionSelection":"initial_conditions"}'::jsonb,
 '[{"seq":99,"node_id":"forged","action_type":"choice","clock_before":0,"clock_after":0}]'::jsonb
 )->>'already_completed')::boolean,true,'duplicate returns already_completed=true');
 select is((select hp_point from public.play_sessions
@@ -112,6 +115,9 @@ where id='e6a00000-0000-0000-0000-000000000001'),245,'duplicate cannot change sc
 select is((select evaluation->>'ending' from public.play_sessions
 where id='e6a00000-0000-0000-0000-000000000001'),
 'safe_complete','duplicate cannot change stored evaluation');
+select is((select evaluation->>'reflectionSelection' from public.play_sessions
+where id='e6a00000-0000-0000-0000-000000000001'),
+'decision','duplicate cannot replace the first committed reflection');
 select results_eq($$select count(*) from public.session_decisions
 where session_id='e6a00000-0000-0000-0000-000000000001'$$,
 array[2::bigint],'duplicate cannot insert decisions');

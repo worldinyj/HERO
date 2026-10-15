@@ -9,7 +9,7 @@ const tests = [
 ["invitation_atomic_cancel",27],["invitation_atomic_creation",27],
 ["player_status_atomic",32],["nickname_force_reset_atomic",33],
 ["nickname_self_change_atomic",39],["admin_plant_atomic",34],
-["plant_deactivation_epoch",39],["session_completion_atomic",33],
+["plant_deactivation_epoch",39],["session_completion_atomic",35],
 ["manager_reinvitation",31],["scenario_status_atomic",35],["season_scenario_management",46]
 ];
 const migrations = ["leaderboard_public_projection","atomic_invitation_reissue",
@@ -37,7 +37,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===440,"pgTAP declarations total 440 (NOT executed)");
+check(total===442,"pgTAP declarations total 442 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also
@@ -86,7 +86,7 @@ for (const name of testNames) {
   if(plan!==count) mismatchedPlans.push(name+": plan "+plan+" != "+count);
 }
 mismatchedPlans.forEach(m=>console.error("INVALID pgTAP DECLARATION "+m));
-check(testNames.length===20 && allAssertions===529 && mismatchedPlans.length===0,
+check(testNames.length===20 && allAssertions===531 && mismatchedPlans.length===0,
   testNames.length+" pgTAP suites: "+allAssertions+" total planned declarations (NOT executed)");
 
 // Each assertion must quote SQL with $$...$$ (or a valid named tag).

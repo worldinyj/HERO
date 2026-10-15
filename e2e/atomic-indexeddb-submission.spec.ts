@@ -17,6 +17,7 @@ type StagingInput = {
     >;
     reflectionAnswered: boolean;
     swissCheeseViewed: boolean;
+    reflectionSelection?: string;
   };
 };
 
@@ -226,6 +227,19 @@ test.describe("real IndexedDB two-tab atomic submission staging", () => {
     await expect(stage(b, "other-user", input(id, "verify")))
       .rejects.toThrow("submission_queue_owner_conflict");
     expect(await inspect(a, id)).toMatchObject({ userId: "user-one" });
+  });
+
+  test("queued reflection survives a second tab retry and rejects replacement", async ({ context }) => {
+    const [a, b] = await twoTabs(context);
+    const id = "stage-reflection-" + crypto.randomUUID();
+    const original = input(id, "verify");
+    original.body.reflectionSelection = "decision_identify";
+    expect((await stage(a, "user-one", original)).kind).toBe("ready");
+    expect((await stage(b, "user-one", original)).kind).toBe("ready");
+    const replacement = structuredClone(original);
+    replacement.body.reflectionSelection = "initial_conditions";
+    expect((await stage(b, "user-one", replacement)).kind).toBe("conflict");
+    expect(await inspect(a, id)).toMatchObject({ body: { reflectionSelection: "decision_identify" } });
   });
 
   test("committed server receipt cannot be rewritten by another tab", async ({ context }) => {

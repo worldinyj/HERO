@@ -108,6 +108,10 @@ export function HpReview({
   );
   const decisions = replayNodes(scenario, game);
   const weakBarriers = weakBarrierIds(evaluation);
+  const reflectedDecision = decisions.find(item => item.nodeId === evaluation.reflectionSelection);
+  const reflectionLabel = evaluation.reflectionSelection === "initial_conditions"
+    ? "상황이 시작되기 전부터"
+    : reflectedDecision?.prompt;
 
   return (
     <article className="review-card hp-review">
@@ -129,6 +133,11 @@ export function HpReview({
       </p>
 
       <section className="review-section">
+        {reflectionLabel ? <section aria-label="내 회고 선택">
+          <h3>내가 돌아본 방벽 약화 시점</h3>
+          <p>{reflectionLabel}</p>
+          <p className="muted">내가 선택한 회고 시점입니다. 정답 여부를 판정하거나 선택에 따라 점수를 다르게 매기지 않습니다.</p>
+        </section> : null}
         <h3>5대 학습행동</h3>
         <HpRadar metrics={evaluation.metrics} />
         <div className="metric-bars">

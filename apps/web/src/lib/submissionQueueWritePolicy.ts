@@ -9,6 +9,7 @@ export interface QueueWriteBody {
   }[];
   reflectionAnswered: boolean;
   swissCheeseViewed: boolean;
+  reflectionSelection?: string;
 }
 
 export interface QueueWriteRecord {
@@ -41,8 +42,13 @@ export function sameSubmissionBody(a: QueueWriteBody, b: QueueWriteBody): boolea
   if (!a || !b || a.sessionId !== b.sessionId ||
       a.reflectionAnswered !== b.reflectionAnswered ||
       a.swissCheeseViewed !== b.swissCheeseViewed ||
+      a.reflectionSelection !== b.reflectionSelection ||
       !Array.isArray(a.actions) || !Array.isArray(b.actions) ||
       a.actions.length !== b.actions.length) return false;
+  if (a.reflectionSelection !== undefined &&
+      (typeof a.reflectionSelection !== "string" || !a.reflectionAnswered ||
+       a.reflectionSelection.length === 0 || a.reflectionSelection.length > 256 ||
+       a.reflectionSelection.trim() !== a.reflectionSelection)) return false;
   return a.actions.every((entry, i) => {
     const other = b.actions[i];
     if (!entry || typeof entry !== "object" || Array.isArray(entry) ||
