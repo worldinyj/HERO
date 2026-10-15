@@ -4,7 +4,7 @@ import AxeBuilder from "@axe-core/playwright";
 const row = { session_id: "fixture-session-one", title: "2장 · 아마 이 설비가 맞을 겁니다", scenario_version: 4, season_title: "테스트 시즌", completed_at: "2026-10-15T07:00:00Z", hp_point: 233, ending: "safe_complete", reflection_state: "available", reflection_label: "작업 대상을 확신하기 어려운 상황입니다. 어떻게 하시겠습니까?" };
 
 async function fixture(page: Page, role = "player") {
-  const state = { calls: 0, fail: false, response: [row] as unknown };
+  const state = { calls: 0, fail: false, response: [row] as unknown, wait: null as Promise<void> | null };
   const user = { id: "fa100000-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
   await page.addInitScript(({ user }) => {
     const exp = Math.floor(Date.now() / 1000) + 3600;
@@ -26,6 +26,7 @@ async function fixture(page: Page, role = "player") {
       state.calls++;
       expect(route.request().method()).toBe("POST");
       expect(route.request().postDataJSON()).toEqual({});
+      if (state.wait) await state.wait;
       return state.fail ? route.fulfill({ status: 400, json: { message: "fixture failed" } }) : route.fulfill({ json: state.response });
     }
     throw new Error(`Unexpected history API: ${url.pathname}`);
@@ -73,6 +74,47 @@ test("empty and malformed history are different states", async ({ page }) => {
   await page.getByRole("button", { name: "회고 새로고침", exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(page.getByText("아직 완료한 경쟁 플레이가 없습니다.", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("이전에 조회했을 때 완료한 경쟁 플레이가 없었습니다.", { exact: true })).toBeVisible();
+});
+
+for (const failure of ["network", "malformed"]) test(`refresh preserves exact-version history during ${failure} failure and replaces it on recovery`, async ({ page }, testInfo) => {
+  const state = await fixture(page);
+  state.response = [{ ...row, scenario_version: 3 }];
+  const section = page.getByRole("region", { name: "내 회고 다시보기", exact: true });
+  await section.getByRole("button", { name: "최근 회고 불러오기", exact: true }).click();
+  const previous = section.getByRole("article").filter({ hasText: "v3" });
+  await expect(previous).toContainText("233 HP");
+  let release: () => void = () => {};
+  state.wait = new Promise<void>(resolve => { release = resolve; });
+  state.fail = failure === "network";
+  state.response = [{ ...row, scenario_version: 0 }];
+  await section.getByRole("button", { name: "회고 새로고침", exact: true }).click();
+  await expect(section.getByRole("button")).toBeDisabled();
+  await expect(section).toContainText("이전 조회 결과를 유지하며");
+  await expect(previous).toContainText("233 HP");
+  release();
+  await expect(section.getByRole("alert")).toContainText("아래는 이전 조회 결과입니다.");
+  await expect(previous).toContainText(row.reflection_label);
+  await expect(section).toContainText("이전에 불러온 완료 기록 1건");
+  await expect(section.getByText("아직 완료한 경쟁 플레이가 없습니다.", { exact: true })).toHaveCount(0);
+  await section.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath(`history-refresh-${failure}.png`) });
+  state.wait = null;
+  state.fail = false;
+  state.response = [
+    { ...row, session_id: "fresh-s01", title: "1장 · 오늘 오전까지 끝내야 합니다", scenario_version: 5 },
+    { ...row, session_id: "fresh-s03", title: "3장 · 절차와 실제 상황이 조금 다릅니다", scenario_version: 7 },
+  ];
+  await section.getByRole("button", { name: "회고 다시 불러오기", exact: true }).click();
+  await expect(section.getByRole("alert")).toHaveCount(0);
+  await expect(section.getByRole("article")).toHaveCount(2);
+  await expect(previous).toHaveCount(0);
+  await expect(section).toContainText("1장 · 오늘 오전까지 끝내야 합니다 · v5");
+  await expect(section).toContainText("3장 · 절차와 실제 상황이 조금 다릅니다 · v7");
+  await expect(section).toContainText("최근 완료 기록 2건");
+  expect(state.calls).toBe(3);
+  expect((await new AxeBuilder({ page }).include(".profile-section").analyze()).violations).toEqual([]);
+  expect(await section.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
 });
 
 for (const role of ["admin", "plant_manager"]) test(`${role} does not request participant reflection history`, async ({ page }) => {
