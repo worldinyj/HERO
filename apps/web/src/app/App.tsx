@@ -1,6 +1,6 @@
 import { HERO_PRODUCT_NAME } from "@hero/engine/metadata";
 import { SCENARIO_SCHEMA_VERSION } from "@hero/schema/version";
-import { Suspense, lazy, useEffect, useRef, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink, Route, Routes, useLocation } from "react-router";
 import { SuriIllustration } from "../components/SuriIllustration";
 import { FeedbackLink } from "../components/FeedbackLink";
@@ -12,7 +12,7 @@ import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
 import { CampaignRankCard } from "../features/leaderboard/CampaignRankCard";
 import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
-import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
+import { startDeferredSubmissionProcessor } from "../lib/deferredSubmissionProcessor";
 import {
   loadAdminOverviewPageModule,
   loadAdminAuditPageModule,
@@ -174,6 +174,7 @@ export function App() {
   const mainRef = useRef<HTMLElement>(null);
   const { manager: audioManager, settings: audioSettings } = useAudio();
   const { profile, session } = useAuth();
+  const [queueUnavailableFor, setQueueUnavailableFor] = useState<string | null>(null);
   const managerNav = profile?.role === "plant_manager";
   const adminNav = profile?.role === "admin";
   const publicRoute =
@@ -205,7 +206,9 @@ export function App() {
       return;
     }
 
-    return startSubmissionQueueProcessor(session.user.id);
+    const userId = session.user.id;
+    return startDeferredSubmissionProcessor(userId, undefined,
+      () => setQueueUnavailableFor(userId), () => setQueueUnavailableFor(null));
   }, [profile?.is_active, profile?.role, session?.user.id]);
 
   useEffect(() => {
@@ -257,6 +260,13 @@ export function App() {
       ) : null}
 
       {!immersiveRoute && (location.pathname === "/" || location.pathname === "/login" || location.pathname === "/me") ? <InstallApp /> : null}
+
+      {profile?.role === "player" && profile.is_active === true && session?.user.id === queueUnavailableFor ? (
+        <section className="panel" aria-label="대기 결과 처리 연결">
+          <p role="alert">대기 결과 확인을 시작하지 못했습니다. 연결을 확인한 뒤 앱을 다시 불러와주세요.</p>
+          <button type="button" className="secondary-button" onClick={() => window.location.reload()}>앱 다시 불러오기</button>
+        </section>
+      ) : null}
 
       <RouteErrorBoundary key={location.pathname}>
       <Suspense fallback={<RouteLoading />}>

@@ -60,6 +60,34 @@ test("published season content is playable without stale month or preparation la
   expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 });
 
+for (const role of ["player", "admin", "plant_manager"]) test(`${role} only loads the deferred queue when participating`, async ({ page }) => {
+  let queueRequests = 0;
+  await page.route("**/src/lib/submissionQueue.ts*", route => { queueRequests++; return route.continue(); });
+  await fixture(page, { role });
+  if (role === "player") await expect.poll(() => queueRequests).toBe(1);
+  else {
+    await expect(page.getByRole("heading", { name: "교육 운영 계정 안내", exact: true })).toBeVisible();
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    expect(queueRequests).toBe(0);
+  }
+});
+
+test("a failed deferred queue fetch keeps campaign usable and offers reload recovery", async ({ page }) => {
+  let attempts = 0;
+  await page.route("**/src/lib/submissionQueue.ts*", route => {
+    attempts++;
+    return attempts === 1 ? route.abort("failed") : route.continue();
+  });
+  await fixture(page);
+  await expect.poll(() => attempts).toBe(1);
+  await expect(page.getByRole("link", { name: new RegExp(title) })).toBeVisible();
+  await expect(page.getByRole("alert")).toContainText("대기 결과 확인을 시작하지 못했습니다.");
+  await page.getByRole("button", { name: "앱 다시 불러오기", exact: true }).click();
+  await expect.poll(() => attempts).toBe(2);
+  await expect(page.getByRole("heading", { name: "캠페인", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "대기 결과 처리 연결", exact: true })).toHaveCount(0);
+});
+
 for (const role of ["admin", "plant_manager"]) {
   test(`${role} sees operating guidance without pretending content is unpublished`, async ({ page }) => {
     const { requests } = await fixture(page, { role });
