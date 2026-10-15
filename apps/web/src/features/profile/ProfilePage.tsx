@@ -6,6 +6,7 @@ import { isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { canReconcileNickname, isValidMyRecordSummary, isValidNicknameStatus, matchesCheckedNickname } from "./nicknameReconciliation";
 import { AudioSettings } from "../audio/AudioSettings";
 import { useAuth } from "../auth/AuthContext";
+import { ReflectionHistory } from "./ReflectionHistory";
 
 interface LearningMetrics {
   safety: number;
@@ -614,6 +615,8 @@ export function ProfilePage() {
           </div>
         )}
       </section>
+
+      {profile?.role === "player" ? <ReflectionHistory key={profile.id} /> : null}
 
       <section className="panel profile-section">
         <div className="section-heading">

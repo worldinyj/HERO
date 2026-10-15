@@ -5,7 +5,7 @@ import { resolve, join } from "node:path";
 const read = p => readFileSync(join(resolve(import.meta.dirname, ".."), p), "utf8");
 const tests = [
 ["leaderboard_projection_lifecycle",23],["leaderboard_plant_identity",12],
-["my_record_summary",8],["invitation_atomic_reissue",21],
+["my_record_summary",24],["invitation_atomic_reissue",21],
 ["invitation_atomic_cancel",27],["invitation_atomic_creation",27],
 ["player_status_atomic",32],["nickname_force_reset_atomic",33],
 ["nickname_self_change_atomic",39],["admin_plant_atomic",34],
@@ -37,7 +37,7 @@ for(const [name,expected] of tests) {
   check(count===expected && plan===count, name+": "+count+"/"+expected+" declarations");
   check(/\bbegin\s*;/i.test(sql)&&/\brollback\s*;/i.test(sql),name+": rollback fixture");
 }
-check(total===442,"pgTAP declarations total 442 (NOT executed)");
+check(total===458,"pgTAP declarations total 458 (NOT executed)");
 
 // Keep fixed UUID literals globally distinct across test files. A value
 // in a different table would not conflict today, but distinct fixtures also
@@ -86,7 +86,7 @@ for (const name of testNames) {
   if(plan!==count) mismatchedPlans.push(name+": plan "+plan+" != "+count);
 }
 mismatchedPlans.forEach(m=>console.error("INVALID pgTAP DECLARATION "+m));
-check(testNames.length===20 && allAssertions===531 && mismatchedPlans.length===0,
+check(testNames.length===20 && allAssertions===547 && mismatchedPlans.length===0,
   testNames.length+" pgTAP suites: "+allAssertions+" total planned declarations (NOT executed)");
 
 // Each assertion must quote SQL with $$...$$ (or a valid named tag).
