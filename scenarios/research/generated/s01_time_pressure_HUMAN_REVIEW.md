@@ -6,7 +6,7 @@
 >
 > Version: `5`
 >
-> Source file: `scenarios/drafts/S01_time_pressure_v1.json`
+> Source file: `scenarios/data/S01_time_pressure_v1.json`
 >
 > Review content SHA-256: `0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525`
 
@@ -14,18 +14,18 @@
 
 | 항목 | 값 |
 |---|---|
-| promotion status | **REVIEW_READY** |
+| promotion status | **APPROVED** |
 | sourceRightsComplete | `true` |
 | source verdict | `complete` |
 | rights verdict | `complete` |
-| HF review | `false` |
-| anonymization review | `false` |
-| human review | `pending` |
-| approved content SHA-256 | `not approved` |
+| HF review | `true` |
+| anonymization review | `true` |
+| human review | `approved` |
+| approved content SHA-256 | `0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525` |
 
 ### 현재 blocker
 
-- S01 v5 current-content human review in all five areas (HF, operations, anonymization, Just Culture, incident debrief)
+- 없음
 
 ## 2. 시나리오 기본정보
 

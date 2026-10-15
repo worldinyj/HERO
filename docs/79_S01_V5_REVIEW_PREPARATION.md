@@ -1,5 +1,7 @@
 # S01 v5 검토 준비
 
+> 후속 상태(2026-10-15): 사용자가 “일단 승인으로 갑니다. 그리고 공개로 갑니다.”라고 명시적으로 승인했습니다. 아래 검토 준비 당시의 대기 표시는 역사적 상태입니다. 현재 원본은 `scenarios/data/S01_time_pressure_v1.json`이며 승인 해시는 동일합니다. 공개 실행 기록은 `docs/80_S01_V5_SEASON_RELEASE.md`를 참조합니다.
+
 작성일: 2026-10-15. 현재 상태: **review_ready / 사람 승인 0/5 / 미공개**.
 
 ## 결과
@@ -9,7 +11,7 @@ S01의 기존 출처 보류 사유 중 원인–방벽–관련 대책의 추적
 - [전체 장면·선택지·회고 검토본](../scenarios/research/S01_V5_REVIEW_CONTENT_20261015.md)
 - [원인 10개–방벽 5개–대책 6개 추적표](../scenarios/research/S01_V5_CAUSE_TRACEABILITY_20261015.md)
 - [현재 해시 기준 사람 검토 패킷](../scenarios/research/generated/s01_time_pressure_HUMAN_REVIEW.md)
-- 검토 JSON: `scenarios/drafts/S01_time_pressure_v1.json` · 콘텐츠 v5
+- 검토 JSON: `scenarios/data/S01_time_pressure_v1.json` · 콘텐츠 v5
 - SHA-256: `0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525`
 
 ## 범위와 검증

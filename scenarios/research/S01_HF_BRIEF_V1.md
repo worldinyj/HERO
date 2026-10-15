@@ -1,8 +1,10 @@
 # S01 HF Brief — v5 검토 준비본
 
+> 후속 상태(2026-10-15): 사용자가 “일단 승인으로 갑니다. 그리고 공개로 갑니다.”라고 명시적으로 승인했습니다. 아래 검토 준비 당시의 대기 표시는 역사적 상태입니다. 현재 원본은 `scenarios/data/S01_time_pressure_v1.json`이며 승인 해시는 동일합니다. 공개 실행 기록은 `docs/80_S01_V5_SEASON_RELEASE.md`를 참조합니다.
+
 상태(2026-10-15): **REVIEW_READY / 사람 승인 대기 / 미공개**.
 
-현재 JSON은 `scenarios/drafts/S01_time_pressure_v1.json`의 v5입니다. 파일명의 v1은 최초 초안 경로이며 현재 콘텐츠 버전과 다릅니다.
+현재 JSON은 `scenarios/data/S01_time_pressure_v1.json`의 v5입니다. 파일명의 v1은 최초 초안 경로이며 현재 콘텐츠 버전과 다릅니다.
 
 ## 교육 목표
 

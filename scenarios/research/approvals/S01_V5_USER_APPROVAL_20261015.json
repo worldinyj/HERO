@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "s01_time_pressure",
+  "version": 5,
+  "contentSha256": "0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525",
+  "reviewedAt": "2026-10-15",
+  "reviewedBy": "사용자 (본 대화 직접 승인)",
+  "evidenceSource": "Current Codex conversation: explicit approval and publication request after the S01 v5 full review document was provided",
+  "approvalStatement": "일단 승인으로 갑니다. 그리고 공개로 갑니다.",
+  "reviewMaterialProvided": [
+    "scenarios/research/S01_V5_REVIEW_CONTENT_20261015.md 전체 장면·선택지·회고·원본 JSON",
+    "scenarios/research/S01_V5_CAUSE_TRACEABILITY_20261015.md 원인·방벽·대책 추적표",
+    "HF·운전정비·익명화·Just Culture·실사건 회고의 다섯 관점"
+  ],
+  "approvedAreas": [
+    "hf_accuracy",
+    "operations_context",
+    "anonymization",
+    "just_culture",
+    "incident_debrief"
+  ],
+  "scope": "Single human user approval of the exact S01 v5 hash and request to publish. Not five separate expert reviews; no independently verified credentials or observed reading activity claimed. Future content revisions require renewed review."
+}

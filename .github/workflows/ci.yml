@@ -32,8 +32,16 @@ jobs:
       - name: Check batch SQL and RPC static contracts (not pgTAP)
         run: pnpm check:batch-db-contracts
       - run: pnpm validate:scenario
-      - name: Validate scenario drafts
-        run: pnpm validate:scenario scenarios/drafts
+      - name: Validate scenario drafts when present
+        shell: bash
+        run: |
+          shopt -s nullglob
+          drafts=(scenarios/drafts/*.json)
+          if (( ${#drafts[@]} > 0 )); then
+            pnpm validate:scenario scenarios/drafts
+          else
+            echo "No scenario drafts; all current content is promoted."
+          fi
       - name: Check source evidence consistency
         run: pnpm check:source-evidence
 
@@ -99,7 +107,9 @@ jobs:
       - name: Report MVP release readiness
         run: pnpm check:mvp-readiness
       - name: Simulate research drafts
+        shell: bash
         run: |
+          shopt -s nullglob
           for scenario in scenarios/drafts/*.json; do
             echo "=== $scenario ==="
             pnpm simulate:scenario -- --scenario="$scenario"
