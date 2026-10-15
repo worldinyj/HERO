@@ -10,9 +10,7 @@ import { useAudio } from "../features/audio/AudioContext";
 import { useAuth } from "../features/auth/AuthContext";
 import { LoginPage } from "../features/auth/LoginPage";
 import { RequireAuth, RequireRole } from "../features/auth/RequireAuth";
-import { InvitationPage } from "../features/invite/InvitationPage";
 import { CampaignRankCard } from "../features/leaderboard/CampaignRankCard";
-import { PrivacyPage, TermsPage } from "../features/legal/LegalPage";
 import { CompetitiveCampaignChapters } from "../features/play/CompetitiveCampaignChapters";
 import { startSubmissionQueueProcessor } from "../lib/submissionQueue";
 import {
@@ -29,6 +27,9 @@ import {
 } from "./routeModules";
 
 const ALL_ACTIVE_ROLES = ["admin", "plant_manager", "player"] as const;
+const InvitationPage = lazy(() => import("../features/invite/InvitationPage").then(module => ({ default: module.InvitationPage })));
+const TermsPage = lazy(() => import("../features/legal/LegalPage").then(module => ({ default: module.TermsPage })));
+const PrivacyPage = lazy(() => import("../features/legal/LegalPage").then(module => ({ default: module.PrivacyPage })));
 const ExplorationPage = lazy(() => import("../features/exploration/ExplorationPage").then(module => ({ default: module.ExplorationPage })));
 
 const GamePage = lazy(() =>

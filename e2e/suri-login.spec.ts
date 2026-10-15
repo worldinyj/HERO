@@ -25,6 +25,12 @@ for (const path of ["/login", "/login?reason=invite_required"]) {
     await button.focus(); await page.keyboard.press("Tab");
     await expect(page.getByRole("link", { name: "이용약관", exact: true })).toBeFocused();
     await page.screenshot({ path: testInfo.outputPath("suri-login.png"), fullPage: true });
+    await page.getByRole("link", { name: "이용약관", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "HERO 이용약관", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "개인정보 처리방침", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "개인정보 처리방침", exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "로그인으로", exact: true }).click();
+    await expect(page.getByRole("button", { name: "카카오로 시작하기" })).toBeEnabled();
   });
 }
 
