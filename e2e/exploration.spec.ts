@@ -5,7 +5,7 @@ import targets from "../apps/web/src/features/admin/scenarioReviewTargets.genera
 import { EXPLORATION_QUESTIONS } from "../apps/web/src/features/exploration/feedbackContract";
 import { parseExplorationFeedback } from "../apps/web/src/features/admin/explorationFeedbackValidation";
 import { validateReviewSubmission } from "../apps/web/src/features/admin/scenarioReviewSubmission";
-import { HERO_FEEDBACK_FORM_URL } from "../apps/web/src/components/FeedbackLink";
+const HERO_FEEDBACK_FORM_URL = "https://secondlifelol.notion.site/147e51907ccf4bbb9060816817335bb3?pvs=105";
 
 async function fixture(page: Page) {
   const writes: string[] = [];
