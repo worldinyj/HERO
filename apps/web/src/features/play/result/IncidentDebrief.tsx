@@ -1,5 +1,6 @@
 import { BARRIER_CARDS, type GameState } from "@hero/engine";
 import type { Scenario } from "@hero/schema";
+import { useId } from "react";
 import { Link } from "react-router";
 
 function replayNodes(
@@ -33,10 +34,12 @@ export function IncidentDebrief({
   replayEnabled: boolean;
   onReplay: (nodeId: string) => void;
 }) {
+  const sectionPrefix = useId();
   const debrief = scenario.incidentDebrief;
   if (!debrief) return null;
 
   const decisions = replayNodes(scenario, game);
+  const sectionId = (name: string) => `${sectionPrefix}-${name}`;
 
   return (
     <article className="review-card incident-debrief">
@@ -47,6 +50,17 @@ export function IncidentDebrief({
         </div>
         <span className="incident-type">{debrief.caseType}</span>
       </header>
+
+      <nav className="ending-actions" aria-label="실사건 회고 바로가기">
+        <a className="secondary-button text-link" href={`#${sectionId("overview")}`}>사건과 원인</a>
+        {debrief.causalChain.length > 0 ? (
+          <a className="secondary-button text-link" href={`#${sectionId("chain")}`}>인과사슬</a>
+        ) : null}
+        {debrief.failedBarriers.length > 0 || debrief.correctiveActions.length > 0 ? (
+          <a className="secondary-button text-link" href={`#${sectionId(debrief.failedBarriers.length > 0 ? "barriers" : "actions")}`}>방벽과 대책</a>
+        ) : null}
+        <a className="secondary-button text-link" href={`#${sectionId("lessons")}`}>핵심 교훈</a>
+      </nav>
 
       <p className="incident-anonymization">
         사건 개요는 공개된 공식자료의 사실관계를 바탕으로 익명화·일반화했습니다.
@@ -59,7 +73,7 @@ export function IncidentDebrief({
       </p>
 
       <section className="incident-section">
-        <h3>사건 개요 · 공식자료 기반 일반화</h3>
+        <h3 id={sectionId("overview")} tabIndex={-1}>사건 개요 · 공식자료 기반 일반화</h3>
         <p>{debrief.overview}</p>
       </section>
 
@@ -97,7 +111,7 @@ export function IncidentDebrief({
 
       {debrief.causalChain.length > 0 ? (
         <section className="incident-section">
-          <h3>사건 인과사슬</h3>
+          <h3 id={sectionId("chain")} tabIndex={-1}>사건 인과사슬</h3>
           <ol className="incident-list">
             {debrief.causalChain.map((item) => (
               <li key={item}>{item}</li>
@@ -108,7 +122,7 @@ export function IncidentDebrief({
 
       {debrief.failedBarriers.length > 0 ? (
         <section className="incident-section">
-          <h3>약화·실패한 방벽</h3>
+          <h3 id={sectionId("barriers")} tabIndex={-1}>약화·실패한 방벽</h3>
           <ul className="incident-list incident-list--factors">
             {debrief.failedBarriers.map((item) => (
               <li key={item}>{item}</li>
@@ -119,10 +133,11 @@ export function IncidentDebrief({
 
       {debrief.correctiveActions.length > 0 ? (
         <section className="incident-section">
-          <h3>재발방지대책 연결</h3>
+          <h3 id={sectionId("actions")} tabIndex={-1}>재발방지대책 연결</h3>
           <p className="muted mini-copy">
-            아래 항목은 공식 조사자료에 제시된 조치 중 이 시나리오의 원인구조와
-            직접 연결되는 내용을 교육용으로 요약한 것입니다.
+            각 항목의 설명에 따라 공식 조치, 당시의 개선 계획과 HERO의 학습
+            제안을 구분해 읽어주세요. 당시 계획을 현재의 완료 사실로
+            해석하지 않습니다.
           </p>
           <ul className="incident-list incident-list--factors">
             {debrief.correctiveActions.map((item) => (
@@ -133,7 +148,7 @@ export function IncidentDebrief({
       ) : null}
 
       <section className="incident-section">
-        <h3>핵심 교훈 · HU Tool</h3>
+        <h3 id={sectionId("lessons")} tabIndex={-1}>핵심 교훈 · HU Tool</h3>
         <div className="incident-lessons">
           {debrief.lessons.map((lesson) => {
             const tool = lesson.toolId ? BARRIER_CARDS[lesson.toolId] : null;

@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import tutorial from "../scenarios/data/S00_tutorial.json" with { type: "json" };
 import s02 from "../scenarios/data/S02_equipment_identity_v1.json" with { type: "json" };
+import s01 from "../scenarios/data/S01_time_pressure_v1.json" with { type: "json" };
 
 const adminId = "f6100000-0000-0000-0000-000000000001";
 const versionId = "f6200000-0000-0000-0000-000000000001";
@@ -145,6 +146,46 @@ test("invalid JSON and broken graph cannot open preview", async ({ page }) => {
     await expect(button).toBeDisabled();
     await expect(page.getByText("미리보기 전 검증이 필요합니다.", { exact: true })).toBeVisible();
   }
+});
+
+test("published S01 debrief supports keyboard section navigation without creating records", async ({ page }, testInfo) => {
+  const { calls } = await fixture(page);
+  await page.getByRole("textbox", { name: "시나리오 JSON", exact: true }).fill(JSON.stringify(s01));
+  await page.getByRole("button", { name: "입력한 JSON 미리보기", exact: true }).click();
+  const preview = page.getByRole("region", { name: `${s01.title} · 미리보기`, exact: true });
+  await preview.getByRole("button", { name: "계속", exact: true }).click();
+  for (const label of [
+    "변경된 순서와 위험요인을 반영해 짧게 재브리핑한다.",
+    "현재 단계에 머물며 진행 조건이 충족됐는지 다시 확인한다.",
+  ]) {
+    await preview.getByRole("radio", { name: label }).check();
+    await preview.getByRole("button", { name: "선택 확정", exact: true }).click();
+    await preview.getByRole("button", { name: "계속", exact: true }).click();
+  }
+  const closeout = preview.getByRole("radio", { name: "남은 불확실성이 있어 다음 작업 인계를 잠시 보류한다." });
+  if (await closeout.isVisible()) await closeout.check();
+  else await preview.getByRole("radio", { name: "시험을 중지하고 상태를 보호한 뒤 즉시 보고한다." }).check();
+  await preview.getByRole("button", { name: "선택 확정", exact: true }).click();
+  const debrief = preview.locator(".incident-debrief");
+  const nav = debrief.getByRole("navigation", { name: "실사건 회고 바로가기", exact: true });
+  for (const [link, heading] of [
+    ["사건과 원인", "사건 개요 · 공식자료 기반 일반화"],
+    ["인과사슬", "사건 인과사슬"],
+    ["방벽과 대책", "약화·실패한 방벽"],
+    ["핵심 교훈", "핵심 교훈 · HU Tool"],
+  ]) {
+    await nav.getByRole("link", { name: link, exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await expect(debrief.getByRole("heading", { name: heading, exact: true })).toBeFocused();
+  }
+  await expect(debrief).toContainText("공식 조치, 당시의 개선 계획과 HERO의 학습 제안을 구분해 읽어주세요.");
+  await expect(debrief).toContainText(s01.incidentDebrief.correctiveActions[5]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect((await new AxeBuilder({ page }).include(".incident-debrief").analyze()).violations).toEqual([]);
+  await nav.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("s01-debrief-navigation.png") });
+  expect(calls.every(call => ["list", "season-overview"].includes(String(call.action)))).toBe(true);
+  expect(await page.evaluate(async () => (await indexedDB.databases()).length)).toBe(0);
 });
 
 test("saved preview requests the exact version; canceled late responses stay closed", async ({ page }) => {
