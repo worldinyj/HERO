@@ -3,8 +3,9 @@ import AxeBuilder from "@axe-core/playwright";
 
 const row = { session_id: "fixture-session-one", title: "2장 · 아마 이 설비가 맞을 겁니다", scenario_version: 4, season_title: "테스트 시즌", completed_at: "2026-10-15T07:00:00Z", hp_point: 233, ending: "safe_complete", reflection_state: "available", reflection_label: "작업 대상을 확신하기 어려운 상황입니다. 어떻게 하시겠습니까?" };
 
-async function fixture(page: Page, role = "player") {
-  const state = { calls: 0, fail: false, response: [row] as unknown, wait: null as Promise<void> | null };
+async function fixture(page: Page, role = "player", options: { summaryWait?: Promise<void>; skipReady?: boolean } = {}) {
+  const state = { calls: 0, fail: false, response: [row] as unknown, wait: null as Promise<void> | null,
+    summaryCalls: 0, summaryWait: options.summaryWait ?? null };
   const user = { id: "fa100000-0000-4000-8000-000000000001", aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
   await page.addInitScript(({ user }) => {
     const exp = Math.floor(Date.now() / 1000) + 3600;
@@ -17,22 +18,27 @@ async function fixture(page: Page, role = "player") {
     if (url.hostname !== "127.0.0.1") throw new Error("History fixture requires loopback Supabase");
     if (url.pathname === "/auth/v1/user") return route.fulfill({ json: user });
     if (url.pathname === "/rest/v1/profiles") return route.fulfill({ json: { id: user.id, role, is_active: true, plant_id: null, real_name: "테스트", nickname: "TEST", nickname_reset_required: false, job_role: "worker" } });
-    if (url.pathname === "/rest/v1/rpc/my_record_summary") return route.fulfill({ json: {
+    if (url.pathname === "/rest/v1/rpc/my_record_summary") {
+      state.summaryCalls++;
+      if (state.summaryWait) await state.summaryWait;
+      return route.fulfill({ json: {
       profile: { nickname: "TEST", role, job_role: "worker" }, metrics: { safety: 50, awareness: 50, communication: 50, procedure: 50, challenge: 50, completed_sessions: 2 },
       scenario_records: [{ scenario_slug: "s02_equipment_identity", title: row.title, best_hp: 245, play_count: 2, last_completed_at: row.completed_at }], season_history: [], current_season: null,
-    } });
+      } });
+    }
     if (url.pathname === "/functions/v1/nickname-action") return route.fulfill({ json: { canChange: false, resetRequired: false, changedThisSeason: false, seasonKey: null, nickname: "TEST" } });
     if (url.pathname === "/rest/v1/rpc/my_reflection_history") {
       state.calls++;
       expect(route.request().method()).toBe("POST");
       expect(route.request().postDataJSON()).toEqual({});
+      const fail = state.fail, response = state.response;
       if (state.wait) await state.wait;
-      return state.fail ? route.fulfill({ status: 400, json: { message: "fixture failed" } }) : route.fulfill({ json: state.response });
+      return fail ? route.fulfill({ status: 400, json: { message: "fixture failed" } }) : route.fulfill({ json: response });
     }
     throw new Error(`Unexpected history API: ${url.pathname}`);
   });
   await page.goto("/me");
-  await expect(page.getByRole("heading", { name: "장별 최고 기록", exact: true })).toBeVisible();
+  if (!options.skipReady) await expect(page.getByRole("heading", { name: "장별 최고 기록", exact: true })).toBeVisible();
   return state;
 }
 
@@ -115,6 +121,50 @@ for (const failure of ["network", "malformed"]) test(`refresh preserves exact-ve
   expect(state.calls).toBe(3);
   expect((await new AxeBuilder({ page }).include(".profile-section").analyze()).violations).toEqual([]);
   expect(await section.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+});
+
+for (const previous of [false, true]) test(`hung reflection read releases retry and ignores late response (previous=${previous})`, async ({ page }) => {
+  await page.clock.install();
+  const state = await fixture(page);
+  const section = page.getByRole("region", { name: "내 회고 다시보기", exact: true });
+  if (previous) {
+    await section.getByRole("button", { name: "최근 회고 불러오기", exact: true }).click();
+    await expect(section.getByRole("article")).toHaveCount(1);
+  }
+  let release: () => void = () => {};
+  state.wait = new Promise<void>(resolve => { release = resolve; });
+  const initialCalls = state.calls;
+  await section.getByRole("button").click();
+  await expect.poll(() => state.calls).toBe(initialCalls + 1);
+  await page.clock.runFor(15_001);
+  await expect(section.getByRole("alert")).toContainText("회고 조회 응답이 지연되어 대기를 마쳤습니다.");
+  await expect(section.getByRole("button", { name: "회고 다시 불러오기", exact: true })).toBeEnabled();
+  await expect(section.getByRole("article")).toHaveCount(previous ? 1 : 0);
+  state.wait = null;
+  state.response = [{ ...row, session_id: "fresh-timeout-retry", hp_point: 244 }];
+  await section.getByRole("button", { name: "회고 다시 불러오기", exact: true }).click();
+  await expect(section).toContainText("244 HP");
+  release();
+  await expect(section).not.toContainText("233 HP");
+  await expect(section.getByRole("alert")).toHaveCount(0);
+  expect(state.calls).toBe(initialCalls + 2);
+});
+
+test("hung record summary offers retry without requiring logout", async ({ page }) => {
+  await page.clock.install();
+  let release: () => void = () => {};
+  const summaryWait = new Promise<void>(resolve => { release = resolve; });
+  const state = await fixture(page, "player", { summaryWait, skipReady: true });
+  await expect.poll(() => state.summaryCalls).toBe(1);
+  await page.clock.runFor(15_001);
+  await expect(page.getByRole("alert")).toContainText("조회 응답이 지연되어 대기를 마쳤습니다.");
+  await expect(page.getByRole("button", { name: "로그아웃", exact: true })).toBeEnabled();
+  state.summaryWait = null;
+  await page.getByRole("button", { name: "기록 다시 불러오기", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "장별 최고 기록", exact: true })).toBeVisible();
+  release();
+  await expect(page.getByRole("heading", { name: "내 기록을 불러오지 못했습니다", exact: true })).toHaveCount(0);
+  expect(state.summaryCalls).toBe(2);
 });
 
 for (const role of ["admin", "plant_manager"]) test(`${role} does not request participant reflection history`, async ({ page }) => {
