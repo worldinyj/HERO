@@ -7,6 +7,8 @@ import { ReadRequestGate } from "../../lib/readRequestGate";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "../manager/inviteCreationErrors";
 import { readIssuedInviteLink, readReissuedInviteLink, readCanceledInviteResult, readManagerReinviteLink } from "../manager/inviteResponse";
 import { isValidAdminOrgLists, currentPendingInvitations } from "./adminOrgResponse";
+import { readOrgListSnapshot } from "./orgListSnapshot";
+import { OrgListPages } from "./OrgListPages";
 import { AdminManagerRoster } from "./AdminManagerRoster";
 import { exactManagerCount, isCurrentManager, readPlantManagerCounts, type ManagerRow } from "./managerRosterQueries";
 import { readPlantCreated, readPlantStatus } from "./plantActionResponse";
@@ -116,25 +118,27 @@ export function AdminOrgPage() {
 
       const now = new Date().toISOString();
       const [plantResult, managerResult, inviteResult] = await readWithDeadline(signal => Promise.all([
-        supabase
+        readOrgListSnapshot((from, to) => supabase
           .from("plants")
-          .select("id, code, name, display_name, is_active, invitation_epoch, created_at, profiles(count)")
+          .select("id, code, name, display_name, is_active, invitation_epoch, created_at, profiles(count)", { count: "exact" })
           .eq("profiles.role", "plant_manager")
           .eq("profiles.is_active", true)
-          .order("display_name", { ascending: true }).abortSignal(signal),
+          .order("display_name", { ascending: true }).order("id", { ascending: true })
+          .range(from, to).abortSignal(signal), signal).then(data => ({ data: data as PlantRow[], error: null })),
         supabase
           .from("profiles")
           .select("id", { count: "exact", head: true })
           .eq("role", "plant_manager")
           .eq("is_active", true).abortSignal(signal),
-        supabase
+        readOrgListSnapshot((from, to) => supabase
           .from("invitations")
-          .select("id, plant_id, invitee_name, plant_invitation_epoch, expires_at, created_at, plants(display_name, code)")
+          .select("id, plant_id, invitee_name, plant_invitation_epoch, expires_at, created_at, plants(display_name, code)", { count: "exact" })
           .eq("target_role", "plant_manager")
           .is("accepted_at", null)
           .is("canceled_at", null)
           .gt("expires_at", now)
-          .order("created_at", { ascending: false }).abortSignal(signal),
+          .order("created_at", { ascending: false }).order("id", { ascending: true })
+          .range(from, to).abortSignal(signal), signal).then(data => ({ data, error: null })),
       ]), controller.signal);
 
       // A later refresh supersedes this snapshot, including on success.
@@ -176,6 +180,7 @@ export function AdminOrgPage() {
       }
       return false;
     } finally {
+      controller.abort();
       if (rosterGate.current.isCurrent(revision)) setLoading(false);
       if (rosterController.current === controller) rosterController.current = null;
     }
@@ -746,8 +751,10 @@ export function AdminOrgPage() {
           </div>
         ) : null}
 
-        <div className="admin-list">
-          {plants.map((plant) => (
+        <OrgListPages rows={plants} label="발전소" loading={loading}
+          disabled={creatingPlant || plantActionPending || plantRosterPending}>
+          {visiblePlants => <div className="admin-list">
+          {visiblePlants.map((plant) => (
             <article key={plant.id} className="admin-row">
               <div>
                 <strong>{plant.display_name}</strong>
@@ -776,7 +783,8 @@ export function AdminOrgPage() {
               </div>
             </article>
           ))}
-        </div>
+        </div>}
+        </OrgListPages>
       </section>
 
       <section className="panel admin-section">
@@ -909,12 +917,13 @@ export function AdminOrgPage() {
           </div>
         ) : null}
 
-        {pendingManagerInvites.length > 0 ? (
-          <div className="admin-list" aria-label="수락 대기 중인 담당자 초대">
+        <OrgListPages rows={pendingManagerInvites} label="수락 대기 초대" loading={loading}
+          disabled={creatingInvite || Boolean(managerInviteActionPending) || adminRosterPending}>
+          {visibleInvites => <div className="admin-list" aria-label="수락 대기 중인 담당자 초대">
             <p className="muted mini-copy">
               수락 대기 {pendingManagerInvites.length}건 · 기존 링크 원문은 보안상 다시 표시할 수 없습니다.
             </p>
-            {pendingManagerInvites.map((invite) => (
+            {visibleInvites.map((invite) => (
               <article key={invite.id} className="admin-row">
                 <div>
                   <strong>{invite.invitee_name}</strong>
@@ -954,8 +963,8 @@ export function AdminOrgPage() {
                 </div>
               </article>
             ))}
-          </div>
-        ) : null}
+          </div>}
+        </OrgListPages>
 
         <AdminManagerRoster plants={plants}
           disabled={creatingInvite || Boolean(managerInviteActionPending) || Boolean(inviteResult) ||

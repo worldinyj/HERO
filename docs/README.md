@@ -2,9 +2,9 @@
 
 원전 인적오류 예방 시뮬레이션 게임 **HERO : Human Error Risk Operations** 설계 문서입니다.
 
-**설계 Baseline: v1.3 · 2026-10-07 / 개발 현황: 2026-10-15**
+**설계 Baseline: v1.3 · 2026-10-07 / 개발 현황: 2026-10-16**
 
-최신 관리자 검색 검증은 [86_ADMIN_MANAGER_SEARCH_VALIDATION.md](86_ADMIN_MANAGER_SEARCH_VALIDATION.md), 이전 재개 지점과 권장 작업 순서는 [85_SESSION_RESUME_AND_LEADERBOARD_RECOVERY.md](85_SESSION_RESUME_AND_LEADERBOARD_RECOVERY.md), 출시 상태는 [10_MVP_READINESS.md](10_MVP_READINESS.md)를 참고하세요. S01 v5·S02 v4·S03 v7은 승인 및 10월 시즌 게시 기록이 있습니다. [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md)의 83.7%는 10월 13일 기준의 역사적 구현관리 지표입니다.
+최신 사업소·초대 페이지 검증은 [87_ADMIN_ORG_LIST_PAGES_VALIDATION.md](87_ADMIN_ORG_LIST_PAGES_VALIDATION.md), 관리자 검색 검증은 [86_ADMIN_MANAGER_SEARCH_VALIDATION.md](86_ADMIN_MANAGER_SEARCH_VALIDATION.md), 이전 재개 지점과 권장 작업 순서는 [85_SESSION_RESUME_AND_LEADERBOARD_RECOVERY.md](85_SESSION_RESUME_AND_LEADERBOARD_RECOVERY.md), 출시 상태는 [10_MVP_READINESS.md](10_MVP_READINESS.md)를 참고하세요. S01 v5·S02 v4·S03 v7은 승인 및 10월 시즌 게시 기록이 있습니다. [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md)의 83.7%는 10월 13일 기준의 역사적 구현관리 지표입니다.
 
 | 순서 | 문서 | 내용 |
 |---|---|---|
