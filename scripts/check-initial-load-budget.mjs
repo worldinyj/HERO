@@ -24,8 +24,8 @@ for (const file of scripts) {
   decodedBytes += bytes.length;
   gzipBytes += gzipSync(bytes).length;
 }
-const report = {decodedBytes, gzipBytes, scripts: [...scripts], limits: {decodedBytes: 550 * 1024, gzipBytes: 160 * 1024}};
+const report = {decodedBytes, gzipBytes, scripts: [...scripts], limits: {decodedBytes: 510 * 1024, gzipBytes: 150 * 1024}};
 console.log(JSON.stringify(report, null, 2));
-assert.ok(decodedBytes <= report.limits.decodedBytes, 'Initial JS exceeds 550 KiB; keep scenario validation/gameplay behind lazy routes');
-assert.ok(gzipBytes <= report.limits.gzipBytes, 'Initial gzipped JS exceeds 160 KiB');
+assert.ok(decodedBytes <= report.limits.decodedBytes, 'Initial JS exceeds 510 KiB; keep validation, gameplay and participant queue behind lazy loading');
+assert.ok(gzipBytes <= report.limits.gzipBytes, 'Initial gzipped JS exceeds 150 KiB');
 console.log('INITIAL_LOAD_BUDGET_PASS (build size check, not an LCP measurement)');

@@ -78,3 +78,9 @@ if (initial.has(tutorial) || initial.has(competitive) ||
   throw new Error("Play modes must remain outside the initial static graph and independent of each other");
 }
 console.log("PLAY_MODE_SPLIT_PASS tutorial and competitive load independently");
+
+const queue = "src/lib/submissionQueue.ts";
+if (manifest[queue]?.isDynamicEntry !== true || initial.has(queue)) {
+  throw new Error("Participant submission queue must remain a dynamic module outside the initial static graph");
+}
+console.log("PARTICIPANT_QUEUE_SPLIT_PASS queue processing loads after participant authentication");
