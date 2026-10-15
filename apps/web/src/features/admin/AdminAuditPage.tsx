@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
+import { readWithDeadline, ReadTimeoutError } from "../../lib/readWithDeadline";
 import { AUDIT_ACTIONS, AUDIT_COLUMNS, AUDIT_PAGE_SIZE, EMPTY_AUDIT_FILTERS, auditDateBounds,
   auditTime, readAuditRows, type AuditFilters, type AuditRow } from "./auditHistory";
 
 export function AdminAuditPage() {
   const gate = useRef(new ReadRequestGate());
+  const readController = useRef<AbortController | null>(null);
   const [draft, setDraft] = useState<AuditFilters>(EMPTY_AUDIT_FILTERS);
   const [applied, setApplied] = useState<AuditFilters>(EMPTY_AUDIT_FILTERS);
   const [rows, setRows] = useState<AuditRow[]>([]);
@@ -14,12 +16,21 @@ export function AdminAuditPage() {
   const [hasNext, setHasNext] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryAvailable, setRetryAvailable] = useState(false);
 
   async function load(filters: AuditFilters, pages: Array<number | null>) {
+    const ticket = gate.current.begin();
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
+    setRetryAvailable(false);
     let bounds: ReturnType<typeof auditDateBounds>;
     try { bounds = auditDateBounds(filters); }
-    catch (cause) { setRows([]); setHasNext(false); setError(cause instanceof Error ? cause.message : "날짜를 확인해주세요."); return; }
-    const ticket = gate.current.begin();
+    catch (cause) {
+      readController.current = null;
+      setLoading(false); setRows([]); setHasNext(false);
+      setError(cause instanceof Error ? cause.message : "날짜를 확인해주세요."); return;
+    }
     setLoading(true); setError(null); setRows([]); setHasNext(false);
     setApplied(filters); setCursors(pages);
     try {
@@ -30,21 +41,28 @@ export function AdminAuditPage() {
       if (filters.action) query = query.eq("action", filters.action);
       if (bounds.from) query = query.gte("created_at", bounds.from);
       if (bounds.to) query = query.lt("created_at", bounds.to);
-      const result = await query;
+      const result = await readWithDeadline(signal => query.abortSignal(signal), controller.signal);
       if (!gate.current.isCurrent(ticket)) return;
       if (result.error) throw result.error;
       const records = readAuditRows(result.data);
       if (cursor !== null && records.some(r => r.id >= cursor)) throw new Error("audit_cursor_invalid");
       setRows(records.slice(0, AUDIT_PAGE_SIZE)); setHasNext(records.length > AUDIT_PAGE_SIZE);
-    } catch {
-      if (gate.current.isCurrent(ticket)) setError("감사 이력을 불러오지 못했습니다. 권한과 연결 상태를 확인하고 다시 조회해주세요.");
+    } catch (cause) {
+      if (gate.current.isCurrent(ticket)) {
+        setRetryAvailable(true);
+        setError(cause instanceof ReadTimeoutError
+          ? "감사 이력 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 같은 페이지를 다시 조회해주세요."
+          : "감사 이력을 불러오지 못했습니다. 권한과 연결 상태를 확인하고 다시 조회해주세요.");
+      }
     } finally {
+      controller.abort();
+      if (readController.current === controller) readController.current = null;
       if (gate.current.isCurrent(ticket)) setLoading(false);
     }
   }
   useEffect(() => {
     void load(EMPTY_AUDIT_FILTERS, [null]);
-    return () => gate.current.invalidate();
+    return () => { gate.current.invalidate(); readController.current?.abort(); };
   }, []);
 
   return <section className="admin-page" aria-labelledby="audit-title">
@@ -72,10 +90,12 @@ export function AdminAuditPage() {
         }}>필터 초기화</button>
       </form>
       {error ? <p className="error-text" role="alert">{error}</p> : null}
+      {retryAvailable ? <button className="secondary-button" type="button" disabled={loading}
+        onClick={() => void load(applied, cursors)}>같은 페이지 다시 조회</button> : null}
       <p role="status" className="muted">{loading ? "감사 이력을 불러오고 있습니다…" : error ? "조회 결과를 확인해주세요." :
         `${cursors.length}페이지 · ${rows.length}건 · ${AUDIT_ACTIONS[applied.action] ?? "전체 이벤트"} · ${applied.from || "시작일 제한 없음"} ~ ${applied.to || "종료일 제한 없음"}`}</p>
       {!loading && !error && rows.length === 0 ? <p>조회 조건에 해당하는 감사 이력이 없습니다.</p> : null}
-      <div className="admin-list audit-history-list" aria-label="감사 기록">
+      <div className="admin-list audit-history-list" role="group" aria-label="감사 기록">
         {rows.map(row => <article key={row.id} className="audit-history-row">
           <strong>{AUDIT_ACTIONS[row.action] ?? row.action}</strong>
           <p><time dateTime={row.created_at}>{auditTime(row.created_at)}</time> · 기록 #{row.id}</p>
@@ -87,7 +107,7 @@ export function AdminAuditPage() {
           </dl></details>
         </article>)}
       </div>
-      <div className="inline-actions" aria-label="감사 이력 페이지">
+      <div className="inline-actions" role="group" aria-label="감사 이력 페이지">
         <button className="secondary-button" disabled={loading || cursors.length <= 1} type="button"
           onClick={() => void load(applied, cursors.slice(0, -1))}>이전 페이지</button>
         <button className="secondary-button" disabled={loading || !hasNext || Boolean(error)} type="button"

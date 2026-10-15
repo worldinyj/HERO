@@ -1,10 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
+import { heldAdminRead } from "./heldAdminRead";
 import AxeBuilder from "@axe-core/playwright";
 const adminId = "f6100000-0000-0000-0000-000000000001";
 function record(id: number) {
   return { id, actor_user_id: adminId, plant_id: null, action: "invitation.reissued", entity_type: "invitation", entity_id: "f6200000-0000-0000-0000-000000000001", created_at: "2026-10-11T12:34:56Z" };
 }
-async function fixture(page: Page, role = "admin") {
+async function fixture(page: Page, role = "admin", navigate = true) {
   const reads: URL[] = [];
   const state = { error: false, empty: false, malformed: false };
   const user = { id: adminId, aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
@@ -37,7 +38,7 @@ async function fixture(page: Page, role = "admin") {
       else throw new Error(`Unexpected API ${request.method()} ${url.pathname}`);
     }
   });
-  await page.goto("/admin/audit");
+  if (navigate) await page.goto("/admin/audit");
   return { reads, state };
 }
 
@@ -96,4 +97,55 @@ for (const role of ["player", "plant_manager"]) test(`${role} cannot open audit 
   await expect(page).toHaveURL("http://127.0.0.1:4173/");
   await expect(page.getByRole("heading", { name: "감사 이력", exact: true })).toHaveCount(0);
   expect(reads).toEqual([]);
+});
+
+
+test("hung audit pagination retries the same cursor and applied filters, ignoring unsent draft and late rows", async ({ page }, testInfo) => {
+  await page.clock.install();
+  const { reads } = await fixture(page);
+  await expect(page.getByRole("button", { name: "조회", exact: true })).toBeEnabled();
+  await page.getByLabel("이벤트", { exact: true }).selectOption("invitation.reissued");
+  await page.getByLabel("시작일", { exact: true }).fill("2026-10-11");
+  await page.getByLabel("종료일", { exact: true }).fill("2026-10-11");
+  await page.getByRole("button", { name: "조회", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("1페이지 · 50건");
+  const held = await heldAdminRead(page, url => url.pathname === "/rest/v1/audit_logs" && url.searchParams.has("id"), { json: [record(1)] });
+  await page.getByRole("button", { name: "다음 페이지", exact: true }).click();
+  await expect.poll(() => held.calls).toBe(1);
+  await page.getByLabel("이벤트", { exact: true }).selectOption("plant.created");
+  await page.clock.runFor(15_001);
+  await expect(page.getByRole("alert")).toContainText("응답이 지연되어 대기를 마쳤습니다.");
+  await expect(page.getByText("조회 조건에 해당하는 감사 이력이 없습니다.")).toHaveCount(0);
+  await expect(page.locator(".audit-history-row")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "다음 페이지", exact: true })).toBeDisabled();
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("audit-timeout.png") });
+  held.holding = false;
+  await page.getByRole("button", { name: "같은 페이지 다시 조회", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("2페이지 · 1건");
+  expect(reads.at(-1)?.searchParams.get("id")).toBe("lt.51");
+  expect(reads.at(-1)?.searchParams.get("action")).toBe("eq.invitation.reissued");
+  expect(reads.at(-1)?.searchParams.getAll("created_at")).toEqual(["gte.2026-10-10T15:00:00.000Z", "lt.2026-10-11T15:00:00.000Z"]);
+  held.release();
+  await expect(page.locator(".audit-history-row")).toContainText("기록 #50");
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("first audit read timeout permits a fresh filter without reviving an old page", async ({ page }) => {
+  await page.clock.install();
+  const { reads } = await fixture(page, "admin", false);
+  const held = await heldAdminRead(page, url => url.pathname === "/rest/v1/audit_logs", { json: [record(1)] });
+  await page.goto("/admin/audit");
+  await expect.poll(() => held.calls).toBe(1);
+  await page.clock.runFor(15_001);
+  await expect(page.getByRole("button", { name: "조회", exact: true })).toBeEnabled();
+  held.holding = false;
+  await page.getByLabel("이벤트", { exact: true }).selectOption("plant.created");
+  await page.getByRole("button", { name: "조회", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("1페이지 · 50건");
+  expect(reads.at(-1)?.searchParams.get("action")).toBe("eq.plant.created");
+  held.release();
+  await expect(page.locator(".audit-history-row")).toHaveCount(50);
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
