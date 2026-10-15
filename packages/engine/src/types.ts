@@ -74,6 +74,8 @@ export interface ScoreBreakdown {
 }
 
 export interface Evaluation {
+  /** Optional learner reflection; never changes scoring or implies a correct answer. */
+  reflectionSelection?: string;
   ending: Ending;
   metrics: Metrics;
   metricAverage: number;

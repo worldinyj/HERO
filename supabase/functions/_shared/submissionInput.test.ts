@@ -1,4 +1,4 @@
-import { parseSessionSubmission, parseSubmissionActions } from "./submissionInput.ts";
+import { isReachedReflectionSelection, parseSessionSubmission, parseSubmissionActions } from "./submissionInput.ts";
 
 const validId = "a1000000-0000-4000-8000-000000000001";
 const good = [
@@ -7,6 +7,30 @@ const good = [
   { type: "info", actionId: "verify_shift_log" },
   { type: "card", cardId: "stop_work_authority" },
 ];
+
+Deno.test("preserves optional reflection selection while accepting legacy clients", () => {
+  const body = { sessionId: validId, actions: good, reflectionAnswered: true };
+  for (const selection of ["initial_conditions", "decision_identify"]) {
+    if (parseSessionSubmission({ ...body, reflectionSelection: selection })?.reflectionSelection !== selection) {
+      throw new Error("reflection selection lost");
+    }
+  }
+  if (parseSessionSubmission(body)?.reflectionSelection !== undefined) throw new Error("invented legacy reflection");
+  for (const selection of [null, {}, [], 2, "", " x ", "x".repeat(257)]) {
+    if (parseSessionSubmission({ ...body, reflectionSelection: selection }) !== null) throw new Error("invalid reflection accepted");
+  }
+  if (parseSessionSubmission({ ...body, reflectionAnswered: false, reflectionSelection: "initial_conditions" }) !== null) {
+    throw new Error("unanswered reflection supplied a selection");
+  }
+});
+
+Deno.test("reflection must refer to initial conditions or a reached decision, not an unvisited branch", () => {
+  if (!isReachedReflectionSelection("initial_conditions", []) ||
+      !isReachedReflectionSelection("decision_identify", ["decision_identify"])) throw new Error("valid reflection rejected");
+  for (const selection of ["decision_recovery", "ending", "toString", "__proto__"]) {
+    if (isReachedReflectionSelection(selection, ["decision_identify"])) throw new Error("unreached reflection accepted");
+  }
+});
 
 Deno.test("accepts all four legitimate engine decision types in original order", () => {
   const parsed = parseSessionSubmission({

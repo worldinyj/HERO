@@ -66,6 +66,16 @@ describe("immutable queued submission payload and monotonic retries", () => {
   it("accepts a retry with identical actions and newer attempt count", () => {
     expect(decideQueueWrite(saved, { ...saved, attempts: 4 })).toBe("write");
   });
+  it("keeps a queued reflection immutable across tabs and retries", () => {
+    const withReflection = { ...saved, body: { ...body, reflectionSelection: "decision_identify" } };
+    expect(decideQueueWrite(withReflection, structuredClone(withReflection))).toBe("write");
+    expect(decideQueueWrite(withReflection, saved)).toBe("payload_conflict");
+    expect(decideQueueWrite(withReflection, { ...withReflection, body: {
+      ...withReflection.body, reflectionSelection: "initial_conditions",
+    } })).toBe("payload_conflict");
+    expect(sameSubmissionBody(body, { ...body })).toBe(true);
+    expect(sameSubmissionBody({ ...body, reflectionSelection: " " }, { ...body, reflectionSelection: " " })).toBe(false);
+  });
   it("does not allow stale attempts to replace a newer queued record", () => {
     expect(decideQueueWrite(saved, { ...saved, attempts: 2 }))
       .toBe("preserve_newer_attempt");

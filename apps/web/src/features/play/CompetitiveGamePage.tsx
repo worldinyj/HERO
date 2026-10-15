@@ -360,6 +360,7 @@ export function CompetitiveGamePage({
           actions: gameLogToSubmissionActions(game.log, server.submissionLogStart),
           reflectionAnswered: true,
           swissCheeseViewed: true,
+          ...(reflectionSelection === null ? {} : { reflectionSelection }),
         },
       });
 

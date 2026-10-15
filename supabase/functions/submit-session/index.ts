@@ -12,7 +12,7 @@ import { classifyInvitationError } from "../_shared/invitationErrorStatus.ts";
 import { readCommittedCompletion } from "../_shared/completionReceipt.ts";
 import { readJsonObject } from "../_shared/jsonObject.ts";
 import { isUuid } from "../_shared/uuid.ts";
-import { parseSessionSubmission } from "../_shared/submissionInput.ts";
+import { isReachedReflectionSelection, parseSessionSubmission } from "../_shared/submissionInput.ts";
 import { singleLookupOutcome } from "../_shared/lookupOutcome.ts";
 import { guardRateLimit } from "../_shared/rateLimit.ts";
 import { adminClient, requireActiveProfile } from "../_shared/supabase.ts";
@@ -196,6 +196,12 @@ Deno.serve(async (req) => {
         ? Math.max(...previousMetricAverages)
         : undefined;
 
+    if (body.reflectionSelection !== undefined && !isReachedReflectionSelection(
+      body.reflectionSelection,
+      state.log.filter(entry => entry.actionType === "choice" &&
+        parsed.data.nodes[entry.nodeId]?.type === "decision").map(entry => entry.nodeId),
+    )) return json(req, { error: "invalid_reflection_selection" }, 400);
+
     const evaluation = evaluate(parsed.data, state, {
       reflectionAnswered: body.reflectionAnswered === true,
       swissCheeseViewed: body.swissCheeseViewed === true,
@@ -203,6 +209,9 @@ Deno.serve(async (req) => {
         ? {}
         : { previousBestMetricAvg }),
     });
+    if (body.reflectionSelection !== undefined) {
+      evaluation.reflectionSelection = body.reflectionSelection;
+    }
 
     const userDecisions = state.log
       .filter((entry) => entry.actionType !== "hazard_check")

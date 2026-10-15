@@ -13,6 +13,7 @@ export interface ValidSessionSubmission {
   actions: ValidSubmissionAction[];
   reflectionAnswered: boolean;
   swissCheeseViewed: boolean;
+  reflectionSelection?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -53,6 +54,8 @@ export function parseSessionSubmission(value: unknown): ValidSessionSubmission |
       typeof value.reflectionAnswered !== "boolean") return null;
   if (value.swissCheeseViewed !== undefined &&
       typeof value.swissCheeseViewed !== "boolean") return null;
+  if (value.reflectionSelection !== undefined &&
+      (!actionIdentifier(value.reflectionSelection) || value.reflectionAnswered !== true)) return null;
   // Backwards compatible with clients that omit the optional action list.
   const actions = parseSubmissionActions(value.actions === undefined ? [] : value.actions);
   if (actions === null) return null;
@@ -62,5 +65,11 @@ export function parseSessionSubmission(value: unknown): ValidSessionSubmission |
     actions,
     reflectionAnswered: value.reflectionAnswered === true,
     swissCheeseViewed: value.swissCheeseViewed === true,
+    ...(value.reflectionSelection === undefined ? {} : { reflectionSelection: value.reflectionSelection as string }),
   };
+}
+
+/** Only the initial conditions or a decision reached in the server replay may be reflected on. */
+export function isReachedReflectionSelection(selection: string, reachedDecisionIds: readonly string[]): boolean {
+  return selection === "initial_conditions" || reachedDecisionIds.includes(selection);
 }
