@@ -2,7 +2,7 @@
 
 | 항목 | 상태 |
 |---|---|
-| 기준일 | 2026-10-13 / main `5976d53020` |
+| 기준일 | 2026-10-15 / 기능 기준선 main `17211b0` |
 | 코드 기준선 | `main` |
 | 대상 | MVP Release 1 |
 | 현재 판정 | **개발판 운영 배포 완료 / 정식 v1.0 RELEASE BLOCKED** |
@@ -11,7 +11,7 @@
 | 출시 강제 게이트 | `pnpm check:legal-release -- --strict
 pnpm check:mvp-readiness -- --strict` + GitHub **Release Candidate Gate** |
 
-> 최신 구현 진도는 [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md), 관측 근거는 `ops/development-snapshot-20261013.json`, 다음 콘텐츠 검토는 [S03_REVIEW_HANDOFF_20261013.md](S03_REVIEW_HANDOFF_20261013.md)를 따른다. PR #109 head의 기존 성공 기록과 병합 main을 구분하며 이번 문서 갱신이 새 CI·실기기·운영 DB 검증을 뜻하지 않는다.
+> 최신 재개 지점과 권장 순서는 [85_SESSION_RESUME_AND_LEADERBOARD_RECOVERY.md](85_SESSION_RESUME_AND_LEADERBOARD_RECOVERY.md)를 따른다. 이 문서의 현재 상태는 2026-10-15 저장소 manifest와 `check:mvp-readiness --json` 재검사에 근거한다. [30_TASKLIST_PROGRESS_AUDIT.md](30_TASKLIST_PROGRESS_AUDIT.md)의 **83.7%는 10월 13일 고정 기준선의 구현관리 지표**이며 현재 출시 준비율이 아니다. 운영 시즌 연결은 [S01 v5 운영 기록](80_S01_V5_SEASON_RELEASE.md), [S02 v4 운영 기록](75_S02_V4_SEASON_RELEASE.md)을 따른다. 이번 문서 갱신은 새 CI·실기기·운영 DB 확인을 뜻하지 않는다.
 
 ## 1. 판정 원칙
 
@@ -41,13 +41,13 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 | 접근성 | **READY (자동 게이트)** | WCAG 2.2 AA 자동 검사, reduced motion, 키보드/포커스 |
 | 모바일 핵심 E2E | **READY (자동 게이트)** | 360×800/390×844: 초대→가입→플레이→결과→리플레이→오프라인 제출 큐→재접속 자동제출→리더보드 자동 플로우 |
 | S00 튜토리얼 | **APPROVED** | competitive source gate 예외 |
-| S01 | **SOURCE_HOLD (v2)** | IAEA 직접 사건기록 기준 Direct Cause/물리 인과사슬(시험 중 인적오류→LOOP, 비상전원 가용성 문제→SBO/정지냉각 상실)과 HF 근본·기여조건을 분리. OPIS/NSIC 사건별 direct URL/식별번호/PDF, 2012 KHNP 개별 이용표시, HF/익명화 승인 남음 |
-| S02 | **SOURCE_HOLD (v2)** | 확보된 원안위 보도자료 전재 기준 Direct Cause/물리 인과사슬(잘못된 회로상태 + 조작부 오인→터빈·발전기 정지→원자로 정지)과 HERO 방어막 분석을 분리하고, 원문이 명시한 회로정비·인적오류 방지 설비개선만 corrective action으로 반영. 정책브리핑/원안위 직접 상세와 개별 이용표시, OPIS/NSIC 사건별 상세 레코드, HF/익명화 승인 남음 |
-| S03 | **APPROVED (v7)** | 승인된 개정 방향을 반영해 근거 확인·팀 공유/기록/인계 후 미조작을 학습 완료로 인정. 추가 불확실성은 safe_stop 유지. 동일 해시의5개 영역 사용자 승인5/5와 최종 콘텐츠 승인 기록 완료; 운영 게시·시즌 연결 진행 |
+| S01 | **APPROVED (v5)** | 동일 해시 사용자 5개 영역·최종 콘텐츠 승인 완료. 10월 15일 운영 게시·10월 시즌 연결 기록은 [80번 문서](80_S01_V5_SEASON_RELEASE.md) 참조 |
+| S02 | **APPROVED (v4)** | 출처·권리·동일 해시 사용자 5개 영역·최종 콘텐츠 승인 완료. 운영 게시·10월 시즌 연결 기록은 [75번 문서](75_S02_V4_SEASON_RELEASE.md) 참조 |
+| S03 | **APPROVED (v7)** | 근거 확인·팀 공유/기록/인계 후 미조작을 학습 완료로 인정. 동일 해시 사용자 승인 5/5·최종 콘텐츠 승인 완료. S01 운영 기록에서 세 장 모두 10월 시즌 시작 가능 확인 |
 | 약관·개인정보 | **BLOCKED** | `[확정 필요]` 제거 + `release-evidence.json`의 법무/개인정보 승인 증거 필요 |
-| 외부 배포 | **개발판 DEPLOYED / 정식 RELEASE BLOCKED** | PR #109 main `5976d53020` 운영 배포·48개 파일/경로 일치 기록. 분리 staging·동일 SHA Staging Smoke·RC 및 실기기·사내망·정식 승인 증거는 남음 |
+| 외부 배포 | **개발판 DEPLOYED / 정식 RELEASE BLOCKED** | 최신 기능 기준선 `17211b0`·PR #138. 기존 세션의 운영 반영 보고와 [84번 측정 기록](84_PARTICIPANT_QUEUE_LOADING.md) 참조. 별도 staging·동일 SHA Staging Smoke/RC와 정식 승인 증거는 남음 |
 | 오디오 런타임 | **READY (코드)** | AudioManager, 최초 소리/무음 선택, BGM crossfade·dialogue ducking, SFX voice limit, 독립 mute/volume, reduced-sensory, lazy-load/cache, manifest CI gate 구현 |
-| 오디오 자산 | **16개 REGISTERED / 출시 QC BLOCKED** | 나레이션4·BGM4·SFX5·stinger3 등록. 용어가 바뀐 튜토리얼 근접오류 음성1개는 이력 보존·재제작 대기. `audioPolicy=included`, 사용자 청취/권리·기술 QC는 자산 검수 기록 참조. `approvals.audioQc=pending` 및 실기기 QC 미완료 |
+| 오디오 자산 | **17개 REGISTERED / 출시 QC BLOCKED** | readiness 재검사에서 manifest 등록·승인 자산 17/17. `audioPolicy=included`, 정식 `approvals.audioQc=pending` 및 실기기 QC 미완료 |
 | 실기기·사내망 | **BLOCKED** | 4종 실기기 확인 + 사내망/개인폰 정책 승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 | 파일럿 | **BLOCKED** | 30명 이상·Blocker 0·승인 증거를 `release-evidence.json`에 기록하면 PASS 전환 |
 
@@ -108,18 +108,18 @@ HERO는 **코드가 빌드된 것**과 **프로덕션에 공개해도 되는 것
 - JSON이 `scenarios/data/`에 존재
 - CI promotion/schema/path/balance gate PASS
 
-현재는 S01/S02가 `source_hold`, S03이 `approved`이므로 **경쟁 시나리오 3종 출시 게이트는 아직 열리지 않는다.**
+현재 S01 v5·S02 v4·S03 v7은 모두 `approved`이며 **경쟁 시나리오 콘텐츠 게이트는 3/3 PASS**다. 법무·외부배포·실기기·정책·파일럿·오디오 QC 및 동일 SHA staging/RC 게이트는 별도로 남아 있다.
 
 ## 5. 외부 운영 준비 순서
 
-1. **승인된 S03 v7 게시·시즌 연결** 후 실제 경쟁 플레이 개방 상태를 확인한다.
-2. S01/S02의 남은 직접 원문·개별 이용조건·OPIS 레코드 식별을 확정하고 동일 사람 검토를 수행한다.
+1. **S01 v5·S02 v4·S03 v7 게시·10월 시즌 연결은 완료 기록이 있다.** 참여자 본인의 경쟁판 완료 → 서버 검증 완료 → 내 기록·회고 재조회 이용 결과를 확보한다.
+2. 탐색형 체험 2명의 상세 의견 원본을 접수해 진행 차단 문제부터 반영한다. 현재 체험 완료 보고는 30명 본 파일럿이나 실기기 4종 통과 근거로 승계하지 않는다.
 3. 개인정보 운영주체·담당부서·보유기간·처리위탁/국외이전을 확정한다.
 4. staging Supabase + Cloudflare + Kakao 환경을 연결한다.
 5. 기존 PR CI·Cloudflare 미리보기 성공을 분리 staging 증거로 승계하지 않는다. 환경 준비 후 GitHub **Staging Smoke** workflow를 실행해 SPA deep-link·보안헤더·PWA·Supabase Auth·peek-invite Edge 배포를 확인한다.
 6. 최초 admin bootstrap은 완료되었다. 이어서 관리자→담당자→사용자 실제 초대 플로우를 별도 Kakao 계정으로 검증한다.
 7. 실기기/사내망 테스트를 수행한다.
-8. 등록 오디오16개는 기존 사용자 청취·권리 및 기술 QC 근거를 유지한다. 남은 실기기 QC와 정식 출시 audioQc 승인 증거를 확보한다.
+8. 등록 오디오17개는 기존 사용자 청취·권리 및 기술 QC 근거를 유지한다. 남은 실기기 QC와 정식 출시 audioQc 승인 증거를 확보한다.
 9. 파일럿 1개 발전소·30명 운영 후 KPI/Blocker를 검토한다.
 10. 법무·외부배포·실기기·사내망·파일럿·audioQc의 실제 승인 증거를 `ops/release-evidence.json`에 기록한다. 오디오 범위는 등록·포함 상태에 맞게 `included`로 정리되어 있다.
 11. 릴리스 대상 `main` SHA를 staging에 배포하고 **Staging Smoke**를 PASS시킨다.

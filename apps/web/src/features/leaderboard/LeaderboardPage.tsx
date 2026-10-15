@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { getSupabase } from "../../lib/supabase";
+import { readWithDeadline, ReadTimeoutError } from "../../lib/readWithDeadline";
 
 type Scope = "overall" | "plant" | "job" | "plant_job";
 
@@ -141,8 +142,14 @@ export function LeaderboardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [baseError, setBaseError] = useState<string | null>(null);
+  const [baseLoading, setBaseLoading] = useState(true);
+  const [baseAttempt, setBaseAttempt] = useState(0);
+  const [rankAttempt, setRankAttempt] = useState(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const requestKeyRef = useRef("");
+  const requestKeyRef = useRef(0);
+  const moreInFlightRef = useRef<number | null>(null);
+  const pageControllerRef = useRef<AbortController | null>(null);
 
   const selectedSeason =
     seasons.find((season) => season.id === seasonId) ?? null;
@@ -169,16 +176,23 @@ export function LeaderboardPage() {
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    setBaseLoading(true);
+    setBaseError(null);
 
     async function loadBase() {
       try {
         const supabase = getSupabase();
-        const { data: seasonData, error: seasonError } = await supabase
-          .from("seasons")
-          .select("id, season_key, title, status, starts_at, ends_at")
-          .in("status", ["open", "closed"])
-          .order("starts_at", { ascending: false })
-          .limit(24);
+        const { data: seasonData, error: seasonError } = await readWithDeadline(
+          signal => supabase
+            .from("seasons")
+            .select("id, season_key, title, status, starts_at, ends_at")
+            .in("status", ["open", "closed"])
+            .order("starts_at", { ascending: false })
+            .limit(24)
+            .abortSignal(signal),
+          controller.signal,
+        );
 
         if (seasonError) throw seasonError;
         if (!active) return;
@@ -192,26 +206,29 @@ export function LeaderboardPage() {
         );
       } catch (cause) {
         if (active) {
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "시즌 정보를 불러오지 못했습니다.",
+          setBaseError(
+            cause instanceof ReadTimeoutError
+              ? "시즌 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 불러와주세요."
+              : "시즌 정보를 불러오지 못했습니다. 연결을 확인한 뒤 다시 불러와주세요.",
           );
-          setLoading(false);
         }
+      } finally {
+        if (active) setBaseLoading(false);
       }
     }
 
     void loadBase();
     return () => {
       active = false;
+      controller.abort();
     };
-  }, []);
+  }, [baseAttempt]);
 
   const fetchPage = useCallback(
     async (
       offset: number,
-      requestKey: string,
+      requestKey: number,
+      signal: AbortSignal,
     ): Promise<DisplayRow[]> => {
       if (!selectedSeason) return [];
 
@@ -238,11 +255,15 @@ export function LeaderboardPage() {
             .eq("job_role", profile.job_role);
         }
 
-        const { data, error: viewError } = await query
-          .order(String(rankField), { ascending: true })
-          .order("hp_point", { ascending: false })
-          .order("nickname", { ascending: true })
-          .range(offset, end);
+        const { data, error: viewError } = await readWithDeadline(
+          readSignal => query
+            .order(String(rankField), { ascending: true })
+            .order("hp_point", { ascending: false })
+            .order("nickname", { ascending: true })
+            .range(offset, end)
+            .abortSignal(readSignal),
+          signal,
+        );
 
         if (viewError) throw viewError;
         if (requestKeyRef.current !== requestKey) return [];
@@ -271,11 +292,15 @@ export function LeaderboardPage() {
           .eq("job_role", profile.job_role);
       }
 
-      const { data, error: viewError } = await query
-        .order("rank_position", { ascending: true })
-        .order("hp_point", { ascending: false })
-        .order("nickname", { ascending: true })
-        .range(offset, end);
+      const { data, error: viewError } = await readWithDeadline(
+        readSignal => query
+          .order("rank_position", { ascending: true })
+          .order("hp_point", { ascending: false })
+          .order("nickname", { ascending: true })
+          .range(offset, end)
+          .abortSignal(readSignal),
+        signal,
+      );
 
       if (viewError) throw viewError;
       if (requestKeyRef.current !== requestKey) return [];
@@ -291,19 +316,23 @@ export function LeaderboardPage() {
   );
 
   const fetchMyRow = useCallback(
-    async (requestKey: string): Promise<DisplayRow | null> => {
+    async (requestKey: number, signal: AbortSignal): Promise<DisplayRow | null> => {
       if (!selectedSeason || !profile?.nickname) return null;
 
       const supabase = getSupabase();
 
       if (selectedSeason.status === "open") {
-        const { data, error: viewError } = await supabase
-          .from("leaderboard_current_public_rows")
-          .select("*")
-          .eq("season_id", selectedSeason.id)
-          .eq("nickname", profile.nickname)
-          .limit(1)
-          .maybeSingle();
+        const { data, error: viewError } = await readWithDeadline(
+          readSignal => supabase
+            .from("leaderboard_current_public_rows")
+            .select("*")
+            .eq("season_id", selectedSeason.id)
+            .eq("nickname", profile.nickname)
+            .limit(1)
+            .abortSignal(readSignal)
+            .maybeSingle(),
+          signal,
+        );
 
         if (viewError) throw viewError;
         if (requestKeyRef.current !== requestKey || !data) return null;
@@ -311,14 +340,18 @@ export function LeaderboardPage() {
         return mapCurrentRow(data as CurrentRow, scope);
       }
 
-      const { data, error: viewError } = await supabase
-        .from("leaderboard_snapshot_public_rows")
-        .select("*")
-        .eq("season_id", selectedSeason.id)
-        .eq("scope_type", scope)
-        .eq("nickname", profile.nickname)
-        .limit(1)
-        .maybeSingle();
+      const { data, error: viewError } = await readWithDeadline(
+        readSignal => supabase
+          .from("leaderboard_snapshot_public_rows")
+          .select("*")
+          .eq("season_id", selectedSeason.id)
+          .eq("scope_type", scope)
+          .eq("nickname", profile.nickname)
+          .limit(1)
+          .abortSignal(readSignal)
+          .maybeSingle(),
+        signal,
+      );
 
       if (viewError) throw viewError;
       if (requestKeyRef.current !== requestKey || !data) return null;
@@ -329,6 +362,10 @@ export function LeaderboardPage() {
   );
 
   useEffect(() => {
+    const requestKey = ++requestKeyRef.current;
+    const controller = new AbortController();
+    pageControllerRef.current = controller;
+    moreInFlightRef.current = null;
     if (!selectedSeason) {
       setRows([]);
       setMyRow(null);
@@ -337,8 +374,6 @@ export function LeaderboardPage() {
       return;
     }
 
-    const requestKey = queryKey;
-    requestKeyRef.current = requestKey;
     let active = true;
 
     setRows([]);
@@ -351,8 +386,8 @@ export function LeaderboardPage() {
     void (async () => {
       try {
         const [firstPage, ownRow] = await Promise.all([
-          fetchPage(0, requestKey),
-          fetchMyRow(requestKey),
+          fetchPage(0, requestKey, controller.signal),
+          fetchMyRow(requestKey, controller.signal),
         ]);
 
         if (!active || requestKeyRef.current !== requestKey) return;
@@ -363,9 +398,9 @@ export function LeaderboardPage() {
       } catch (cause) {
         if (active && requestKeyRef.current === requestKey) {
           setError(
-            cause instanceof Error
-              ? cause.message
-              : "리더보드를 불러오지 못했습니다.",
+            cause instanceof ReadTimeoutError
+              ? "순위 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 불러와주세요."
+              : "리더보드를 불러오지 못했습니다. 연결을 확인한 뒤 다시 불러와주세요.",
           );
         }
       } finally {
@@ -377,26 +412,33 @@ export function LeaderboardPage() {
 
     return () => {
       active = false;
+      ++requestKeyRef.current;
+      controller.abort();
     };
-  }, [selectedSeason, queryKey, fetchPage, fetchMyRow]);
+  }, [selectedSeason, queryKey, fetchPage, fetchMyRow, rankAttempt]);
 
   const loadMore = useCallback(async () => {
     if (
       loading ||
       loadingMore ||
+      moreInFlightRef.current !== null ||
       !hasMore ||
       !selectedSeason ||
-      requestKeyRef.current !== queryKey
+      !pageControllerRef.current ||
+      pageControllerRef.current.signal.aborted
     ) {
       return;
     }
 
-    const requestKey = queryKey;
+    const requestKey = requestKeyRef.current;
+    moreInFlightRef.current = requestKey;
+    const signal = pageControllerRef.current.signal;
     const offset = rows.length;
     setLoadingMore(true);
+    setError(null);
 
     try {
-      const nextRows = await fetchPage(offset, requestKey);
+      const nextRows = await fetchPage(offset, requestKey, signal);
 
       if (requestKeyRef.current !== requestKey) return;
 
@@ -411,13 +453,14 @@ export function LeaderboardPage() {
     } catch (cause) {
       if (requestKeyRef.current === requestKey) {
         setError(
-          cause instanceof Error
-            ? cause.message
-            : "다음 순위를 불러오지 못했습니다.",
+          cause instanceof ReadTimeoutError
+            ? "다음 순위 조회 응답이 지연되어 대기를 마쳤습니다. 아래에서 다시 시도해주세요."
+            : "다음 순위를 불러오지 못했습니다. 아래에서 다시 시도해주세요.",
         );
       }
     } finally {
       if (requestKeyRef.current === requestKey) {
+        moreInFlightRef.current = null;
         setLoadingMore(false);
       }
     }
@@ -434,7 +477,7 @@ export function LeaderboardPage() {
   useEffect(() => {
     const sentinel = sentinelRef.current;
 
-    if (!sentinel || !hasMore || loading || loadingMore) {
+    if (!sentinel || !hasMore || loading || loadingMore || error) {
       return;
     }
 
@@ -453,7 +496,7 @@ export function LeaderboardPage() {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, loadMore, loading, loadingMore]);
+  }, [hasMore, loadMore, loading, loadingMore, error]);
 
   return (
     <section className="leaderboard-page" aria-labelledby="leaderboard-title">
@@ -468,6 +511,7 @@ export function LeaderboardPage() {
           value={seasonId}
           onChange={(event) => setSeasonId(event.target.value)}
           aria-label="시즌 선택"
+          disabled={baseLoading || !!baseError}
         >
           {seasons.map((season) => (
             <option key={season.id} value={season.id}>
@@ -508,15 +552,40 @@ export function LeaderboardPage() {
         </div>
       ) : null}
 
-      {error ? (
-        <p className="error-text" role="alert">
-          {error}
-        </p>
+      {baseError ? (
+        <div className="panel">
+          <p className="error-text" role="alert">{baseError}</p>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setBaseAttempt(attempt => attempt + 1)}
+          >
+            시즌 다시 불러오기
+          </button>
+        </div>
+      ) : error ? (
+        <div className="panel">
+          <p className="error-text" role="alert">{error}</p>
+          {rows.length === 0 ? (
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setRankAttempt(attempt => attempt + 1)}
+            >
+              순위 다시 불러오기
+            </button>
+          ) : null}
+        </div>
       ) : null}
 
-      {loading ? (
+      {baseLoading || loading ? (
         <div className="panel">
           <p className="muted">순위를 불러오고 있습니다…</p>
+        </div>
+      ) : baseError || (error && rows.length === 0) ? null : seasons.length === 0 ? (
+        <div className="panel">
+          <h3>표시할 시즌이 없습니다</h3>
+          <p className="muted">시즌이 열리면 순위를 확인할 수 있습니다.</p>
         </div>
       ) : rows.length === 0 ? (
         <div className="panel">
@@ -573,7 +642,11 @@ export function LeaderboardPage() {
               disabled={loadingMore}
               onClick={() => void loadMore()}
             >
-              {loadingMore ? "다음 순위 불러오는 중…" : "순위 더 보기"}
+              {loadingMore
+                ? "다음 순위 불러오는 중…"
+                : error
+                  ? "다음 순위 다시 불러오기"
+                  : "순위 더 보기"}
             </button>
           ) : (
             <p className="leaderboard-end muted" role="status">
