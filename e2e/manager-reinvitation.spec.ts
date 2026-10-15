@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 const adminId = "f5100000-0000-0000-0000-000000000001";
 const managerId = "f5100000-0000-0000-0000-000000000002";
@@ -6,7 +7,7 @@ const plantId = "f5200000-0000-0000-0000-000000000001";
 const inviteId = "f5300000-0000-0000-0000-000000000001";
 
 // Intercept every Supabase call: UI checks cannot mutate local or remote data.
-async function fixture(page: Page, failure = false, managerSession = false) {
+async function fixture(page: Page, failure = false, managerSession = false, plantActive = true) {
   const calls: unknown[] = [];
   const userId = managerSession ? managerId : adminId;
   const user = { id: userId, aud: "authenticated", role: "authenticated", email: "fixture@example.test", app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
@@ -23,13 +24,17 @@ async function fixture(page: Page, failure = false, managerSession = false) {
     if (url.pathname === "/rest/v1/profiles") {
       body = url.searchParams.has("role") ? [{ id: managerId, plant_id: plantId, real_name: "테스트 담당자", nickname: "TESTLEAD", is_active: true, plants: { display_name: "테스트 발전소", code: "TEST" } }] : { id: userId, plant_id: managerSession ? plantId : null, role: managerSession ? "plant_manager" : "admin", real_name: "테스트 계정", nickname: "TESTUSER", is_active: true, nickname_reset_required: false, job_role: null };
     } else if (url.pathname === "/rest/v1/plants") {
-      body = [{ id: plantId, code: "TEST", name: "테스트 발전소", display_name: "테스트 발전소", is_active: true, invitation_epoch: 0, created_at: new Date().toISOString() }];
+      body = [{ id: plantId, code: "TEST", name: "테스트 발전소", display_name: "테스트 발전소", is_active: plantActive, invitation_epoch: 0, created_at: new Date().toISOString() }];
     } else if (url.pathname === "/rest/v1/invitations") body = [];
     else if (url.pathname === "/auth/v1/user") body = user;
     else if (url.pathname === "/functions/v1/manager-user-action") {
       calls.push(route.request().postDataJSON());
       status = failure ? 503 : 201;
       body = failure ? { error: "internal_error" } : { reissued: true, managerProfileId: managerId, invitationId: inviteId, inviteUrl: "http://127.0.0.1:4173/i/fixture-token", expiresAt: new Date(Date.now() + 604800000).toISOString(), plantDisplayName: "테스트 발전소" };
+    } else if (url.pathname === "/functions/v1/create-invite") {
+      calls.push(route.request().postDataJSON());
+      status = 201;
+      body = { invitationId: inviteId, inviteUrl: "http://127.0.0.1:4173/i/new-fixture-token", expiresAt: new Date(Date.now() + 604800000).toISOString(), plantDisplayName: "테스트 발전소" };
     } else if (url.pathname === "/functions/v1/peek-invite") {
       body = { valid: true, existingManager: true, invitationId: inviteId, inviteeName: "테스트 담당자", targetRole: "plant_manager", plantDisplayName: "테스트 발전소", expiresAt: new Date(Date.now() + 604800000).toISOString() };
     } else if (url.pathname === "/functions/v1/accept-invite") {
@@ -83,4 +88,49 @@ test("bound invitation omits signup fields and explains account mismatch", async
   await button.click();
   await expect(page.getByText("현재 로그인한 계정은 이 링크의 대상이 아닙니다.", { exact: false })).toBeVisible();
   expect(calls).toEqual([{ token: "fixture-token" }]);
+});
+
+
+test("new manager invitation requires a name and submits trimmed text once", async ({ page }, testInfo) => {
+  const calls = await fixture(page);
+  await page.goto("/admin");
+  const button = page.getByRole("button", { name: "담당자 초대 링크 생성", exact: true });
+  const input = page.getByRole("textbox", { name: "담당자 이름", exact: true });
+  await expect(input).toHaveAttribute("maxlength", "100");
+  await expect(button).toBeDisabled();
+  await input.fill("   ");
+  await expect(button).toBeDisabled();
+  expect(calls).toEqual([]);
+  await input.fill("  새 담당자  ");
+  await expect(button).toBeEnabled();
+  await expect(input).toHaveAccessibleDescription("담당자의 실명을 입력하세요. 앞뒤 공백은 제외되며 100자 이내입니다.");
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  await input.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("manager-invite-input.png"), fullPage: true });
+  await button.click();
+  await expect(page.locator("code").filter({ hasText: "/i/new-fixture-token" })).toBeVisible();
+  expect(calls).toEqual([{ plantId, targetRole: "plant_manager", inviteeName: "새 담당자" }]);
+  await expect(button).toBeDisabled();
+});
+
+test("an inactive plant cannot issue a new manager invitation", async ({ page }) => {
+  const calls = await fixture(page, false, false, false);
+  await page.goto("/admin");
+  const input = page.getByRole("textbox", { name: "담당자 이름", exact: true });
+  await input.fill("새 담당자");
+  const plant = page.getByRole("combobox", { name: "담당자 초대 발전소" });
+  await expect(plant.getByRole("option")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "담당자 초대 링크 생성", exact: true })).toBeDisabled();
+  expect(calls).toEqual([]);
+});
+
+test("manager name input caps entry at 100 characters", async ({ page }) => {
+  const calls = await fixture(page);
+  await page.goto("/admin");
+  const input = page.getByRole("textbox", { name: "담당자 이름", exact: true });
+  await input.fill("가".repeat(101));
+  await expect(input).toHaveValue("가".repeat(100));
+  await page.getByRole("button", { name: "담당자 초대 링크 생성", exact: true }).click();
+  await expect(page.locator("code").filter({ hasText: "/i/new-fixture-token" })).toBeVisible();
+  expect(calls).toEqual([{ plantId, targetRole: "plant_manager", inviteeName: "가".repeat(100) }]);
 });
