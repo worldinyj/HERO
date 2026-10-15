@@ -34,3 +34,6 @@
 8. **오디오 파이프라인 추가**: Google Flow Music/Lyria 계열로 BGM을 제작하고, SFX/foley는 승인된 Google Flow 오디오 도구 또는 동급 생성도구를 사용. 생성물은 검수 후 `public/audio/`에 저장하며 manifest로 출처·프롬프트·버전을 추적. 실제 원전 경보음과 혼동되는 SFX는 금지.
 
 - [09_DEPLOYMENT_BOOTSTRAP.md](09_DEPLOYMENT_BOOTSTRAP.md) — 최초 admin 부트스트랩 및 배포 준비\n
+## 탐색형 체험 운영
+
+[S02 탐색형 체험 첫 파일럿 진행](71_S02_EXPLORATION_PILOT.md) — 두 명의 체험 안내, 의견 파일 전달과 관리자 검토, 개선 우선순위 결정.
