@@ -15,7 +15,7 @@ export function ReflectionHistory() {
 
   async function load() {
     if (busy.current) return;
-    busy.current = true; setPending(true); setError(false); setRecords(null);
+    busy.current = true; setPending(true); setError(false);
     try {
       const { data, error: failure } = await getSupabase().rpc("my_reflection_history");
       if (failure) throw failure;
@@ -32,11 +32,11 @@ export function ReflectionHistory() {
     <button type="button" className="secondary-button compact-button" disabled={pending} onClick={() => void load()}>
       {pending ? "회고를 불러오고 있습니다…" : error ? "회고 다시 불러오기" : records === null ? "최근 회고 불러오기" : "회고 새로고침"}
     </button>
-    {pending ? <p role="status">내 회고 기록을 확인하고 있습니다…</p> : null}
-    {error ? <p role="alert">회고 기록을 불러오지 못했습니다. 연결을 확인한 뒤 다시 시도해주세요.</p> : null}
-    {records?.length === 0 ? <p role="status">아직 완료한 경쟁 플레이가 없습니다.</p> : null}
+    {pending ? <p role="status">{records === null ? "내 회고 기록을 확인하고 있습니다…" : "이전 조회 결과를 유지하며 새 회고 기록을 확인하고 있습니다…"}</p> : null}
+    {error ? <p role="alert">회고 기록을 불러오지 못했습니다. {records === null ? "연결을 확인한 뒤 다시 시도해주세요." : "아래는 이전 조회 결과입니다. 연결을 확인한 뒤 다시 불러오면 최신 기록을 확인할 수 있습니다."}</p> : null}
+    {records?.length === 0 ? <p role="status">{pending || error ? "이전에 조회했을 때 완료한 경쟁 플레이가 없었습니다." : "아직 완료한 경쟁 플레이가 없습니다."}</p> : null}
     {records?.length ? <>
-      <p role="status">최근 완료 기록 {records.length}건 · 한국 시간 기준</p>
+      <p role="status">{pending || error ? "이전에 불러온 완료 기록" : "최근 완료 기록"} {records.length}건 · 한국 시간 기준</p>
       <div className="record-list">{records.map(record => <article key={record.session_id} className="reflection-history-record">
         <h4>{record.title} · v{record.scenario_version}</h4>
         <p className="muted">{record.season_title} · <time dateTime={record.completed_at}>{dateFormat.format(new Date(record.completed_at))}</time></p>
