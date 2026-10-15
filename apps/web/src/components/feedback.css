@@ -1,0 +1,4 @@
+.app-feedback { display: flex; justify-content: center; margin: 24px 0 8px; }
+.feedback-link { display: inline-flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; min-height: 44px; padding: 10px 14px; border: 1px solid rgba(242, 165, 65, 0.28); border-radius: 12px; color: var(--accent); text-decoration: none; }
+.feedback-invitation { padding: 16px; border: 1px solid rgba(138, 150, 173, 0.3); border-radius: 12px; }
+.feedback-invitation .mini-copy { margin: 12px 0 0; }

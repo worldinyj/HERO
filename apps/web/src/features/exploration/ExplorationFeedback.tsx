@@ -1,6 +1,7 @@
 import { EXPLORATION_QUESTIONS as questions, type ExplorationHistoryItem } from "./feedbackContract";
 import { useState } from "react";
 import targets from "../admin/scenarioReviewTargets.generated.json";
+import { FeedbackLink } from "../../components/FeedbackLink";
 
 const source = targets.find(target => target.scenarioId === "s02_equipment_identity" && target.version === 4 && target.approved);
 if (!source) throw new Error("exploration_feedback_requires_approved_s02_v4");
@@ -41,7 +42,12 @@ export function ExplorationFeedback({ notes, history }: {
   }
   return <section className="exploration-feedback" aria-labelledby="exploration-feedback-title">
     <h3 id="exploration-feedback-title">체험을 돌아보기</h3>
-    <p className="muted">의견은 서버로 전송되지 않습니다. 세 문항을 작성하면 판단 기록과 함께 파일로 내려받아 검토자에게 직접 전달할 수 있습니다. 새로고침하거나 다시 시작하면 입력이 초기화됩니다.</p>
+    <div className="feedback-invitation">
+      <p>불편했던 점이나 도움이 된 점은 익명 접수 폼으로 알려주세요. 이름과 이메일 없이 작성할 수 있습니다.</p>
+      <FeedbackLink />
+      <p className="muted mini-copy">새 탭에서 폼을 제출하면 Notion에 저장됩니다. 아래 입력과 판단 기록은 자동으로 옮겨지지 않습니다.</p>
+    </div>
+    <p className="muted">판단 기록을 함께 전달하려면 아래 세 문항을 작성하고 파일을 내려받아 검토자에게 직접 공유해주세요. 아래 입력은 서버로 전송되지 않습니다. 새로고침하거나 다시 시작하면 입력이 초기화됩니다.</p>
     <label htmlFor="exploration-judgment-basis">어떤 근거와 불확실성으로 판단했나요? (선택)</label>
     <textarea id="exploration-judgment-basis" maxLength={1000} value={basis} onChange={event => { setBasis(event.target.value); setDownloaded(false); }} />
     {questions.map((question, index) => <div className="exploration-feedback-field" key={question}>
