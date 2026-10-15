@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { CompanionHeading } from "../../components/CompanionHeading";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
+import { readWithDeadline, ReadTimeoutError } from "../../lib/readWithDeadline";
 import { exactCount, isScenarioPlayable, operationalScenarioState, type OperationsCounts } from "./operationsOverview";
 import { readSeasonOverview, type SeasonOverview } from "./seasonScenario";
 
@@ -12,43 +13,54 @@ const dateTime = (value: string) => new Intl.DateTimeFormat("ko-KR", {
 
 export function AdminOverviewPage() {
   const gate = useRef(new ReadRequestGate());
+  const readController = useRef<AbortController | null>(null);
   const [counts, setCounts] = useState<OperationsCounts | null>(null);
   const [season, setSeason] = useState<SeasonOverview | null>(null);
   const [countError, setCountError] = useState(false);
   const [seasonError, setSeasonError] = useState(false);
+  const [countTimedOut, setCountTimedOut] = useState(false);
+  const [seasonTimedOut, setSeasonTimedOut] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadedAt, setLoadedAt] = useState<string | null>(null);
 
   async function load() {
     const ticket = gate.current.begin();
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
     setLoading(true); setLoadedAt(null); setCounts(null); setSeason(null); setCountError(false); setSeasonError(false);
+    setCountTimedOut(false); setSeasonTimedOut(false);
     let supabase: ReturnType<typeof getSupabase>;
     try { supabase = getSupabase(); }
-    catch { setCountError(true); setSeasonError(true); setLoading(false); return; }
-    const readCounts = async (): Promise<OperationsCounts> => {
+    catch { readController.current = null; setCountError(true); setSeasonError(true); setLoading(false); return; }
+    const readCounts = (): Promise<OperationsCounts> => readWithDeadline(async signal => {
       const results = await Promise.all([
-        supabase.from("plants").select("id", { count: "exact", head: true }).eq("is_active", true),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "plant_manager"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "player"),
-        supabase.from("play_sessions").select("id", { count: "exact", head: true }).eq("status", "completed"),
+        supabase.from("plants").select("id", { count: "exact", head: true }).eq("is_active", true).abortSignal(signal),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "plant_manager").abortSignal(signal),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "player").abortSignal(signal),
+        supabase.from("play_sessions").select("id", { count: "exact", head: true }).eq("status", "completed").abortSignal(signal),
       ]);
       return { activePlants: exactCount(results[0]), managers: exactCount(results[1]),
         players: exactCount(results[2]), completedSessions: exactCount(results[3]) };
-    };
-    const readSeason = async () => {
-      const result = await supabase.functions.invoke("admin-scenario", { body: { action: "season-overview" } });
+    }, controller.signal);
+    const readSeason = () => readWithDeadline(async signal => {
+      const result = await supabase.functions.invoke("admin-scenario", { body: { action: "season-overview" }, signal });
       if (result.error) throw result.error;
       return readSeasonOverview(result.data);
-    };
+    }, controller.signal);
     const [countsResult, seasonResult] = await Promise.allSettled([readCounts(), readSeason()]);
+    controller.abort();
+    if (readController.current === controller) readController.current = null;
     if (!gate.current.isCurrent(ticket)) return;
     const denied = seasonResult.status === "rejected" && seasonResult.reason?.context instanceof Response &&
       [401, 403].includes(seasonResult.reason.context.status);
     if (countsResult.status === "fulfilled" && !denied) setCounts(countsResult.value); else setCountError(true);
     if (seasonResult.status === "fulfilled") setSeason(seasonResult.value); else setSeasonError(true);
+    setCountTimedOut(countsResult.status === "rejected" && countsResult.reason instanceof ReadTimeoutError);
+    setSeasonTimedOut(seasonResult.status === "rejected" && seasonResult.reason instanceof ReadTimeoutError);
     setLoadedAt(new Date().toISOString()); setLoading(false);
   }
-  useEffect(() => { void load(); return () => gate.current.invalidate(); }, []);
+  useEffect(() => { void load(); return () => { gate.current.invalidate(); readController.current?.abort(); }; }, []);
 
   const playable = season?.scenarios.filter(isScenarioPlayable) ?? [];
   return <section className="admin-page" aria-labelledby="operations-title">
@@ -67,7 +79,9 @@ export function AdminOverviewPage() {
     </header>
     <section className="panel" aria-labelledby="registration-title">
       <h3 id="registration-title">등록·학습 현황</h3>
-      {countError ? <p className="error-text" role="alert">등록·학습 현황을 불러오지 못했습니다. 새로고침으로 다시 확인해주세요.</p> : null}
+      {countError ? <p className="error-text" role="alert">{countTimedOut
+        ? "등록·학습 현황 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 새로고침해주세요."
+        : "등록·학습 현황을 불러오지 못했습니다. 새로고침으로 다시 확인해주세요."}</p> : null}
       {counts ? <dl className="operations-metrics">
         <div><dt>운영 중인 조직</dt><dd>{counts.activePlants.toLocaleString("ko-KR")}개</dd></div>
         <div><dt>등록 담당자</dt><dd>{counts.managers.toLocaleString("ko-KR")}명</dd></div>
@@ -79,7 +93,9 @@ export function AdminOverviewPage() {
     </section>
     <section className="panel" aria-labelledby="season-overview-title">
       <h3 id="season-overview-title">현재 시즌</h3>
-      {seasonError ? <p className="error-text" role="alert">현재 시즌을 불러오지 못했습니다. 새로고침으로 다시 확인해주세요.</p> : null}
+      {seasonError ? <p className="error-text" role="alert">{seasonTimedOut
+        ? "현재 시즌 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 새로고침해주세요."
+        : "현재 시즌을 불러오지 못했습니다. 새로고침으로 다시 확인해주세요."}</p> : null}
       {season ? season.season ? <>
         <strong>{season.season.title} · {season.season.seasonKey}</strong>
         <p className="muted">{dateTime(season.season.startsAt)} ~ {dateTime(season.season.endsAt)} (한국 시간)</p>

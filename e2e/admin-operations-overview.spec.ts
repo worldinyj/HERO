@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { heldAdminRead } from "./heldAdminRead";
 import AxeBuilder from "@axe-core/playwright";
 const adminId = "f6100000-0000-0000-0000-000000000001";
 const seasonId = "f6100000-0000-0000-0000-000000000002";
@@ -7,7 +8,7 @@ const overview = {
   season: { id: seasonId, seasonKey: "2026-10", title: "10월 시즌", startsAt: "2026-09-30T15:00:00Z", endsAt: "2026-10-31T15:00:00Z" },
   scenarios: [{ id: "f6100000-0000-0000-0000-000000000004", slug: "e2e_operations", title: "테스트 경쟁 장", isActive: true, isCompetitive: true, publishedVersionId: versionId, publishedVersion: 1, revision: "a".repeat(32), bindings: [{ versionId, version: 1, status: "published", isActive: true }] }],
 };
-async function fixture(page: Page, options: { role?: string; zero?: boolean; countError?: boolean; seasonError?: boolean; denied?: boolean; emptySeason?: boolean } = {}) {
+async function fixture(page: Page, options: { role?: string; zero?: boolean; countError?: boolean; seasonError?: boolean; denied?: boolean; emptySeason?: boolean } = {}, navigate = true) {
   const role = options.role ?? "admin";
   const requests: Array<{ method: string; path: string; search: string }> = [];
   const state = { countError: options.countError ?? false, seasonError: options.seasonError ?? false, denied: options.denied ?? false };
@@ -33,11 +34,12 @@ async function fixture(page: Page, options: { role?: string; zero?: boolean; cou
       expect(request.postDataJSON()).toEqual({ action: "season-overview" });
       if (state.denied || state.seasonError) await route.fulfill({ status: state.denied ? 403 : 503, json: { error: "overview_unavailable" } });
       else await route.fulfill({ json: options.zero ? { season: null, scenarios: [] } : options.emptySeason ? { ...overview, scenarios: [] } : overview });
-    } else if (role !== "admin" && url.pathname === "/rest/v1/rpc/my_current_rank") await route.fulfill({ json: null });
+    } else if (url.pathname === "/rest/v1/audit_logs") await route.fulfill({ json: [] });
+    else if (role !== "admin" && url.pathname === "/rest/v1/rpc/my_current_rank") await route.fulfill({ json: null });
     else if (role !== "admin" && request.method() === "GET") await route.fulfill({ json: [] });
     else throw Error(`Unexpected API ${request.method()} ${url.pathname}`);
   });
-  await page.goto("/admin/overview");
+  if (navigate) await page.goto("/admin/overview");
   return { requests, state };
 }
 
@@ -161,4 +163,49 @@ test("an active season without connected scenarios explains the next management 
   await fixture(page, { emptySeason: true });
   await expect(page.getByText("현재 연결 상태로 새 경쟁 플레이를 시작할 수 있는 시나리오가 없습니다. 시나리오 관리에서 배포 버전과 시즌 연결을 확인해주세요.")).toBeVisible();
   await expect(page.getByRole("link", { name: "시나리오·시즌 연결 관리" })).toHaveAttribute("href", "/admin/scenarios");
+});
+
+
+for (const target of ["counts", "season", "both"] as const) test(`hung ${target} reads release refresh, preserve independent results and ignore late replies`, async ({ page }, testInfo) => {
+  await page.clock.install();
+  await fixture(page, {}, false);
+  const held = await heldAdminRead(page, (url, method) =>
+    (target !== "season" && method === "HEAD" && url.pathname === "/rest/v1/plants") ||
+    (target !== "counts" && url.pathname === "/functions/v1/admin-scenario"),
+    target === "counts" ? { headers: { "content-range": "*/999", "access-control-expose-headers": "content-range" }, body: "" } : { json: { season: null, scenarios: [] } });
+  await page.goto("/admin/overview");
+  await expect.poll(() => held.calls).toBe(target === "both" ? 2 : 1);
+  await page.clock.runFor(15_001);
+  const refresh = page.getByRole("button", { name: "현황 새로고침", exact: true });
+  await expect(refresh).toBeEnabled();
+  await expect(page.getByRole("alert")).toHaveCount(target === "both" ? 2 : 1);
+  await expect(page.getByRole("alert").first()).toContainText("응답이 지연되어 대기를 마쳤습니다.");
+  if (target === "counts") await expect(page.getByText("v1 적용 중 · 새 경쟁 플레이 가능")).toBeVisible();
+  else if (target === "season") await expect(page.locator(".operations-metrics")).toContainText("9건");
+  await expect(page.getByText("현재 운영 중인 시즌이 없습니다.")).toHaveCount(0);
+  expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath(`overview-${target}-timeout.png`) });
+  held.holding = false;
+  await refresh.click();
+  await expect(page.locator(".operations-metrics")).toContainText("3개");
+  await expect(page.getByText("v1 적용 중 · 새 경쟁 플레이 가능")).toBeVisible();
+  held.release();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(page.locator(".operations-metrics")).not.toContainText("999");
+  await expect(page.getByText("현재 운영 중인 시즌이 없습니다.")).toHaveCount(0);
+});
+
+test("leaving a pending overview aborts its reads and returning reads a fresh summary", async ({ page }) => {
+  await fixture(page, {}, false);
+  const held = await heldAdminRead(page, url => url.pathname === "/functions/v1/admin-scenario", { json: { season: null, scenarios: [] } });
+  await page.goto("/admin/overview");
+  await expect.poll(() => held.calls).toBe(1);
+  await page.getByRole("navigation", { name: "관리자 메뉴", exact: true }).getByRole("link", { name: "감사 이력", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "감사 이력", exact: true })).toBeVisible();
+  held.holding = false;
+  await page.getByRole("navigation", { name: "관리자 메뉴", exact: true }).getByRole("link", { name: "운영 현황", exact: true }).click();
+  await expect(page.getByText("v1 적용 중 · 새 경쟁 플레이 가능")).toBeVisible();
+  held.release();
+  await expect(page.getByText("현재 운영 중인 시즌이 없습니다.")).toHaveCount(0);
 });
