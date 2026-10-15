@@ -321,3 +321,27 @@ test("read retries never release an uncertain invitation lock", async ({ page })
   held.release();
   expect(calls).toEqual([{ action: "reinvite-manager", profileId: managerId }]);
 });
+
+test("PostgREST range error after rows disappear reloads the first page", async ({ page }) => {
+  const calls = await fixture(page, false, false, true, true);
+  await page.goto("/admin");
+  const roster = page.getByRole("region", { name: "담당자 목록 검색", exact: true });
+  await expect(roster.locator("article")).toHaveCount(20);
+  let shrunk = false;
+  await page.route("**/rest/v1/profiles?**", async route => {
+    const url = new URL(route.request().url());
+    if (!isPage(url)) return route.fallback();
+    if (url.searchParams.get("offset") === "20") {
+      shrunk = true;
+      return route.fulfill({ status: 416, json: { code: "PGRST103", message: "Requested range not satisfiable" } });
+    }
+    if (!shrunk) return route.fallback();
+    return route.fulfill({ json: [{ id: managerId, plant_id: plantId, real_name: "남은 담당자", nickname: "REMAINING", is_active: true, plants: { display_name: "테스트 발전소", code: "TEST" } }], headers: { "content-range": "0-0/1", "access-control-expose-headers": "content-range" } });
+  });
+  await roster.getByRole("button", { name: "다음 담당자 페이지", exact: true }).click();
+  await expect(roster).toContainText("검색 결과 1명 · 1 / 1페이지");
+  await expect(roster.locator("article")).toHaveCount(1);
+  await expect(roster).toContainText("남은 담당자");
+  await expect(roster.getByRole("alert")).toHaveCount(0);
+  expect(calls).toEqual([]);
+});

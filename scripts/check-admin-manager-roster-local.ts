@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { EMPTY_MANAGER_FILTERS, readManagerPage, readPlantManagerCounts } from "../apps/web/src/features/admin/managerRosterQueries.ts";
+import { EMPTY_MANAGER_FILTERS, ManagerPageOutOfRangeError, readManagerPage, readPlantManagerCounts } from "../apps/web/src/features/admin/managerRosterQueries.ts";
 
 async function main() {
   const config = JSON.parse(execFileSync("supabase", ["status", "--output", "json"], { stdio: ["ignore", "pipe", "pipe"] }).toString());
@@ -43,6 +43,15 @@ async function main() {
     if (filtered.rows.some(row => row.plant_id !== plantId || row.is_active !== (status === "active"))) throw Error("server_filter_mismatch");
     filterChecks++;
   }
-  console.log(JSON.stringify({ result: "PASS", target: "127.0.0.1:55321", authenticatedAdminRls: true, activeManagers: total.count, checkedPlantCounts: counts.size, firstPageRows: page.rows.length, totalManagers: page.total, filterChecks, writes: 0 }));
+  let outOfRangeVerified = false;
+  if (page.total > 0) {
+    try { await readManagerPage(admin, EMPTY_MANAGER_FILTERS, Math.ceil(page.total / 20) + 1); }
+    catch (error) {
+      if (!(error instanceof ManagerPageOutOfRangeError)) throw error;
+      outOfRangeVerified = true;
+    }
+    if (!outOfRangeVerified) throw Error("postgrest_range_error_missing");
+  }
+  console.log(JSON.stringify({ outOfRangeVerified, result: "PASS", target: "127.0.0.1:55321", authenticatedAdminRls: true, activeManagers: total.count, checkedPlantCounts: counts.size, firstPageRows: page.rows.length, totalManagers: page.total, filterChecks, writes: 0 }));
 }
 main().catch(error => { console.error(error instanceof Error && /^[a-z_]+(?::[A-Z0-9]+)?$/.test(error.message) ? error.message : "local_read_verification_failed"); process.exitCode = 1; });

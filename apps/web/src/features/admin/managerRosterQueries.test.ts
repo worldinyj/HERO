@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
-import { EMPTY_MANAGER_FILTERS, exactManagerCount, isCurrentManager, readManagerPage, readPlantManagerCounts } from "./managerRosterQueries";
+import { EMPTY_MANAGER_FILTERS, ManagerPageOutOfRangeError, exactManagerCount, isCurrentManager, readManagerPage, readPlantManagerCounts } from "./managerRosterQueries";
 
 const manager = { id: "m", plant_id: "p", real_name: "홍길동", nickname: "SAFE", is_active: true, plants: null };
 function fixture(data: unknown, total: number | null, status = 200) {
@@ -67,6 +67,11 @@ describe("server-side manager roster", () => {
   it("allows an empty page after the last row is removed so the UI can clamp its page", async () => {
     const { client } = fixture([], 20);
     expect(await readManagerPage(client, EMPTY_MANAGER_FILTERS, 1)).toEqual({ rows: [], total: 20 });
+  });
+  it("recognizes PostgREST range errors only on later pages, without masking first-page failures", async () => {
+    const failure = { code: "PGRST103", message: "Requested range not satisfiable" };
+    await expect(readManagerPage(fixture(failure, null, 416).client, EMPTY_MANAGER_FILTERS, 1)).rejects.toBeInstanceOf(ManagerPageOutOfRangeError);
+    await expect(readManagerPage(fixture(failure, null, 416).client, EMPTY_MANAGER_FILTERS, 0)).rejects.toEqual(failure);
   });
   it("keeps full plant counts independent from the displayed manager page", () => {
     expect(readPlantManagerCounts([{ id: "a", profiles: [{ count: 47 }] }, { id: "b", profiles: [{ count: 0 }] }]))

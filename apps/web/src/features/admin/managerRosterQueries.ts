@@ -3,6 +3,9 @@ import { readWithDeadline } from "../../lib/readWithDeadline";
 import { isValidAdminOrgLists } from "./adminOrgResponse";
 
 export const MANAGER_PAGE_SIZE = 20;
+export class ManagerPageOutOfRangeError extends Error {
+  constructor() { super("manager_page_out_of_range"); this.name = "ManagerPageOutOfRangeError"; }
+}
 export interface ManagerRow {
   id: string;
   plant_id: string | null;
@@ -57,7 +60,8 @@ export async function readManagerPage(client: SupabaseClient, filters: ManagerFi
   if (name) query = query.ilike("real_name", `%${name.replace(/[\\%_]/gu, "\\$&")}%`);
   if (filters.plantId) query = query.eq("plant_id", filters.plantId);
   if (filters.status !== "all") query = query.eq("is_active", filters.status === "active");
-  const { data, count, error } = await readWithDeadline(readSignal => query.range(page * MANAGER_PAGE_SIZE, (page + 1) * MANAGER_PAGE_SIZE - 1).abortSignal(readSignal), signal);
+  const { data, count, error, status } = await readWithDeadline(readSignal => query.range(page * MANAGER_PAGE_SIZE, (page + 1) * MANAGER_PAGE_SIZE - 1).abortSignal(readSignal), signal);
+  if (error && status === 416 && error.code === "PGRST103" && page > 0) throw new ManagerPageOutOfRangeError();
   if (error) throw error;
   const total = exactManagerCount(count);
   if (!isValidAdminOrgLists([], data, []) || !Array.isArray(data) ||

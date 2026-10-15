@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getSupabase } from "../../lib/supabase";
 import { ReadTimeoutError } from "../../lib/readWithDeadline";
 import { ReadRequestGate } from "../../lib/readRequestGate";
-import { EMPTY_MANAGER_FILTERS, MANAGER_PAGE_SIZE, readManagerPage, type ManagerFilters, type ManagerRow } from "./managerRosterQueries";
+import { EMPTY_MANAGER_FILTERS, MANAGER_PAGE_SIZE, ManagerPageOutOfRangeError, readManagerPage, type ManagerFilters, type ManagerRow } from "./managerRosterQueries";
 
 interface Props {
   plants: Array<{ id: string; display_name: string; is_active: boolean }>;
@@ -38,6 +38,7 @@ export function AdminManagerRoster({ plants, disabled, onSelect, onQueryChange }
       setLoading(false);
     }).catch(cause => {
       if (!gate.current.isCurrent(revision)) return;
+      if (cause instanceof ManagerPageOutOfRangeError && page > 0) { setPage(0); return; }
       setError(cause instanceof ReadTimeoutError
         ? "담당자 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 조회해주세요."
         : "담당자 목록을 불러오지 못했습니다. 검색 조건과 연결 상태를 확인한 뒤 다시 시도해주세요.");
