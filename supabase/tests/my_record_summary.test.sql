@@ -151,6 +151,9 @@ update public.plants set is_active=false where id='72000000-0000-0000-0000-00000
 set local role authenticated;
 select is(jsonb_array_length(public.my_reflection_history()),2,'active owner retains history while plant suspended');
 reset role;
+-- Restore the plant before changing profile status: the existing profile
+-- mutation guard intentionally blocks any such write while suspended.
+update public.plants set is_active=true where id='72000000-0000-0000-0000-000000000001';
 update public.profiles set is_active=false where id='71000000-0000-0000-0000-000000000001';
 set local role authenticated;
 select throws_ok('select public.my_reflection_history()','P0001','authenticated_profile_required','inactive account cannot read history');
@@ -159,7 +162,6 @@ set local role anon;
 select throws_ok('select public.my_reflection_history()','42501',null,'anonymous execution is denied');
 reset role;
 update public.profiles set is_active=true where id='71000000-0000-0000-0000-000000000001';
-update public.plants set is_active=true where id='72000000-0000-0000-0000-000000000001';
 insert into public.play_sessions(id,user_id,plant_id,player_job_role,perspective_role,season_id,scenario_version_id,
  simulation_seed,presentation_seed,status,ending,hp_point,evaluation,completed_at)
 select ('75000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,
