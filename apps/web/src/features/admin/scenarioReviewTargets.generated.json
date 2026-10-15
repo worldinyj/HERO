@@ -1,5 +1,36 @@
 [
   {
+    "scenarioId": "s01_time_pressure",
+    "version": 5,
+    "title": "1장 · 오늘 오전까지 끝내야 합니다",
+    "contentSha256": "0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525",
+    "previewSha256": "197ff9b563488676167898a1c6fe3f7eb19608383f413c58f97aedcaeb591282",
+    "sourceRightsComplete": true,
+    "approved": false,
+    "areas": [
+      {
+        "area": "hf_accuracy",
+        "decision": "pending"
+      },
+      {
+        "area": "operations_context",
+        "decision": "pending"
+      },
+      {
+        "area": "anonymization",
+        "decision": "pending"
+      },
+      {
+        "area": "just_culture",
+        "decision": "pending"
+      },
+      {
+        "area": "incident_debrief",
+        "decision": "pending"
+      }
+    ]
+  },
+  {
     "scenarioId": "s02_equipment_identity",
     "version": 4,
     "title": "2장 · 아마 이 설비가 맞을 겁니다",

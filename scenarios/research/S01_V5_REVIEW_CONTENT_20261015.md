@@ -1,0 +1,668 @@
+# S01 v5 콘텐츠 검토본 — 오늘 오전까지 끝내야 합니다
+
+작성일: 2026-10-15. 상태: **검토 준비 완료 / 사람 승인 대기 / 미공개**.
+
+이 문서에서 실제 장면·모든 선택지·회고 전문을 확인할 수 있습니다. 장면은 실제 사건의 대화를 재현한 것이 아닌 교육용 구성입니다. 같은 화면에서 정보 확인·방벽 카드를 사용한 뒤 선택할 수 있습니다.
+
+## 검토 대상과 변경 범위
+
+- 원본: `scenarios/drafts/S01_time_pressure_v1.json` · v5
+- 파일 SHA-256: `0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525`
+- 약 8분, 기본 관점 작업자. 모든 대상 직무에서 같은 교육용 상황을 다룹니다.
+- v4 대비 회고: 공식 일정관리 근거 보강, 최초 오류와 확대 조건 구분, 관련 대책 6개 추가, 공식 사실·HERO 해석·당시 개선 계획 구분.
+- 장면·선택지·시간비용·카드·초기상태·점수는 v4와 동일합니다. 기존 S02 v4·S03 v7 승인에 영향이 없습니다.
+- 출처·권리·추적성 점검 완료는 사람의 콘텐츠 승인과 다릅니다. 새 v5에 대한 사람 검토 5개 영역은 모두 대기입니다.
+
+## 읽는 순서
+
+첫 상황 → 일정 변경 판단 → 중지 지시 → 단계 판단 → 예상 범위 진행 또는 예상 밖 상태 → 마무리 또는 대응 판단 → 엔딩 → 실제 사건 회고 순서입니다. 실제 운영 절차를 가르치거나 모든 경로를 실제 사건의 경위로 주장하지 않습니다.
+
+## 플레이 화면 전문
+
+### intro · scene
+
+작업팀
+
+오늘 예정된 시험 순서가 일부 바뀌었습니다. 이 시험을 마치면 팀 일부는 다음 작업 장소로 이동해야 합니다.
+
+다음 화면: `decision_schedule`
+
+### decision_schedule · decision
+
+원래 계획과 작업순서가 달라졌습니다. 시험을 시작하기 전에 무엇을 하시겠습니까?
+
+- 정보 확인 · 2분: 바뀐 작업순서와 팀 이동계획을 확인한다.
+  - 확인 내용: 시험 순서뿐 아니라 일부 인력의 다음 작업 시작시간도 앞당겨져 있습니다.
+
+1. 변경된 순서와 위험요인을 반영해 짧게 재브리핑한다. (5분 → `event_hold_instruction`)
+2. 현재 작업경계와 가용조건을 문서와 다시 대조한다. (3분 → `event_hold_instruction`)
+3. 기존 브리핑 내용이 있으므로 변경된 순서만 기억하고 시작한다. (0분 → `event_hold_instruction`)
+
+사용 가능한 방벽 카드: 작업 전 브리핑.
+
+### event_hold_instruction · event
+
+시험 중 감독자로부터 현재 단계에서 멈추고 다음 단계로 진행하지 말라는 지시가 전달됩니다.
+
+다음 화면: `decision_hold_point`
+
+### decision_hold_point · decision
+
+다음 작업 일정은 가까워지고 있습니다. 현재 단계에서 어떻게 하시겠습니까?
+
+- 정보 확인 · 1분: 현재 단계의 완료조건과 다음 단계 시작조건을 다시 읽는다.
+  - 확인 내용: 현재 단계는 확인이 끝나기 전 다음 단계로 넘어가지 않도록 구분되어 있습니다.
+
+1. 현재 단계에 머물며 진행 조건이 충족됐는지 다시 확인한다. (1분 → `hazard_step_control`)
+2. 중지 지시를 복창하고 다음 진행 조건을 감독자와 맞춘다. (2분 → `hazard_step_control`)
+3. 익숙한 시험이고 시간이 촉박하므로 준비된 다음 단계까지 진행한다. (0분 → `hazard_step_control`)
+
+사용 가능한 방벽 카드: 단계 위치 확인(Place Keeping) / 3방향 의사소통.
+
+### hazard_step_control · hazard
+
+엔진 분기: 기준 52, 변동폭 ±4. 통과 → `event_test_stable`, 초과 → `event_unexpected_condition`. 이 수치는 게임용 지표이며 실제 사건 확률이나 HEP가 아닙니다.
+
+### event_test_stable · event
+
+진행조건을 다시 맞춘 뒤 시험은 예상 범위 안에서 진행됩니다.
+
+다음 화면: `decision_closeout`
+
+### decision_closeout · decision
+
+시험을 마무리하면서 다음 작업 인계까지 어떻게 연결하시겠습니까?
+
+1. 현재 상태와 남은 주의사항을 다음 작업팀에 인계한다. (2분 → `safe_complete_end`)
+2. 최종 설비상태를 다시 확인한 뒤 작업을 종료한다. (2분 → `safe_complete_end`)
+3. 남은 불확실성이 있어 다음 작업 인계를 잠시 보류한다. (3분 → `safe_stop_end`)
+
+사용 가능한 방벽 카드: 없음.
+
+### event_unexpected_condition · event
+
+예상하지 못한 설비상태 변화가 나타났습니다. 시험을 계속하기보다 현재 상태를 보호하는 판단이 필요합니다.
+
+다음 화면: `decision_recovery`
+
+### decision_recovery · decision
+
+예상하지 못한 상태가 나타난 직후 무엇을 하시겠습니까?
+
+- 정보 확인 · 1분: 현재 표시와 팀의 관찰내용을 다시 모은다.
+  - 확인 내용: 한 가지 표시만으로는 원인을 단정하기 어렵고, 작업중지 상태에서 추가 확인이 필요합니다.
+
+1. 시험을 중지하고 상태를 보호한 뒤 즉시 보고한다. (1분 → `safe_stop_end`)
+2. 팀과 상태를 확인한 뒤 승인된 범위 안에서 복구를 시도한다. (3분 → `hazard_recovery`)
+3. 현재 시험 단계를 끝낸 뒤 상태를 정리해 보고한다. (0분 → `hazard_recovery`)
+
+사용 가능한 방벽 카드: 불확실하면 중지.
+
+### hazard_recovery · hazard
+
+엔진 분기: 기준 58, 변동폭 ±4. 통과 → `near_miss_end`, 초과 → `event_end`. 이 수치는 게임용 지표이며 실제 사건 확률이나 HEP가 아닙니다.
+
+### safe_complete_end · ending
+
+변경된 조건을 다시 맞춰 완료
+
+일정은 조금 늦어졌지만 변경된 조건을 다시 공유하고 단계통제 방벽을 지켜 시험을 완료했습니다.
+
+### safe_stop_end · ending
+
+일정보다 안전한 중지를 선택
+
+작업 압박이 있는 상황에서도 불확실성을 인정하고 시험을 중지했습니다. 안전한 중지는 중요한 성공 경로입니다.
+
+### near_miss_end · ending
+
+예상 밖 상태 뒤 확대를 막음
+
+단계통제 방벽이 약해져 예상하지 못한 상태가 나타났지만, 추가 확인과 팀 조정으로 확대를 막았습니다.
+
+### event_end · ending
+
+일정·절차·감독의 틈이 겹침
+
+시간압박, 변경된 작업계획, 단계통제와 커뮤니케이션 방벽의 취약이 겹쳐 사건으로 이어졌습니다.
+
+## 실제 사건 회고 전문
+
+사건 유형: 정비 시험 일정변경과 단계통제 방벽이 겹친 사건
+
+정비기간 중 보호계전기 시험의 잘못된 조작으로 소외전원이 상실되었고, 한 비상전원 계통은 계획정비로 사용할 수 없는 상태에서 다른 비상디젤발전기까지 기동에 실패하여 전원상실과 정지냉각 상실로 확대된 실제 사건을 교육 목적으로 일반화했다. 공식 안전점검 보고서에서는 작업일정의 임의 변경과 예방절차 미준수도 확인했다. 시간압박·등장인물·대화·재브리핑·단계통제 선택은 HERO의 교육용 구성이며 실제 사건의 재현이나 조사기관의 공식 원인분류가 아니다. 사건 이후의 비상발령·기관 보고 지연은 사건 개시와 구분한다. 실제 운전 설정·설비 식별자·복구절차 세부는 제공하지 않는다.
+
+### 직접원인과 확대 조건
+
+1. 보호계전기 시험 중 잘못된 조작이 소외전원 상실을 직접 유발했다.
+2. 사건 확대 조건: 한 비상전원 계통이 계획정비로 사용할 수 없는 상태에서 다른 비상디젤발전기가 기동에 실패하여 전원상실 상태가 확대되었다. 최초 조작 오류와 구분한다.
+
+### HERO의 근본원인 해석
+
+1. HERO의 HF 해석: 시험 수행 중 대체 전원이 확보되도록 전력계통 구성을 통제하는 관리방벽이 충분히 작동하지 않았다.
+2. HERO의 HF 해석: 작업일정 변경 시 위험평가·승인·설비상태 확인을 다시 묶어 관리하는 과정이 충분히 강하지 않았다.
+3. HERO의 HF 해석: 시험 절차·협력업체 교육·관리감독을 함께 보완해야 단일 조작 오류를 차단할 수 있다. 단계별 hold point와 Place Keeping은 이 구조를 학습하기 위한 HERO의 적용이며 실제 사건에서 해당 도구가 없었다고 단정하지 않는다.
+
+### 기여요인
+
+1. HERO 교육용 기여조건: 자격 인력의 가용성 제약과 다음 작업 일정으로 인한 시간압박
+2. 공식 근거: 소외전원 상실을 유발할 수 있는 작업일정의 임의 변경과 관련 예방절차 미준수
+3. HERO 교육용 기여조건: 익숙한 반복시험에서 생길 수 있는 과도한 자신감
+4. 공식 근거와 HERO 학습의 연결: 보고서가 확인한 절차·관리감독 미흡을 바탕으로, 게임에서는 사전조건과 단계별 확인을 점검한다. 실제 절차의 모든 항목이 없었다고 단정하지 않는다.
+5. HERO 교육용 기여조건: 감독 지시와 현장 수행 사이의 커뮤니케이션 방벽 취약
+
+### 인과 연결
+
+1. 공식 기록: 시험 작업일정의 임의 변경과 예방절차 미준수
+2. HERO의 HF 해석: 변경조건의 위험평가·전원구성 확인·단계통제 방벽을 함께 살펴볼 필요
+3. 보호계전기 시험 중 잘못된 조작
+4. 소외전원 상실
+5. 한 비상전원 계통은 계획정비로 사용 불가
+6. 가용 비상디젤발전기 기동 실패
+7. 전원상실 상태 확대
+8. 정지냉각 기능 상실
+
+### 방벽
+
+1. HERO 학습 방벽: 변경조건 재브리핑과 위험평가
+2. 공식 기록 기반 방벽: 전력계통 구성·대체전원 가용성 관리
+3. HERO 학습 방벽: 단계별 Place Keeping·hold point
+4. HERO 학습 방벽: 감독-현장 간 닫힌고리 의사소통
+
+### 관련 재발방지대책·학습 제안
+
+1. 공식 보고서의 조치·계획: 전원상실 유발 가능 작업을 분류하고 감독을 강화했으며, 위험을 고려한 정비·시험 공정 관리 개선도 계획했다. 2012년 보고서에 제시된 계획을 현재까지의 완료 사실로 해석하지 않는다.
+2. 공식 보고서가 확인한 절차 개선: 관련 부서의 단계별 협의, 예방대책을 반영한 시험절차와 현장관리자·감독자의 확인서명 절차를 보완했다.
+3. 공식 보고서가 확인한 교육·작업 준비: 사건 사례와 예방대책 교육을 실시하고, 중요 작업의 작업 전 회의와 시험·감독 요원의 자격 확인을 절차에 반영했다.
+4. 공식 보고서의 확대 방지·복구 대책: 대체 전원 사용을 위한 협조체계와 절차·훈련을 점검·보완했다. 이는 전원상실 이후의 대응 방벽이며 최초 오류의 원인과 구분한다.
+5. 공식 보고서의 조직 개선 계획: 보고 체계 개선, 인력·역량 강화, 안전문화 확산을 시정조치계획에 포함했다. 보고 지연을 최초 전원상실의 원인으로 다루지 않는다.
+6. HERO 학습 제안: 조건이 바뀌면 재브리핑하고 단계별 확인을 남긴다. 중지 지시는 복창·확인하며, 불확실성이 남으면 멈추고 보고한다. 이 행동 묶음은 공식 시정조치 문구나 실제 복구절차를 재현한 것이 아니다.
+
+### 학습 포인트
+
+- **일정이 바뀌면 브리핑과 위험평가도 다시 맞춘다.** 원래 계획에 대한 브리핑이 끝났더라도 작업순서·인력·설비상태가 바뀌면 변경된 조건을 다시 공유한다.
+- **중요 단계는 위치를 잃지 않고 hold point를 지킨다.** 익숙한 작업일수록 단계표시와 완료 확인을 사용해 다음 단계로 조기에 넘어가지 않도록 한다.
+- **중지 지시는 송·수신 의미가 같도록 확인한다.** 중요 지시는 복창과 확인으로 닫힌 고리를 만들고, 불확실하면 진행하지 않는다.
+- **일정보다 불확실성의 해소를 우선할 수 있다.** 시간압박이 있어도 조건이 달라졌거나 지시가 불명확하면 안전하게 멈추고 확인한다.
+
+### 공개 화면 출처
+
+- [Loss of shutdown cooling due to station blackout during refueling outage](https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9) · IAEA NEWS / participating national authority
+  - 사건일·INES·LOOP/EDG/SBO 직접 사실 확인. 원문 문장·도표를 HERO에 복제하지 않음.
+- [고리1호기 종합 안전점검 결과 보고서 (최종본, 2012.7)](https://www.nssc.go.kr/ajaxfile/FR_SVC/FileDown.do?BBS_SEQ=3596&BOARD_SEQ=14&FILE_SEQ=12528&GBN=X01&SITE_NO=2) · 한국원자력안전기술원(KINS) / 원자력안전위원회 공개
+  - 본문 12·14–16·110쪽의 일정관리·절차·감독·교육·복구 협조·조직 개선 근거를 독립적으로 요약. 조치와 당시 향후 계획을 구분하며 원문·표·그림·설비별 운전절차는 복제하지 않음.
+- [원전 사고·고장 상세 고리1호기-2012-4 (화면 식별자 832)](https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient) · 원자력안전정보공개센터 / KINS
+  - 사건일·전원상실과 기동실패·보고 지연의 공식 기록 대조. 원문·첨부를 복제하지 않음.
+- [2012 IAEA 전문가 안전점검 결과 보도자료](https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384) · 한국수력원자력
+  - 안전문화·리더십 개선권고 맥락. 해당 본문은 공공누리 제1유형; 기존 최종보고서 첨부의 이용조건은 별도 미확인.
+
+## 검토할 다섯 관점
+
+한 명의 검토자가 다섯 관점을 함께 확인할 수 있습니다. 별도 전문가 5명의 승인을 뜻하지 않습니다.
+
+1. HF: 마지막 행동만 탓하지 않고 원인·방벽·대책이 연결되는가?
+2. 운전·정비 맥락: 실제 사건 사실과 교육용 상황을 구분했는가?
+3. 익명화: 실제 인물·설비 식별자·운전 설정·복구 순서를 노출하지 않는가? 출처의 실제 사건명은 인용 식별용이다.
+4. Just Culture: 시간 압박과 조직 조건을 다루며 안전한 중지를 성공 경로로 인정하는가?
+5. 회고: 공식 사실·해석·학습 제안과 보고서 당시 완료 조치·향후 계획이 구분되는가?
+
+검토 의견은 “S01 v5 승인”, “수정 후 재검토: …”, “보류: …” 형태로 남길 수 있습니다. 현재 문서는 승인 기록이 아닙니다. 수정하면 새로운 버전·해시로 다시 검토할 수 있습니다.
+
+## 기술 점검
+
+전 경로 탐색 12,511개 상태, 종료 경로 7,176개. 안전완료 4,204 / 안전중지 2,392 / 아차사고 508 / 사건 72. HP 181–246, 평균 235.8. 버전 번호를 제외한 시뮬레이션 결과 전체가 v4와 같습니다. 실제 참여자 선택 비율이나 사건 확률이 아닙니다.
+
+## 원본 JSON 전체
+
+화면 문구 외 시간·방벽 효과·점수까지 확인하려면 아래 원본을 검토합니다.
+
+```json
+{
+  "schemaVersion": "1.0.0",
+  "id": "s01_time_pressure",
+  "version": 5,
+  "title": "1장 · 오늘 오전까지 끝내야 합니다",
+  "defaultPerspectiveRole": "worker",
+  "audienceJobs": [
+    "sro",
+    "ro",
+    "field_operator",
+    "supervisor",
+    "worker"
+  ],
+  "estimatedMinutes": 8,
+  "startNode": "intro",
+  "cards": [
+    "prejob_briefing",
+    "place_keeping",
+    "three_way_communication",
+    "stop_when_unsure"
+  ],
+  "initialState": {
+    "clockMin": 540,
+    "deadlineMin": 570,
+    "baseHazard": 58,
+    "psf": {
+      "time_pressure": 1.35,
+      "schedule_change": 1.25,
+      "familiarity": 1.15
+    },
+    "barriers": {
+      "briefing": 0.1,
+      "place_keeping": 0.1,
+      "communication": 0.1,
+      "supervision": 0.1
+    },
+    "metrics": {
+      "safety": 50,
+      "awareness": 50,
+      "communication": 50,
+      "procedure": 50,
+      "challenge": 50
+    }
+  },
+  "incidentDebrief": {
+    "caseType": "정비 시험 일정변경과 단계통제 방벽이 겹친 사건",
+    "overview": "정비기간 중 보호계전기 시험의 잘못된 조작으로 소외전원이 상실되었고, 한 비상전원 계통은 계획정비로 사용할 수 없는 상태에서 다른 비상디젤발전기까지 기동에 실패하여 전원상실과 정지냉각 상실로 확대된 실제 사건을 교육 목적으로 일반화했다. 공식 안전점검 보고서에서는 작업일정의 임의 변경과 예방절차 미준수도 확인했다. 시간압박·등장인물·대화·재브리핑·단계통제 선택은 HERO의 교육용 구성이며 실제 사건의 재현이나 조사기관의 공식 원인분류가 아니다. 사건 이후의 비상발령·기관 보고 지연은 사건 개시와 구분한다. 실제 운전 설정·설비 식별자·복구절차 세부는 제공하지 않는다.",
+    "rootCauses": [
+      "HERO의 HF 해석: 시험 수행 중 대체 전원이 확보되도록 전력계통 구성을 통제하는 관리방벽이 충분히 작동하지 않았다.",
+      "HERO의 HF 해석: 작업일정 변경 시 위험평가·승인·설비상태 확인을 다시 묶어 관리하는 과정이 충분히 강하지 않았다.",
+      "HERO의 HF 해석: 시험 절차·협력업체 교육·관리감독을 함께 보완해야 단일 조작 오류를 차단할 수 있다. 단계별 hold point와 Place Keeping은 이 구조를 학습하기 위한 HERO의 적용이며 실제 사건에서 해당 도구가 없었다고 단정하지 않는다."
+    ],
+    "contributingFactors": [
+      "HERO 교육용 기여조건: 자격 인력의 가용성 제약과 다음 작업 일정으로 인한 시간압박",
+      "공식 근거: 소외전원 상실을 유발할 수 있는 작업일정의 임의 변경과 관련 예방절차 미준수",
+      "HERO 교육용 기여조건: 익숙한 반복시험에서 생길 수 있는 과도한 자신감",
+      "공식 근거와 HERO 학습의 연결: 보고서가 확인한 절차·관리감독 미흡을 바탕으로, 게임에서는 사전조건과 단계별 확인을 점검한다. 실제 절차의 모든 항목이 없었다고 단정하지 않는다.",
+      "HERO 교육용 기여조건: 감독 지시와 현장 수행 사이의 커뮤니케이션 방벽 취약"
+    ],
+    "lessons": [
+      {
+        "title": "일정이 바뀌면 브리핑과 위험평가도 다시 맞춘다.",
+        "detail": "원래 계획에 대한 브리핑이 끝났더라도 작업순서·인력·설비상태가 바뀌면 변경된 조건을 다시 공유한다.",
+        "toolId": "prejob_briefing"
+      },
+      {
+        "title": "중요 단계는 위치를 잃지 않고 hold point를 지킨다.",
+        "detail": "익숙한 작업일수록 단계표시와 완료 확인을 사용해 다음 단계로 조기에 넘어가지 않도록 한다.",
+        "toolId": "place_keeping"
+      },
+      {
+        "title": "중지 지시는 송·수신 의미가 같도록 확인한다.",
+        "detail": "중요 지시는 복창과 확인으로 닫힌 고리를 만들고, 불확실하면 진행하지 않는다.",
+        "toolId": "three_way_communication"
+      },
+      {
+        "title": "일정보다 불확실성의 해소를 우선할 수 있다.",
+        "detail": "시간압박이 있어도 조건이 달라졌거나 지시가 불명확하면 안전하게 멈추고 확인한다.",
+        "toolId": "stop_when_unsure"
+      }
+    ],
+    "directCauses": [
+      "보호계전기 시험 중 잘못된 조작이 소외전원 상실을 직접 유발했다.",
+      "사건 확대 조건: 한 비상전원 계통이 계획정비로 사용할 수 없는 상태에서 다른 비상디젤발전기가 기동에 실패하여 전원상실 상태가 확대되었다. 최초 조작 오류와 구분한다."
+    ],
+    "causalChain": [
+      "공식 기록: 시험 작업일정의 임의 변경과 예방절차 미준수",
+      "HERO의 HF 해석: 변경조건의 위험평가·전원구성 확인·단계통제 방벽을 함께 살펴볼 필요",
+      "보호계전기 시험 중 잘못된 조작",
+      "소외전원 상실",
+      "한 비상전원 계통은 계획정비로 사용 불가",
+      "가용 비상디젤발전기 기동 실패",
+      "전원상실 상태 확대",
+      "정지냉각 기능 상실"
+    ],
+    "failedBarriers": [
+      "HERO 학습 방벽: 변경조건 재브리핑과 위험평가",
+      "공식 기록 기반 방벽: 전력계통 구성·대체전원 가용성 관리",
+      "HERO 학습 방벽: 단계별 Place Keeping·hold point",
+      "HERO 학습 방벽: 감독-현장 간 닫힌고리 의사소통"
+    ],
+    "sources": [
+      {
+        "publisher": "IAEA NEWS / participating national authority",
+        "label": "Loss of shutdown cooling due to station blackout during refueling outage",
+        "url": "https://www-news.iaea.org/ErfView.aspx?mId=c4d6b9a1-1f60-4bf3-b333-bb5485fa55e9",
+        "publishedAt": "2012-04-23",
+        "usage": "사건일·INES·LOOP/EDG/SBO 직접 사실 확인. 원문 문장·도표를 HERO에 복제하지 않음."
+      },
+      {
+        "publisher": "한국원자력안전기술원(KINS) / 원자력안전위원회 공개",
+        "label": "고리1호기 종합 안전점검 결과 보고서 (최종본, 2012.7)",
+        "url": "https://www.nssc.go.kr/ajaxfile/FR_SVC/FileDown.do?BBS_SEQ=3596&BOARD_SEQ=14&FILE_SEQ=12528&GBN=X01&SITE_NO=2",
+        "usage": "본문 12·14–16·110쪽의 일정관리·절차·감독·교육·복구 협조·조직 개선 근거를 독립적으로 요약. 조치와 당시 향후 계획을 구분하며 원문·표·그림·설비별 운전절차는 복제하지 않음."
+      },
+      {
+        "publisher": "원자력안전정보공개센터 / KINS",
+        "label": "원전 사고·고장 상세 고리1호기-2012-4 (화면 식별자 832)",
+        "url": "https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient",
+        "usage": "사건일·전원상실과 기동실패·보고 지연의 공식 기록 대조. 원문·첨부를 복제하지 않음."
+      },
+      {
+        "publisher": "한국수력원자력",
+        "label": "2012 IAEA 전문가 안전점검 결과 보도자료",
+        "url": "https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384",
+        "publishedAt": "2012-06-11",
+        "usage": "안전문화·리더십 개선권고 맥락. 해당 본문은 공공누리 제1유형; 기존 최종보고서 첨부의 이용조건은 별도 미확인."
+      }
+    ],
+    "correctiveActions": [
+      "공식 보고서의 조치·계획: 전원상실 유발 가능 작업을 분류하고 감독을 강화했으며, 위험을 고려한 정비·시험 공정 관리 개선도 계획했다. 2012년 보고서에 제시된 계획을 현재까지의 완료 사실로 해석하지 않는다.",
+      "공식 보고서가 확인한 절차 개선: 관련 부서의 단계별 협의, 예방대책을 반영한 시험절차와 현장관리자·감독자의 확인서명 절차를 보완했다.",
+      "공식 보고서가 확인한 교육·작업 준비: 사건 사례와 예방대책 교육을 실시하고, 중요 작업의 작업 전 회의와 시험·감독 요원의 자격 확인을 절차에 반영했다.",
+      "공식 보고서의 확대 방지·복구 대책: 대체 전원 사용을 위한 협조체계와 절차·훈련을 점검·보완했다. 이는 전원상실 이후의 대응 방벽이며 최초 오류의 원인과 구분한다.",
+      "공식 보고서의 조직 개선 계획: 보고 체계 개선, 인력·역량 강화, 안전문화 확산을 시정조치계획에 포함했다. 보고 지연을 최초 전원상실의 원인으로 다루지 않는다.",
+      "HERO 학습 제안: 조건이 바뀌면 재브리핑하고 단계별 확인을 남긴다. 중지 지시는 복창·확인하며, 불확실성이 남으면 멈추고 보고한다. 이 행동 묶음은 공식 시정조치 문구나 실제 복구절차를 재현한 것이 아니다."
+    ]
+  },
+  "nodes": {
+    "intro": {
+      "type": "scene",
+      "speaker": "작업팀",
+      "text": "오늘 예정된 시험 순서가 일부 바뀌었습니다. 이 시험을 마치면 팀 일부는 다음 작업 장소로 이동해야 합니다.",
+      "next": "decision_schedule"
+    },
+    "decision_schedule": {
+      "type": "decision",
+      "prompt": "원래 계획과 작업순서가 달라졌습니다. 시험을 시작하기 전에 무엇을 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "rebrief_changed_schedule",
+          "label": "변경된 순서와 위험요인을 반영해 짧게 재브리핑한다.",
+          "next": "event_hold_instruction",
+          "timeCostMin": 5,
+          "effects": {
+            "psfMultipliers": {
+              "schedule_change": 0.8
+            },
+            "barrierDelta": {
+              "briefing": 0.4
+            },
+            "metricsDelta": {
+              "communication": 5,
+              "safety": 4
+            }
+          }
+        },
+        {
+          "actionId": "confirm_changed_boundary",
+          "label": "현재 작업경계와 가용조건을 문서와 다시 대조한다.",
+          "next": "event_hold_instruction",
+          "timeCostMin": 3,
+          "effects": {
+            "barrierDelta": {
+              "supervision": 0.25
+            },
+            "metricsDelta": {
+              "awareness": 3,
+              "procedure": 7
+            }
+          }
+        },
+        {
+          "actionId": "use_original_briefing",
+          "label": "기존 브리핑 내용이 있으므로 변경된 순서만 기억하고 시작한다.",
+          "next": "event_hold_instruction",
+          "timeCostMin": 0,
+          "effects": {
+            "metricsDelta": {
+              "challenge": -3
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "review_schedule_changes",
+          "label": "바뀐 작업순서와 팀 이동계획을 확인한다.",
+          "revealText": "시험 순서뿐 아니라 일부 인력의 다음 작업 시작시간도 앞당겨져 있습니다.",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": [
+        "prejob_briefing"
+      ]
+    },
+    "event_hold_instruction": {
+      "type": "event",
+      "text": "시험 중 감독자로부터 현재 단계에서 멈추고 다음 단계로 진행하지 말라는 지시가 전달됩니다.",
+      "next": "decision_hold_point",
+      "tone": "attention"
+    },
+    "decision_hold_point": {
+      "type": "decision",
+      "prompt": "다음 작업 일정은 가까워지고 있습니다. 현재 단계에서 어떻게 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "hold_and_verify_conditions",
+          "label": "현재 단계에 머물며 진행 조건이 충족됐는지 다시 확인한다.",
+          "next": "hazard_step_control",
+          "timeCostMin": 1,
+          "effects": {
+            "barrierDelta": {
+              "place_keeping": 0.4
+            },
+            "metricsDelta": {
+              "procedure": 6,
+              "challenge": 4
+            }
+          }
+        },
+        {
+          "actionId": "repeat_back_hold_instruction",
+          "label": "중지 지시를 복창하고 다음 진행 조건을 감독자와 맞춘다.",
+          "next": "hazard_step_control",
+          "timeCostMin": 2,
+          "effects": {
+            "barrierDelta": {
+              "communication": 0.4
+            },
+            "metricsDelta": {
+              "communication": 8,
+              "awareness": 2
+            }
+          }
+        },
+        {
+          "actionId": "advance_familiar_test_step",
+          "label": "익숙한 시험이고 시간이 촉박하므로 준비된 다음 단계까지 진행한다.",
+          "next": "hazard_step_control",
+          "timeCostMin": 0,
+          "effects": {
+            "psfMultipliers": {
+              "familiarity": 1.1
+            },
+            "metricsDelta": {
+              "procedure": -5,
+              "challenge": -4
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "read_current_hold_point",
+          "label": "현재 단계의 완료조건과 다음 단계 시작조건을 다시 읽는다.",
+          "revealText": "현재 단계는 확인이 끝나기 전 다음 단계로 넘어가지 않도록 구분되어 있습니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "procedure": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": [
+        "place_keeping",
+        "three_way_communication"
+      ]
+    },
+    "hazard_step_control": {
+      "type": "hazard",
+      "threshold": 52,
+      "jitter": 4,
+      "passNext": "event_test_stable",
+      "breachNext": "event_unexpected_condition",
+      "tag": "schedule_step_control"
+    },
+    "event_test_stable": {
+      "type": "event",
+      "text": "진행조건을 다시 맞춘 뒤 시험은 예상 범위 안에서 진행됩니다.",
+      "next": "decision_closeout",
+      "tone": "positive"
+    },
+    "decision_closeout": {
+      "type": "decision",
+      "prompt": "시험을 마무리하면서 다음 작업 인계까지 어떻게 연결하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "closeout_and_handover",
+          "label": "현재 상태와 남은 주의사항을 다음 작업팀에 인계한다.",
+          "next": "safe_complete_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "communication": 5,
+              "procedure": 3
+            }
+          }
+        },
+        {
+          "actionId": "verify_final_state",
+          "label": "최종 설비상태를 다시 확인한 뒤 작업을 종료한다.",
+          "next": "safe_complete_end",
+          "timeCostMin": 2,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4,
+              "safety": 4
+            }
+          }
+        },
+        {
+          "actionId": "pause_handover_due_uncertainty",
+          "label": "남은 불확실성이 있어 다음 작업 인계를 잠시 보류한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 3,
+          "effects": {
+            "metricsDelta": {
+              "challenge": 6,
+              "safety": 3
+            }
+          }
+        }
+      ],
+      "infoActions": [],
+      "allowedCards": []
+    },
+    "event_unexpected_condition": {
+      "type": "event",
+      "text": "예상하지 못한 설비상태 변화가 나타났습니다. 시험을 계속하기보다 현재 상태를 보호하는 판단이 필요합니다.",
+      "next": "decision_recovery",
+      "tone": "attention"
+    },
+    "decision_recovery": {
+      "type": "decision",
+      "prompt": "예상하지 못한 상태가 나타난 직후 무엇을 하시겠습니까?",
+      "choices": [
+        {
+          "actionId": "stop_and_report_condition",
+          "label": "시험을 중지하고 상태를 보호한 뒤 즉시 보고한다.",
+          "next": "safe_stop_end",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "safety": 8,
+              "communication": 5,
+              "challenge": 8
+            }
+          }
+        },
+        {
+          "actionId": "coordinate_limited_recovery",
+          "label": "팀과 상태를 확인한 뒤 승인된 범위 안에서 복구를 시도한다.",
+          "next": "hazard_recovery",
+          "timeCostMin": 3,
+          "effects": {
+            "psfMultipliers": {
+              "time_pressure": 0.85
+            },
+            "barrierDelta": {
+              "communication": 0.2
+            },
+            "metricsDelta": {
+              "communication": 5,
+              "procedure": 5
+            }
+          }
+        },
+        {
+          "actionId": "finish_step_then_report",
+          "label": "현재 시험 단계를 끝낸 뒤 상태를 정리해 보고한다.",
+          "next": "hazard_recovery",
+          "timeCostMin": 0,
+          "effects": {
+            "metricsDelta": {
+              "safety": -6,
+              "challenge": -4
+            }
+          }
+        }
+      ],
+      "infoActions": [
+        {
+          "actionId": "review_current_indications",
+          "label": "현재 표시와 팀의 관찰내용을 다시 모은다.",
+          "revealText": "한 가지 표시만으로는 원인을 단정하기 어렵고, 작업중지 상태에서 추가 확인이 필요합니다.",
+          "timeCostMin": 1,
+          "effects": {
+            "metricsDelta": {
+              "awareness": 4
+            }
+          }
+        }
+      ],
+      "allowedCards": [
+        "stop_when_unsure"
+      ]
+    },
+    "hazard_recovery": {
+      "type": "hazard",
+      "threshold": 58,
+      "jitter": 4,
+      "passNext": "near_miss_end",
+      "breachNext": "event_end",
+      "tag": "unexpected_condition_escalation"
+    },
+    "safe_complete_end": {
+      "type": "ending",
+      "ending": "safe_complete",
+      "title": "변경된 조건을 다시 맞춰 완료",
+      "summary": "일정은 조금 늦어졌지만 변경된 조건을 다시 공유하고 단계통제 방벽을 지켜 시험을 완료했습니다."
+    },
+    "safe_stop_end": {
+      "type": "ending",
+      "ending": "safe_stop",
+      "title": "일정보다 안전한 중지를 선택",
+      "summary": "작업 압박이 있는 상황에서도 불확실성을 인정하고 시험을 중지했습니다. 안전한 중지는 중요한 성공 경로입니다."
+    },
+    "near_miss_end": {
+      "type": "ending",
+      "ending": "near_miss",
+      "title": "예상 밖 상태 뒤 확대를 막음",
+      "summary": "단계통제 방벽이 약해져 예상하지 못한 상태가 나타났지만, 추가 확인과 팀 조정으로 확대를 막았습니다."
+    },
+    "event_end": {
+      "type": "ending",
+      "ending": "event",
+      "title": "일정·절차·감독의 틈이 겹침",
+      "summary": "시간압박, 변경된 작업계획, 단계통제와 커뮤니케이션 방벽의 취약이 겹쳐 사건으로 이어졌습니다."
+    }
+  }
+}
+```

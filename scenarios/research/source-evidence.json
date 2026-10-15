@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-10-14",
+  "updatedAt": "2026-10-15",
   "entries": [
     {
       "scenarioId": "s01_time_pressure",
@@ -140,9 +140,27 @@
             "license": "공공누리 제1유형 (이 보도자료 본문에 한정; 기존 최종보고서 첨부에 상속하지 않음)",
             "evidenceUrl": "https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384"
           }
+        },
+        {
+          "id": "s01-kins-integrated-review-201207",
+          "authority": "한국원자력안전기술원(KINS) / 원자력안전위원회 공개",
+          "sourceClass": "official_primary",
+          "url": "https://www.nssc.go.kr/ajaxfile/FR_SVC/FileDown.do?BBS_SEQ=3596&BOARD_SEQ=14&FILE_SEQ=12528&GBN=X01&SITE_NO=2",
+          "eventSpecific": true,
+          "accessedAt": "2026-10-15",
+          "retrieval": "NSSC 제4회 회의자료의 참고자료2 PDF(최종본, 2012.7). 본문 12·14–16·110쪽과 PDF 16·18–20·114쪽 대조. 14·15·16·110쪽은 이미지로도 확인.",
+          "purpose": [
+            "event_investigation",
+            "cause_barrier_corrective_action_traceability"
+          ],
+          "rights": {
+            "status": "not_used_for_reproduction",
+            "license": null,
+            "evidenceUrl": null
+          }
         }
       ],
-      "rightsScope": "현재 S01 v4는 공식 사건 사실을 독립적으로 설명하고, 안전문화 맥락은 개별 공공누리 제1유형을 확인한 한수원 보도자료 본문에 근거한다. 기존 2012 미션 보고서 원문·표·그림·첨부는 재사용하지 않는다. 비상업 목적이라는 사용자 설명을 허락 증빙으로 대체하지 않는다. 사용하지 않는 첨부의 개별 이용조건은 현재 문안의 승격 장애로 두지 않는다."
+      "rightsScope": "S01 v5는 공식 사건 사실과 개선 조치·당시 계획을 독립 문장으로 요약한다. KINS 보고서 원문·표·그림·운전절차와 기존 IAEA 미션 첨부를 복제하거나 배포하지 않는다. 안전문화 보조 맥락의 KHNP 보도자료 본문만 기존에 확인된 공공누리 제1유형 범위로 유지한다. 미사용 첨부의 허락을 주장하지 않으며 비상업 목적을 일괄 이용허락 근거로 사용하지 않는다."
     },
     {
       "scenarioId": "s02_equipment_identity",

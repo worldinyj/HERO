@@ -4,17 +4,17 @@
 >
 > Scenario ID: `s01_time_pressure`
 >
-> Version: `4`
+> Version: `5`
 >
 > Source file: `scenarios/drafts/S01_time_pressure_v1.json`
 >
-> Review content SHA-256: `3d9c2474a478f1464b6f6f01cc9ee1a320b0a159a4f830d59bcb484d458387dc`
+> Review content SHA-256: `0b3558cf7eb9961d932ae2d7eb229e873685c2436f4959eee2082af45443a525`
 
 ## 1. 현재 승격 상태
 
 | 항목 | 값 |
 |---|---|
-| promotion status | **SOURCE_HOLD** |
+| promotion status | **REVIEW_READY** |
 | sourceRightsComplete | `true` |
 | source verdict | `complete` |
 | rights verdict | `complete` |
@@ -25,8 +25,7 @@
 
 ### 현재 blocker
 
-- Cause/barrier/corrective-action traceability for the current content
-- HF/anonymization/current-content human review
+- S01 v5 current-content human review in all five areas (HF, operations, anonymization, Just Culture, incident debrief)
 
 ## 2. 시나리오 기본정보
 
@@ -53,6 +52,7 @@
 | 행정안전부 안전모아 / 원자력안전위원회 제공정보 | official_locator | 탐색/보조 | direct_record_locator, opis_backed_accident_list | not_applicable | https://safewatch.safemap.go.kr/contact/selectNsopSafetyChck.do |
 | 원자력안전정보공개센터 / KINS 사건조사 | official_primary | 사건 직접근거 | event_identity, investigation_result, corrective_actions | not_used_for_reproduction | https://nsic.nssc.go.kr/information/reguDataActive.do?nsicDtaTyCode=nppAccient |
 | 한국수력원자력 | official_primary | 사건 직접근거 | mission_context, leadership_safety_culture_context | verified · 공공누리 제1유형 (이 보도자료 본문에 한정; 기존 최종보고서 첨부에 상속하지 않음) | https://www.khnp.co.kr/main/selectBbsNttView.do?key=2289&bbsNo=71&nttNo=24384 |
+| 한국원자력안전기술원(KINS) / 원자력안전위원회 공개 | official_primary | 사건 직접근거 | event_investigation, cause_barrier_corrective_action_traceability | not_used_for_reproduction | https://www.nssc.go.kr/ajaxfile/FR_SVC/FileDown.do?BBS_SEQ=3596&BOARD_SEQ=14&FILE_SEQ=12528&GBN=X01&SITE_NO=2 |
 
 ### 아직 부족한 근거
 

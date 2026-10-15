@@ -19,7 +19,7 @@
     {
       "scenarioId": "s01_time_pressure",
       "file": "scenarios/drafts/S01_time_pressure_v1.json",
-      "status": "source_hold",
+      "status": "review_ready",
       "sourceRightsComplete": true,
       "hfReviewComplete": false,
       "anonymizationReviewComplete": false,
@@ -29,10 +29,9 @@
         "approvedAt": null
       },
       "blockers": [
-        "Cause/barrier/corrective-action traceability for the current content",
-        "HF/anonymization/current-content human review"
+        "S01 v5 current-content human review in all five areas (HF, operations, anonymization, Just Culture, incident debrief)"
       ],
-      "notes": "S01 v4 retains its current content hash and official fact/HERO interpretation separation. Rights review is complete for the actual scope: independently written event facts and verified KHNP press-text KOGL1 context. The unused historical mission attachment is not claimed licensed and is not a publication blocker. Human review remains pending; not approved or published. Source rights are complete for actual usage, but formal review_ready also requires cause/barrier/corrective-action traceability. S01 v4 does not yet have the correctiveActions needed by that contract; retain source_hold until a separately reviewed content revision supplies this evidence. This is not a rights hold."
+      "notes": "S01 v5 supplies cause/barrier/corrective-action traceability using the official KINS July 2012 integrated safety review and IAEA NEWS event facts. Official findings, completed measures, plans at the time, and HERO educational additions remain distinct. Gameplay nodes, initial state and scoring are unchanged from v4. Actual-use source/rights review is complete for independently written facts; no source PDF/text/art is reproduced. Human review is pending for v5; not approved, uploaded, published or season-bound."
     },
     {
       "scenarioId": "s02_equipment_identity",
