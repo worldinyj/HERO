@@ -81,9 +81,21 @@ async function cacheSuccessfulResponse(request, response) {
   // Never save that response under the asset URL or serve it as executable code.
   if (!hasExpectedAssetType(request, response)) return Response.error();
 
-  const cache = await caches.open(CACHE_NAME);
-  await cache.put(request, response.clone());
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  } catch {
+    // Storage is optional: quota/private-mode failures must not lose online data.
+  }
   return response;
+}
+
+async function readCachedResponse(request) {
+  try {
+    return await caches.match(request);
+  } catch {
+    return undefined;
+  }
 }
 
 async function networkFirstNavigation(request) {
@@ -92,9 +104,10 @@ async function networkFirstNavigation(request) {
     return cacheSuccessfulResponse(request, response);
   } catch {
     return (
-      (await caches.match(request)) ||
-      (await caches.match("/")) ||
-      (await caches.match("/offline.html"))
+      (await readCachedResponse(request)) ||
+      (await readCachedResponse("/")) ||
+      (await readCachedResponse("/offline.html")) ||
+      Response.error()
     );
   }
 }
@@ -105,7 +118,7 @@ async function staleWhileRevalidate(request, event) {
     .catch(() => null);
   // Keep the worker alive until the refreshed response has reached the cache.
   event.waitUntil(network.then(() => undefined));
-  const cached = await caches.match(request);
+  const cached = await readCachedResponse(request);
 
   if (cached && hasExpectedAssetType(request, cached)) {
     return cached;

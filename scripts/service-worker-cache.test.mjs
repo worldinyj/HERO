@@ -10,14 +10,26 @@ function response(body, mime = "application/javascript") {
   Object.defineProperty(result, "type", { value: "basic" });
   return result;
 }
-function worker(fetch, initial = []) {
+function worker(fetch, initial = [], failures = []) {
   const entries = new Map(initial);
   const listeners = new Map();
   const key = request => typeof request === "string" ? request : request.url;
-  const cache = { put: async (request, value) => entries.set(key(request), value), match: async request => entries.get(key(request)) };
+  const cache = {
+    put: async (request, value) => {
+      if (failures.includes("write")) throw new Error("cache quota exceeded");
+      entries.set(key(request), value);
+    },
+    match: async request => {
+      if (failures.includes("read")) throw new Error("cache unavailable");
+      return entries.get(key(request));
+    },
+  };
   vm.runInNewContext(source, {
     self: { location: { origin }, addEventListener: (name, callback) => listeners.set(name, callback) },
-    caches: { open: async () => cache, match: cache.match }, fetch, URL, Response, Set,
+    caches: { open: async () => {
+      if (failures.includes("open")) throw new Error("cache unavailable");
+      return cache;
+    }, match: cache.match }, fetch, URL, Response, Set,
   });
   return {
     entries,
@@ -82,4 +94,33 @@ test("external scripts are not intercepted or cached", () => {
   const event = runtime.request("https://external.example/sdk.js");
   assert.equal(event.result, undefined);
   assert.equal(event.lifetime.length, 0);
+});
+
+for (const failure of ["open", "write"]) {
+  test(`cache ${failure} failure does not discard successful network pages or scripts`, async () => {
+    const runtime = worker(async request => request.mode === "navigate"
+      ? response("online page", "text/html") : response("online script"), [], [failure]);
+    const page = runtime.request("/login", "document", "navigate");
+    assert.equal(await (await page.result).text(), "online page");
+    const asset = runtime.request("/assets/app.js");
+    assert.equal(await (await asset.result).text(), "online script");
+    await Promise.all(asset.lifetime);
+    assert.equal(runtime.entries.size, 0);
+  });
+}
+
+test("cache lookup failure still serves the successful network script", async () => {
+  const runtime = worker(async () => response("online script"), [], ["read"]);
+  const event = runtime.request("/assets/app.js");
+  assert.equal(await (await event.result).text(), "online script");
+  await Promise.all(event.lifetime);
+});
+
+test("offline with unavailable storage returns a network error response without rejecting handlers", async () => {
+  const runtime = worker(async () => { throw new Error("offline"); }, [], ["read", "open"]);
+  const page = runtime.request("/login", "document", "navigate");
+  assert.equal((await page.result).type, "error");
+  const asset = runtime.request("/assets/app.js");
+  assert.equal((await asset.result).type, "error");
+  await Promise.all(asset.lifetime);
 });
