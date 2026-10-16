@@ -2,6 +2,9 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import type { Scenario } from "@hero/schema";
 import { Link } from "react-router";
 import { getSupabase } from "../../lib/supabase";
+import { readWithDeadline, ReadTimeoutError } from "../../lib/readWithDeadline";
+import { ReadRequestGate } from "../../lib/readRequestGate";
+import { readScenarioVersionRows, type ScenarioVersionRow } from "./scenarioVersionRows";
 import { ScenarioReviewPanel } from "./ScenarioReviewPanel";
 import { AdminScenarioPreview } from "./AdminScenarioPreview";
 import { parsePreviewJson, readSavedPreview, type PreviewIssue } from "./scenarioPreviewValidation";
@@ -12,31 +15,6 @@ import { ScenarioVersionComparison } from "./ScenarioVersionComparison";
 import { ScenarioStatusDialog, type StatusChange } from "./ScenarioStatusDialog";
 
 const ExplorationFeedbackReview = lazy(() => import("./ExplorationFeedbackReview").then(module => ({ default: module.ExplorationFeedbackReview })));
-
-interface ScenarioVersionRow {
-  id: string;
-  version: number;
-  status: ScenarioStatus;
-  default_perspective_role: string;
-  approved_at: string | null;
-  published_at: string | null;
-  created_at: string;
-  scenarios:
-    | {
-        id: string;
-        slug: string;
-        title: string;
-        is_active: boolean;
-        is_competitive: boolean;
-      }
-    | Array<{
-        id: string;
-        slug: string;
-        title: string;
-        is_active: boolean;
-        is_competitive: boolean;
-      }>;
-}
 
 interface UploadIssue {
   path?: string;
@@ -68,6 +46,10 @@ function formatDate(value: string | null): string {
 }
 
 export function AdminScenarioPage() {
+  const listGate = useRef(new ReadRequestGate());
+  const listController = useRef<AbortController | null>(null);
+  const previewController = useRef<AbortController | null>(null);
+  const [listError, setListError] = useState(false);
   const [feedbackReviewOpen, setFeedbackReviewOpen] = useState(false);
   const [versions, setVersions] = useState<ScenarioVersionRow[]>([]);
   const [jsonText, setJsonText] = useState("");
@@ -100,31 +82,46 @@ export function AdminScenarioPage() {
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const previewRevision = useRef(0);
   const previewTrigger = useRef<HTMLButtonElement | null>(null);
-  useEffect(() => () => { previewRevision.current += 1; }, []);
+  useEffect(() => () => { previewRevision.current += 1; previewController.current?.abort(); listGate.current.invalidate(); listController.current?.abort(); }, []);
 
-  async function invoke(body: Record<string, unknown>) {
+  async function invoke(body: Record<string, unknown>, signal?: AbortSignal) {
     const supabase = getSupabase();
     const { data, error: invokeError } = await supabase.functions.invoke(
       "admin-scenario",
-      { body },
+      { body, ...(signal ? { signal } : {}) },
     );
 
     if (invokeError) throw invokeError;
     return data as Record<string, unknown>;
   }
 
+  // Explicit read actions only: writes keep their existing receipt/confirmation flow.
+  function read(body: { action: "list" | "season-overview" } | { action: "preview"; scenarioVersionId: string }, signal?: AbortSignal) {
+    return readWithDeadline(readSignal => invoke(body, readSignal), signal);
+  }
+
   async function load() {
+    const ticket = listGate.current.begin();
+    listController.current?.abort();
+    const controller = new AbortController();
+    listController.current = controller;
+    setLoading(true); setError(null); setListError(false);
+    setVersions(rows => rows.length ? [] : rows);
+    closePreview(false);
     try {
-      setLoading(true);
-      setError(null);
-      const data = await invoke({ action: "list" });
-      setVersions((data.versions ?? []) as ScenarioVersionRow[]);
+      const data = await read({ action: "list" }, controller.signal);
+      if (!listGate.current.isCurrent(ticket)) return;
+      setVersions(readScenarioVersionRows(data));
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "시나리오 목록을 불러오지 못했습니다.",
-      );
+      if (listGate.current.isCurrent(ticket)) {
+        setListError(true);
+        setError(cause instanceof ReadTimeoutError
+          ? "시나리오 목록 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 목록을 새로고침해주세요." : "시나리오 목록을 불러오지 못했습니다. 연결과 권한을 확인한 뒤 목록을 새로고침해주세요.");
+      }
     } finally {
-      setLoading(false);
+      controller.abort();
+      if (listController.current === controller) listController.current = null;
+      if (listGate.current.isCurrent(ticket)) setLoading(false);
     }
   }
 
@@ -145,6 +142,7 @@ export function AdminScenarioPage() {
 
   function closePreview(restoreFocus = true) {
     previewRevision.current += 1;
+    previewController.current?.abort();
     setPreviewLoadingId(null);
     setPlayPreview(null);
     setPreviewIssues([]);
@@ -159,18 +157,26 @@ export function AdminScenarioPage() {
 
   async function previewSaved(row: ScenarioVersionRow) {
     const revision = ++previewRevision.current;
+    previewController.current?.abort();
+    const controller = new AbortController();
+    previewController.current = controller;
     setPreviewLoadingId(row.id);
     setPlayPreview(null);
     setPreviewIssues([]);
     try {
-      const data = await invoke({ action: "preview", scenarioVersionId: row.id });
+      const data = await read({ action: "preview", scenarioVersionId: row.id }, controller.signal);
       if (revision !== previewRevision.current) return;
       const checked = readSavedPreview(data, row.id, row.version);
       if (!checked.scenario) { setPreviewIssues(checked.issues); return; }
+      if (checked.scenario.id !== scenarioInfo(row)?.slug) throw Error("preview_scenario_mismatch");
       setPlayPreview({ scenario: checked.scenario, sourceLabel: `저장된 버전 · ${STATUS_LABEL[row.status]}`, revision });
-    } catch {
-      if (revision === previewRevision.current) setPreviewIssues([{ path: "", message: "저장된 버전을 불러오지 못했습니다. 다시 시도해주세요." }]);
+    } catch (cause) {
+      if (revision === previewRevision.current) setPreviewIssues([{ path: "", message: cause instanceof ReadTimeoutError
+        ? "미리보기 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 미리보기를 다시 눌러주세요."
+        : "저장된 버전을 불러오지 못했습니다. 다시 시도해주세요." }]);
     } finally {
+      controller.abort();
+      if (previewController.current === controller) previewController.current = null;
       if (revision === previewRevision.current) setPreviewLoadingId(null);
     }
   }
@@ -275,9 +281,9 @@ export function AdminScenarioPage() {
         </section>
       ) : null}
 
-      <ScenarioReviewPanel versions={comparisonVersions} editor={preview?.scenario ?? null}
+      <ScenarioReviewPanel listState={loading ? "loading" : listError ? "error" : "ready"} versions={comparisonVersions} editor={preview?.scenario ?? null}
         onTargetChange={() => closePreview(false)}
-        readVersion={id => invoke({ action: "preview", scenarioVersionId: id })}
+        readVersion={(id, signal) => read({ action: "preview", scenarioVersionId: id }, signal)}
         onPreview={(scenario, trigger) => { previewTrigger.current = trigger; closePreview(false); setPlayPreview({ scenario, sourceLabel: `${scenario.id.slice(0, 3).toUpperCase()} 검토 대상과 내용 일치 확인`, revision: previewRevision.current }); }} />
 
       <section className="panel admin-section">
@@ -361,12 +367,12 @@ export function AdminScenarioPage() {
       {previewIssues.length ? <section className="panel validation-box validation-box--error" role="alert"><strong>미리보기를 열 수 없습니다.</strong>{previewIssues.slice(0, 8).map((issue, index) => <p key={index}>{issue.path ? `${issue.path}: ` : ""}{issue.message}</p>)}</section> : null}
       {playPreview ? <AdminScenarioPreview key={playPreview.revision} scenario={playPreview.scenario} sourceLabel={playPreview.sourceLabel} onClose={() => closePreview()} /> : null}
 
-      <SeasonScenarioPanel invoke={invoke} refreshKey={versions} disabled={saving || Boolean(statusPending)} onBusy={setSeasonBusy} />
+      <SeasonScenarioPanel invoke={invoke} readOverview={signal => read({ action: "season-overview" }, signal)} refreshKey={versions} disabled={saving || Boolean(statusPending)} onBusy={setSeasonBusy} />
 
       <section className="review-card"><h3>탐색형 체험 의견</h3><p>사용성 의견을 콘텐츠 승인과 구분해 검토합니다.</p><button type="button" className="secondary-button" aria-expanded={feedbackReviewOpen} onClick={() => setFeedbackReviewOpen(open => !open)}>{feedbackReviewOpen ? "체험 의견 검토 접기" : "체험 의견 파일 검토 열기"}</button>
       {feedbackReviewOpen ? <Suspense fallback={<p role="status">체험 의견 검토 화면을 준비하고 있습니다…</p>}><ExplorationFeedbackReview /></Suspense> : null}</section>
 
-      <ScenarioVersionComparison versions={comparisonVersions} editor={preview?.scenario ?? null} readVersion={id => invoke({ action: "preview", scenarioVersionId: id })} />
+      <ScenarioVersionComparison listState={loading ? "loading" : listError ? "error" : "ready"} versions={comparisonVersions} editor={preview?.scenario ?? null} readVersion={(id, signal) => read({ action: "preview", scenarioVersionId: id }, signal)} />
 
       {statusChange ? <ScenarioStatusDialog change={statusChange} pending={(Boolean(statusPending) || seasonBusy)} error={statusError} onCancel={closeStatusDialog} onConfirm={() => void handleStatus()} /> : null}
 
@@ -376,11 +382,13 @@ export function AdminScenarioPage() {
             <p className="eyebrow">Versions</p>
             <h3>버전 및 배포 상태</h3>
           </div>
-          <span className="count-badge">{versions.length}</span>
+          <span className="count-badge">{loading || listError ? "미확인" : versions.length}</span>
         </div>
 
         {loading ? (
           <p className="muted">시나리오 버전을 불러오고 있습니다…</p>
+        ) : listError ? (
+          <p className="muted">버전 목록을 확인하지 못했습니다. 목록 새로고침으로 다시 조회해주세요.</p>
         ) : versions.length === 0 ? (
           <p className="muted">저장된 시나리오 버전이 없습니다.</p>
         ) : (

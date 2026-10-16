@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { confirmedSeasonBinding, readSeasonOverview, seasonBindingError, seasonBindingState, type SeasonOverview, type SeasonScenario } from "./seasonScenario";
+import { ReadTimeoutError } from "../../lib/readWithDeadline";
 import { STATUS_LABEL } from "./scenarioStatus";
 
 type Invoke = (body: Record<string, unknown>) => Promise<unknown>;
@@ -29,7 +30,7 @@ function BindingDialog({ change, pending, error, onCancel, onConfirm }: { change
     </div>
   </dialog>;
 }
-export function SeasonScenarioPanel({ invoke, refreshKey, disabled, onBusy }: { invoke: Invoke; refreshKey: unknown; disabled: boolean; onBusy: (busy: boolean) => void }) {
+export function SeasonScenarioPanel({ invoke, readOverview, refreshKey, disabled, onBusy }: { invoke: Invoke; readOverview: (signal?: AbortSignal) => Promise<unknown>; refreshKey: unknown; disabled: boolean; onBusy: (busy: boolean) => void }) {
   const [overview, setOverview] = useState<SeasonOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,7 @@ export function SeasonScenarioPanel({ invoke, refreshKey, disabled, onBusy }: { 
   const [pending, setPending] = useState(false);
   const [changeError, setChangeError] = useState<string | null>(null);
   const revision = useRef(0);
+  const readController = useRef<AbortController | null>(null);
   const lock = useRef(false);
   const alive = useRef(true);
   useEffect(() => { alive.current = true; return () => { alive.current = false; onBusy(false); }; }, [onBusy]);
@@ -45,16 +47,26 @@ export function SeasonScenarioPanel({ invoke, refreshKey, disabled, onBusy }: { 
   const heading = useRef<HTMLHeadingElement>(null);
   // invoke is a parent closure; refreshKey is the explicit list-reload signal.
   const request = useRef(invoke); request.current = invoke;
+  const overviewRead = useRef(readOverview); overviewRead.current = readOverview;
   async function load() {
     const current = ++revision.current;
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
     setLoading(true); setOverview(null); setError(null);
     try {
-      const result = readSeasonOverview(await request.current({ action: "season-overview" }));
+      const result = readSeasonOverview(await overviewRead.current(controller.signal));
       if (current === revision.current) setOverview(result);
-    } catch { if (current === revision.current) setError("시즌 연결을 불러오지 못했습니다. 새로고침해주세요."); }
-    finally { if (current === revision.current) setLoading(false); }
+    } catch (cause) { if (current === revision.current) setError(cause instanceof ReadTimeoutError
+      ? "시즌 연결 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 새로고침해주세요."
+      : "시즌 연결을 불러오지 못했습니다. 새로고침해주세요."); }
+    finally {
+      controller.abort();
+      if (readController.current === controller) readController.current = null;
+      if (current === revision.current) setLoading(false);
+    }
   }
-  useEffect(() => { void load(); return () => { revision.current += 1; }; }, [refreshKey]);
+  useEffect(() => { void load(); return () => { revision.current += 1; readController.current?.abort(); }; }, [refreshKey]);
   function close() {
     if (lock.current) return;
     setChange(null); setChangeError(null);

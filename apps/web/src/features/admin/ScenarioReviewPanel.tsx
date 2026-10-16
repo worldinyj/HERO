@@ -4,6 +4,7 @@ import { ScenarioReviewForm } from "./ScenarioReviewForm";
 import generated from "./scenarioReviewTargets.generated.json";
 import { matchesReviewTarget, type ReviewArea, type ReviewTarget } from "./scenarioReview";
 import { readSavedPreview } from "./scenarioPreviewValidation";
+import { ReadTimeoutError } from "../../lib/readWithDeadline";
 import { STATUS_LABEL, type ScenarioStatus } from "./scenarioStatus";
 
 const targets = generated as ReviewTarget[];
@@ -18,9 +19,10 @@ const DECISION = { pending: "검토 대기", pass: "검토 통과", hold: "보�
 type Version = { id: string; version: number; status: ScenarioStatus; slug: string; title: string };
 
 type PanelProps = {
+  listState?: "loading" | "error" | "ready";
   versions: Version[];
   editor: Scenario | null;
-  readVersion: (id: string) => Promise<unknown>;
+  readVersion: (id: string, signal?: AbortSignal) => Promise<unknown>;
   onPreview: (scenario: Scenario, trigger: HTMLButtonElement) => void;
   onTargetChange?: () => void;
 };
@@ -36,7 +38,7 @@ export function ScenarioReviewPanel(props: PanelProps) {
     <ReviewTargetPanel key={`${target.scenarioId}:${target.previewSha256}`} {...props} target={target} />
   </div>;
 }
-function ReviewTargetPanel({ versions, editor, readVersion, onPreview, target }: PanelProps & { target: ReviewTarget }) {
+function ReviewTargetPanel({ versions, editor, readVersion, onPreview, target, listState = "ready" }: PanelProps & { target: ReviewTarget }) {
   const code = target.scenarioId.slice(0, 3).toUpperCase();
   const candidates = versions.filter(version => version.slug === target.scenarioId);
   const [selected, setSelected] = useState("");
@@ -44,28 +46,36 @@ function ReviewTargetPanel({ versions, editor, readVersion, onPreview, target }:
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const revision = useRef(0);
+  const readController = useRef<AbortController | null>(null);
   useEffect(() => {
     revision.current += 1;
+    readController.current?.abort();
     setChecked(null); setMessage(null); setBusy(false);
-    return () => { revision.current += 1; };
+    return () => { revision.current += 1; readController.current?.abort(); };
   }, [versions, editor, selected]);
 
   async function check(fromEditor: boolean) {
     const ticket = ++revision.current;
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
     setBusy(true); setChecked(null); setMessage(null);
     try {
       const row = candidates.find(version => version.id === selected);
       const scenario = fromEditor ? editor : row
-        ? readSavedPreview(await readVersion(row.id), row.id, row.version).scenario : null;
+        ? readSavedPreview(await readVersion(row.id, controller.signal), row.id, row.version).scenario : null;
       if (ticket !== revision.current) return;
       if (!scenario) throw new Error("review_unavailable");
       const match = await matchesReviewTarget(scenario, target);
       if (ticket !== revision.current) return;
       if (!match) { setMessage("선택한 내용은 현재 검토 대상과 다릅니다. 버전 번호가 같아도 내용이 변경됐다면 별도 검토가 필요합니다."); return; }
       setChecked(scenario);
-    } catch {
-      if (ticket === revision.current) setMessage("검토 대상 내용을 확인하지 못했습니다. 다시 시도해주세요.");
+    } catch (cause) {
+      if (ticket === revision.current) setMessage(cause instanceof ReadTimeoutError
+        ? "검토 대상 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 확인해주세요." : "검토 대상 내용을 확인하지 못했습니다. 다시 시도해주세요.");
     } finally {
+      controller.abort();
+      if (readController.current === controller) readController.current = null;
       if (ticket === revision.current) setBusy(false);
     }
   }
@@ -89,7 +99,7 @@ function ReviewTargetPanel({ versions, editor, readVersion, onPreview, target }:
     </ol>
     <h4>검토할 내용 확인</h4>
     <p className="muted">저장된 버전이나 입력한 JSON이 이 검토 대상과 일치하는지 확인한 뒤 검토용 미리보기를 열 수 있습니다.</p>
-    {candidates.length ? <label>저장된 {code} 버전
+    {listState !== "ready" ? <p className="muted">{listState === "loading" ? "저장된 버전 목록을 불러오고 있습니다…" : "저장된 버전 목록을 확인하지 못했습니다. 목록을 새로고침해주세요."}</p> : candidates.length ? <label>저장된 {code} 버전
       <select aria-label={`저장된 ${code} 버전`} value={selected} onChange={event => setSelected(event.target.value)}>
         <option value="">버전을 선택해주세요</option>
         {candidates.map(row => <option key={row.id} value={row.id}>v{row.version} · {STATUS_LABEL[row.status]}</option>)}

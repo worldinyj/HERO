@@ -192,10 +192,11 @@ test("saved preview requests the exact version; canceled late responses stay clo
   const { calls, release } = await fixture(page, { delayed: true });
   const button = page.getByRole("button", { name: `${tutorial.title} v${tutorial.version} 미리보기`, exact: true });
   await button.click();
+  await expect.poll(() => calls.filter(call => call.action === "preview").length).toBe(1);
+  const aborted = page.waitForEvent("requestfailed", request => request.url().endsWith("/functions/v1/admin-scenario") && request.postDataJSON().action === "preview");
   await page.getByRole("button", { name: "불러오기 취소", exact: true }).click();
-  const lateResponse = page.waitForResponse(response => response.url().endsWith("/functions/v1/admin-scenario") && response.request().postDataJSON().action === "preview");
+  await aborted;
   release();
-  await (await lateResponse).json();
   await expect(page.getByRole("region", { name: `${tutorial.title} · 미리보기`, exact: true })).not.toBeVisible();
   await button.click();
   const preview = page.getByRole("region", { name: `${tutorial.title} · 미리보기`, exact: true });
