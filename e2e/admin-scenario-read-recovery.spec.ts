@@ -10,7 +10,7 @@ const reviewId = "fa200000-0000-0000-0000-000000000003";
 const seasonId = "fa300000-0000-0000-0000-000000000001";
 const scenarioId = "fa400000-0000-0000-0000-000000000001";
 async function fixture(page: Page, hold: string | null = null, allowWrites = false) {
-  const state = { hold, malformed: false };
+  const state = { hold, holdAlso: null as string | null, malformed: false };
   const calls: Array<Record<string, unknown>> = [];
   const releases: Array<() => void> = [];
   let status = "draft";
@@ -47,7 +47,7 @@ async function fixture(page: Page, hold: string | null = null, allowWrites = fal
       bound = true;
       response = { updated: true, seasonId, scenarioId, versionId: reviewId, isActive: true };
     } else throw Error(`Unexpected mutation: ${body.action}`);
-    if (body.action === state.hold) await new Promise<void>(resolve => releases.push(resolve));
+    if (body.action === state.hold || body.action === state.holdAlso) await new Promise<void>(resolve => releases.push(resolve));
     await route.fulfill({ json: response }).catch(() => {});
   });
   await page.goto("/admin/scenarios");
@@ -232,6 +232,9 @@ for (const action of ["set-status", "set-season-scenario"]) test(`${action} conf
   state.hold = action === "set-status" ? "list" : "season-overview";
   const followingRead = state.hold;
   const beforeReads = calls.filter(x => x.action === followingRead).length;
+  const beforeSeasonReads = calls.filter(x => x.action === "season-overview").length;
+  // A version refresh also refreshes the independent season panel. Exercise both errors deliberately.
+  if (action === "set-status") state.holdAlso = "season-overview";
   if (action === "set-status") {
     await page.locator(".scenario-version-card").filter({ has: previewButton(page) }).getByRole("button", { name: "검토로", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: "검토 상태로 변경", exact: true }).click();
@@ -241,10 +244,13 @@ for (const action of ["set-status", "set-season-scenario"]) test(`${action} conf
   }
   await expect.poll(() => calls.filter(x => x.action === action).length).toBe(1);
   await expect.poll(() => calls.filter(x => x.action === followingRead).length).toBeGreaterThan(beforeReads);
+  if (action === "set-status") await expect.poll(() => calls.filter(x => x.action === "season-overview").length).toBeGreaterThan(beforeSeasonReads);
   await page.clock.runFor(15_001);
   await expect(page.getByRole("dialog")).not.toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("조회 응답이 지연");
+  await expect(page.getByRole("alert").filter({ hasText: action === "set-status" ? "시나리오 목록 조회 응답이 지연" : "시즌 연결 조회 응답이 지연" })).toBeVisible();
+  if (action === "set-status") await expect(page.getByRole("region", { name: "활성 시즌 시나리오 연결", exact: true }).getByRole("alert")).toContainText("시즌 연결 조회 응답이 지연");
   state.hold = null;
+  state.holdAlso = null;
   await page.getByRole("button", { name: action === "set-status" ? "목록 새로고침" : "시즌 연결 새로고침", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveCount(0);
   release();
