@@ -110,11 +110,13 @@ test("editor comparison validates identity and captures the clicked JSON snapsho
 });
 
 test("canceling a delayed comparison discards its late response", async ({ page }) => {
-  const { release } = await fixture(page, { delay: afterId });
+  const { calls, release } = await fixture(page, { delay: afterId });
   await chooseSaved(page);
+  await expect.poll(() => calls.filter(call => call.scenarioVersionId === afterId).length).toBe(1);
+  const aborted = page.waitForEvent("requestfailed", request => request.url().endsWith("/functions/v1/admin-scenario") && request.postDataJSON().scenarioVersionId === afterId);
   await page.getByRole("button", { name: "비교 불러오기 취소", exact: true }).click();
-  const response = page.waitForResponse(row => row.url().endsWith("/functions/v1/admin-scenario") && row.request().postDataJSON().scenarioVersionId === afterId);
-  release(); await (await response).json();
+  await aborted;
+  release();
   await expect(page.locator(".scenario-comparison-result")).not.toBeVisible();
   await expect(page.getByRole("button", { name: "변경 사항 비교", exact: true })).toBeFocused();
 });
@@ -144,27 +146,31 @@ test("an empty production-like list explains how to start", async ({ page }) => 
 });
 
 test("changing selections discards an in-flight comparison", async ({ page }) => {
-  const { release } = await fixture(page, { delay: afterId });
+  const { calls, release } = await fixture(page, { delay: afterId });
   await chooseSaved(page);
+  await expect.poll(() => calls.filter(call => call.scenarioVersionId === afterId).length).toBe(1);
+  const aborted = page.waitForEvent("requestfailed", request => request.url().endsWith("/functions/v1/admin-scenario") && request.postDataJSON().scenarioVersionId === afterId);
   await page.getByLabel("변경 전 · 기준 버전", { exact: true }).selectOption(afterId);
-  const response = page.waitForResponse(row => row.url().endsWith("/functions/v1/admin-scenario") && row.request().postDataJSON().scenarioVersionId === afterId);
-  release(); await (await response).json();
+  await aborted;
+  release();
   await expect(page.locator(".scenario-comparison-result")).not.toBeVisible();
   await expect(page.getByRole("button", { name: "비교 불러오기 취소", exact: true })).not.toBeVisible();
   await expect(page.getByLabel("변경 후 · 비교 대상", { exact: true })).toHaveValue("editor");
 });
 
 test("cancel returns to the comparison heading when edited JSON disables the trigger", async ({ page }) => {
-  const { release } = await fixture(page, { delay: beforeId });
+  const { calls, release } = await fixture(page, { delay: beforeId });
   await page.getByLabel("변경 전 · 기준 버전", { exact: true }).selectOption(beforeId);
   const editor = page.getByRole("textbox", { name: "시나리오 JSON", exact: true });
   await editor.fill(JSON.stringify(editedScenario()));
   await page.getByRole("button", { name: "변경 사항 비교", exact: true }).click();
   await editor.fill("null");
+  await expect.poll(() => calls.filter(call => call.scenarioVersionId === beforeId).length).toBe(1);
+  const aborted = page.waitForEvent("requestfailed", request => request.url().endsWith("/functions/v1/admin-scenario") && request.postDataJSON().scenarioVersionId === beforeId);
   await page.getByRole("button", { name: "비교 불러오기 취소", exact: true }).click();
+  await aborted;
   await expect(page.getByRole("heading", { name: "시나리오 버전 비교", exact: true })).toBeFocused();
-  const response = page.waitForResponse(row => row.url().endsWith("/functions/v1/admin-scenario") && row.request().postDataJSON().scenarioVersionId === beforeId);
-  release(); await (await response).json();
+  release();
   await expect(page.locator(".scenario-comparison-result")).not.toBeVisible();
 });
 

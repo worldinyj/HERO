@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Scenario } from "@hero/schema";
 import { readSavedPreview } from "./scenarioPreviewValidation";
 import { DIFF_GROUPS, diffGroup, diffLabel, diffPath, diffScenarios, diffValue, type ScenarioDifference } from "./scenarioDiff";
+import { ReadTimeoutError } from "../../lib/readWithDeadline";
 import { STATUS_LABEL, type ScenarioStatus } from "./scenarioStatus";
 
 export interface ComparisonVersion {
@@ -20,10 +21,11 @@ interface Comparison {
 
 const KIND_LABEL = { added: "추가", removed: "삭제", changed: "변경" };
 
-export function ScenarioVersionComparison({ versions, editor, readVersion }: {
+export function ScenarioVersionComparison({ versions, editor, readVersion, listState = "ready" }: {
+  listState?: "loading" | "error" | "ready";
   versions: ComparisonVersion[];
   editor: Scenario | null;
-  readVersion: (id: string) => Promise<unknown>;
+  readVersion: (id: string, signal?: AbortSignal) => Promise<unknown>;
 }) {
   const [baselineId, setBaselineId] = useState("");
   const [targetId, setTargetId] = useState("editor");
@@ -32,12 +34,14 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
   const [result, setResult] = useState<Comparison | null>(null);
   const [shown, setShown] = useState(20);
   const revision = useRef(0);
+  const readController = useRef<AbortController | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const panelHeading = useRef<HTMLHeadingElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => () => { revision.current += 1; }, []);
+  useEffect(() => () => { revision.current += 1; readController.current?.abort(); }, []);
   useEffect(() => {
     revision.current += 1;
+    readController.current?.abort();
     setBusy(false);
     setResult(null);
     setError(null);
@@ -56,6 +60,7 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
 
   function reset(restoreFocus = false) {
     revision.current += 1;
+    readController.current?.abort();
     setBusy(false);
     setError(null);
     setResult(null);
@@ -66,8 +71,8 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
     });
   }
 
-  async function loadVersion(row: ComparisonVersion): Promise<Scenario> {
-    const checked = readSavedPreview(await readVersion(row.id), row.id, row.version);
+  async function loadVersion(row: ComparisonVersion, signal: AbortSignal): Promise<Scenario> {
+    const checked = readSavedPreview(await readVersion(row.id, signal), row.id, row.version);
     if (!checked.scenario || checked.scenario.id !== row.slug) throw new Error("invalid_comparison_version");
     return checked.scenario;
   }
@@ -75,6 +80,9 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
   async function compare() {
     if (!canCompare || !baseline || busy) return;
     const request = ++revision.current;
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
     const beforeRow = baseline;
     const editorSnapshot = editor ? structuredClone(editor) : null;
     const afterRow = target;
@@ -84,8 +92,8 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
     setShown(20);
     try {
       const [before, after] = await Promise.all([
-        loadVersion(beforeRow),
-        targetId === "editor" ? Promise.resolve(editorSnapshot!) : loadVersion(afterRow!),
+        loadVersion(beforeRow, controller.signal),
+        targetId === "editor" ? Promise.resolve(editorSnapshot!) : loadVersion(afterRow!, controller.signal),
       ]);
       if (request !== revision.current) return;
       setResult({
@@ -93,9 +101,13 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
         afterLabel: afterRow ? `${after.title} · v${afterRow.version} · ${STATUS_LABEL[afterRow.status]}` : `입력 중인 JSON 사본 · v${after.version}`,
         changes: diffScenarios(before, after),
       });
-    } catch {
-      if (request === revision.current) setError("비교할 버전을 확인하지 못했습니다. 목록의 시나리오·버전과 JSON 내용을 확인한 뒤 다시 시도해주세요.");
+    } catch (cause) {
+      if (request === revision.current) setError(cause instanceof ReadTimeoutError
+        ? "버전 비교 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 비교를 다시 눌러주세요."
+        : "비교할 버전을 확인하지 못했습니다. 목록의 시나리오·버전과 JSON 내용을 확인한 뒤 다시 시도해주세요.");
     } finally {
+      controller.abort();
+      if (readController.current === controller) readController.current = null;
       if (request === revision.current) setBusy(false);
     }
   }
@@ -104,7 +116,7 @@ export function ScenarioVersionComparison({ versions, editor, readVersion }: {
     <p className="eyebrow">Version comparison</p>
     <h3 id="scenario-comparison-title" ref={panelHeading} tabIndex={-1}>시나리오 버전 비교</h3>
     <p className="muted">변경 전을 기준으로 변경 후의 차이를 확인합니다. 시나리오 저장·상태 변경·플레이 기록은 발생하지 않습니다.</p>
-    {versions.length === 0 ? <p className="muted">초안을 저장하면 저장된 버전과 편집 중인 JSON 또는 다른 저장 버전을 비교할 수 있습니다.</p> : <>
+    {listState !== "ready" ? <p className="muted">{listState === "loading" ? "비교할 버전 목록을 불러오고 있습니다…" : "비교할 버전 목록을 확인하지 못했습니다. 목록을 새로고침해주세요."}</p> : versions.length === 0 ? <p className="muted">초안을 저장하면 저장된 버전과 편집 중인 JSON 또는 다른 저장 버전을 비교할 수 있습니다.</p> : <>
       <div className="comparison-select"><label htmlFor="comparison-before">변경 전 · 기준 버전</label>
         <select id="comparison-before" value={baselineId} onChange={event => { reset(); setBaselineId(event.target.value); setTargetId("editor"); }}>
           <option value="">기준 버전을 선택해주세요</option>
