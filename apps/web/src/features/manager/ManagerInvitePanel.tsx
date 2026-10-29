@@ -175,14 +175,18 @@ function downloadBulkCsv(rows: BulkResult[]) {
   URL.revokeObjectURL(url);
 }
 
-export function ManagerInvitePanel({ onChanged }: { onChanged: () => Promise<boolean> }) {
+export function ManagerInvitePanel({ onChanged, rosterCurrent = true }: {
+  onChanged: () => Promise<boolean>;
+  rosterCurrent?: boolean;
+}) {
   const { profile } = useAuth();
   const [name, setName] = useState("");
   const [jobRole, setJobRole] = useState<JobRole>("worker");
   const [teamName, setTeamName] = useState("");
   const [singlePending, setSinglePending] = useState(false);
   const [singleRetryBlocked, setSingleRetryBlocked] = useState(false);
-  const [inviteRosterReady, setInviteRosterReady] = useState(false);
+  const [inviteRosterVerified, setInviteRosterReady] = useState(false);
+  const inviteRosterReady = inviteRosterVerified && rosterCurrent;
   const [inviteRosterPending, setInviteRosterPending] = useState(false);
   const [singleResult, setSingleResult] = useState<InviteLinkResult | null>(null);
   const [bulkPending, setBulkPending] = useState(false);
