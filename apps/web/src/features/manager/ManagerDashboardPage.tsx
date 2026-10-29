@@ -3,9 +3,10 @@ import { CompanionHeading } from "../../components/CompanionHeading";
 import { shareHeroInvite } from "../../lib/kakaoShare";
 import { getSupabase } from "../../lib/supabase";
 import { ReadRequestGate } from "../../lib/readRequestGate";
+import { ReadTimeoutError } from "../../lib/readWithDeadline";
 import { ManagerInvitePanel } from "./ManagerInvitePanel";
 import { InviteCreationOutcomeUnknownError, isDefiniteInviteRejection } from "./inviteCreationErrors";
-import { isValidManagerDashboardLists } from "./managerDashboardResponse";
+import { readManagerDashboard } from "./managerDashboardQueries";
 import { readReissuedInviteLink, readCanceledInviteResult } from "./inviteResponse";
 
 type JobRole = "sro" | "ro" | "field_operator" | "supervisor" | "worker";
@@ -65,10 +66,13 @@ function formatDateTime(value: string | null): string {
 
 export function ManagerDashboardPage() {
   const rosterGate = useRef(new ReadRequestGate());
+  const readController = useRef<AbortController | null>(null);
   const [participants, setParticipants] = useState<ParticipationRow[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInviteRow[]>([]);
   const [aggregates, setAggregates] = useState<AggregateRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [rosterCurrent, setRosterCurrent] = useState(false);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [reissueResult, setReissueResult] = useState<ReissueResult | null>(null);
   const [copiedReissue, setCopiedReissue] = useState(false);
@@ -83,49 +87,54 @@ export function ManagerDashboardPage() {
 
   const loadDashboard = useCallback(async (background = false): Promise<boolean> => {
     const revision = rosterGate.current.begin();
+    readController.current?.abort();
+    const controller = new AbortController();
+    readController.current = controller;
+    setRefreshing(true);
+    setRosterCurrent(false);
+    // A previous successful read is not evidence for this new attempt.
+    setInvitationReconciliationReady(false);
+    setPlayerReconciliationReady(false);
+    setNicknameReconciliationReady(false);
     try {
       if (!background) setLoading(true);
       setError(null);
       const supabase = getSupabase();
 
-      const [participation, pending, aggregate] = await Promise.all([
-        supabase.rpc("manager_player_rows"),
-        supabase.rpc("manager_pending_invites"),
-        supabase.rpc("manager_job_aggregates"),
-      ]);
+      const result = await readManagerDashboard(supabase, controller.signal);
 
       // Superseded reads cannot commit a stale roster or unlock retries.
       if (!rosterGate.current.isCurrent(revision)) return false;
-      const firstError = participation.error ?? pending.error ?? aggregate.error;
-      if (firstError) throw firstError;
-
-      // A null/malformed RPC response cannot prove invitation, status or
-      // nickname outcomes. Keep the reconciliation lock in that case.
-      if (!isValidManagerDashboardLists(participation.data, pending.data, aggregate.data)) {
-        throw new Error("manager_dashboard_result_invalid");
-      }
-
-      setParticipants(participation.data as ParticipationRow[]);
-      setPendingInvites(pending.data as PendingInviteRow[]);
-      setAggregates(aggregate.data as AggregateRow[]);
+      setParticipants(result.participation as ParticipationRow[]);
+      setPendingInvites(result.pending as PendingInviteRow[]);
+      setAggregates(result.aggregate as AggregateRow[]);
+      setRosterCurrent(true);
       return true;
     } catch (cause) {
       if (rosterGate.current.isCurrent(revision)) {
+        setParticipants([]);
+        setPendingInvites([]);
+        setAggregates([]);
         setError(
-          cause instanceof Error
-            ? cause.message
-            : "발전소 참여 현황을 불러오지 못했습니다.",
+          cause instanceof ReadTimeoutError
+            ? "참여 현황 조회 응답이 지연되어 대기를 마쳤습니다. 연결을 확인한 뒤 다시 조회해주세요."
+            : "발전소 참여 현황을 불러오지 못했습니다. 연결과 접근 권한을 확인한 뒤 다시 조회해주세요.",
         );
       }
       return false;
     } finally {
-      if (!background && rosterGate.current.isCurrent(revision)) setLoading(false);
+      controller.abort();
+      if (readController.current === controller) readController.current = null;
+      if (rosterGate.current.isCurrent(revision)) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     void loadDashboard();
-    return () => rosterGate.current.invalidate();
+    return () => { rosterGate.current.invalidate(); readController.current?.abort(); };
   }, [loadDashboard]);
 
   const summary = useMemo(() => {
@@ -168,6 +177,7 @@ export function ManagerDashboardPage() {
   }
 
   async function handleCancelInvite(invitationId: string) {
+    if (!rosterCurrent || refreshing) return;
     if (
       actionPending ||
       uncertainCancellations.includes(invitationId) ||
@@ -229,7 +239,7 @@ export function ManagerDashboardPage() {
   }
 
   function confirmInvitationReconciliation() {
-    if (!invitationReconciliationReady || actionPending) return;
+    if (!invitationReconciliationReady || actionPending || !rosterCurrent || refreshing) return;
     // The operator explicitly reviewed the freshly fetched roster.
     // Lost one-time token URLs cannot be reconstructed from this roster.
     setUncertainCancellations([]);
@@ -239,6 +249,7 @@ export function ManagerDashboardPage() {
   }
 
   async function handleReissueInvite(invitationId: string) {
+    if (!rosterCurrent || refreshing) return;
     if (actionPending) return;
     if (
       reissueResult ||
@@ -275,6 +286,7 @@ export function ManagerDashboardPage() {
   }
 
   async function handleNicknameReset(profileId: string) {
+    if (!rosterCurrent || refreshing) return;
     if (actionPending || uncertainNicknameIds.includes(profileId)) {
       setError("이전 닉네임 초기화 결과를 명단에서 먼저 확인해주세요.");
       return;
@@ -352,13 +364,14 @@ export function ManagerDashboardPage() {
   }
 
   function confirmNicknameReset() {
-    if (!nicknameReconciliationReady || actionPending) return;
+    if (!nicknameReconciliationReady || actionPending || !rosterCurrent || refreshing) return;
     setUncertainNicknameIds([]);
     setNicknameReconciliationReady(false);
     setError(null);
   }
 
   async function handlePlayerActive(profileId: string, isActive: boolean) {
+    if (!rosterCurrent || refreshing) return;
     if (actionPending || uncertainPlayerIds.includes(profileId)) {
       setError("이전 상태 변경 결과를 명단에서 확인한 뒤 다시 요청해주세요.");
       return;
@@ -418,7 +431,7 @@ export function ManagerDashboardPage() {
   }
 
   function confirmPlayerStatus() {
-    if (!playerReconciliationReady || actionPending) return;
+    if (!playerReconciliationReady || actionPending || !rosterCurrent || refreshing) return;
     setUncertainPlayerIds([]);
     setPlayerReconciliationReady(false);
     setError(null);
@@ -467,6 +480,11 @@ export function ManagerDashboardPage() {
         <p className="muted">
           개인 HP·선택·엔딩·5대 학습행동 지표는 담당자 화면에 표시하지 않습니다.
         </p>
+        <button type="button" className="secondary-button" disabled={refreshing || actionPending !== null}
+          onClick={() => void loadDashboard(true)}>참여 현황 다시 조회</button>
+        {!rosterCurrent ? <p className="muted" role="status">{refreshing
+          ? "참여 현황을 다시 확인하고 있습니다…"
+          : "현재 명단을 확인하지 못했습니다. 아래에 남아 있는 이전 명단으로 변경 결과를 판단하지 말고 다시 조회해주세요."}</p> : null}
       </header>
 
       {error ? (
@@ -475,7 +493,7 @@ export function ManagerDashboardPage() {
         </section>
       ) : null}
 
-      <div className="manager-summary" aria-label="참여 요약">
+      {rosterCurrent ? <div className="manager-summary" aria-label="참여 요약">
         <article>
           <span>등록 인원</span>
           <strong>{summary.accepted}</strong>
@@ -492,9 +510,9 @@ export function ManagerDashboardPage() {
           <span>1장 이상 완료</span>
           <strong>{summary.completedUsers}</strong>
         </article>
-      </div>
+      </div> : null}
 
-      <ManagerInvitePanel onChanged={() => loadDashboard(true)} />
+      <ManagerInvitePanel onChanged={() => loadDashboard(true)} rosterCurrent={rosterCurrent} />
 
       <section className="panel manager-section">
         <div className="section-heading">
@@ -522,7 +540,7 @@ export function ManagerDashboardPage() {
                 1. 닉네임 명단 다시 조회
               </button>
               <button type="button" className="text-button"
-                disabled={actionPending !== null || !nicknameReconciliationReady}
+                disabled={actionPending !== null || refreshing || !rosterCurrent || !nicknameReconciliationReady}
                 onClick={() => confirmNicknameReset()}>
                 2. 결과 확인 완료 · 잠금 해제
               </button>
@@ -543,7 +561,7 @@ export function ManagerDashboardPage() {
                 1. Player 명단 다시 조회
               </button>
               <button type="button" className="text-button"
-                disabled={actionPending !== null || !playerReconciliationReady}
+                disabled={actionPending !== null || refreshing || !rosterCurrent || !playerReconciliationReady}
                 onClick={() => confirmPlayerStatus()}>
                 2. 활성 상태 확인 완료 · 잠금 해제
               </button>
@@ -552,7 +570,7 @@ export function ManagerDashboardPage() {
         ) : null}
 
         {participants.length === 0 ? (
-          <p className="muted">아직 초대를 수락한 사용자가 없습니다.</p>
+          <p className="muted">{rosterCurrent ? "아직 초대를 수락한 사용자가 없습니다." : "사용자 명단을 확인하지 못했습니다."}</p>
         ) : (
           <div className="manager-list">
             {participants.map((row) => (
@@ -581,7 +599,7 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending !== null ||
+                        actionPending !== null || refreshing || !rosterCurrent ||
                         uncertainNicknameIds.includes(row.profile_id)
                       }
                       onClick={() => void handleNicknameReset(row.profile_id)}
@@ -592,7 +610,7 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending !== null ||
+                        actionPending !== null || refreshing || !rosterCurrent ||
                         uncertainPlayerIds.includes(row.profile_id)
                       }
                       onClick={() =>
@@ -615,7 +633,7 @@ export function ManagerDashboardPage() {
             <p className="eyebrow">Pending</p>
             <h3>수락 대기 초대</h3>
           </div>
-          <span className="count-badge">{pendingInvites.length}</span>
+          <span className="count-badge">{rosterCurrent ? pendingInvites.length : "미확인"}</span>
         </div>
 
         {reissueResult ? (
@@ -666,7 +684,7 @@ export function ManagerDashboardPage() {
               <button
                 type="button"
                 className="text-button"
-                disabled={actionPending !== null || !invitationReconciliationReady}
+                disabled={actionPending !== null || refreshing || !rosterCurrent || !invitationReconciliationReady}
                 onClick={() => confirmInvitationReconciliation()}
               >
                 2. 결과 확인 완료 · 잠금 해제
@@ -676,7 +694,7 @@ export function ManagerDashboardPage() {
         ) : null}
 
         {pendingInvites.length === 0 ? (
-          <p className="muted">현재 수락 대기 중인 초대가 없습니다.</p>
+          <p className="muted">{rosterCurrent ? "현재 수락 대기 중인 초대가 없습니다." : "수락 대기 초대 명단을 확인하지 못했습니다."}</p>
         ) : (
           <div className="manager-list">
             {pendingInvites.map((invite) => (
@@ -695,7 +713,7 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button"
                       disabled={
-                        actionPending !== null ||
+                        actionPending !== null || refreshing || !rosterCurrent ||
                         Boolean(reissueResult) ||
                         uncertainReissues.includes(invite.invitation_id) ||
                         uncertainCancellations.includes(invite.invitation_id)
@@ -708,7 +726,7 @@ export function ManagerDashboardPage() {
                       type="button"
                       className="text-button danger-text-button"
                       disabled={
-                        actionPending !== null ||
+                        actionPending !== null || refreshing || !rosterCurrent ||
                         reissueResult?.invitationId === invite.invitation_id ||
                         uncertainReissues.includes(invite.invitation_id) ||
                         uncertainCancellations.includes(invite.invitation_id)
@@ -736,7 +754,7 @@ export function ManagerDashboardPage() {
 
         {aggregates.length === 0 ? (
           <p className="muted">
-            직무별 활성 인원이 5명 이상일 때만 집계가 표시됩니다.
+            {rosterCurrent ? "직무별 활성 인원이 5명 이상일 때만 집계가 표시됩니다." : "직무별 익명 집계를 확인하지 못했습니다."}
           </p>
         ) : (
           <div className="aggregate-grid">
